@@ -34,8 +34,8 @@ Follow the instructions [here](https://golang.org/doc/install) to install Go.
 
 Alternatively, for Ubuntu LTS, you can do:
 ```bash:
-wget https://golang.org/dl/go1.19.0.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.19.0.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz
 ```
 
 Unless you want to configure in a non standard way, then set these in the `.profile` in the user's home (i.e. `~/`) folder.
