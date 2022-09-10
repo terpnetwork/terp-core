@@ -116,7 +116,7 @@ terpd keys show <key-name> -a
 
 ### Set minimum gas fees
 ```bash:
-perl -i -pe 's/^minimum-gas-prices = .+?$/minimum-gas-prices = "0.0125ucgas"/' ~/.terp/config/app.toml
+perl -i -pe 's/^minimum-gas-prices = .+?$/minimum-gas-prices = "0.0125upersy"/' ~/.terp/config/app.toml
 ```
 
 ### Add persistent peers
