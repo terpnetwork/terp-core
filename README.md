@@ -124,7 +124,7 @@ perl -i -pe 's/^minimum-gas-prices = .+?$/minimum-gas-prices = "0.0125upersy"/' 
 
 ### Download new genesis file
 ```bash:
-curl https://raw.githubusercontent.com/terpnetwork/net/main/mainnet/v1.1/genesis.json > ~/.terp/config/genesis.json
+curl https://raw.githubusercontent.com/terpnetwork/test-net/master/athena-1/genesis.json > ~/.terp/config/genesis.json
 ```
 
 ### Setup Unit/Daemon file
