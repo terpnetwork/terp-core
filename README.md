@@ -114,17 +114,29 @@ terpd keys show <key-name> -a
 
 ## Validator Setup Instructions
 
+### Download new genesis file
+```bash:
+curl https://raw.githubusercontent.com/terpnetwork/test-net/master/athena-1/genesis.json > ~/.terp/config/genesis.json
+```
 ### Set minimum gas fees
 ```bash:
 perl -i -pe 's/^minimum-gas-prices = .+?$/minimum-gas-prices = "0.0125upersy"/' ~/.terp/config/app.toml
 ```
+### P2P
 
-### Add persistent peers
-
-
-### Download new genesis file
+#### Add seeds
 ```bash:
-curl https://raw.githubusercontent.com/terpnetwork/test-net/master/athena-1/genesis.json > ~/.terp/config/genesis.json
+TBD
+```
+### Add persistent peers
+```bash:
+7e5c0b9384a1b9636f1c670d5dc91ba4721ab1ca@23.88.53.28:36656
+```
+### OR
+
+### Download addrbook.json
+```bash:
+TBD
 ```
 
 ### Setup Unit/Daemon file
@@ -208,7 +220,7 @@ node_key.json
 systemctl stop terpd.service
 ```
 
-### Install latest Terpd from source
+### Install latest Terpd from source [TODO: Update for v0.x.0]
 
 [Install latest Terpd](#install-terpd)
 
