@@ -120,7 +120,7 @@ curl https://raw.githubusercontent.com/terpnetwork/test-net/master/athena-1/gene
 ```
 ### Set minimum gas fees
 ```bash:
-perl -i -pe 's/^minimum-gas-prices = .+?$/minimum-gas-prices = "120upersy"/' ~/.terp/config/app.toml
+perl -i -pe 's/^minimum-gas-prices = .+?$/minimum-gas-prices = "0.0125upersyx"/' ~/.terp/config/app.toml
 ```
 ### P2P
 
@@ -176,7 +176,7 @@ Congratulations! You now have a full node. Once the node is synced with the netw
 you can then make your node a validator.
 
 ### Create validator
-1. Transfer funds to your validator address. A minimum of 1  (1000000uterp) is required to start a validator.
+1. Transfer funds to your validator address. A minimum of 1  (1000000uterpx) is required to start a validator.
 
 2. Confirm your address has the funds.
 
@@ -189,7 +189,7 @@ terpd q bank balances $(terpd keys show -a <key-alias>)
 
 ```bash:
 terpd tx staking create-validator \ 
---amount 1000000uterp \ 
+--amount 1000000uterpx \ 
 --commission-max-change-rate "0.05" \ 
 --commission-max-rate "0.10" \ 
 --commission-rate "0.05" \ 
@@ -198,7 +198,7 @@ terpd tx staking create-validator \
 --pubkey $(terpd tendermint show-validator) \ 
 --moniker $MONIKER_NAME \ 
 --chain-id $CHAIN_ID \ 
---fees 2000upersy \
+--fees 2000upersyx \
 --from <key-name>
 ```
 
@@ -232,7 +232,7 @@ curl https://raw.githubusercontent.com/terpnetwork/net/main/mainnet/genesis.json
 ### Clean old state
 
 ```bash:
-terpd unsafe-reset-all
+terpd tendermint unsafe-reset-all --home ~/.terp
 ```
 
 ### Rerun node
