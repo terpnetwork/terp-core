@@ -39,8 +39,8 @@ RUN GO111MODULE=on go get \
 
 RUN upx --lzma /usr/local/bin/*
 
-FROM golang:1.17.3-alpine
-ENV LD_LIBRARY_PATH=/lib64:/lib
+FROM golang:1.18-alpine
+cd ENV LD_LIBRARY_PATH=/lib64:/lib
 
 WORKDIR /work
 RUN apk --no-cache add --update curl git libc6-compat make

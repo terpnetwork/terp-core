@@ -3,8 +3,12 @@ package wasm
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math/rand"
+	"runtime/debug"
+	"strings"
 
+	wasmvm "github.com/CosmWasm/wasmvm"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -13,7 +17,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-	simKeeper "github.com/cosmos/cosmos-sdk/x/simulation"
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cast"
@@ -105,7 +108,7 @@ type AppModule struct {
 	keeper             *Keeper
 	validatorSetSource keeper.ValidatorSetSource
 	accountKeeper      types.AccountKeeper // for simulation
-	bankKeeper         simKeeper.BankKeeper
+	bankKeeper         simulation.BankKeeper
 }
 
 // ConsensusVersion is a sequence number for state-breaking change of the
@@ -120,7 +123,7 @@ func NewAppModule(
 	keeper *Keeper,
 	validatorSetSource keeper.ValidatorSetSource,
 	ak types.AccountKeeper,
-	bk simKeeper.BankKeeper,
+	bk simulation.BankKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic:     AppModuleBasic{},
@@ -218,6 +221,8 @@ func AddModuleInitFlags(startCmd *cobra.Command) {
 	startCmd.Flags().Uint32(flagWasmMemoryCacheSize, defaults.MemoryCacheSize, "Sets the size in MiB (NOT bytes) of an in-memory cache for wasm modules. Set to 0 to disable.")
 	startCmd.Flags().Uint64(flagWasmQueryGasLimit, defaults.SmartQueryGasLimit, "Set the max gas that can be spent on executing a query with a wasm contract")
 	startCmd.Flags().String(flagWasmSimulationGasLimit, "", "Set the max gas that can be spent when executing a simulation TX")
+
+	startCmd.PreRunE = chainPreRuns(checkLibwasmVersion, startCmd.PreRunE)
 }
 
 // ReadWasmConfig reads the wasm specifig configuration
@@ -250,4 +255,51 @@ func ReadWasmConfig(opts servertypes.AppOptions) (types.WasmConfig, error) {
 		}
 	}
 	return cfg, nil
+}
+
+func getExpectedLibwasmVersion() string {
+	buildInfo, ok := debug.ReadBuildInfo()
+	if !ok {
+		panic("can't read build info")
+	}
+	for _, d := range buildInfo.Deps {
+		if d.Path != "github.com/CosmWasm/wasmvm" {
+			continue
+		}
+		if d.Replace != nil {
+			return d.Replace.Version
+		}
+		return d.Version
+	}
+	return ""
+}
+
+func checkLibwasmVersion(cmd *cobra.Command, args []string) error {
+	wasmVersion, err := wasmvm.LibwasmvmVersion()
+	if err != nil {
+		return fmt.Errorf("unable to retrieve libwasmversion %w", err)
+	}
+	wasmExpectedVersion := getExpectedLibwasmVersion()
+	if wasmExpectedVersion == "" {
+		return fmt.Errorf("wasmvm module not exist")
+	}
+	if !strings.Contains(wasmExpectedVersion, wasmVersion) {
+		return fmt.Errorf("libwasmversion mismatch. got: %s; expected: %s", wasmVersion, wasmExpectedVersion)
+	}
+	return nil
+}
+
+type preRunFn func(cmd *cobra.Command, args []string) error
+
+func chainPreRuns(pfns ...preRunFn) preRunFn {
+	return func(cmd *cobra.Command, args []string) error {
+		for _, pfn := range pfns {
+			if pfn != nil {
+				if err := pfn(cmd, args); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
 }
