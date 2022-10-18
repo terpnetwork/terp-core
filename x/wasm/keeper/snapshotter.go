@@ -22,13 +22,13 @@ const SnapshotFormat = 1
 
 type WasmSnapshotter struct {
 	wasm *Keeper
-	cms sdk.MultiStore
+	cms  sdk.MultiStore
 }
 
 func NewWasmSnapshotter(cms sdk.MultiStore, wasm *Keeper) *WasmSnapshotter {
 	return &WasmSnapshotter{
 		wasm: wasm,
-		cms: cms,
+		cms:  cms,
 	}
 }
 

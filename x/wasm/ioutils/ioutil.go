@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"io"
 
-
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
 

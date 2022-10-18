@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -19,14 +17,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
@@ -94,6 +90,9 @@ import (
 	porttypes "github.com/cosmos/ibc-go/v3/modules/core/05-port/types"
 	ibchost "github.com/cosmos/ibc-go/v3/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
+
+	// Note: please do your research before using this in production app, this is a demo and not an officially
+	// supported IBC team implementation. It has no known issues, but do your own research before using it.
 	intertx "github.com/cosmos/interchain-accounts/x/inter-tx"
 	intertxkeeper "github.com/cosmos/interchain-accounts/x/inter-tx/keeper"
 	intertxtypes "github.com/cosmos/interchain-accounts/x/inter-tx/types"
@@ -107,6 +106,8 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
+	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
+
 	wasmappparams "github.com/terpnetwork/terp-core/app/params"
 	"github.com/terpnetwork/terp-core/x/wasm"
 	wasmclient "github.com/terpnetwork/terp-core/x/wasm/client"
@@ -115,11 +116,7 @@ import (
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
 )
 
-const (
-	AccountAddressPrefix = "terp"
-	Name                 = "Terp-Network"
-	appName              = "TerpApp"
-)
+const appName = "TerpApp"
 
 // We pull these out so we can set them with LDFLAGS in the Makefile
 var (
@@ -128,14 +125,15 @@ var (
 
 	// If EnabledSpecificProposals is "", and this is "true", then enable all x/wasm proposals.
 	// If EnabledSpecificProposals is "", and this is not "true", then disable all x/wasm proposals.
-	ProposalsEnabled = "true"
+	ProposalsEnabled = "false"
 	// If set to non-empty string it must be comma-separated list of values that are all a subset
 	// of "EnableAllProposals" (takes precedence over ProposalsEnabled)
+	// https://github.com/CosmWasm/wasmd/blob/02a54d33ff2c064f3539ae12d75d027d9c665f05/x/wasm/internal/types/proposal.go#L28-L34
 	EnableSpecificProposals = ""
 )
 
 // GetEnabledProposals parses the ProposalsEnabled / EnableSpecificProposals values to
-// produce a list of enabled proposals to pass into terpd app.
+// produce a list of enabled proposals to pass into wasmd app.
 func GetEnabledProposals() []wasm.ProposalType {
 	if EnableSpecificProposals == "" {
 		if ProposalsEnabled == "true" {
@@ -155,7 +153,7 @@ func GetEnabledProposals() []wasm.ProposalType {
 // These are the ones we will want to use in the code, based on
 // any overrides above
 var (
-	// DefaultNodeHome default home directories for terpd
+	// DefaultNodeHome default home directories for wasmd
 	DefaultNodeHome = os.ExpandEnv("$HOME/") + NodeDir
 
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address
@@ -225,7 +223,6 @@ var (
 )
 
 var (
-	_ simapp.App              = (*TerpApp)(nil)
 	_ servertypes.Application = (*TerpApp)(nil)
 )
 
@@ -276,7 +273,7 @@ type TerpApp struct {
 	mm *module.Manager
 
 	// simulation manager
-	sm *module.SimulationManager
+
 
 	// module configurator
 	configurator module.Configurator
@@ -346,7 +343,7 @@ func NewTerpApp(
 	scopedICAControllerKeeper := app.capabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
 	scopedInterTxKeeper := app.capabilityKeeper.ScopeToModule(intertxtypes.ModuleName)
 	scopedTransferKeeper := app.capabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
-	scopedwasmKeeper := app.capabilityKeeper.ScopeToModule(wasm.ModuleName)
+	scopedWasmKeeper := app.capabilityKeeper.ScopeToModule(wasm.ModuleName)
 	app.capabilityKeeper.Seal()
 
 	// add keepers
@@ -459,7 +456,6 @@ func NewTerpApp(
 	transferModule := transfer.NewAppModule(app.transferKeeper)
 	transferIBCModule := transfer.NewIBCModule(app.transferKeeper)
 
-	_ = app.getSubspace(icahosttypes.SubModuleName)
 	app.icaHostKeeper = icahostkeeper.NewKeeper(
 		appCodec,
 		keys[icahosttypes.StoreKey],
@@ -483,10 +479,13 @@ func NewTerpApp(
 	icaModule := ica.NewAppModule(&app.icaControllerKeeper, &app.icaHostKeeper)
 	icaHostIBCModule := icahost.NewIBCModule(app.icaHostKeeper)
 
-	// Use the "official" demo controller from https://github.com/cosmos/interchain-accounts
+	// For wasmd we use the demo controller from https://github.com/cosmos/interchain-accounts but see notes below
 	app.interTxKeeper = intertxkeeper.NewKeeper(appCodec, keys[intertxtypes.StoreKey], app.icaControllerKeeper, scopedInterTxKeeper)
+	// Note: please do your research before using this in production app, this is a demo and not an officially
+	// supported IBC team implementation. Do your own research before using it.
 	interTxModule := intertx.NewAppModule(appCodec, app.interTxKeeper)
 	interTxIBCModule := intertx.NewIBCModule(app.interTxKeeper)
+	// You will likely want to swap out the second argument with your own reviewed and maintained ica auth module
 	icaControllerIBCModule := icacontroller.NewIBCModule(app.icaControllerKeeper, interTxIBCModule)
 
 	// create evidence keeper with router
@@ -501,7 +500,7 @@ func NewTerpApp(
 	wasmDir := filepath.Join(homePath, "wasm")
 	wasmConfig, err := wasm.ReadWasmConfig(appOpts)
 	if err != nil {
-		panic(fmt.Sprintf("error while reading wasm config: %s", err.Error()))
+		panic(fmt.Sprintf("error while reading wasm config: %s", err))
 	}
 
 	// The last arguments can contain custom message handlers, and custom query handlers,
@@ -517,7 +516,7 @@ func NewTerpApp(
 		app.distrKeeper,
 		app.ibcKeeper.ChannelKeeper,
 		&app.ibcKeeper.PortKeeper,
-		scopedwasmKeeper,
+		scopedWasmKeeper,
 		app.transferKeeper,
 		app.MsgServiceRouter(),
 		app.GRPCQueryRouter(),
@@ -688,25 +687,7 @@ func NewTerpApp(
 	//
 	// NOTE: this is not required apps that don't use the simulator for fuzz testing
 	// transactions
-	app.sm = module.NewSimulationManager(
-		auth.NewAppModule(appCodec, app.accountKeeper, authsims.RandomGenesisAccounts),
-		bank.NewAppModule(appCodec, app.bankKeeper, app.accountKeeper),
-		capability.NewAppModule(appCodec, *app.capabilityKeeper),
-		feegrantmodule.NewAppModule(appCodec, app.accountKeeper, app.bankKeeper, app.feeGrantKeeper, app.interfaceRegistry),
-		authzmodule.NewAppModule(appCodec, app.authzKeeper, app.accountKeeper, app.bankKeeper, app.interfaceRegistry),
-		gov.NewAppModule(appCodec, app.govKeeper, app.accountKeeper, app.bankKeeper),
-		mint.NewAppModule(appCodec, app.mintKeeper, app.accountKeeper),
-		staking.NewAppModule(appCodec, app.stakingKeeper, app.accountKeeper, app.bankKeeper),
-		distr.NewAppModule(appCodec, app.distrKeeper, app.accountKeeper, app.bankKeeper, app.stakingKeeper),
-		slashing.NewAppModule(appCodec, app.slashingKeeper, app.accountKeeper, app.bankKeeper, app.stakingKeeper),
-		params.NewAppModule(app.paramsKeeper),
-		evidence.NewAppModule(app.evidenceKeeper),
-		wasm.NewAppModule(appCodec, &app.wasmKeeper, app.stakingKeeper, app.accountKeeper, app.bankKeeper),
-		ibc.NewAppModule(app.ibcKeeper),
-		transferModule,
-	)
 
-	app.sm.RegisterStoreDecoders()
 	// initialize stores
 	app.MountKVStores(keys)
 	app.MountTransientStores(tkeys)
@@ -737,7 +718,7 @@ func NewTerpApp(
 
 	// must be before Loading version
 	// requires the snapshot store to be created and registered as a BaseAppOption
-	// see cmd/terpd/root.go: 206 - 214 approx
+	// see cmd/wasmd/root.go: 206 - 214 approx
 	if manager := app.SnapshotManager(); manager != nil {
 		err := manager.RegisterExtensions(
 			wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), &app.wasmKeeper),
@@ -749,7 +730,7 @@ func NewTerpApp(
 
 	app.scopedIBCKeeper = scopedIBCKeeper
 	app.scopedTransferKeeper = scopedTransferKeeper
-	app.scopedWasmKeeper = scopedwasmKeeper
+	app.scopedWasmKeeper = scopedWasmKeeper
 	app.scopedICAHostKeeper = scopedICAHostKeeper
 	app.scopedICAControllerKeeper = scopedICAControllerKeeper
 	app.scopedInterTxKeeper = scopedInterTxKeeper
@@ -826,9 +807,8 @@ func (app *TerpApp) getSubspace(moduleName string) paramstypes.Subspace {
 }
 
 // SimulationManager implements the SimulationApp interface
-func (app *TerpApp) SimulationManager() *module.SimulationManager {
-	return app.sm
-}
+
+
 
 // RegisterAPIRoutes registers all application module routes with the provided
 // API server.
@@ -847,9 +827,9 @@ func (app *TerpApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APICo
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// register swagger API from root so that other applications can override easily
-	//if apiConfig.Swagger {
-	RegisterSwaggerAPI(apiSvr.Router)
-	//}
+	if apiConfig.Swagger {
+		RegisterSwaggerAPI(apiSvr.Router)
+	}
 }
 
 // RegisterTxService implements the Application.RegisterTxService method.

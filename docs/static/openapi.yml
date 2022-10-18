@@ -4,7 +4,7 @@ info:
   name: ''
   description: ''
 paths:
-  /terpnetwork/wasm/v1/code:
+  /cosmwasm/wasm/v1/code:
     get:
       summary: Codes gets the metadata for all stored wasm codes
       operationId: terpnetworkWasmV1Codes
@@ -314,7 +314,7 @@ paths:
           type: boolean
       tags:
         - Query
-  '/terpnetwork/wasm/v1/code/{code_id}':
+  '/cosmwasm/wasm/v1/code/{code_id}':
     get:
       summary: Code gets the binary code and metadata for a singe wasm code
       operationId: terpnetworkWasmV1Code
@@ -556,7 +556,7 @@ paths:
           format: uint64
       tags:
         - Query
-  '/terpnetwork/wasm/v1/code/{code_id}/contracts':
+  '/cosmwasm/wasm/v1/code/{code_id}/contracts':
     get:
       summary: ContractsByCode lists all smart contracts for a code id
       operationId: terpnetworkWasmV1ContractsByCode
@@ -841,7 +841,7 @@ paths:
           type: boolean
       tags:
         - Query
-  /terpnetwork/wasm/v1/codes/pinned:
+  /cosmwasm/wasm/v1/codes/pinned:
     get:
       summary: PinnedCodes gets the pinned code ids
       operationId: terpnetworkWasmV1PinnedCodes
@@ -1121,7 +1121,7 @@ paths:
           type: boolean
       tags:
         - Query
-  '/terpnetwork/wasm/v1/contract/{address}':
+  '/cosmwasm/wasm/v1/contract/{address}':
     get:
       summary: ContractInfo gets the contract meta data
       operationId: terpnetworkWasmV1ContractInfo
@@ -1553,7 +1553,7 @@ paths:
           type: string
       tags:
         - Query
-  '/terpnetwork/wasm/v1/contract/{address}/history':
+  '/cosmwasm/wasm/v1/contract/{address}/history':
     get:
       summary: ContractHistory gets the contract code history
       operationId: terpnetworkWasmV1ContractHistory
@@ -1880,7 +1880,7 @@ paths:
           type: boolean
       tags:
         - Query
-  '/terpnetwork/wasm/v1/contract/{address}/raw/{query_data}':
+  '/cosmwasm/wasm/v1/contract/{address}/raw/{query_data}':
     get:
       summary: RawContractState gets single key from the raw store data of a contract
       operationId: terpnetworkWasmV1RawContractState
@@ -2095,7 +2095,7 @@ paths:
           format: byte
       tags:
         - Query
-  '/terpnetwork/wasm/v1/contract/{address}/smart/{query_data}':
+  '/cosmwasm/wasm/v1/contract/{address}/smart/{query_data}':
     get:
       summary: SmartContractState get smart query result from the contract
       operationId: terpnetworkWasmV1SmartContractState
@@ -2311,7 +2311,7 @@ paths:
           format: byte
       tags:
         - Query
-  '/terpnetwork/wasm/v1/contract/{address}/state':
+  '/cosmwasm/wasm/v1/contract/{address}/state':
     get:
       summary: AllContractState gets all raw store data for a single contract
       operationId: terpnetworkWasmV1AllContractState

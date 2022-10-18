@@ -6,7 +6,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 echo "-----------------------"
 PROTO_THRD="$DIR/../../third_party/proto"
 PROTO_WASMD="$DIR/../../proto"
-PROTO_WASMD_QUERY="$PROTO_WASMD/terpnetwork/wasm/v1/query.proto"
+PROTO_WASMD_QUERY="$PROTO_WASMD/cosmwasm/wasm/v1/query.proto"
 
 echo "### List all codes"
 RESP=$(grpcurl -plaintext -import-path "$PROTO_THRD" -import-path "$PROTO_WASMD" -proto "$PROTO_WASMD_QUERY" \
