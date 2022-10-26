@@ -34,8 +34,8 @@ Follow the instructions [here](https://golang.org/doc/install) to install Go.
 
 Alternatively, for Ubuntu LTS, you can do:
 ```bash:
-wget https://go.dev/dl/go1.19.1.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.19.1.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.19.2.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.19.2.linux-amd64.tar.gz
 ```
 
 Unless you want to configure in a non standard way, then set these in the `.profile` in the user's home (i.e. `~/`) folder.
@@ -51,7 +51,7 @@ source ~/.profile
 go version
 ```
 
-Output should be: `go version go1.19.1 linux/amd64`
+Output should be: `go version go1.19.2 linux/amd64`
 
 <a id="install-terpd"></a>
 ### Install terpd from source
@@ -66,7 +66,7 @@ git clone https://github.com/terpnetwork/terp-core.git
 ```shell
 cd terp-core
 git fetch --tags
-git checkout v0.1.0
+git checkout v0.1.1
 ```
 #### 2. Install CLI
 ```shell
@@ -78,7 +78,7 @@ To confirm that the installation was successful, you can run:
 ```bash:
 terpd version
 ```
-Output should be: `v0.1.0`
+Output should be: `v0.1.1`
 
 ## Instruction for new validators
 
@@ -116,7 +116,7 @@ terpd keys show <key-name> -a
 
 ### Download new genesis file
 ```bash:
-curl https://raw.githubusercontent.com/terpnetwork/test-net/master/athena-1/genesis.json > ~/.terp/config/genesis.json
+curl https://raw.githubusercontent.com/terpnetwork/test-net/master/athena-2/genesis.json > ~/.terp/config/genesis.json
 ```
 ### Set minimum gas fees
 ```bash:
@@ -130,7 +130,7 @@ TBD
 ```
 ### Add persistent peers
 ```bash:
-7e5c0b9384a1b9636f1c670d5dc91ba4721ab1ca@23.88.53.28:36656
+TBD
 ```
 ### OR
 
@@ -198,8 +198,9 @@ terpd tx staking create-validator \
 --pubkey $(terpd tendermint show-validator) \ 
 --moniker $MONIKER_NAME \ 
 --chain-id $CHAIN_ID \ 
---fees 2000upersyx \
---from <key-name>
+--gas 400000upersyx \
+--fees 400000upersyx \
+--from <KEY_NAME>
 ```
 
 To ensure your validator is active, run:
@@ -220,19 +221,12 @@ node_key.json
 systemctl stop terpd.service
 ```
 
-### Install latest Terpd from source [TODO: Update for v0.x.0]
 
-[Install latest Terpd](#install-terpd)
-
-### Download genesis file
-```bash:
-curl https://raw.githubusercontent.com/terpnetwork/net/main/mainnet/genesis.json > ~/.terp/config/genesis.json
-```
 
 ### Clean old state
 
 ```bash:
-terpd tendermint unsafe-reset-all --home ~/.terp
+terpd tendermint unsafe-reset-all --home ~/.terp --keep-addr-book
 ```
 
 ### Rerun node
