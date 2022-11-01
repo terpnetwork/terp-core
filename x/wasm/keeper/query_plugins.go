@@ -80,7 +80,7 @@ type QueryPlugins struct {
 	IBC      func(ctx sdk.Context, caller sdk.AccAddress, request *wasmvmtypes.IBCQuery) ([]byte, error)
 	Staking  func(ctx sdk.Context, request *wasmvmtypes.StakingQuery) ([]byte, error)
 	Stargate func(ctx sdk.Context, request *wasmvmtypes.StargateQuery) ([]byte, error)
-	Wasm      func(ctx sdk.Context, request *wasmvmtypes.WasmQuery) ([]byte, error)
+	Wasm     func(ctx sdk.Context, request *wasmvmtypes.WasmQuery) ([]byte, error)
 }
 
 type contractMetaDataSource interface {
@@ -108,7 +108,7 @@ func DefaultQueryPlugins(
 		IBC:      IBCQuerier(wasm, channelKeeper),
 		Staking:  StakingQuerier(staking, distKeeper),
 		Stargate: StargateQuerier(queryRouter),
-		Wasm:      WasmQuerier(wasm),
+		Wasm:     WasmQuerier(wasm),
 	}
 }
 

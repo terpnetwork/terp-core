@@ -1,8 +1,8 @@
 # Event System
 
-## Usage in the SDK
+## Usage in the Terp-Core
 
-Events are an essential part of the Cosmos SDK. They are similar to "logs" in Ethereum and allow a blockchain
+Events are an essential part of the Terp-Core. They are similar to "logs" in Ethereum and allow a blockchain
 app to attach key-value pairs to a transaction that can later be used to search for it or extract some information
 in human readable form. Events are not written to the application state, nor do they form part of the AppHash,
 but mainly intended for client use (and become an essential API for any reactive app or app that searches for txs). 
@@ -18,24 +18,11 @@ by it). Secondly is the `log` field on the same transaction result. And third is
 transactions. 
 
 The `log` field actually has the best data. It contains an array of array of events. The first array is one entry per incoming message.
-Transactions in the Cosmos SDK may consist of multiple messages that are executed atomically. Maybe we send tokens, then issue a swap
+Transactions in the Terp-Core may consist of multiple messages that are executed atomically. Maybe we send tokens, then issue a swap
 on a DEX. Each action would return it's own list of Events and in the logs, these are separated. For each message, it maintains a list
 of Events, exactly in the order returned by the application. This is JSON encoded and can be parsed by a client. In fact this is
 how [CosmJS](https://github.com/cosmos/cosmjs) gets the events it shows to the client.
 
-In Tendermint 0.35, the `events` field will be one flattened list of events over all messages. Just as if we concatenated all
-the per-message arrays contained in the `log` field. This fix was made as
-[part of an event system refactoring](https://github.com/tendermint/tendermint/pull/6634). This refactoring is also giving us
-[pluggable event indexing engines](https://github.com/tendermint/tendermint/pull/6411), so we can use eg. PostgreSQL to
-store and query the events with more powerful indexes.
-
-However, currently (until Tendermint 0.34 used in Cosmos SDK 0.40-0.43), all events of one transaction are "flat-mapped" on type. 
-Meaning all events with type `wasm` get merged into one. This makes the API not very useful to understanding more complex events
-currently. There are also a number of limitations of the power of queries in the search interface.
-
-Given the state of affairs, and given that we seek to provide a stable API for contracts looking into the future, we consider the
-`log` output and the Tendermint 0.35 event handling to be the standard that clients should adhere to. And we will expose a similar
-API to the smart contracts internally (all events from the message appended, unmerged).
 ### Data Format
 
 The event has a string type, and a list of attributes. Each of them being a key value pair. All of these maintain a
@@ -74,7 +61,7 @@ And here is a sample log output for a transaction with one message, which emitte
 ]
 ```
 
-### Default Events in the SDK
+### Default Events in the Terp-Core
 
 There are two places events that are emitted in every transaction regardless of the module which is executed.
 [The first is `{"type": "message"}`](https://github.com/cosmos/cosmos-sdk/blob/6888de1d86026c25197c1227dae3d7da4d41a441/baseapp/baseapp.go#L746-L748)
@@ -85,7 +72,7 @@ The other place is in the [signature verification AnteHandler](https://github.co
 
 These are all handled in BaseApp and the middleware *before* any module is called and thus not exposed to CosmWasm contracts at all.
 
-### Standard Events in the SDK
+### Standard Events in the Terp-COre
 
 The events that will actually make it to the contracts are the events that are emitted by the other modules / keepers. Let's look
 at some good examples of what they look like:
@@ -123,7 +110,7 @@ sdk.NewEvent(
 ),
 ```
 
-## Usage in wasmd
+## Usage in terpd
 
 In `x/wasm` we also use Events system. On one hand, the Go implementation of `x/wasm` emits standard events for each 
 message it processes, using the `distribution` module as an example. Furthermore, it allows contracts to
@@ -294,7 +281,7 @@ undertake, we also perform a number of further validation checks on the contract
 * Attribute keys and values (both in `attributes` and under `events`) are trimmed of leading/trailing whitespace. If they are empty after
   trimming, they are rejected as above (aborting the execution). Otherwise, they are passed verbatim.
 
-## Event Details for wasmd
+## Event Details for terpd
 
 Beyond the basic Event system and emitted events, we must handle more advanced cases in `x/wasm`
 and thus add some more logic to the event processing. Remember that CosmWasm contracts dispatch other
