@@ -1,5 +1,5 @@
 # Setup
-Enable prometheus metrics in terpd:
+Enable prometheus metrics in wasmd:
 
 * Edit `$HOME/config/app.toml`
 ```toml
@@ -37,10 +37,10 @@ Note the `format` parameter in the request for the endpoint:
 # Local testing
 ## Run Prometheus
 ```sh
-# port 9090 is used by terpd already
+# port 9090 is used by wasmd already
 docker run -it -v $(pwd)/contrib/prometheus:/prometheus  -p9091:9090  prom/prometheus --config.file=/prometheus/prometheus.yaml
 ```
-* Open [console](http://localhost:9091) and find `terp_`service metrics
+* Open [console](http://localhost:9091) and find `wasm_`service metrics
 
 ## Run Grafana
 
@@ -50,4 +50,4 @@ docker run -it -p 3000:3000 grafana/grafana
 * Add Prometheus data source
 `http://host.docker.internal:9091`
 ### Labels
-* `terp_contract_create` = nanosec
+* `wasm_contract_create` = nanosec

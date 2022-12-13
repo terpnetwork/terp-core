@@ -8,14 +8,13 @@ import (
 
 // RandomizeGenState generates a random GenesisState for wasm
 func RandomizedGenState(simstate *module.SimulationState) {
-	params := RandomParams(simstate.Rand)
+	params := types.DefaultParams()
 	wasmGenesis := types.GenesisState{
 		Params:    params,
 		Codes:     nil,
 		Contracts: nil,
 		Sequences: []types.Sequence{
 			{IDKey: types.KeyLastCodeID, Value: simstate.Rand.Uint64()},
-			{IDKey: types.KeyLastInstanceID, Value: simstate.Rand.Uint64()},
 		},
 	}
 

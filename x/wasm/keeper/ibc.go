@@ -31,7 +31,7 @@ func (k Keeper) ensureIbcPort(ctx sdk.Context, contractAddr sdk.AccAddress) (str
 	return portID, k.bindIbcPort(ctx, portID)
 }
 
-const portIDPrefix = "terp."
+const portIDPrefix = "wasm."
 
 func PortIDForContract(addr sdk.AccAddress) string {
 	return portIDPrefix + addr.String()

@@ -24,8 +24,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/terpnetwork/terp-core/x/wasm/client/cli"
-	"github.com/terpnetwork/terp-core/x/wasm/client/rest"
+	"github.com/terpnetwork/terp-core/x/wasm/client/rest" //nolint:staticcheck
 	"github.com/terpnetwork/terp-core/x/wasm/keeper"
+	"github.com/terpnetwork/terp-core/x/wasm/simulation"
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
 

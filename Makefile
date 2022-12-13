@@ -59,7 +59,7 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=terpnetwork \
 		  -X github.com/cosmos/cosmos-sdk/version.AppName=terpd \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
-		  -X github.com/CosmWasm/wasmd/app.Bech32Prefix=terp \
+		  -X github.com/terpnetwork/terp-core/app.Bech32Prefix=terp \
 		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)"
 
 ifeq ($(WITH_CLEVELDB),yes)

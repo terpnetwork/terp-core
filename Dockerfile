@@ -1,5 +1,5 @@
-# docker build . -t cosmwasm/wasmd:latest
-# docker run --rm -it cosmwasm/wasmd:latest /bin/sh
+# docker build . -t terpnetwork/terp-core:latest
+# docker run --rm -it terpnetwork/terp-core:latest /bin/sh
 FROM golang:1.19-alpine3.15 AS go-builder
 ARG arch=x86_64
 

@@ -6,12 +6,11 @@ import (
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-
+	"github.com/terpnetwork/terp-core/x/wasm/keeper"
+	"github.com/terpnetwork/terp-core/x/wasm/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/terpnetwork/terp-core/x/wasm/keeper"
-	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
 // NewHandler returns a handler for "wasm" type messages.

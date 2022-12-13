@@ -18,9 +18,8 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto.Marshal
-
 var (
+	_ = proto.Marshal
 	_ = fmt.Errorf
 	_ = math.Inf
 )
@@ -32,7 +31,7 @@ var (
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // ContractExecutionAuthorization defines authorization for wasm execute.
-// Since: terpd 0.30
+// Since: terpd 0.2.0
 type ContractExecutionAuthorization struct {
 	// Grants for contract executions
 	Grants []ContractGrant `protobuf:"bytes,1,rep,name=grants,proto3" json:"grants"`
@@ -77,7 +76,7 @@ func (m *ContractExecutionAuthorization) XXX_DiscardUnknown() {
 var xxx_messageInfo_ContractExecutionAuthorization proto.InternalMessageInfo
 
 // ContractMigrationAuthorization defines authorization for wasm contract
-// migration. Since: terpd 0.30
+// migration. Since: terpd 0.2.0
 type ContractMigrationAuthorization struct {
 	// Grants for contract migrations
 	Grants []ContractGrant `protobuf:"bytes,1,rep,name=grants,proto3" json:"grants"`
@@ -122,7 +121,7 @@ func (m *ContractMigrationAuthorization) XXX_DiscardUnknown() {
 var xxx_messageInfo_ContractMigrationAuthorization proto.InternalMessageInfo
 
 // ContractGrant a granted permission for a single contract
-// Since: terpd 0.30
+// Since: terpd 0.2.0
 type ContractGrant struct {
 	// Contract is the bech32 address of the smart contract
 	Contract string `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
@@ -174,7 +173,7 @@ func (m *ContractGrant) XXX_DiscardUnknown() {
 var xxx_messageInfo_ContractGrant proto.InternalMessageInfo
 
 // MaxCallsLimit limited number of calls to the contract. No funds transferable.
-// Since: terpd 0.30
+// Since: terpd 0.2.0
 type MaxCallsLimit struct {
 	// Remaining number that is decremented on each execution
 	Remaining uint64 `protobuf:"varint,1,opt,name=remaining,proto3" json:"remaining,omitempty"`
@@ -219,7 +218,7 @@ func (m *MaxCallsLimit) XXX_DiscardUnknown() {
 var xxx_messageInfo_MaxCallsLimit proto.InternalMessageInfo
 
 // MaxFundsLimit defines the maximal amounts that can be sent to the contract.
-// Since: terpd 0.30
+// Since: terpd 0.2.0
 type MaxFundsLimit struct {
 	// Amounts is the maximal amount of tokens transferable to the contract.
 	Amounts github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,1,rep,name=amounts,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"amounts"`
@@ -265,7 +264,7 @@ var xxx_messageInfo_MaxFundsLimit proto.InternalMessageInfo
 
 // CombinedLimit defines the maximal amounts that can be sent to a contract and
 // the maximal number of calls executable. Both need to remain >0 to be valid.
-// Since: terpd 0.30
+// Since: terpd 0.2.0
 type CombinedLimit struct {
 	// Remaining number that is decremented on each execution
 	CallsRemaining uint64 `protobuf:"varint,1,opt,name=calls_remaining,json=callsRemaining,proto3" json:"calls_remaining,omitempty"`
@@ -313,7 +312,7 @@ var xxx_messageInfo_CombinedLimit proto.InternalMessageInfo
 
 // AllowAllMessagesFilter is a wildcard to allow any type of contract payload
 // message.
-// Since: terpd 0.30
+// Since: terpd 0.2.0
 type AllowAllMessagesFilter struct{}
 
 func (m *AllowAllMessagesFilter) Reset()         { *m = AllowAllMessagesFilter{} }
@@ -356,7 +355,7 @@ var xxx_messageInfo_AllowAllMessagesFilter proto.InternalMessageInfo
 
 // AcceptedMessageKeysFilter accept only the specific contract message keys in
 // the json object to be executed.
-// Since: terpd 0.30
+// Since: terpd 0.2.0
 type AcceptedMessageKeysFilter struct {
 	// Messages is the list of unique keys
 	Keys []string `protobuf:"bytes,1,rep,name=keys,proto3" json:"keys,omitempty"`
@@ -402,7 +401,7 @@ var xxx_messageInfo_AcceptedMessageKeysFilter proto.InternalMessageInfo
 
 // AcceptedMessagesFilter accept only the specific raw contract messages to be
 // executed.
-// Since: terpd 0.30
+// Since: terpd 0.2.0
 type AcceptedMessagesFilter struct {
 	// Messages is the list of raw contract messages
 	Messages []RawContractMessage `protobuf:"bytes,1,rep,name=messages,proto3,casttype=RawContractMessage" json:"messages,omitempty"`

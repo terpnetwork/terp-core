@@ -32,7 +32,7 @@ func (s GenesisState) ValidateBasic() error {
 			return sdkerrors.Wrapf(err, "sequence: %d", i)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -75,8 +75,6 @@ func (c Contract) ValidateBasic() error {
 	}
 	return nil
 }
-
-
 
 // ValidateGenesis performs basic validation of supply genesis data returning an
 // error for any failed validation criteria.
