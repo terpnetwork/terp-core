@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
+
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
@@ -51,6 +52,7 @@ func (d MessageDispatcher) DispatchMessages(ctx sdk.Context, contractAddr sdk.Ac
 func (d MessageDispatcher) dispatchMsgWithGasLimit(ctx sdk.Context, contractAddr sdk.AccAddress, ibcPort string, msg wasmvmtypes.CosmosMsg, gasLimit uint64) (events []sdk.Event, data [][]byte, err error) {
 	limitedMeter := sdk.NewGasMeter(gasLimit)
 	subCtx := ctx.WithGasMeter(limitedMeter)
+
 	// catch out of gas panic and just charge the entire gas limit
 	defer func() {
 		if r := recover(); r != nil {
@@ -65,9 +67,11 @@ func (d MessageDispatcher) dispatchMsgWithGasLimit(ctx sdk.Context, contractAddr
 		}
 	}()
 	events, data, err = d.messenger.DispatchMsg(subCtx, contractAddr, ibcPort, msg)
+
 	// make sure we charge the parent what was spent
 	spent := subCtx.GasMeter().GasConsumed()
 	ctx.GasMeter().ConsumeGas(spent, "From limited Sub-Message")
+
 	return events, data, err
 }
 
@@ -85,9 +89,11 @@ func (d MessageDispatcher) DispatchSubmessages(ctx sdk.Context, contractAddr sdk
 		subCtx, commit := ctx.CacheContext()
 		em := sdk.NewEventManager()
 		subCtx = subCtx.WithEventManager(em)
+
 		// check how much gas left locally, optionally wrap the gas meter
 		gasRemaining := ctx.GasMeter().Limit() - ctx.GasMeter().GasConsumed()
 		limitGas := msg.GasLimit != nil && (*msg.GasLimit < gasRemaining)
+
 		var err error
 		var events []sdk.Event
 		var data [][]byte
@@ -96,6 +102,7 @@ func (d MessageDispatcher) DispatchSubmessages(ctx sdk.Context, contractAddr sdk
 		} else {
 			events, data, err = d.messenger.DispatchMsg(subCtx, contractAddr, ibcPort, msg.Msg)
 		}
+
 		// if it succeeds, commit state changes from submessage, and pass on events to Event Manager
 		var filteredEvents []sdk.Event
 		if err == nil {
@@ -121,6 +128,7 @@ func (d MessageDispatcher) DispatchSubmessages(ctx sdk.Context, contractAddr sdk
 		if msg.ReplyOn == wasmvmtypes.ReplyNever || (msg.ReplyOn == wasmvmtypes.ReplyError && err == nil) {
 			continue
 		}
+
 		// otherwise, we create a SubMsgResult and pass it into the calling contract
 		var result wasmvmtypes.SubMsgResult
 		if err == nil {
@@ -143,11 +151,13 @@ func (d MessageDispatcher) DispatchSubmessages(ctx sdk.Context, contractAddr sdk
 				Err: redactError(err).Error(),
 			}
 		}
+
 		// now handle the reply, we use the parent context, and abort on error
 		reply := wasmvmtypes.Reply{
 			ID:     msg.ID,
 			Result: result,
 		}
+
 		// we can ignore any result returned as there is nothing to do with the data
 		// and the events are already in the ctx.EventManager()
 		rspData, err := d.keeper.reply(ctx, contractAddr, reply)
@@ -168,6 +178,7 @@ func redactError(err error) error {
 	if wasmvmtypes.ToSystemError(err) != nil {
 		return err
 	}
+
 	// FIXME: do we want to hardcode some constant string mappings here as well?
 	// Or better document them? (SDK error string may change on a patch release to fix wording)
 	// sdk/11 is out of gas

@@ -15488,7 +15488,7 @@ paths:
                         moniker:
                           type: string
                           description: >-
-                            moniker defines a human-readable name for the
+                            moniker defines a stoner-friendly name for the
                             validator.
                         identity:
                           type: string
@@ -16077,7 +16077,7 @@ paths:
                       moniker:
                         type: string
                         description: >-
-                          moniker defines a human-readable name for the
+                          moniker defines a stoner-friendly name for the
                           validator.
                       identity:
                         type: string
@@ -16679,7 +16679,7 @@ paths:
                             moniker:
                               type: string
                               description: >-
-                                moniker defines a human-readable name for the
+                                moniker defines a stoner-friendly name for the
                                 validator.
                             identity:
                               type: string
@@ -17631,7 +17631,7 @@ paths:
                         moniker:
                           type: string
                           description: >-
-                            moniker defines a human-readable name for the
+                            moniker defines a stoner-friendly name for the
                             validator.
                         identity:
                           type: string
@@ -18218,7 +18218,7 @@ paths:
                       moniker:
                         type: string
                         description: >-
-                          moniker defines a human-readable name for the
+                          moniker defines a stoner-friendly name for the
                           validator.
                       identity:
                         type: string
@@ -42533,7 +42533,7 @@ definitions:
     properties:
       moniker:
         type: string
-        description: moniker defines a human-readable name for the validator.
+        description: moniker defines a stoner-friendly name for the validator.
       identity:
         type: string
         description: >-
@@ -42834,7 +42834,7 @@ definitions:
               properties:
                 moniker:
                   type: string
-                  description: moniker defines a human-readable name for the validator.
+                  description: moniker defines a stoner-friendly name for the validator.
                 identity:
                   type: string
                   description: >-
@@ -43389,7 +43389,7 @@ definitions:
             properties:
               moniker:
                 type: string
-                description: moniker defines a human-readable name for the validator.
+                description: moniker defines a stoner-friendly name for the validator.
               identity:
                 type: string
                 description: >-
@@ -43684,7 +43684,7 @@ definitions:
               properties:
                 moniker:
                   type: string
-                  description: moniker defines a human-readable name for the validator.
+                  description: moniker defines a stoner-friendly name for the validator.
                 identity:
                   type: string
                   description: >-
@@ -44087,7 +44087,7 @@ definitions:
                   properties:
                     moniker:
                       type: string
-                      description: moniker defines a human-readable name for the validator.
+                      description: moniker defines a stoner-friendly name for the validator.
                     identity:
                       type: string
                       description: >-
@@ -44678,7 +44678,7 @@ definitions:
             properties:
               moniker:
                 type: string
-                description: moniker defines a human-readable name for the validator.
+                description: moniker defines a stoner-friendly name for the validator.
               identity:
                 type: string
                 description: >-
@@ -45042,7 +45042,7 @@ definitions:
               properties:
                 moniker:
                   type: string
-                  description: moniker defines a human-readable name for the validator.
+                  description: moniker defines a stoner-friendly name for the validator.
                 identity:
                   type: string
                   description: >-
@@ -45618,7 +45618,7 @@ definitions:
         properties:
           moniker:
             type: string
-            description: moniker defines a human-readable name for the validator.
+            description: moniker defines a stoner-friendly name for the validator.
           identity:
             type: string
             description: >-
@@ -46161,7 +46161,7 @@ definitions:
        - SIGN_MODE_DIRECT: SIGN_MODE_DIRECT specifies a signing mode which uses SignDoc and is
       verified with raw bytes from Tx
        - SIGN_MODE_TEXTUAL: SIGN_MODE_TEXTUAL is a future signing mode that will verify some
-      human-readable textual representation on top of the binary representation
+      stoner-friendly textual representation on top of the binary representation
       from SIGN_MODE_DIRECT
        - SIGN_MODE_LEGACY_AMINO_JSON: SIGN_MODE_LEGACY_AMINO_JSON is a backwards compatibility mode which uses
       Amino JSON and will be removed in the future
@@ -47931,7 +47931,7 @@ definitions:
                - SIGN_MODE_DIRECT: SIGN_MODE_DIRECT specifies a signing mode which uses SignDoc and is
               verified with raw bytes from Tx
                - SIGN_MODE_TEXTUAL: SIGN_MODE_TEXTUAL is a future signing mode that will verify some
-              human-readable textual representation on top of the binary
+              stoner-friendly textual representation on top of the binary
               representation
 
               from SIGN_MODE_DIRECT
@@ -48010,7 +48010,7 @@ definitions:
            - SIGN_MODE_DIRECT: SIGN_MODE_DIRECT specifies a signing mode which uses SignDoc and is
           verified with raw bytes from Tx
            - SIGN_MODE_TEXTUAL: SIGN_MODE_TEXTUAL is a future signing mode that will verify some
-          human-readable textual representation on top of the binary
+          stoner-friendly textual representation on top of the binary
           representation
 
           from SIGN_MODE_DIRECT

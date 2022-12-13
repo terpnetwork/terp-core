@@ -22,25 +22,26 @@ func (k Keeper) OnOpenChannel(
 	ctx sdk.Context,
 	contractAddr sdk.AccAddress,
 	msg wasmvmtypes.IBCChannelOpenMsg,
-) error {
+) (string, error) {
 	defer telemetry.MeasureSince(time.Now(), "wasm", "contract", "ibc-open-channel")
-
 	_, codeInfo, prefixStore, err := k.contractInstance(ctx, contractAddr)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	env := types.NewEnv(ctx, contractAddr)
 	querier := k.newQueryHandler(ctx, contractAddr)
 
 	gas := k.runtimeGasForContract(ctx)
-	_, gasUsed, execErr := k.wasmVM.IBCChannelOpen(codeInfo.CodeHash, env, msg, prefixStore, cosmwasmAPI, querier, ctx.GasMeter(), gas, costJSONDeserialization)
+	res, gasUsed, execErr := k.wasmVM.IBCChannelOpen(codeInfo.CodeHash, env, msg, prefixStore, cosmwasmAPI, querier, ctx.GasMeter(), gas, costJSONDeserialization)
 	k.consumeRuntimeGas(ctx, gasUsed)
 	if execErr != nil {
-		return sdkerrors.Wrap(types.ErrExecuteFailed, execErr.Error())
+		return "", sdkerrors.Wrap(types.ErrExecuteFailed, execErr.Error())
 	}
-
-	return nil
+	if res != nil {
+		return res.Version, nil
+	}
+	return "", nil
 }
 
 // OnConnectChannel calls the contract to let it know the IBC channel was established.
