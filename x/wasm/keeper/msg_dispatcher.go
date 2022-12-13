@@ -13,7 +13,7 @@ import (
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
-// Messenger is an extension point for custom wasmd message handling
+// Messenger is an extension point for custom terpd message handling
 type Messenger interface {
 	// DispatchMsg encodes the wasmVM message and dispatches it.
 	DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, contractIBCPortID string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error)

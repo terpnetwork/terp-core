@@ -20,7 +20,7 @@ import (
 	wasmibctesting "github.com/terpnetwork/terp-core/x/wasm/ibctesting"
 	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
 	"github.com/terpnetwork/terp-core/x/wasm/keeper/wasmtesting"
-	wasmTypes "github.com/terpnetwork/terp-core/x/wasm/types"
+	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
 const (

@@ -77,7 +77,7 @@ type WasmVMResponseHandler interface {
 	) ([]byte, error)
 }
 
-// list of account types that are accepted for wasm contracts. Chains importing wasmd
+// list of account types that are accepted for wasm contracts. Chains importing terpd
 // can overwrite this list with the WithAcceptedAccountTypesOnContractInstantiation option.
 var defaultAcceptedAccountTypes = map[reflect.Type]struct{}{
 	reflect.TypeOf(&authtypes.BaseAccount{}): {},
@@ -315,7 +315,7 @@ func (k Keeper) instantiate(
 			// keep account and balance as it is
 			k.Logger(ctx).Info("instantiate contract with existing account", "address", contractAddress.String())
 		} else {
-			// consider an account in the wasmd namespace spam and overwrite it.
+			// consider an account in the terpd namespace spam and overwrite it.
 			k.Logger(ctx).Info("pruning existing account for contract instantiation", "address", contractAddress.String())
 			contractAccount := k.accountKeeper.NewAccountWithAddress(ctx, contractAddress)
 			k.accountKeeper.SetAccount(ctx, contractAccount)

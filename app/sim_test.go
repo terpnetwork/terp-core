@@ -36,7 +36,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/terpnetwork/terp-core/x/wasm"
-	wasmTypes "github.com/terpnetwork/terp-core/x/wasm/types"
+	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
 // Get flags every time the simulator is run

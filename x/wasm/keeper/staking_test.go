@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/terpnetwork/terp-core/x/wasm/keeper/testdata"
-	wasmTypes "github.com/terpnetwork/terp-core/x/wasm/types"
+	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
 type StakingInitMsg struct {

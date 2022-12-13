@@ -1,12 +1,12 @@
 name: Proto Buf Publishing - Action
-# Protobuf runs buf (https://buf.build/) push updated proto files to https://buf.build/cosmwasm/wasmd
+# Protobuf runs buf (https://buf.build/) push updated proto files to https://buf.build/terpnetwork/terp-core
 # This workflow is only run when a .proto file has been changed
 on:
   push:
     branches:
       - main
     paths:
-      - 'proto/**'
+      - "proto/**"
 
     # Sequence of patterns matched against refs/tags
     tags:
@@ -22,17 +22,17 @@ jobs:
       # lint checks
       - uses: bufbuild/buf-lint-action@v1
         with:
-          input: 'proto'
+          input: "proto"
 
       # TODO: Add this when project is more stable.
       # backward compatibility breaking checks
       #- uses: bufbuild/buf-breaking-action@v1
       #  with:
       #    input: 'proto'
-      #    against: 'https://github.com/CosmWasm/wasmd.git#branch=master'
+      #    against: 'https://github.com/terpnetwork/terp-core.git#branch=master'
 
       # publish proto files
       - uses: bufbuild/buf-push-action@v1
         with:
-          input: 'proto'
+          input: "proto"
           buf_token: ${{ secrets.BUF_TOKEN }}

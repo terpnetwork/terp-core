@@ -16,7 +16,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	wasmTypes "github.com/terpnetwork/terp-core/x/wasm/types"
+	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
 func BenchmarkTxSending(b *testing.B) {

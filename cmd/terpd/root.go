@@ -35,7 +35,7 @@ import (
 	"github.com/terpnetwork/terp-core/app/params"
 	"github.com/terpnetwork/terp-core/x/wasm"
 	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
-	wasmTypes "github.com/terpnetwork/terp-core/x/wasm/types"
+	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
 // NewRootCmd creates a new root command for terpd. It is called once in the
@@ -47,7 +47,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	cfg.SetBech32PrefixForAccount(app.Bech32PrefixAccAddr, app.Bech32PrefixAccPub)
 	cfg.SetBech32PrefixForValidator(app.Bech32PrefixValAddr, app.Bech32PrefixValPub)
 	cfg.SetBech32PrefixForConsensusNode(app.Bech32PrefixConsAddr, app.Bech32PrefixConsPub)
-	cfg.SetAddressVerifier(wasmTypes.VerifyAddressLen())
+	cfg.SetAddressVerifier(wasmtypes.VerifyAddressLen())
 	cfg.Seal()
 
 	initClientCtx := client.Context{}.

@@ -19,7 +19,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/app"
 	wasmibctesting "github.com/terpnetwork/terp-core/x/wasm/ibctesting"
-	wasmTypes "github.com/terpnetwork/terp-core/x/wasm/types"
+	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
 func TestIBCFeesTransfer(t *testing.T) {

@@ -23,7 +23,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/app"
 	"github.com/terpnetwork/terp-core/x/wasm"
-	wasmTypes "github.com/terpnetwork/terp-core/x/wasm/types"
+	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
 func setup(db dbm.DB, withGenesis bool, invCheckPeriod uint, opts ...wasm.Option) (*app.TerpApp, app.GenesisState) {
