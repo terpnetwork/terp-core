@@ -2,19 +2,20 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/address"
 )
 
 const (
-	// ModuleName defines the module name
+	// ModuleName is the name of the contract module
 	ModuleName = "wasm"
 
-	// StoreKey defines the primary module store key
+	// StoreKey is the string store representation
 	StoreKey = ModuleName
 
 	// TStoreKey is the string transient store representation
 	TStoreKey = "transient_" + ModuleName
 
-	// QuerierRoute defines the module's query routing key
+	// QuerierRoute is the querier route for the wasm module
 	QuerierRoute = ModuleName
 
 	// RouterKey is the msg router key for the wasm module
@@ -31,12 +32,13 @@ var (
 	ContractByCodeIDAndCreatedSecondaryIndexPrefix = []byte{0x06}
 	PinnedCodeIndexPrefix                          = []byte{0x07}
 	TXCounterPrefix                                = []byte{0x08}
+	ContractsByCreatorPrefix                       = []byte{0x09}
 
 	KeyLastCodeID     = append(SequenceKeyPrefix, []byte("lastCodeId")...)
 	KeyLastInstanceID = append(SequenceKeyPrefix, []byte("lastContractId")...)
 )
 
-// GetCodeKey constructs the key for retrieving the ID for the WASM code
+// GetCodeKey constructs the key for retreiving the ID for the WASM code
 func GetCodeKey(codeID uint64) []byte {
 	contractIDBz := sdk.Uint64ToBigEndian(codeID)
 	return append(CodeKeyPrefix, contractIDBz...)
@@ -45,6 +47,12 @@ func GetCodeKey(codeID uint64) []byte {
 // GetContractAddressKey returns the key for the WASM contract instance
 func GetContractAddressKey(addr sdk.AccAddress) []byte {
 	return append(ContractKeyPrefix, addr...)
+}
+
+// GetContractsByCreatorPrefix returns the contracts by creator prefix for the WASM contract instance
+func GetContractsByCreatorPrefix(addr sdk.AccAddress) []byte {
+	bz := address.MustLengthPrefix(addr)
+	return append(ContractsByCreatorPrefix, bz...)
 }
 
 // GetContractStorePrefix returns the store prefix for the WASM contract instance
@@ -72,6 +80,19 @@ func GetContractByCodeIDSecondaryIndexPrefix(codeID uint64) []byte {
 	r := make([]byte, prefixLen+codeIDLen)
 	copy(r[0:], ContractByCodeIDAndCreatedSecondaryIndexPrefix)
 	copy(r[prefixLen:], sdk.Uint64ToBigEndian(codeID))
+	return r
+}
+
+// GetContractByCreatorSecondaryIndexKey returns the key for the second index: `<prefix><creatorAddress length><created time><creatorAddress><contractAddr>`
+func GetContractByCreatorSecondaryIndexKey(bz []byte, position []byte, contractAddr sdk.AccAddress) []byte {
+	prefixBytes := GetContractsByCreatorPrefix(bz)
+	lenPrefixBytes := len(prefixBytes)
+	r := make([]byte, lenPrefixBytes+AbsoluteTxPositionLen+len(contractAddr))
+
+	copy(r[:lenPrefixBytes], prefixBytes)
+	copy(r[lenPrefixBytes:lenPrefixBytes+AbsoluteTxPositionLen], position)
+	copy(r[lenPrefixBytes+AbsoluteTxPositionLen:], contractAddr)
+
 	return r
 }
 

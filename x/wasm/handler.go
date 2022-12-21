@@ -6,10 +6,11 @@ import (
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 	"github.com/terpnetwork/terp-core/x/wasm/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewHandler returns a handler for "wasm" type messages.
@@ -28,6 +29,8 @@ func NewHandler(k types.ContractOpsKeeper) sdk.Handler {
 			res, err = msgServer.StoreCode(sdk.WrapSDKContext(ctx), msg)
 		case *MsgInstantiateContract:
 			res, err = msgServer.InstantiateContract(sdk.WrapSDKContext(ctx), msg)
+		case *MsgInstantiateContract2:
+			res, err = msgServer.InstantiateContract2(sdk.WrapSDKContext(ctx), msg)
 		case *MsgExecuteContract:
 			res, err = msgServer.ExecuteContract(sdk.WrapSDKContext(ctx), msg)
 		case *MsgMigrateContract:

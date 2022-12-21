@@ -1,236 +1,26 @@
-#  Terp-Node Base Setup
+# Terp-Core
 
-## Hardware Requirements
-* **Minimal**
-    * 4 GB RAM
-    * 100 GB SSD
-    * 3.2 x4 GHz CPU
-* **Recommended**
-    * 8 GB RAM
-    * 1 TB NVME SSD
-    * 3.2 GHz x4 GHz CPU
+**Terp Core** is a [Cosmos](https://cosmos.network) zone (layer 1 proof-of-stake blockchain).
 
-## Operating System
+[![golangci-lint](https://github.com/JackalLabs/canine-chain/actions/workflows/golangci.yml/badge.svg)](https://github.com/terpnetwork/terp-core/actions/workflows/golangci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/terpnetwork/terp-core)](https://goreportcard.com/report/github.com/terpnetwork/terp-core)
 
-* **Recommended**
-    * Linux(x86_64)
+## Install
 
+### Run a local, single-node chain
 
-## Installation Steps
-#### 1. Basic Packages
-```bash:
-# update the local package list and install any available upgrades 
-sudo apt-get update && sudo apt upgrade -y 
-# install toolchain and ensure accurate time synchronization 
-sudo apt-get install make build-essential gcc git jq chrony -y
-```
-```bash:
-# install gcc & make
-sudo apt install gcc && sudo apt install make
+Requires [Go](https://golang.org/doc/install).
+
+```sh
+make install
+
+./startnode.sh
 ```
 
-#### 2. Install Go
-Follow the instructions [here](https://golang.org/doc/install) to install Go.
+### Test smart contracts
 
-Alternatively, for Ubuntu LTS, you can do:
-```bash:
-wget https://go.dev/dl/go1.19.2.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.19.2.linux-amd64.tar.gz
-```
+See [./scripts/wasm/README.md](./scripts/wasm/README.md).
 
-Unless you want to configure in a non standard way, then set these in the `.profile` in the user's home (i.e. `~/`) folder.
+# Disclaimer
 
-```bash:
-cat <<EOF >> ~/.profile
-export GOROOT=/usr/local/go
-export GOPATH=$HOME/go
-export GO111MODULE=on
-export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-EOF
-source ~/.profile
-go version
-```
-
-Output should be: `go version go1.19.2 linux/amd64`
-
-<a id="install-terpd"></a>
-### Install terpd from source
-
-#### 1. Clone repository
-
-* Clone git repository
-```shell
-git clone https://github.com/terpnetwork/terp-core.git
-```
-* Checkout latest tag
-```shell
-cd terp-core
-git fetch --tags
-git checkout v0.1.1
-```
-#### 2. Install CLI
-```shell
-make build && make install
-```
-
-To confirm that the installation was successful, you can run:
-
-```bash:
-terpd version
-```
-Output should be: `v0.1.1`
-
-## Instruction for new validators
-
-### Init
-```bash:
-terpd init "$MONIKER_NAME" --chain-id $CHAIN_ID
-```
-
-### Generate keys
-
-```bash:
-# To create new keypair - make sure you save the mnemonics!
-terpd keys add <key-name> 
-```
-
-or
-```
-# Restore existing terp wallet with mnemonic seed phrase. 
-# You will be prompted to enter mnemonic seed. 
-terpd keys add <key-name> --recover
-```
-or
-```
-# Add keys using ledger
-terpd keys show <key-name> --ledger
-```
-
-Check your key:
-```
-# Query the keystore for your public address 
-terpd keys show <key-name> -a
-```
-
-## Validator Setup Instructions
-
-### Download new genesis file
-```bash:
-curl https://raw.githubusercontent.com/terpnetwork/test-net/master/athena-2/genesis.json > ~/.terp/config/genesis.json
-```
-### Set minimum gas fees
-```bash:
-perl -i -pe 's/^minimum-gas-prices = .+?$/minimum-gas-prices = "0.0125upersyx"/' ~/.terp/config/app.toml
-```
-### P2P
-
-#### Add seeds
-```bash:
-TBD
-```
-### Add persistent peers
-```bash:
-TBD
-```
-### OR
-
-### Download addrbook.json
-```bash:
-TBD
-```
-
-### Setup Unit/Daemon file
-
-```bash:
-# 1. create daemon file
-touch /etc/systemd/system/terpd.service
-# 2. run:
-cat <<EOF >> /etc/systemd/system/terpd.service
-[Unit]
-Description=Terp Net daemon
-After=network-online.target
-[Service]
-User=<USER>
-ExecStart=/home/<USER>/go/bin/terpd start
-Restart=on-failure
-RestartSec=3
-LimitNOFILE=4096
-[Install]
-WantedBy=multi-user.target
-EOF
-# 3. reload the daemon
-systemctl daemon-reload
-# 4. enable service - this means the service will start up 
-# automatically after a system reboot
-systemctl enable terpd.service
-# 5. start daemon
-systemctl start terpd.service
-```
-
-In order to watch the service run, you can do the following:
-```
-journalctl -u terpd.service -f
-```
-
-Congratulations! You now have a full node. Once the node is synced with the network, 
-you can then make your node a validator.
-
-### Create validator
-1. Transfer funds to your validator address. A minimum of 1  (1000000uterpx) is required to start a validator.
-
-2. Confirm your address has the funds.
-
-```
-terpd q bank balances $(terpd keys show -a <key-alias>)
-```
-
-3. Run the create-validator transaction
-**Note: 1,000,000 uterpx = 1 , so this validator will start with 1 **
-
-```bash:
-terpd tx staking create-validator \ 
---amount 1000000uterpx \ 
---commission-max-change-rate "0.05" \ 
---commission-max-rate "0.10" \ 
---commission-rate "0.05" \ 
---min-self-delegation "1" \ 
---details "validators write bios too" \ 
---pubkey $(terpd tendermint show-validator) \ 
---moniker $MONIKER_NAME \ 
---chain-id $CHAIN_ID \ 
---gas 400000upersyx \
---fees 400000upersyx \
---from <KEY_NAME>
-```
-
-To ensure your validator is active, run:
-```
-terpd q staking validators | grep moniker
-```
-
-### Backup critical files
-```bash:
-priv_validator_key.json
-node_key.json
-```
-
-## Instruction for old validators
-
-### Stop node
-```bash:
-systemctl stop terpd.service
-```
-
-
-
-### Clean old state
-
-```bash:
-terpd tendermint unsafe-reset-all --home ~/.terp --keep-addr-book
-```
-
-### Rerun node
-```bash:
-systemctl daemon-reload
-systemctl start terpd.service
-```
+TERP-CORE SOFTWARE IS PROVIDED “AS IS”, AT YOUR OWN RISK, AND WITHOUT WARRANTIES OF ANY KIND. No developer or entity involved in running Terp-Core software will be liable for any claims or damages whatsoever associated with your use, inability to use, or your interaction with other users of Terp-Core, including any direct, indirect, incidental, special, exemplary, punitive or consequential damages, or loss of profits, cryptocurrencies, tokens, or anything else of value. Although Public Awesome, LLC and it's affiliates developed the initial code for Terp-Core, it does not own or control the Terp Network, which is run by a decentralized validator set.

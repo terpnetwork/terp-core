@@ -5,7 +5,7 @@
 Events are an essential part of the Terp-Core. They are similar to "logs" in Ethereum and allow a blockchain
 app to attach key-value pairs to a transaction that can later be used to search for it or extract some information
 in human readable form. Events are not written to the application state, nor do they form part of the AppHash,
-but mainly intended for client use (and become an essential API for any reactive app or app that searches for txs). 
+but mainly intended for client use (and become an essential API for any reactive app or app that searches for txs).
 
 In contrast, transactions also have a binary "data" field that is part of the AppHash (provable with light client proofs,
 part of consensus). This data is not searchable, but given a tx hash, you can be guaranteed what the data returned is.
@@ -15,7 +15,7 @@ Every message in the SDK may add events to the EventManager and these are then a
 to Tendermint. Events are exposed in 3 different ways over the Tendermint API (which is the only way a client can query).
 First of all is the `events` field on the transaction result (when you query a transaction by hash, you can see all event emitted
 by it). Secondly is the `log` field on the same transaction result. And third is the query interface to search or subscribe for
-transactions. 
+transactions.
 
 The `log` field actually has the best data. It contains an array of array of events. The first array is one entry per incoming message.
 Transactions in the Terp-Core may consist of multiple messages that are executed atomically. Maybe we send tokens, then issue a swap
@@ -29,12 +29,15 @@ The event has a string type, and a list of attributes. Each of them being a key 
 consistent order (and avoid dictionaries/hashes). Here is a simple Event in JSON:
 
 ```json
-{ 
-    "type": "wasm", 
-    "attributes": [
-        {"key": "_contract_address", "value": "cosmos1pkptre7fdkl6gfrzlesjjvhxhlc3r4gmmk8rs6"}, 
-        {"key": "transfered", "value": "777000"}
-    ]
+{
+  "type": "wasm",
+  "attributes": [
+    {
+      "key": "_contract_address",
+      "value": "cosmos1pkptre7fdkl6gfrzlesjjvhxhlc3r4gmmk8rs6"
+    },
+    { "key": "transfered", "value": "777000" }
+  ]
 }
 ```
 
@@ -42,22 +45,25 @@ And here is a sample log output for a transaction with one message, which emitte
 
 ```json
 [
-    [
-        { 
-            "type": "message", 
-            "attributes": [
-                {"key": "module", "value": "bank"}, 
-                {"key": "action", "value": "send"}
-            ]
+  [
+    {
+      "type": "message",
+      "attributes": [
+        { "key": "module", "value": "bank" },
+        { "key": "action", "value": "send" }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "cosmos1pkptre7fdkl6gfrzlesjjvhxhlc3r4gmmk8rs6"
         },
-        { 
-            "type": "transfer", 
-            "attributes": [
-                {"key": "recipient", "value": "cosmos1pkptre7fdkl6gfrzlesjjvhxhlc3r4gmmk8rs6"}, 
-                {"key": "amount", "value": "777000uatom"}
-            ]
-        }
-    ]
+        { "key": "amount", "value": "777000uatom" }
+      ]
+    }
+  ]
 ]
 ```
 
@@ -66,11 +72,11 @@ And here is a sample log output for a transaction with one message, which emitte
 There are two places events that are emitted in every transaction regardless of the module which is executed.
 [The first is `{"type": "message"}`](https://github.com/cosmos/cosmos-sdk/blob/6888de1d86026c25197c1227dae3d7da4d41a441/baseapp/baseapp.go#L746-L748)
 defining an `action` attribute. This is emitted for each top-level (user-signed) message, but the action names have changed between
-0.42 and 0.43. 
+0.42 and 0.43.
 
 The other place is in the [signature verification AnteHandler](https://github.com/cosmos/cosmos-sdk/blob/v0.42.9/x/auth/ante/sigverify.go#L103-L120), where it emits information on the account sequences and signatures on the transaction.
 
-These are all handled in BaseApp and the middleware *before* any module is called and thus not exposed to CosmWasm contracts at all.
+These are all handled in BaseApp and the middleware _before_ any module is called and thus not exposed to CosmWasm contracts at all.
 
 ### Standard Events in the Terp-COre
 
@@ -92,7 +98,7 @@ sdk.NewEvent(
 ),
 ```
 
-The delegation module seems a bit more refined, emitting a generic "message" type event in [`msg_server.go`](https://github.com/cosmos/cosmos-sdk/blob/v0.42.9/x/distribution/keeper/msg_server.go#L42-L46) including the module name, **before** 
+The delegation module seems a bit more refined, emitting a generic "message" type event in [`msg_server.go`](https://github.com/cosmos/cosmos-sdk/blob/v0.42.9/x/distribution/keeper/msg_server.go#L42-L46) including the module name, **before**
 emitting some custom event types closer to the actual code logic in
 [`keeper.go`](https://github.com/cosmos/cosmos-sdk/blob/v0.42.9/x/distribution/keeper/keeper.go#L74-L77).
 
@@ -112,7 +118,7 @@ sdk.NewEvent(
 
 ## Usage in terpd
 
-In `x/wasm` we also use Events system. On one hand, the Go implementation of `x/wasm` emits standard events for each 
+In `x/wasm` we also use Events system. On one hand, the Go implementation of `x/wasm` emits standard events for each
 message it processes, using the `distribution` module as an example. Furthermore, it allows contracts to
 emit custom events based on their execution state, so they can for example say "dex swap, BTC-ATOM, in 0.23, out 512"
 which require internal knowledge of the contract and is very useful for custom dApp UIs.
@@ -131,7 +137,7 @@ sdk.NewEvent(
     "message",
     sdk.NewAttribute("module", "wasm"),
     // Note: this was "signer" before 0.18
-    sdk.NewAttribute("sender", msg.Sender),  
+    sdk.NewAttribute("sender", msg.Sender),
 ),
 ```
 
@@ -144,7 +150,7 @@ sdk.NewEvent(
     "store_code",
     sdk.NewAttribute("code_id", fmt.Sprintf("%d", codeID)),
     // features required by the contract (new in 0.18)
-    // see https://github.com/CosmWasm/wasmd/issues/574
+    // see https://github.com/CosmWasm/terpd/issues/574
     sdk.NewAttribute("feature", "stargate"),
     sdk.NewAttribute("feature", "staking"),
 )
@@ -212,9 +218,9 @@ sdk.NewEvent(
 )
 ```
 
-Note that every event that affects a contract (not store code, pin or unpin) will return the contract_addr as
+Note that every event that affects a contract (not store code, pin or unpin) will return the contract*addr as
 `_contract_addr`. The events that are related to a particular wasm code (store code, instantiate, pin, unpin, and migrate)
-will emit that as `code_id`. All attributes prefixed with `_` are reserved and may not be emitted by a smart contract,
+will emit that as `code_id`. All attributes prefixed with `*` are reserved and may not be emitted by a smart contract,
 so we use the underscore prefix consistently with attributes that may be injected into custom events.
 
 ### Emitted Custom Events from a Contract
@@ -274,11 +280,11 @@ to find all transactions related to the contract.
 While the `wasm` and `wasm-*` namespacing does sandbox the smart contract events and limits malicious activity they could
 undertake, we also perform a number of further validation checks on the contracts:
 
-* No attribute key may start with `_`. This is currently used for `_contract_address` and is reserved for a 
-  namespace for injecting more *trusted* attributes from the `x/wasm` module as opposed to the contract itself
-* Event types are trimmed of whitespace, and must have at least two characters prior to prepending `wasm-`. If the contract returns
-  "  hello\n", the event type will look like `wasm-hello`. If it emits "  a  ", this will be rejected with an error (aborting execution!)
-* Attribute keys and values (both in `attributes` and under `events`) are trimmed of leading/trailing whitespace. If they are empty after
+- No attribute key may start with `_`. This is currently used for `_contract_address` and is reserved for a
+  namespace for injecting more _trusted_ attributes from the `x/wasm` module as opposed to the contract itself
+- Event types are trimmed of whitespace, and must have at least two characters prior to prepending `wasm-`. If the contract returns
+  " hello\n", the event type will look like `wasm-hello`. If it emits " a ", this will be rejected with an error (aborting execution!)
+- Attribute keys and values (both in `attributes` and under `events`) are trimmed of leading/trailing whitespace. If they are empty after
   trimming, they are rejected as above (aborting the execution). Otherwise, they are passed verbatim.
 
 ## Event Details for terpd
@@ -303,12 +309,12 @@ contact and the `wasm` event with any custom fields from the contract itself. It
 for all messages that it returned, which were later dispatched. The event system was really designed for one main
 action emitting events, so we define a structure to flatten this event tree:
 
-* We only emit one event of type `message`. This is the top-level call, just like the standard Go modules. For all
+- We only emit one event of type `message`. This is the top-level call, just like the standard Go modules. For all
   dispatched submessages, we filter out this event type.
-* All events are returned in execution order as [defined by CosmWasm docs](https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#dispatching-messages)
-* `x/wasm` keeper emits a custom event for each call to a contract entry point. Not just `execute`, `instantiate`,
+- All events are returned in execution order as [defined by CosmWasm docs](https://github.com/CosmWasm/cosmwasm/blob/main/SEMANTICS.md#dispatching-messages)
+- `x/wasm` keeper emits a custom event for each call to a contract entry point. Not just `execute`, `instantiate`,
   and `migrate`, but also `reply`, `sudo` and all ibc entry points.
-* This means all `wasm*` events are preceeded by the cosmwasm entry point that returned them. 
+- This means all `wasm*` events are preceeded by the cosmwasm entry point that returned them.
 
 To make this more clear, I will provide an example of executing a contract, which returns two messages, one to instantiate a new
 contract and the other to set the withdrawl address, while also using `ReplyOnSuccess` for the instantiation (to get the
@@ -319,7 +325,7 @@ address). It will emit a series of events that looks something like this:
 sdk.NewEvent(
     "message",
     sdk.NewAttribute("module", "wasm"),
-    sdk.NewAttribute("sender", msg.Sender),  
+    sdk.NewAttribute("sender", msg.Sender),
 ),
 
 // top-level exection call
@@ -390,9 +396,11 @@ and it registered a ReplyOn clause, the `reply` function on that contract would 
 above, and would need to use the `message` markers to locate the segment of interest.
 
 ## Governance Events
+
 The governance process is handled by the cosmos-sdk `gov` module. We do not emit any events of type "message" anymore in v0.18+.
 Context-specific events are emitted as described above. `Execution` and `Migration` return some contract result though that are
 emitted as:
+
 ```go
 sdk.NewEvent(
     "gov_contract_result",

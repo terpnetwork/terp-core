@@ -1,7 +1,5 @@
 package types
 
-// DONTCOVER
-
 import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -57,7 +55,7 @@ var (
 	// ErrMaxIBCChannels error for maximum number of ibc channels reached
 	ErrMaxIBCChannels = sdkErrors.Register(DefaultCodespace, 16, "max transfer channels")
 
-	// ErrUnsupportedForContract error when a feature is used that is not supported for/ by this contract
+	// ErrUnsupportedForContract error when a capability is used that is not supported for/ by this contract
 	ErrUnsupportedForContract = sdkErrors.Register(DefaultCodespace, 17, "unsupported for this contract")
 
 	// ErrPinContractFailed error for pinning contract failures
@@ -75,17 +73,10 @@ var (
 	//  error if an address does not belong to a contract (just for registration)
 	_ = sdkErrors.Register(DefaultCodespace, 22, "no such contract")
 
-	// ErrNotAJSONObject error if given data is not a JSON object
-	ErrNotAJSONObject = sdkErrors.Register(DefaultCodespace, 23, "not a JSON object")
+	// code 23 -26 were used for json parser
 
-	// ErrNoTopLevelKey error if a JSON object has no top-level key
-	ErrNoTopLevelKey = sdkErrors.Register(DefaultCodespace, 24, "no top-level key")
-
-	// ErrMultipleTopLevelKeys error if a JSON object has more than one top-level key
-	ErrMultipleTopLevelKeys = sdkErrors.Register(DefaultCodespace, 25, "multiple top-level keys")
-
-	// ErrTopKevelKeyNotAllowed error if a JSON object has a top-level key that is not allowed
-	ErrTopKevelKeyNotAllowed = sdkErrors.Register(DefaultCodespace, 26, "top-level key is not allowed")
+	// ErrExceedMaxQueryStackSize error if max query stack size is exceeded
+	ErrExceedMaxQueryStackSize = sdkErrors.Register(DefaultCodespace, 27, "max query stack size exceeded")
 )
 
 type ErrNoSuchContract struct {

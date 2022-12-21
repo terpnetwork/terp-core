@@ -88,7 +88,7 @@ func (c *ContractInfo) ValidateBasic() error {
 			return sdkerrors.Wrap(err, "admin")
 		}
 	}
-	if err := validateLabel(c.Label); err != nil {
+	if err := ValidateLabel(c.Label); err != nil {
 		return sdkerrors.Wrap(err, "label")
 	}
 	if c.Extension == nil {
@@ -128,9 +128,8 @@ func (c *ContractInfo) SetExtension(ext ContractInfoExtension) error {
 
 // ReadExtension copies the extension value to the pointer passed as argument so that there is no need to cast
 // For example with a custom extension of type `MyContractDetails` it will look as following:
-
-// var d MyContractDetails
 //
+//	var d MyContractDetails
 //	if err := info.ReadExtension(&d); err != nil {
 //		return nil, sdkerrors.Wrap(err, "extension")
 //	}
@@ -170,16 +169,6 @@ func (c *ContractInfo) AddMigration(ctx sdk.Context, codeID uint64, msg []byte) 
 	}
 	c.CodeID = codeID
 	return h
-}
-
-// ResetFromGenesis resets contracts timestamp and history.
-func (c *ContractInfo) ResetFromGenesis(ctx sdk.Context) ContractCodeHistoryEntry {
-	c.Created = NewAbsoluteTxPosition(ctx)
-	return ContractCodeHistoryEntry{
-		Operation: ContractCodeHistoryOperationTypeGenesis,
-		CodeID:    c.CodeID,
-		Updated:   c.Created,
-	}
 }
 
 // AdminAddr convert into sdk.AccAddress or nil when not set
@@ -254,6 +243,27 @@ func (a *AbsoluteTxPosition) Bytes() []byte {
 	return r
 }
 
+// ValidateBasic syntax checks
+func (c ContractCodeHistoryEntry) ValidateBasic() error {
+	var found bool
+	for _, v := range AllCodeHistoryTypes {
+		if c.Operation == v {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return ErrInvalid.Wrap("operation")
+	}
+	if c.CodeID == 0 {
+		return ErrEmpty.Wrap("code id")
+	}
+	if c.Updated == nil {
+		return ErrEmpty.Wrap("updated")
+	}
+	return sdkerrors.Wrap(c.Msg.ValidateBasic(), "msg")
+}
+
 // NewEnv initializes the environment for a contract instance
 func NewEnv(ctx sdk.Context, contractAddr sdk.AccAddress) wasmvmtypes.Env {
 	// safety checks before casting below
@@ -289,7 +299,7 @@ func NewInfo(creator sdk.AccAddress, deposit sdk.Coins) wasmvmtypes.MessageInfo 
 	}
 }
 
-// NewWasmCoins translates between Cosmos SDK coins and wasm coins
+// NewWasmCoins translates between Cosmos SDK coins and Wasm coins
 func NewWasmCoins(cosmosCoins sdk.Coins) (wasmCoins []wasmvmtypes.Coin) {
 	for _, coin := range cosmosCoins {
 		wasmCoin := wasmvmtypes.Coin{
@@ -335,18 +345,54 @@ func VerifyAddressLen() func(addr []byte) error {
 
 // IsSubset will return true if the caller is the same as the superset,
 // or if the caller is more restrictive than the superset.
-func (a AccessConfig) IsSubset(superSet AccessConfig) bool {
-	switch superSet.Permission {
+func (a AccessType) IsSubset(superSet AccessType) bool {
+	switch superSet {
 	case AccessTypeEverybody:
 		// Everything is a subset of this
-		return a.Permission != AccessTypeUnspecified
+		return a != AccessTypeUnspecified
 	case AccessTypeNobody:
 		// Only an exact match is a subset of this
-		return a.Permission == AccessTypeNobody
-	case AccessTypeOnlyAddress:
-		// An exact match or nobody
-		return a.Permission == AccessTypeNobody || (a.Permission == AccessTypeOnlyAddress && a.Address == superSet.Address)
+		return a == AccessTypeNobody
+	case AccessTypeOnlyAddress, AccessTypeAnyOfAddresses:
+		// Nobody or address(es)
+		return a == AccessTypeNobody || a == AccessTypeOnlyAddress || a == AccessTypeAnyOfAddresses
 	default:
 		return false
 	}
+}
+
+// IsSubset will return true if the caller is the same as the superset,
+// or if the caller is more restrictive than the superset.
+func (a AccessConfig) IsSubset(superSet AccessConfig) bool {
+	switch superSet.Permission {
+	case AccessTypeOnlyAddress:
+		// An exact match or nobody
+		return a.Permission == AccessTypeNobody || (a.Permission == AccessTypeOnlyAddress && a.Address == superSet.Address) ||
+			(a.Permission == AccessTypeAnyOfAddresses && isSubset([]string{superSet.Address}, a.Addresses))
+	case AccessTypeAnyOfAddresses:
+		// An exact match or nobody
+		return a.Permission == AccessTypeNobody || (a.Permission == AccessTypeOnlyAddress && isSubset(superSet.Addresses, []string{a.Address})) ||
+			a.Permission == AccessTypeAnyOfAddresses && isSubset(superSet.Addresses, a.Addresses)
+	case AccessTypeUnspecified:
+		return false
+	default:
+		return a.Permission.IsSubset(superSet.Permission)
+	}
+}
+
+// return true when all elements in sub are also part of super
+func isSubset(super, sub []string) bool {
+	if len(sub) == 0 {
+		return true
+	}
+	var matches int
+	for _, o := range sub {
+		for _, s := range super {
+			if o == s {
+				matches++
+				break
+			}
+		}
+	}
+	return matches == len(sub)
 }

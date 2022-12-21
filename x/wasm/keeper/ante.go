@@ -76,7 +76,7 @@ func NewLimitSimulationGasDecorator(gasLimit *sdk.Gas) *LimitSimulationGasDecora
 // When no custom value is set then the max block gas is used as default limit.
 func (d LimitSimulationGasDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	if !simulate {
-		// wasm code is not executed in checkTX so that we don't need to limit it further.
+		// Wasm code is not executed in checkTX so that we don't need to limit it further.
 		// Tendermint rejects the TX afterwards when the tx.gas > max block gas.
 		// On deliverTX we rely on the tendermint/sdk mechanics that ensure
 		// tx has gas set and gas < max block gas

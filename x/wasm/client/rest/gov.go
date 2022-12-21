@@ -27,6 +27,17 @@ type StoreCodeProposalJSONReq struct {
 	WASMByteCode []byte `json:"wasm_byte_code" yaml:"wasm_byte_code"`
 	// InstantiatePermission to apply on contract creation, optional
 	InstantiatePermission *types.AccessConfig `json:"instantiate_permission" yaml:"instantiate_permission"`
+
+	// UnpinCode indicates if the code should not be pinned as part of the proposal.
+	UnpinCode bool `json:"unpin_code" yaml:"unpin_code"`
+
+	// Source is the URL where the code is hosted
+	Source string `json:"source" yaml:"source"`
+	// Builder is the docker image used to build the code deterministically, used for smart
+	// contract verification
+	Builder string `json:"builder" yaml:"builder"`
+	// CodeHash is the SHA256 sum of the code outputted by optimizer, used for smart contract verification
+	CodeHash []byte `json:"code_hash" yaml:"code_hash"`
 }
 
 func (s StoreCodeProposalJSONReq) Content() govtypes.Content {
@@ -36,6 +47,10 @@ func (s StoreCodeProposalJSONReq) Content() govtypes.Content {
 		RunAs:                 s.RunAs,
 		WASMByteCode:          s.WASMByteCode,
 		InstantiatePermission: s.InstantiatePermission,
+		UnpinCode:             s.UnpinCode,
+		Source:                s.Source,
+		Builder:               s.Builder,
+		CodeHash:              s.CodeHash,
 	}
 }
 
@@ -520,4 +535,13 @@ func toStdTxResponse(cliCtx client.Context, w http.ResponseWriter, data wasmProp
 		return
 	}
 	tx.WriteGeneratedTxResponse(cliCtx, w, baseReq, msg)
+}
+
+func EmptyRestHandler(cliCtx client.Context) govrest.ProposalRESTHandler {
+	return govrest.ProposalRESTHandler{
+		SubRoute: "unsupported",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "Legacy REST Routes are not supported for gov proposals")
+		},
+	}
 }
