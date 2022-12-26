@@ -1,3 +1,3 @@
 # Protobufs
 
-This is the public protocol buffers API for [Terpd](https://github.com/terpnetwork/terp-core).
+This is the public protocol buffers API for [Wasmd](https://github.com/CosmWasm/wasmd).

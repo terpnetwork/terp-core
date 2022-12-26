@@ -4,7 +4,7 @@ global:
 rule_files:
 
 scrape_configs:
-- job_name: terpd
+- job_name: wasmd
 
   scrape_interval: 5s
   static_configs:

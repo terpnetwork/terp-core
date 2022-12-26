@@ -2,32 +2,34 @@ package types
 
 import (
 	"encoding/json"
+
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// isJSONObjectWithTopLevelKey returns true if the given bytes are a valid JSON object
+// IsJSONObjectWithTopLevelKey checks if the given bytes are a valid JSON object
 // with exactly one top-level key that is contained in the list of allowed keys.
-func isJSONObjectWithTopLevelKey(jsonBytes RawContractMessage, allowedKeys []string) (bool, error) {
-	if err := jsonBytes.ValidateBasic(); err != nil {
-		return false, err
-	}
-
+func IsJSONObjectWithTopLevelKey(jsonBytes []byte, allowedKeys []string) error {
 	document := map[string]interface{}{}
 	if err := json.Unmarshal(jsonBytes, &document); err != nil {
-		return false, nil // not a map
+		return sdkerrors.Wrap(ErrNotAJSONObject, "failed to unmarshal JSON to map")
 	}
 
-	if len(document) != 1 {
-		return false, nil // unsupported type
+	if len(document) == 0 {
+		return sdkerrors.Wrap(ErrNoTopLevelKey, "JSON object has no top-level key")
+	}
+
+	if len(document) > 1 {
+		return sdkerrors.Wrap(ErrMultipleTopLevelKeys, "JSON object has multiple top-level keys")
 	}
 
 	// Loop is executed exactly once
 	for topLevelKey := range document {
 		for _, allowedKey := range allowedKeys {
 			if allowedKey == topLevelKey {
-				return true, nil
+				return nil
 			}
 		}
-		return false, nil
+		return sdkerrors.Wrapf(ErrTopKevelKeyNotAllowed, "JSON object has a top-level key which is not allowed: '%s'", topLevelKey)
 	}
 
 	panic("Reached unreachable code. This is a bug.")

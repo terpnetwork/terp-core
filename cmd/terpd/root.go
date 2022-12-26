@@ -38,7 +38,7 @@ import (
 	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
-// NewRootCmd creates a new root command for terpd. It is called once in the
+// NewRootCmd creates a new root command for wasmd. It is called once in the
 // main function.
 func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	encodingConfig := app.MakeEncodingConfig()

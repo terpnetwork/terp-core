@@ -1,24 +1,35 @@
 package ibctesting
 
 import (
-	"encoding/hex"
-	"fmt"
 	"strconv"
 	"strings"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	clienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func getSendPackets(evts []abci.Event) []channeltypes.Packet {
 	var res []channeltypes.Packet
 	for _, evt := range evts {
-		if evt.Type == channeltypes.EventTypeSendPacket {
+		if evt.Type == "send_packet" {
 			packet := parsePacketFromEvent(evt)
 			res = append(res, packet)
+		}
+	}
+	return res
+}
+
+func getAckPackets(evts []abci.Event) []PacketAck {
+	var res []PacketAck
+	for _, evt := range evts {
+		if evt.Type == "write_acknowledgement" {
+			packet := parsePacketFromEvent(evt)
+			ack := PacketAck{
+				Packet: packet,
+				Ack:    []byte(getField(evt, "packet_ack")),
+			}
+			res = append(res, ack)
 		}
 	}
 	return res
@@ -34,27 +45,15 @@ func getSendPackets(evts []abci.Event) []channeltypes.Packet {
 
 func parsePacketFromEvent(evt abci.Event) channeltypes.Packet {
 	return channeltypes.Packet{
-		Sequence:           getUintField(evt, channeltypes.AttributeKeySequence),
-		SourcePort:         getField(evt, channeltypes.AttributeKeySrcPort),
-		SourceChannel:      getField(evt, channeltypes.AttributeKeySrcChannel),
-		DestinationPort:    getField(evt, channeltypes.AttributeKeyDstPort),
-		DestinationChannel: getField(evt, channeltypes.AttributeKeyDstChannel),
-		Data:               getHexField(evt, channeltypes.AttributeKeyDataHex),
-		TimeoutHeight:      parseTimeoutHeight(getField(evt, channeltypes.AttributeKeyTimeoutHeight)),
-		TimeoutTimestamp:   getUintField(evt, channeltypes.AttributeKeyTimeoutTimestamp),
+		Sequence:           getUintField(evt, "packet_sequence"),
+		SourcePort:         getField(evt, "packet_src_port"),
+		SourceChannel:      getField(evt, "packet_src_channel"),
+		DestinationPort:    getField(evt, "packet_dst_port"),
+		DestinationChannel: getField(evt, "packet_dst_channel"),
+		Data:               []byte(getField(evt, "packet_data")),
+		TimeoutHeight:      parseTimeoutHeight(getField(evt, "packet_timeout_height")),
+		TimeoutTimestamp:   getUintField(evt, "packet_timeout_timestamp"),
 	}
-}
-
-func getHexField(evt abci.Event, key string) []byte {
-	got := getField(evt, key)
-	if got == "" {
-		return nil
-	}
-	bz, err := hex.DecodeString(got)
-	if err != nil {
-		panic(err)
-	}
-	return bz
 }
 
 // return the value for the attribute with the given name
@@ -89,30 +88,4 @@ func parseTimeoutHeight(raw string) clienttypes.Height {
 		RevisionNumber: toUint64(chunks[0]),
 		RevisionHeight: toUint64(chunks[1]),
 	}
-}
-
-func ParsePortIDFromEvents(events sdk.Events) (string, error) {
-	for _, ev := range events {
-		if ev.Type == channeltypes.EventTypeChannelOpenInit || ev.Type == channeltypes.EventTypeChannelOpenTry {
-			for _, attr := range ev.Attributes {
-				if string(attr.Key) == channeltypes.AttributeKeyPortID {
-					return string(attr.Value), nil
-				}
-			}
-		}
-	}
-	return "", fmt.Errorf("port id event attribute not found")
-}
-
-func ParseChannelVersionFromEvents(events sdk.Events) (string, error) {
-	for _, ev := range events {
-		if ev.Type == channeltypes.EventTypeChannelOpenInit || ev.Type == channeltypes.EventTypeChannelOpenTry {
-			for _, attr := range ev.Attributes {
-				if string(attr.Key) == channeltypes.AttributeVersion {
-					return string(attr.Value), nil
-				}
-			}
-		}
-	}
-	return "", fmt.Errorf("version event attribute not found")
 }

@@ -2,8 +2,8 @@
 
 if test -n "$1"; then
     # need -R not -r to copy hidden files
-    cp -R "$1/.terp" /root
+    cp -R "$1/.wasmd" /root
 fi
 
 mkdir -p /root/log
-terpd start --rpc.laddr tcp://0.0.0.0:26657 --trace
+wasmd start --rpc.laddr tcp://0.0.0.0:26657 --trace

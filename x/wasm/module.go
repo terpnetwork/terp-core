@@ -24,7 +24,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/terpnetwork/terp-core/x/wasm/client/cli"
-	"github.com/terpnetwork/terp-core/x/wasm/client/rest" //nolint:staticcheck
+	"github.com/terpnetwork/terp-core/x/wasm/client/rest"
 	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 	"github.com/terpnetwork/terp-core/x/wasm/simulation"
 	"github.com/terpnetwork/terp-core/x/wasm/types"
@@ -168,7 +168,7 @@ func (AppModule) QuerierRoute() string {
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState GenesisState
 	cdc.MustUnmarshalJSON(data, &genesisState)
-	validators, err := InitGenesis(ctx, am.keeper, genesisState)
+	validators, err := InitGenesis(ctx, am.keeper, genesisState, am.validatorSetSource, am.Route().Handler())
 	if err != nil {
 		panic(err)
 	}

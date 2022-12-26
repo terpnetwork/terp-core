@@ -10,10 +10,10 @@ import (
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	ibctesting "github.com/cosmos/ibc-go/v4/testing"
+	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
+	ibctesting "github.com/cosmos/ibc-go/v3/testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -416,7 +416,7 @@ func TestContractEmulateIBCTransferMessageOnDiffContractIBCChannel(t *testing.T)
 		}.GetBytes(),
 		Funds: sdk.NewCoins(coinToSendToB),
 	}
-	_, err := chainA.SendMsgs(startMsg)
+	_, err := chainA.SendMsgsExpPass(false, startMsg)
 	require.Error(t, err)
 }
 
@@ -519,7 +519,7 @@ func TestContractHandlesChannelCloseNotOwned(t *testing.T) {
 		Funds: sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(100))),
 	}
 
-	_, err := chainA.SendMsgs(closeIBCChannelMsg)
+	_, err := chainA.SendMsgsExpPass(false, closeIBCChannelMsg)
 	require.Error(t, err)
 }
 

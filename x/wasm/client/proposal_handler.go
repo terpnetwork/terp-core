@@ -4,11 +4,10 @@ import (
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 
 	"github.com/terpnetwork/terp-core/x/wasm/client/cli"
-	"github.com/terpnetwork/terp-core/x/wasm/client/rest" //nolint:staticcheck
+	"github.com/terpnetwork/terp-core/x/wasm/client/rest"
 )
 
 // ProposalHandlers define the wasm cli proposal types and rest handler.
-// Deprecated: the rest package will be removed. You can use the GRPC gateway instead
 var ProposalHandlers = []govclient.ProposalHandler{
 	govclient.NewProposalHandler(cli.ProposalStoreCodeCmd, rest.StoreCodeProposalHandler),
 	govclient.NewProposalHandler(cli.ProposalInstantiateContractCmd, rest.InstantiateProposalHandler),
@@ -20,6 +19,4 @@ var ProposalHandlers = []govclient.ProposalHandler{
 	govclient.NewProposalHandler(cli.ProposalPinCodesCmd, rest.PinCodeProposalHandler),
 	govclient.NewProposalHandler(cli.ProposalUnpinCodesCmd, rest.UnpinCodeProposalHandler),
 	govclient.NewProposalHandler(cli.ProposalUpdateInstantiateConfigCmd, rest.UpdateInstantiateConfigProposalHandler),
-	govclient.NewProposalHandler(cli.ProposalStoreAndInstantiateContractCmd, rest.EmptyRestHandler),
-	govclient.NewProposalHandler(cli.ProposalInstantiateContract2Cmd, rest.EmptyRestHandler),
 }

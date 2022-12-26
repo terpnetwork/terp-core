@@ -3,7 +3,6 @@ package types
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"math/rand"
 
@@ -36,7 +35,11 @@ func GenesisFixture(mutators ...func(*GenesisState)) GenesisState {
 			Value: uint64(i),
 		}
 	}
-
+	fixture.GenMsgs = []GenesisState_GenMsgs{
+		{Sum: &GenesisState_GenMsgs_StoreCode{StoreCode: MsgStoreCodeFixture()}},
+		{Sum: &GenesisState_GenMsgs_InstantiateContract{InstantiateContract: MsgInstantiateContractFixture()}},
+		{Sum: &GenesisState_GenMsgs_ExecuteContract{ExecuteContract: MsgExecuteContractFixture()}},
+	}
 	for _, m := range mutators {
 		m(&fixture)
 	}
@@ -197,21 +200,11 @@ func MsgExecuteContractFixture(mutators ...func(*MsgExecuteContract)) *MsgExecut
 
 func StoreCodeProposalFixture(mutators ...func(*StoreCodeProposal)) *StoreCodeProposal {
 	const anyAddress = "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs2m6sx4"
-	wasm := []byte{0x0}
-	// got the value from shell sha256sum
-	codeHash, err := hex.DecodeString("6E340B9CFFB37A989CA544E6BB780A2C78901D3FB33738768511A30617AFA01D")
-	if err != nil {
-		panic(err)
-	}
-
 	p := &StoreCodeProposal{
 		Title:        "Foo",
 		Description:  "Bar",
 		RunAs:        anyAddress,
-		WASMByteCode: wasm,
-		Source:       "https://example.com/",
-		Builder:      "cosmwasm/workspace-optimizer:v0.12.8",
-		CodeHash:     codeHash,
+		WASMByteCode: []byte{0x0},
 	}
 	for _, m := range mutators {
 		m(p)
@@ -246,90 +239,6 @@ func InstantiateContractProposalFixture(mutators ...func(p *InstantiateContractP
 		Label:       "testing",
 		Msg:         initMsgBz,
 		Funds:       nil,
-	}
-
-	for _, m := range mutators {
-		m(p)
-	}
-	return p
-}
-
-func InstantiateContract2ProposalFixture(mutators ...func(p *InstantiateContract2Proposal)) *InstantiateContract2Proposal {
-	var (
-		anyValidAddress sdk.AccAddress = bytes.Repeat([]byte{0x1}, ContractAddrLen)
-
-		initMsg = struct {
-			Verifier    sdk.AccAddress `json:"verifier"`
-			Beneficiary sdk.AccAddress `json:"beneficiary"`
-		}{
-			Verifier:    anyValidAddress,
-			Beneficiary: anyValidAddress,
-		}
-	)
-	const (
-		anyAddress = "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs2m6sx4"
-		mySalt     = "myDefaultSalt"
-	)
-
-	initMsgBz, err := json.Marshal(initMsg)
-	if err != nil {
-		panic(err)
-	}
-	p := &InstantiateContract2Proposal{
-		Title:       "Foo",
-		Description: "Bar",
-		RunAs:       anyAddress,
-		Admin:       anyAddress,
-		CodeID:      1,
-		Label:       "testing",
-		Msg:         initMsgBz,
-		Funds:       nil,
-		Salt:        []byte(mySalt),
-		FixMsg:      false,
-	}
-
-	for _, m := range mutators {
-		m(p)
-	}
-	return p
-}
-
-func StoreAndInstantiateContractProposalFixture(mutators ...func(p *StoreAndInstantiateContractProposal)) *StoreAndInstantiateContractProposal {
-	var (
-		anyValidAddress sdk.AccAddress = bytes.Repeat([]byte{0x1}, ContractAddrLen)
-
-		initMsg = struct {
-			Verifier    sdk.AccAddress `json:"verifier"`
-			Beneficiary sdk.AccAddress `json:"beneficiary"`
-		}{
-			Verifier:    anyValidAddress,
-			Beneficiary: anyValidAddress,
-		}
-	)
-	const anyAddress = "cosmos1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs2m6sx4"
-	wasm := []byte{0x0}
-	// got the value from shell sha256sum
-	codeHash, err := hex.DecodeString("6E340B9CFFB37A989CA544E6BB780A2C78901D3FB33738768511A30617AFA01D")
-	if err != nil {
-		panic(err)
-	}
-
-	initMsgBz, err := json.Marshal(initMsg)
-	if err != nil {
-		panic(err)
-	}
-	p := &StoreAndInstantiateContractProposal{
-		Title:        "Foo",
-		Description:  "Bar",
-		RunAs:        anyAddress,
-		WASMByteCode: wasm,
-		Source:       "https://example.com/",
-		Builder:      "cosmwasm/workspace-optimizer:v0.12.9",
-		CodeHash:     codeHash,
-		Admin:        anyAddress,
-		Label:        "testing",
-		Msg:          initMsgBz,
-		Funds:        nil,
 	}
 
 	for _, m := range mutators {
