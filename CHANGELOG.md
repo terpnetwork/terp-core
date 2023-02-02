@@ -5,6 +5,17 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Upgrade to WasmVM v1.2.0 
+- Upgrade to cosmos-proto v1.0.0-beta.1
+- Upgrade to spf13/cobra v1.6.1 
+- Upgrade to Tendermint v0.34.24
+- Upgrade to go-metrics v0.4.1 
+- Upgrade to ics23      v0.9.0 
+- Upgrade to btcutil v1.0.5
+- Upgrade to ledger-go v0.9.3
+- Upgrade to go-humanize v1.0.1-0.20200219035652-afde56e7acac 
+- x/terp module for supplychainid & supplychain db core concepts
+- Provide full x/upgrade features
 
 ## [v0.2.0](https://github.com/terpnetwork/terp-core/tree/v0.2.0) (2022-12-12)
 
