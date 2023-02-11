@@ -117,7 +117,7 @@ import (
 	wasmclient "github.com/terpnetwork/terp-core/x/wasm/client"
 	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
 
-	// BCNA Module
+	//BCNA Module
 
 	terpmodule "github.com/terpnetwork/terp-core/x/terp"
 	terpmodulekeeper "github.com/terpnetwork/terp-core/x/terp/keeper"
@@ -129,7 +129,7 @@ import (
 
 const (
 	appName         = "TerpApp"
-	v420UpgradeName = "v420"
+	v040UpgradeName = "v040"
 )
 
 // We pull these out so we can set them with LDFLAGS in the Makefile
@@ -821,7 +821,7 @@ func NewTerpApp(
 		panic(err)
 	}
 
-	if upgradeInfo.Name == v420UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+	if upgradeInfo.Name == v040UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -1000,7 +1000,8 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *TerpApp) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler(v420UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+	app.UpgradeKeeper.SetUpgradeHandler(v040UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
 }
