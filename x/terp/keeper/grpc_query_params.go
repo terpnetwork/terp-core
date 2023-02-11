@@ -3,8 +3,8 @@ package keeper
 import (
 	"context"
 
-	"github.com/terpnetwork/terp-core/x/terp/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/terpnetwork/terp-core/x/terp/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

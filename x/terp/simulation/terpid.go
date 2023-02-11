@@ -3,13 +3,13 @@ package simulation
 import (
 	"math/rand"
 
-	"github.com/terpnetwork/terp-core/x/terp/keeper"
-	"github.com/terpnetwork/terp-core/x/terp/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
+	"github.com/terpnetwork/terp-core/x/terp/keeper"
+	"github.com/terpnetwork/terp-core/x/terp/types"
 )
 
 func SimulateMsgCreateTerpid(
@@ -51,11 +51,11 @@ func SimulateMsgUpdateTerpid(
 	return func(r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		var (
-			simAccount    = simtypes.Account{}
-			terpid    = types.Terpid{}
-			msg           = &types.MsgUpdateTerpid{}
-			allTerpid = k.GetAllTerpid(ctx)
-			found         = false
+			simAccount = simtypes.Account{}
+			terpid     = types.Terpid{}
+			msg        = &types.MsgUpdateTerpid{}
+			allTerpid  = k.GetAllTerpid(ctx)
+			found      = false
 		)
 		for _, obj := range allTerpid {
 			simAccount, found = FindAccount(accs, obj.Creator)
@@ -96,11 +96,11 @@ func SimulateMsgDeleteTerpid(
 	return func(r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		var (
-			simAccount    = simtypes.Account{}
-			terpid    = types.Terpid{}
-			msg           = &types.MsgUpdateTerpid{}
-			allTerpid = k.GetAllTerpid(ctx)
-			found         = false
+			simAccount = simtypes.Account{}
+			terpid     = types.Terpid{}
+			msg        = &types.MsgUpdateTerpid{}
+			allTerpid  = k.GetAllTerpid(ctx)
+			found      = false
 		)
 		for _, obj := range allTerpid {
 			simAccount, found = FindAccount(accs, obj.Creator)

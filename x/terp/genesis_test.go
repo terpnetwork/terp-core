@@ -3,11 +3,11 @@ package terp_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	keepertest "github.com/terpnetwork/terp-core/testutil/keeper"
 	"github.com/terpnetwork/terp-core/testutil/nullify"
 	"github.com/terpnetwork/terp-core/x/terp"
 	"github.com/terpnetwork/terp-core/x/terp/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGenesis(t *testing.T) {

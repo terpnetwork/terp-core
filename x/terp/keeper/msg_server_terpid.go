@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/terpnetwork/terp-core/x/terp/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/terpnetwork/terp-core/x/terp/types"
 )
 
 func (k msgServer) CreateTerpid(goCtx context.Context, msg *types.MsgCreateTerpid) (*types.MsgCreateTerpidResponse, error) {

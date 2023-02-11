@@ -6,7 +6,7 @@ import (
 )
 
 // UpgradeName defines the on-chain upgrade name for the Terp Network v1 upgrade.
-const UpgradeName = "v1" // maybe multiverse?
+const UpgradeName = "v1" // maybe ?
 
 var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,

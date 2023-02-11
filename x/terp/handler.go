@@ -3,10 +3,10 @@ package terp
 import (
 	"fmt"
 
-	"github.com/terpnetwork/terp-core/x/terp/keeper"
-	"github.com/terpnetwork/terp-core/x/terp/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/terpnetwork/terp-core/x/terp/keeper"
+	"github.com/terpnetwork/terp-core/x/terp/types"
 )
 
 // NewHandler ...

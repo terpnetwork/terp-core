@@ -3,9 +3,9 @@ package keeper
 import (
 	"encoding/binary"
 
-	"github.com/terpnetwork/terp-core/x/terp/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/terpnetwork/terp-core/x/terp/types"
 )
 
 // GetTerpidCount get the total number of terpid

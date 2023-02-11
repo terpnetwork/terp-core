@@ -1,8 +1,8 @@
 package keeper
 
 import (
-	"github.com/terpnetwork/terp-core/x/terp/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/terpnetwork/terp-core/x/terp/types"
 )
 
 // GetParams get all parameters as types.Params

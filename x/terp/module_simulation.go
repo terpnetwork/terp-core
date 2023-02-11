@@ -3,15 +3,15 @@ package terp
 import (
 	"math/rand"
 
-	"github.com/terpnetwork/terp-core/testutil/sample"
-	terpsimulation "github.com/terpnetwork/terp-core/x/terp/simulation"
-	"github.com/terpnetwork/terp-core/x/terp/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
+	"github.com/terpnetwork/terp-core/testutil/sample"
+	terpsimulation "github.com/terpnetwork/terp-core/x/terp/simulation"
+	"github.com/terpnetwork/terp-core/x/terp/types"
 )
 
 // avoid unused import issue

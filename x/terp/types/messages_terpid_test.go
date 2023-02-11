@@ -3,9 +3,9 @@ package types
 import (
 	"testing"
 
-	"github.com/terpnetwork/terp-core/testutil/sample"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
+	"github.com/terpnetwork/terp-core/testutil/sample"
 )
 
 func TestMsgCreateTerpid_ValidateBasic(t *testing.T) {

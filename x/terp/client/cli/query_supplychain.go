@@ -4,10 +4,10 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/terpnetwork/terp-core/x/terp/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
+	"github.com/terpnetwork/terp-core/x/terp/types"
 )
 
 func CmdListSupplychain() *cobra.Command {

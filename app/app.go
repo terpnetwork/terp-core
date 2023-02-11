@@ -117,7 +117,7 @@ import (
 	wasmclient "github.com/terpnetwork/terp-core/x/wasm/client"
 	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
 
-	//BCNA Module
+	// BCNA Module
 
 	terpmodule "github.com/terpnetwork/terp-core/x/terp"
 	terpmodulekeeper "github.com/terpnetwork/terp-core/x/terp/keeper"
@@ -1001,7 +1001,6 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *TerpApp) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(v420UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
 }

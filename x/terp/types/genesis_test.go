@@ -3,8 +3,8 @@ package types_test
 import (
 	"testing"
 
-	"github.com/terpnetwork/terp-core/x/terp/types"
 	"github.com/stretchr/testify/require"
+	"github.com/terpnetwork/terp-core/x/terp/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

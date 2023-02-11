@@ -11,14 +11,14 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/terpnetwork/terp-core/x/terp/client/cli"
-	"github.com/terpnetwork/terp-core/x/terp/keeper"
-	"github.com/terpnetwork/terp-core/x/terp/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/terpnetwork/terp-core/x/terp/client/cli"
+	"github.com/terpnetwork/terp-core/x/terp/keeper"
+	"github.com/terpnetwork/terp-core/x/terp/types"
 )
 
 var (
