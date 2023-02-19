@@ -111,16 +111,26 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
+	store "github.com/cosmos/cosmos-sdk/store/types"
 	wasmappparams "github.com/terpnetwork/terp-core/app/params"
 	"github.com/terpnetwork/terp-core/x/wasm"
 	wasmclient "github.com/terpnetwork/terp-core/x/wasm/client"
 	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
 
+	//BCNA Module
+
+	terpmodule "github.com/terpnetwork/terp-core/x/terp"
+	terpmodulekeeper "github.com/terpnetwork/terp-core/x/terp/keeper"
+	terpmoduletypes "github.com/terpnetwork/terp-core/x/terp/types"
+
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
 )
 
-const appName = "TerpApp"
+const (
+	appName         = "TerpApp"
+	v040UpgradeName = "v040"
+)
 
 // We pull these out so we can set them with LDFLAGS in the Makefile
 var (
@@ -129,7 +139,7 @@ var (
 
 	// If EnabledSpecificProposals is "", and this is "true", then enable all x/wasm proposals.
 	// If EnabledSpecificProposals is "", and this is not "true", then disable all x/wasm proposals.
-	ProposalsEnabled = "false"
+	ProposalsEnabled = "true"
 	// If set to non-empty string it must be comma-separated list of values that are all a subset
 	// of "EnableAllProposals" (takes precedence over ProposalsEnabled)
 	// https://github.com/CosmWasm/wasmd/blob/02a54d33ff2c064f3539ae12d75d027d9c665f05/x/wasm/internal/types/proposal.go#L28-L34
@@ -208,6 +218,7 @@ var (
 		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		wasm.AppModuleBasic{},
+		terpmodule.AppModuleBasic{},
 		ica.AppModuleBasic{},
 		intertx.AppModuleBasic{},
 		ibcfee.AppModuleBasic{},
@@ -269,6 +280,7 @@ type TerpApp struct {
 	FeeGrantKeeper      feegrantkeeper.Keeper
 	AuthzKeeper         authzkeeper.Keeper
 	WasmKeeper          wasm.Keeper
+	TerpKeeper          terpmodulekeeper.Keeper
 
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
@@ -314,7 +326,7 @@ func NewTerpApp(
 		authtypes.StoreKey, banktypes.StoreKey, stakingtypes.StoreKey,
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
-		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
+		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey, terpmoduletypes.StoreKey,
 		feegrant.StoreKey, authzkeeper.StoreKey, wasm.StoreKey, icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey, intertxtypes.StoreKey, ibcfeetypes.StoreKey,
 	)
@@ -511,6 +523,14 @@ func NewTerpApp(
 		panic(fmt.Sprintf("error while reading wasm config: %s", err))
 	}
 
+	app.TerpKeeper = *terpmodulekeeper.NewKeeper(
+		appCodec,
+		keys[terpmoduletypes.StoreKey],
+		keys[terpmoduletypes.MemStoreKey],
+		app.getSubspace(terpmoduletypes.ModuleName),
+	)
+	terpModule := terpmodule.NewAppModule(appCodec, app.TerpKeeper, app.AccountKeeper, app.BankKeeper)
+
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
 	availableCapabilities := "iterator,staking,stargate,cosmwasm_1_1"
@@ -620,6 +640,7 @@ func NewTerpApp(
 		ibcfee.NewAppModule(app.IBCFeeKeeper),
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		intertx.NewAppModule(appCodec, app.InterTxKeeper),
+		terpModule,
 		crisis.NewAppModule(&app.CrisisKeeper, skipGenesisInvariants), // always be last to make sure that it checks for all invariants and not only part of them
 	)
 
@@ -651,6 +672,7 @@ func NewTerpApp(
 		ibcfeetypes.ModuleName,
 		intertxtypes.ModuleName,
 		wasm.ModuleName,
+		terpmoduletypes.ModuleName,
 	)
 
 	app.mm.SetOrderEndBlockers(
@@ -677,6 +699,7 @@ func NewTerpApp(
 		ibcfeetypes.ModuleName,
 		intertxtypes.ModuleName,
 		wasm.ModuleName,
+		terpmoduletypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -711,6 +734,7 @@ func NewTerpApp(
 		intertxtypes.ModuleName,
 		// wasm after ibc transfer
 		wasm.ModuleName,
+		terpmoduletypes.ModuleName,
 	)
 
 	// Uncomment if you want to set a custom migration order here.
@@ -724,6 +748,7 @@ func NewTerpApp(
 
 	// create the simulation manager and define the order of the modules for deterministic simulations
 	//
+	app.RegisterUpgradeHandlers(app.configurator)
 	// NOTE: this is not required apps that don't use the simulator for fuzz testing
 	// transactions
 	app.sm = module.NewSimulationManager(
@@ -742,6 +767,7 @@ func NewTerpApp(
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
 		ibc.NewAppModule(app.IBCKeeper),
 		transfer.NewAppModule(app.TransferKeeper),
+		terpModule,
 	)
 
 	app.sm.RegisterStoreDecoders()
@@ -785,6 +811,17 @@ func NewTerpApp(
 		}
 	}
 
+	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
+	if err != nil {
+		panic(err)
+	}
+
+	if upgradeInfo.Name == v040UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+		storeUpgrades := store.StoreUpgrades{}
+
+		// configure store loader that checks if version == upgradeHeight and applies store upgrades
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	}
 	app.ScopedIBCKeeper = scopedIBCKeeper
 	app.ScopedTransferKeeper = scopedTransferKeeper
 	app.ScopedWasmKeeper = scopedWasmKeeper
@@ -948,9 +985,18 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
+	paramsKeeper.Subspace(terpmoduletypes.ModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
 	paramsKeeper.Subspace(wasm.ModuleName)
 
 	return paramsKeeper
+}
+
+// RegisterUpgradeHandlers returns upgrade handlers
+func (app *TerpApp) RegisterUpgradeHandlers(cfg module.Configurator) {
+	app.UpgradeKeeper.SetUpgradeHandler(v040UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+
+		return app.mm.RunMigrations(ctx, cfg, vm)
+	})
 }

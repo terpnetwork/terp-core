@@ -188,7 +188,7 @@ License: Apache2.0
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright 2016 All in Bits, Inc
+   
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -201,3 +201,10 @@ License: Apache2.0
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+This project uses code from the following Apache-licensed projects:
+
+- wasmd: https://github.com/CosmWasm/wasmd
+- bcna: https://github.com/BitCannaGlobal/bcna
+
+The Apache License, Version 2.0 applies to these components of the codebase.
