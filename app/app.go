@@ -123,6 +123,14 @@ import (
 	terpmodulekeeper "github.com/terpnetwork/terp-core/x/terp/keeper"
 	terpmoduletypes "github.com/terpnetwork/terp-core/x/terp/types"
 
+	
+	// Epoch Module
+	epochsmodule "github.com/terpnetwork/terp-core/x/epochs"
+	epochsmodulekeeper "github.com/terpnetwork/terp-core/x/epochs/keeper"
+	epochsmoduletypes "github.com/terpnetwork/terp-core/x/epochs/types"
+
+
+
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
 )
@@ -281,6 +289,8 @@ type TerpApp struct {
 	AuthzKeeper         authzkeeper.Keeper
 	WasmKeeper          wasm.Keeper
 	TerpKeeper          terpmodulekeeper.Keeper
+	EpochsKeeper             epochsmodulekeeper.Keeper
+
 
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
@@ -327,7 +337,7 @@ func NewTerpApp(
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey, terpmoduletypes.StoreKey,
-		feegrant.StoreKey, authzkeeper.StoreKey, wasm.StoreKey, icahosttypes.StoreKey,
+		epochsmoduletypes.StoreKey, feegrant.StoreKey, authzkeeper.StoreKey, wasm.StoreKey, icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey, intertxtypes.StoreKey, ibcfeetypes.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -531,6 +541,14 @@ func NewTerpApp(
 	)
 	terpModule := terpmodule.NewAppModule(appCodec, app.TerpKeeper, app.AccountKeeper, app.BankKeeper)
 
+	epochsKeeper := epochsmodulekeeper.NewKeeper(appCodec, keys[epochsmoduletypes.StoreKey])
+
+	app.EpochsKeeper = *epochsKeeper.SetHooks(
+		epochsmoduletypes.NewMultiEpochHooks(
+		),
+	)
+	epochsModule := epochsmodule.NewAppModule(appCodec, app.EpochsKeeper)
+
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
 	availableCapabilities := "iterator,staking,stargate,cosmwasm_1_1"
@@ -641,6 +659,7 @@ func NewTerpApp(
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		intertx.NewAppModule(appCodec, app.InterTxKeeper),
 		terpModule,
+		epochsModule,
 		crisis.NewAppModule(&app.CrisisKeeper, skipGenesisInvariants), // always be last to make sure that it checks for all invariants and not only part of them
 	)
 
@@ -673,6 +692,8 @@ func NewTerpApp(
 		intertxtypes.ModuleName,
 		wasm.ModuleName,
 		terpmoduletypes.ModuleName,
+		epochsmoduletypes.ModuleName,
+
 	)
 
 	app.mm.SetOrderEndBlockers(
@@ -700,6 +721,8 @@ func NewTerpApp(
 		intertxtypes.ModuleName,
 		wasm.ModuleName,
 		terpmoduletypes.ModuleName,
+		epochsmoduletypes.ModuleName,
+
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -735,6 +758,8 @@ func NewTerpApp(
 		// wasm after ibc transfer
 		wasm.ModuleName,
 		terpmoduletypes.ModuleName,
+		epochsmoduletypes.ModuleName,
+
 	)
 
 	// Uncomment if you want to set a custom migration order here.
@@ -768,6 +793,8 @@ func NewTerpApp(
 		ibc.NewAppModule(app.IBCKeeper),
 		transfer.NewAppModule(app.TransferKeeper),
 		terpModule,
+		epochsModule,
+
 	)
 
 	app.sm.RegisterStoreDecoders()
@@ -986,6 +1013,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
 	paramsKeeper.Subspace(terpmoduletypes.ModuleName)
+	paramsKeeper.Subspace(epochsmoduletypes.ModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
 	paramsKeeper.Subspace(wasm.ModuleName)
