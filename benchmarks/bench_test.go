@@ -108,11 +108,11 @@ func BenchmarkTxSending(b *testing.B) {
 				for j := 0; j < blockSize; j++ {
 					idx := i*blockSize + j
 
-					_, _, err := appInfo.App.Check(txEncoder, txs[idx])
+					_, _, err := appInfo.App.SimCheck(txEncoder, txs[idx])
 					if err != nil {
 						panic("something is broken in checking transaction")
 					}
-					_, _, err = appInfo.App.Deliver(txEncoder, txs[idx])
+					_, _, err = appInfo.App.SimDeliver(txEncoder, txs[idx])
 					require.NoError(b, err)
 				}
 
@@ -157,7 +157,7 @@ func buildTxFromMsg(builder func(info *AppInfo) ([]sdk.Msg, error)) func(b *test
 	}
 }
 
-func buildMemDB(b *testing.B) dbm.DB {
+func buildMemDB(_ *testing.B) dbm.DB {
 	return dbm.NewMemDB()
 }
 

@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	ibctesting "github.com/cosmos/ibc-go/v4/testing"
+	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
+	ibctesting "github.com/cosmos/ibc-go/v6/testing"
 
 	wasmvm "github.com/CosmWasm/wasmvm"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	clienttypes "github.com/cosmos/ibc-go/v6/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -137,7 +136,7 @@ type player struct {
 
 // Execute starts the ping pong game
 // Contracts finds all connected channels and broadcasts a ping message
-func (p *player) Execute(code wasmvm.Checksum, env wasmvmtypes.Env, info wasmvmtypes.MessageInfo, executeMsg []byte, store wasmvm.KVStore, goapi wasmvm.GoAPI, querier wasmvm.Querier, gasMeter wasmvm.GasMeter, gasLimit uint64, deserCost wasmvmtypes.UFraction) (*wasmvmtypes.Response, uint64, error) {
+func (p *player) Execute(_ wasmvm.Checksum, _ wasmvmtypes.Env, _ wasmvmtypes.MessageInfo, executeMsg []byte, store wasmvm.KVStore, _ wasmvm.GoAPI, _ wasmvm.Querier, _ wasmvm.GasMeter, _ uint64, _ wasmvmtypes.UFraction) (*wasmvmtypes.Response, uint64, error) {
 	p.execCalls++
 	// start game
 	var start startGame
@@ -175,7 +174,7 @@ func (p *player) Execute(code wasmvm.Checksum, env wasmvmtypes.Env, info wasmvmt
 }
 
 // OnIBCChannelOpen ensures to accept only configured version
-func (p player) IBCChannelOpen(codeID wasmvm.Checksum, env wasmvmtypes.Env, msg wasmvmtypes.IBCChannelOpenMsg, store wasmvm.KVStore, goapi wasmvm.GoAPI, querier wasmvm.Querier, gasMeter wasmvm.GasMeter, gasLimit uint64, deserCost wasmvmtypes.UFraction) (*wasmvmtypes.IBC3ChannelOpenResponse, uint64, error) {
+func (p player) IBCChannelOpen(_ wasmvm.Checksum, _ wasmvmtypes.Env, msg wasmvmtypes.IBCChannelOpenMsg, _ wasmvm.KVStore, _ wasmvm.GoAPI, _ wasmvm.Querier, _ wasmvm.GasMeter, _ uint64, _ wasmvmtypes.UFraction) (*wasmvmtypes.IBC3ChannelOpenResponse, uint64, error) {
 	if msg.GetChannel().Version != p.actor {
 		return &wasmvmtypes.IBC3ChannelOpenResponse{}, 0, nil
 	}
@@ -183,7 +182,7 @@ func (p player) IBCChannelOpen(codeID wasmvm.Checksum, env wasmvmtypes.Env, msg 
 }
 
 // OnIBCChannelConnect persists connection endpoints
-func (p player) IBCChannelConnect(codeID wasmvm.Checksum, env wasmvmtypes.Env, msg wasmvmtypes.IBCChannelConnectMsg, store wasmvm.KVStore, goapi wasmvm.GoAPI, querier wasmvm.Querier, gasMeter wasmvm.GasMeter, gasLimit uint64, deserCost wasmvmtypes.UFraction) (*wasmvmtypes.IBCBasicResponse, uint64, error) {
+func (p player) IBCChannelConnect(_ wasmvm.Checksum, _ wasmvmtypes.Env, msg wasmvmtypes.IBCChannelConnectMsg, store wasmvm.KVStore, _ wasmvm.GoAPI, _ wasmvm.Querier, _ wasmvm.GasMeter, _ uint64, _ wasmvmtypes.UFraction) (*wasmvmtypes.IBCBasicResponse, uint64, error) {
 	p.storeEndpoint(store, msg.GetChannel())
 	return &wasmvmtypes.IBCBasicResponse{}, 0, nil
 }
@@ -199,20 +198,6 @@ var ( // store keys
 	maxValueKey     = []byte("max-value")
 )
 
-func (p player) loadEndpoints(store prefix.Store, channelID string) *connectedChannelsModel {
-	var counterparties []connectedChannelsModel
-	if bz := store.Get(ibcEndpointsKey); bz != nil {
-		require.NoError(p.t, json.Unmarshal(bz, &counterparties))
-	}
-	for _, v := range counterparties {
-		if v.Our.ChannelID == channelID {
-			return &v
-		}
-	}
-	p.t.Fatalf("no counterparty found for channel %q", channelID)
-	return nil
-}
-
 func (p player) storeEndpoint(store wasmvm.KVStore, channel wasmvmtypes.IBCChannel) {
 	var counterparties []connectedChannelsModel
 	if b := store.Get(ibcEndpointsKey); b != nil {
@@ -224,7 +209,7 @@ func (p player) storeEndpoint(store wasmvm.KVStore, channel wasmvmtypes.IBCChann
 	store.Set(ibcEndpointsKey, bz)
 }
 
-func (p player) IBCChannelClose(codeID wasmvm.Checksum, env wasmvmtypes.Env, msg wasmvmtypes.IBCChannelCloseMsg, store wasmvm.KVStore, goapi wasmvm.GoAPI, querier wasmvm.Querier, gasMeter wasmvm.GasMeter, gasLimit uint64, deserCost wasmvmtypes.UFraction) (*wasmvmtypes.IBCBasicResponse, uint64, error) {
+func (p player) IBCChannelClose(_ wasmvm.Checksum, _ wasmvmtypes.Env, _ wasmvmtypes.IBCChannelCloseMsg, _ wasmvm.KVStore, _ wasmvm.GoAPI, _ wasmvm.Querier, _ wasmvm.GasMeter, _ uint64, _ wasmvmtypes.UFraction) (*wasmvmtypes.IBCBasicResponse, uint64, error) {
 	panic("implement me")
 }
 
@@ -237,14 +222,14 @@ var ( // store keys
 )
 
 // IBCPacketReceive receives the hit and serves a response hit via `wasmvmtypes.IBCPacket`
-func (p player) IBCPacketReceive(codeID wasmvm.Checksum, env wasmvmtypes.Env, msg wasmvmtypes.IBCPacketReceiveMsg, store wasmvm.KVStore, goapi wasmvm.GoAPI, querier wasmvm.Querier, gasMeter wasmvm.GasMeter, gasLimit uint64, deserCost wasmvmtypes.UFraction) (*wasmvmtypes.IBCReceiveResult, uint64, error) {
+func (p player) IBCPacketReceive(_ wasmvm.Checksum, _ wasmvmtypes.Env, msg wasmvmtypes.IBCPacketReceiveMsg, store wasmvm.KVStore, _ wasmvm.GoAPI, _ wasmvm.Querier, _ wasmvm.GasMeter, _ uint64, _ wasmvmtypes.UFraction) (*wasmvmtypes.IBCReceiveResult, uint64, error) {
 	// parse received data and store
 	packet := msg.Packet
 	var receivedBall hit
 	if err := json.Unmarshal(packet.Data, &receivedBall); err != nil {
 		return &wasmvmtypes.IBCReceiveResult{
 			Ok: &wasmvmtypes.IBCReceiveResponse{
-				Acknowledgement: hitAcknowledgement{Error: err.Error()}.GetBytes(),
+				Acknowledgement: HitAcknowledgement{Error: err.Error()}.GetBytes(),
 			},
 			// no hit msg, we stop the game
 		}, 0, nil
@@ -283,14 +268,14 @@ func (p player) IBCPacketReceive(codeID wasmvm.Checksum, env wasmvmtypes.Env, ms
 }
 
 // OnIBCPacketAcknowledgement handles the packet acknowledgment frame. Stops the game on an any error
-func (p player) IBCPacketAck(codeID wasmvm.Checksum, env wasmvmtypes.Env, msg wasmvmtypes.IBCPacketAckMsg, store wasmvm.KVStore, goapi wasmvm.GoAPI, querier wasmvm.Querier, gasMeter wasmvm.GasMeter, gasLimit uint64, deserCost wasmvmtypes.UFraction) (*wasmvmtypes.IBCBasicResponse, uint64, error) {
+func (p player) IBCPacketAck(_ wasmvm.Checksum, _ wasmvmtypes.Env, msg wasmvmtypes.IBCPacketAckMsg, store wasmvm.KVStore, _ wasmvm.GoAPI, _ wasmvm.Querier, _ wasmvm.GasMeter, _ uint64, _ wasmvmtypes.UFraction) (*wasmvmtypes.IBCBasicResponse, uint64, error) {
 	// parse received data and store
 	var sentBall hit
 	if err := json.Unmarshal(msg.OriginalPacket.Data, &sentBall); err != nil {
 		return nil, 0, err
 	}
 
-	var ack hitAcknowledgement
+	var ack HitAcknowledgement
 	if err := json.Unmarshal(msg.Acknowledgement.Data, &ack); err != nil {
 		return nil, 0, err
 	}
@@ -305,7 +290,7 @@ func (p player) IBCPacketAck(codeID wasmvm.Checksum, env wasmvmtypes.Env, msg wa
 	return &wasmvmtypes.IBCBasicResponse{}, 0, nil
 }
 
-func (p player) IBCPacketTimeout(codeID wasmvm.Checksum, env wasmvmtypes.Env, packet wasmvmtypes.IBCPacketTimeoutMsg, store wasmvm.KVStore, goapi wasmvm.GoAPI, querier wasmvm.Querier, gasMeter wasmvm.GasMeter, gasLimit uint64, deserCost wasmvmtypes.UFraction) (*wasmvmtypes.IBCBasicResponse, uint64, error) {
+func (p player) IBCPacketTimeout(_ wasmvm.Checksum, _ wasmvmtypes.Env, _ wasmvmtypes.IBCPacketTimeoutMsg, _ wasmvm.KVStore, _ wasmvm.GoAPI, _ wasmvm.Querier, _ wasmvm.GasMeter, _ uint64, _ wasmvmtypes.UFraction) (*wasmvmtypes.IBCBasicResponse, uint64, error) {
 	panic("implement me")
 }
 
@@ -339,7 +324,7 @@ func counterParty(s string) string {
 // hit is ibc packet payload
 type hit map[string]uint64
 
-func NewHit(player string, count uint64) hit {
+func NewHit(player string, count uint64) hit { //nolint:revive // no need to make this public
 	return map[string]uint64{
 		player: count,
 	}
@@ -357,21 +342,21 @@ func (h hit) String() string {
 	return fmt.Sprintf("Ball %s", string(h.GetBytes()))
 }
 
-func (h hit) BuildAck() hitAcknowledgement {
-	return hitAcknowledgement{Success: &h}
+func (h hit) BuildAck() HitAcknowledgement {
+	return HitAcknowledgement{Success: &h}
 }
 
-func (h hit) BuildError(errMsg string) hitAcknowledgement {
-	return hitAcknowledgement{Error: errMsg}
+func (h hit) BuildError(errMsg string) HitAcknowledgement {
+	return HitAcknowledgement{Error: errMsg}
 }
 
 // hitAcknowledgement is ibc acknowledgment payload
-type hitAcknowledgement struct {
+type HitAcknowledgement struct {
 	Error   string `json:"error,omitempty"`
 	Success *hit   `json:"success,omitempty"`
 }
 
-func (a hitAcknowledgement) GetBytes() []byte {
+func (a HitAcknowledgement) GetBytes() []byte {
 	b, err := json.Marshal(a)
 	if err != nil {
 		panic(err)

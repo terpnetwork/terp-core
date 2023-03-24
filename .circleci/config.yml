@@ -61,7 +61,7 @@ jobs:
 
   lint:
     docker:
-      - image: golangci/golangci-lint:v1.46.2
+      - image: golangci/golangci-lint:v1.50.1
     steps:
       - checkout
       - run:
@@ -160,11 +160,11 @@ jobs:
           version: 20.10.11
       - run:
           name: Build Docker artifact
-          command: docker build --pull -t "terpnetwork/terp-core:${CIRCLE_SHA1}" .
+          command: docker build --pull -t "cosmwasm/wasmd:${CIRCLE_SHA1}" .
       - run:
           name: Ensure libwasmvm version is correct
           command: |
-            IN_DOCKER=$(docker run --rm "terpnetwork/terp-core:${CIRCLE_SHA1}" /usr/bin/terpd query wasm libwasmvm-version)
+            IN_DOCKER=$(docker run --rm "cosmwasm/wasmd:${CIRCLE_SHA1}" /usr/bin/wasmd query wasm libwasmvm-version)
             echo "Runtime libwasmvm-version in docker: $IN_DOCKER"
             IN_GOMOD=$(go list -m github.com/CosmWasm/wasmvm | cut -d" " -f2 | cut -d"v" -f2)
             echo "wasmvm version in go.mod: $IN_GOMOD"
@@ -174,14 +174,14 @@ jobs:
             fi
       - when:
           condition:
-            equal: [main, << pipeline.git.branch >>]
+            equal: [ main, << pipeline.git.branch >> ]
           steps:
             - run:
                 name: Push application Docker image to docker hub
                 command: |
-                  docker tag "terpnetwork/terp-core:${CIRCLE_SHA1}" terpnetwork/terp-core:latest
+                  docker tag "cosmwasm/wasmd:${CIRCLE_SHA1}" cosmwasm/wasmd:latest
                   docker login --password-stdin -u "$DOCKER_USER" \<<<"$DOCKER_PASS"
-                  docker push terpnetwork/terp-core:latest
+                  docker push cosmwasm/wasmd:latest
                   docker logout
 
   docker-tagged:
@@ -195,12 +195,12 @@ jobs:
           version: 20.10.11
       - run:
           name: Build Docker artifact
-          command: docker build --pull -t "terpnetwork/terp-core:${CIRCLE_TAG}" .
+          command: docker build --pull -t "cosmwasm/wasmd:${CIRCLE_TAG}" .
       - run:
           name: Push application Docker image to docker hub
           command: |
             docker login --password-stdin -u "$DOCKER_USER" \<<<"$DOCKER_PASS"
-            docker push "terpnetwork/terp-core:${CIRCLE_TAG}"
+            docker push "cosmwasm/wasmd:${CIRCLE_TAG}"
             docker logout
 
 workflows:

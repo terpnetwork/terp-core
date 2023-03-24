@@ -3,6 +3,7 @@ package wasm
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -25,7 +26,7 @@ func NewHandler(k types.ContractOpsKeeper) sdk.Handler {
 			err error
 		)
 		switch msg := msg.(type) {
-		case *MsgStoreCode: //nolint:typecheck
+		case *MsgStoreCode:
 			res, err = msgServer.StoreCode(sdk.WrapSDKContext(ctx), msg)
 		case *MsgInstantiateContract:
 			res, err = msgServer.InstantiateContract(sdk.WrapSDKContext(ctx), msg)
@@ -39,9 +40,11 @@ func NewHandler(k types.ContractOpsKeeper) sdk.Handler {
 			res, err = msgServer.UpdateAdmin(sdk.WrapSDKContext(ctx), msg)
 		case *MsgClearAdmin:
 			res, err = msgServer.ClearAdmin(sdk.WrapSDKContext(ctx), msg)
+		case *types.MsgUpdateInstantiateConfig:
+			res, err = msgServer.UpdateInstantiateConfig(sdk.WrapSDKContext(ctx), msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized wasm message type: %T", msg)
-			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
+			return nil, errorsmod.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
 		}
 
 		ctx = ctx.WithEventManager(filterMessageEvents(ctx))

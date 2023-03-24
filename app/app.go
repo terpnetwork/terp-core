@@ -11,7 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
-	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/server/api"
@@ -22,7 +21,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
-	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -56,6 +54,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
@@ -74,30 +74,32 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	ica "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts"
-	icacontroller "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/controller"
-	icacontrollerkeeper "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/controller/keeper"
-	icacontrollertypes "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/controller/types"
-	icahost "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/host"
-	icahostkeeper "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/host/keeper"
-	icahosttypes "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/host/types"
-	icatypes "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/types"
-	ibcfee "github.com/cosmos/ibc-go/v4/modules/apps/29-fee"
-	ibcfeekeeper "github.com/cosmos/ibc-go/v4/modules/apps/29-fee/keeper"
-	ibcfeetypes "github.com/cosmos/ibc-go/v4/modules/apps/29-fee/types"
-	transfer "github.com/cosmos/ibc-go/v4/modules/apps/transfer"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	ibc "github.com/cosmos/ibc-go/v4/modules/core"
-	ibcclient "github.com/cosmos/ibc-go/v4/modules/core/02-client"
-	ibcclientclient "github.com/cosmos/ibc-go/v4/modules/core/02-client/client"
-	ibcclienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
-	porttypes "github.com/cosmos/ibc-go/v4/modules/core/05-port/types"
-	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
-	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
+	ica "github.com/cosmos/ibc-go/v6/modules/apps/27-interchain-accounts"
+	icacontroller "github.com/cosmos/ibc-go/v6/modules/apps/27-interchain-accounts/controller"
+	icacontrollerkeeper "github.com/cosmos/ibc-go/v6/modules/apps/27-interchain-accounts/controller/keeper"
+	icacontrollertypes "github.com/cosmos/ibc-go/v6/modules/apps/27-interchain-accounts/controller/types"
+	icahost "github.com/cosmos/ibc-go/v6/modules/apps/27-interchain-accounts/host"
+	icahostkeeper "github.com/cosmos/ibc-go/v6/modules/apps/27-interchain-accounts/host/keeper"
+	icahosttypes "github.com/cosmos/ibc-go/v6/modules/apps/27-interchain-accounts/host/types"
+	icatypes "github.com/cosmos/ibc-go/v6/modules/apps/27-interchain-accounts/types"
+	ibcfee "github.com/cosmos/ibc-go/v6/modules/apps/29-fee"
+	ibcfeekeeper "github.com/cosmos/ibc-go/v6/modules/apps/29-fee/keeper"
+	ibcfeetypes "github.com/cosmos/ibc-go/v6/modules/apps/29-fee/types"
+	transfer "github.com/cosmos/ibc-go/v6/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v6/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v6/modules/core"
+	ibcclient "github.com/cosmos/ibc-go/v6/modules/core/02-client"
+	ibcclientclient "github.com/cosmos/ibc-go/v6/modules/core/02-client/client"
+	ibcclienttypes "github.com/cosmos/ibc-go/v6/modules/core/02-client/types"
+	porttypes "github.com/cosmos/ibc-go/v6/modules/core/05-port/types"
+	ibchost "github.com/cosmos/ibc-go/v6/modules/core/24-host"
+	ibckeeper "github.com/cosmos/ibc-go/v6/modules/core/keeper"
+	ibcmock "github.com/cosmos/ibc-go/v6/testing/mock"
 
 	// Note: please do your research before using this in production app, this is a demo and not an officially
 	// supported IBC team implementation. It has no known issues, but do your own research before using it.
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	intertx "github.com/cosmos/interchain-accounts/x/inter-tx"
 	intertxkeeper "github.com/cosmos/interchain-accounts/x/inter-tx/keeper"
 	intertxtypes "github.com/cosmos/interchain-accounts/x/inter-tx/types"
@@ -111,33 +113,30 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	store "github.com/cosmos/cosmos-sdk/store/types"
 	wasmappparams "github.com/terpnetwork/terp-core/app/params"
+
+	// wasm
 	"github.com/terpnetwork/terp-core/x/wasm"
 	wasmclient "github.com/terpnetwork/terp-core/x/wasm/client"
 	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
 
-	//BCNA Module
-
-	terpmodule "github.com/terpnetwork/terp-core/x/terp"
-	terpmodulekeeper "github.com/terpnetwork/terp-core/x/terp/keeper"
-	terpmoduletypes "github.com/terpnetwork/terp-core/x/terp/types"
-
-	
-	// Epoch Module
-	epochsmodule "github.com/terpnetwork/terp-core/x/epochs"
-	epochsmodulekeeper "github.com/terpnetwork/terp-core/x/epochs/keeper"
-	epochsmoduletypes "github.com/terpnetwork/terp-core/x/epochs/types"
+	//TERP Module
 
 
+	// token factory
+	"github.com/terpnetwork/terp-core/x/tokenfactory"
+	bindings "github.com/terpnetwork/terp-core/x/tokenfactory/bindings"
+	tokenfactorykeeper "github.com/terpnetwork/terp-core/x/tokenfactory/keeper"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/x/tokenfactory/types"
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
 )
 
 const (
-	appName         = "TerpApp"
-	v040UpgradeName = "v040"
+	appName            = "TerpApp"
+	v420UpgradeName = "v420"
+	MockFeePort string = ibcmock.ModuleName + ibcfeetypes.ModuleName
 )
 
 // We pull these out so we can set them with LDFLAGS in the Makefile
@@ -155,7 +154,7 @@ var (
 )
 
 // GetEnabledProposals parses the ProposalsEnabled / EnableSpecificProposals values to
-// produce a list of enabled proposals to pass into terpd app.
+// produce a list of enabled proposals to pass into wasmd app.
 func GetEnabledProposals() []wasm.ProposalType {
 	if EnableSpecificProposals == "" {
 		if ProposalsEnabled == "true" {
@@ -204,17 +203,15 @@ var (
 		staking.AppModuleBasic{},
 		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
-		gov.NewAppModuleBasic(
-			append(
-				wasmclient.ProposalHandlers, //nolint:staticcheck
-				paramsclient.ProposalHandler,
-				distrclient.ProposalHandler,
-				upgradeclient.ProposalHandler,
-				upgradeclient.CancelProposalHandler,
-				ibcclientclient.UpdateClientProposalHandler,
-				ibcclientclient.UpgradeProposalHandler,
-			)...,
-		),
+		gov.NewAppModuleBasic(append(
+			wasmclient.ProposalHandlers,
+			paramsclient.ProposalHandler,
+			distrclient.ProposalHandler,
+			upgradeclient.LegacyProposalHandler,
+			upgradeclient.LegacyCancelProposalHandler,
+			ibcclientclient.UpdateClientProposalHandler,
+			ibcclientclient.UpgradeProposalHandler,
+		)),
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
@@ -226,10 +223,10 @@ var (
 		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		wasm.AppModuleBasic{},
-		terpmodule.AppModuleBasic{},
 		ica.AppModuleBasic{},
 		intertx.AppModuleBasic{},
 		ibcfee.AppModuleBasic{},
+		tokenfactory.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -244,6 +241,7 @@ var (
 		ibcfeetypes.ModuleName:         nil,
 		icatypes.ModuleName:            nil,
 		wasm.ModuleName:                {authtypes.Burner},
+		tokenfactorytypes.ModuleName:   {authtypes.Minter, authtypes.Burner},
 	}
 )
 
@@ -255,20 +253,20 @@ var (
 // TerpApp extended ABCI application
 type TerpApp struct {
 	*baseapp.BaseApp
-	legacyAmino       *codec.LegacyAmino //nolint:staticcheck
+	legacyAmino       *codec.LegacyAmino
 	appCodec          codec.Codec
 	interfaceRegistry types.InterfaceRegistry
 
 	invCheckPeriod uint
 
 	// keys to access the substores
-	keys    map[string]*sdk.KVStoreKey
-	tkeys   map[string]*sdk.TransientStoreKey
-	memKeys map[string]*sdk.MemoryStoreKey
+	keys    map[string]*storetypes.KVStoreKey
+	tkeys   map[string]*storetypes.TransientStoreKey
+	memKeys map[string]*storetypes.MemoryStoreKey
 
 	// keepers
 	AccountKeeper       authkeeper.AccountKeeper
-	BankKeeper          bankkeeper.Keeper
+	BankKeeper          bankkeeper.BaseKeeper
 	CapabilityKeeper    *capabilitykeeper.Keeper
 	StakingKeeper       stakingkeeper.Keeper
 	SlashingKeeper      slashingkeeper.Keeper
@@ -282,15 +280,13 @@ type TerpApp struct {
 	IBCKeeper           *ibckeeper.Keeper // IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
 	IBCFeeKeeper        ibcfeekeeper.Keeper
 	ICAControllerKeeper icacontrollerkeeper.Keeper
+	TokenFactoryKeeper  tokenfactorykeeper.Keeper
 	ICAHostKeeper       icahostkeeper.Keeper
 	InterTxKeeper       intertxkeeper.Keeper
 	TransferKeeper      ibctransferkeeper.Keeper
 	FeeGrantKeeper      feegrantkeeper.Keeper
 	AuthzKeeper         authzkeeper.Keeper
 	WasmKeeper          wasm.Keeper
-	TerpKeeper          terpmodulekeeper.Keeper
-	EpochsKeeper             epochsmodulekeeper.Keeper
-
 
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
@@ -336,9 +332,10 @@ func NewTerpApp(
 		authtypes.StoreKey, banktypes.StoreKey, stakingtypes.StoreKey,
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
-		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey, terpmoduletypes.StoreKey,
-		epochsmoduletypes.StoreKey, feegrant.StoreKey, authzkeeper.StoreKey, wasm.StoreKey, icahosttypes.StoreKey,
+		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
+		feegrant.StoreKey, authzkeeper.StoreKey, wasm.StoreKey, icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey, intertxtypes.StoreKey, ibcfeetypes.StoreKey,
+		tokenfactorytypes.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -362,7 +359,7 @@ func NewTerpApp(
 	)
 
 	// set the BaseApp's parameter store
-	bApp.SetParamStore(app.ParamsKeeper.Subspace(baseapp.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable()))
+	bApp.SetParamStore(app.ParamsKeeper.Subspace(baseapp.Paramspace).WithKeyTable(paramstypes.ConsensusParamsKeyTable()))
 
 	// add capability keeper and ScopeToModule for ibc module
 	app.CapabilityKeeper = capabilitykeeper.NewKeeper(
@@ -382,21 +379,23 @@ func NewTerpApp(
 	app.AccountKeeper = authkeeper.NewAccountKeeper(
 		appCodec,
 		keys[authtypes.StoreKey],
-		app.getSubspace(authtypes.ModuleName),
+		app.GetSubspace(authtypes.ModuleName),
 		authtypes.ProtoBaseAccount,
 		maccPerms,
+		sdk.GetConfig().GetBech32AccountAddrPrefix(),
 	)
 	app.BankKeeper = bankkeeper.NewBaseKeeper(
 		appCodec,
 		keys[banktypes.StoreKey],
 		app.AccountKeeper,
-		app.getSubspace(banktypes.ModuleName),
+		app.GetSubspace(banktypes.ModuleName),
 		app.ModuleAccountAddrs(),
 	)
 	app.AuthzKeeper = authzkeeper.NewKeeper(
 		keys[authzkeeper.StoreKey],
 		appCodec,
 		app.BaseApp.MsgServiceRouter(),
+		app.AccountKeeper,
 	)
 	app.FeeGrantKeeper = feegrantkeeper.NewKeeper(
 		appCodec,
@@ -408,12 +407,12 @@ func NewTerpApp(
 		keys[stakingtypes.StoreKey],
 		app.AccountKeeper,
 		app.BankKeeper,
-		app.getSubspace(stakingtypes.ModuleName),
+		app.GetSubspace(stakingtypes.ModuleName),
 	)
 	app.MintKeeper = mintkeeper.NewKeeper(
 		appCodec,
 		keys[minttypes.StoreKey],
-		app.getSubspace(minttypes.ModuleName),
+		app.GetSubspace(minttypes.ModuleName),
 		&stakingKeeper,
 		app.AccountKeeper,
 		app.BankKeeper,
@@ -422,21 +421,27 @@ func NewTerpApp(
 	app.DistrKeeper = distrkeeper.NewKeeper(
 		appCodec,
 		keys[distrtypes.StoreKey],
-		app.getSubspace(distrtypes.ModuleName),
+		app.GetSubspace(distrtypes.ModuleName),
 		app.AccountKeeper,
 		app.BankKeeper,
 		&stakingKeeper,
 		authtypes.FeeCollectorName,
-		app.ModuleAccountAddrs(),
 	)
 	app.SlashingKeeper = slashingkeeper.NewKeeper(
 		appCodec,
 		keys[slashingtypes.StoreKey],
 		&stakingKeeper,
-		app.getSubspace(slashingtypes.ModuleName),
+		app.GetSubspace(slashingtypes.ModuleName),
+	)
+	app.TokenFactoryKeeper = tokenfactorykeeper.NewKeeper(
+		keys[tokenfactorytypes.StoreKey],
+		app.GetSubspace(tokenfactorytypes.ModuleName),
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.DistrKeeper,
 	)
 	app.CrisisKeeper = crisiskeeper.NewKeeper(
-		app.getSubspace(crisistypes.ModuleName),
+		app.GetSubspace(crisistypes.ModuleName),
 		invCheckPeriod,
 		app.BankKeeper,
 		authtypes.FeeCollectorName,
@@ -447,6 +452,7 @@ func NewTerpApp(
 		appCodec,
 		homePath,
 		app.BaseApp,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
 	// register the staking hooks
@@ -458,16 +464,18 @@ func NewTerpApp(
 	app.IBCKeeper = ibckeeper.NewKeeper(
 		appCodec,
 		keys[ibchost.StoreKey],
-		app.getSubspace(ibchost.ModuleName),
+		app.GetSubspace(ibchost.ModuleName),
 		app.StakingKeeper,
 		app.UpgradeKeeper,
 		scopedIBCKeeper,
 	)
 
-	// register the proposal types
-	govRouter := govtypes.NewRouter()
-	govRouter.
-		AddRoute(govtypes.RouterKey, govtypes.ProposalHandler).
+	// Register the proposal types
+	// Deprecated: Avoid adding new handlers, instead use the new proposal flow
+	// by granting the governance module the right to execute the message.
+	// See: https://github.com/cosmos/cosmos-sdk/blob/release/v0.46.x/x/gov/spec/01_concepts.md#proposal-messages
+	govRouter := govv1beta1.NewRouter()
+	govRouter.AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler).
 		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.ParamsKeeper)).
 		AddRoute(distrtypes.RouterKey, distr.NewCommunityPoolSpendProposalHandler(app.DistrKeeper)).
 		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(app.UpgradeKeeper)).
@@ -475,7 +483,7 @@ func NewTerpApp(
 
 	// IBC Fee Module keeper
 	app.IBCFeeKeeper = ibcfeekeeper.NewKeeper(
-		appCodec, keys[ibcfeetypes.StoreKey], app.getSubspace(ibcfeetypes.ModuleName),
+		appCodec, keys[ibcfeetypes.StoreKey],
 		app.IBCKeeper.ChannelKeeper, // may be replaced with IBC middleware
 		app.IBCKeeper.ChannelKeeper,
 		&app.IBCKeeper.PortKeeper, app.AccountKeeper, app.BankKeeper,
@@ -485,7 +493,7 @@ func NewTerpApp(
 	app.TransferKeeper = ibctransferkeeper.NewKeeper(
 		appCodec,
 		keys[ibctransfertypes.StoreKey],
-		app.getSubspace(ibctransfertypes.ModuleName),
+		app.GetSubspace(ibctransfertypes.ModuleName),
 		app.IBCFeeKeeper, // ISC4 Wrapper: fee IBC middleware
 		app.IBCKeeper.ChannelKeeper,
 		&app.IBCKeeper.PortKeeper,
@@ -494,20 +502,26 @@ func NewTerpApp(
 		scopedTransferKeeper,
 	)
 
-	app.ICAHostKeeper = icahostkeeper.NewKeeper(
-		appCodec,
-		keys[icahosttypes.StoreKey],
-		app.getSubspace(icahosttypes.SubModuleName),
+	// IBC Fee Module keeper
+	app.IBCFeeKeeper = ibcfeekeeper.NewKeeper(
+		appCodec, keys[ibcfeetypes.StoreKey],
+		app.IBCKeeper.ChannelKeeper, // may be replaced with IBC middleware
 		app.IBCKeeper.ChannelKeeper,
-		&app.IBCKeeper.PortKeeper,
-		app.AccountKeeper,
-		scopedICAHostKeeper,
-		app.MsgServiceRouter(),
+		&app.IBCKeeper.PortKeeper, app.AccountKeeper, app.BankKeeper,
 	)
+
+	// ICA Host keeper
+	app.ICAHostKeeper = icahostkeeper.NewKeeper(
+		appCodec, keys[icahosttypes.StoreKey], app.GetSubspace(icahosttypes.SubModuleName),
+		app.IBCFeeKeeper, // use ics29 fee as ics4Wrapper in middleware stack
+		app.IBCKeeper.ChannelKeeper, &app.IBCKeeper.PortKeeper,
+		app.AccountKeeper, scopedICAHostKeeper, app.MsgServiceRouter(),
+	)
+
 	app.ICAControllerKeeper = icacontrollerkeeper.NewKeeper(
 		appCodec,
 		keys[icacontrollertypes.StoreKey],
-		app.getSubspace(icacontrollertypes.SubModuleName),
+		app.GetSubspace(icacontrollertypes.SubModuleName),
 		app.IBCFeeKeeper, // use ics29 fee as ics4Wrapper in middleware stack
 		app.IBCKeeper.ChannelKeeper,
 		&app.IBCKeeper.PortKeeper,
@@ -515,7 +529,7 @@ func NewTerpApp(
 		app.MsgServiceRouter(),
 	)
 
-	// For terpd we use the demo controller from https://github.com/cosmos/interchain-accounts but see notes below
+	// For wasmd we use the demo controller from https://github.com/cosmos/interchain-accounts but see notes below
 	app.InterTxKeeper = intertxkeeper.NewKeeper(appCodec, keys[intertxtypes.StoreKey], app.ICAControllerKeeper, scopedInterTxKeeper)
 
 	// create evidence keeper with router
@@ -533,29 +547,15 @@ func NewTerpApp(
 		panic(fmt.Sprintf("error while reading wasm config: %s", err))
 	}
 
-	app.TerpKeeper = *terpmodulekeeper.NewKeeper(
-		appCodec,
-		keys[terpmoduletypes.StoreKey],
-		keys[terpmoduletypes.MemStoreKey],
-		app.getSubspace(terpmoduletypes.ModuleName),
-	)
-	terpModule := terpmodule.NewAppModule(appCodec, app.TerpKeeper, app.AccountKeeper, app.BankKeeper)
-
-	epochsKeeper := epochsmodulekeeper.NewKeeper(appCodec, keys[epochsmoduletypes.StoreKey])
-
-	app.EpochsKeeper = *epochsKeeper.SetHooks(
-		epochsmoduletypes.NewMultiEpochHooks(
-		),
-	)
-	epochsModule := epochsmodule.NewAppModule(appCodec, app.EpochsKeeper)
-
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
-	availableCapabilities := "iterator,staking,stargate,cosmwasm_1_1"
+
+	availableCapabilities := "iterator,staking,stargate,cosmwasm_1_1,token_factory,cosmwasm_1_2"
+	wasmOpts = append(bindings.RegisterCustomPlugins(&app.BankKeeper, &app.TokenFactoryKeeper), wasmOpts...)
 	app.WasmKeeper = wasm.NewKeeper(
 		appCodec,
 		keys[wasm.StoreKey],
-		app.getSubspace(wasm.ModuleName),
+		app.GetSubspace(wasm.ModuleName),
 		app.AccountKeeper,
 		app.BankKeeper,
 		app.StakingKeeper,
@@ -565,7 +565,6 @@ func NewTerpApp(
 		scopedWasmKeeper,
 		app.TransferKeeper,
 		app.MsgServiceRouter(),
-		app.GRPCQueryRouter(),
 		wasmDir,
 		wasmConfig,
 		availableCapabilities,
@@ -614,14 +613,27 @@ func NewTerpApp(
 		AddRoute(icahosttypes.SubModuleName, icaHostStack)
 	app.IBCKeeper.SetRouter(ibcRouter)
 
-	app.GovKeeper = govkeeper.NewKeeper(
+	govConfig := govtypes.DefaultConfig()
+	/*
+		Example of setting gov params:
+		govConfig.MaxMetadataLen = 10000
+	*/
+	govKeeper := govkeeper.NewKeeper(
 		appCodec,
 		keys[govtypes.StoreKey],
-		app.getSubspace(govtypes.ModuleName),
+		app.GetSubspace(govtypes.ModuleName),
 		app.AccountKeeper,
 		app.BankKeeper,
 		&stakingKeeper,
 		govRouter,
+		app.MsgServiceRouter(),
+		govConfig,
+	)
+
+	app.GovKeeper = *govKeeper.SetHooks(
+		govtypes.NewMultiGovHooks(
+		// register the governance hooks
+		),
 	)
 	/****  Module Options ****/
 
@@ -643,7 +655,7 @@ func NewTerpApp(
 		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper),
 		capability.NewAppModule(appCodec, *app.CapabilityKeeper),
 		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper),
-		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper),
+		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper, nil),
 		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
 		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
 		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
@@ -657,9 +669,8 @@ func NewTerpApp(
 		transfer.NewAppModule(app.TransferKeeper),
 		ibcfee.NewAppModule(app.IBCFeeKeeper),
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
+		tokenfactory.NewAppModule(app.TokenFactoryKeeper, app.AccountKeeper, app.BankKeeper),
 		intertx.NewAppModule(appCodec, app.InterTxKeeper),
-		terpModule,
-		epochsModule,
 		crisis.NewAppModule(&app.CrisisKeeper, skipGenesisInvariants), // always be last to make sure that it checks for all invariants and not only part of them
 	)
 
@@ -691,9 +702,7 @@ func NewTerpApp(
 		ibcfeetypes.ModuleName,
 		intertxtypes.ModuleName,
 		wasm.ModuleName,
-		terpmoduletypes.ModuleName,
-		epochsmoduletypes.ModuleName,
-
+		tokenfactorytypes.ModuleName,
 	)
 
 	app.mm.SetOrderEndBlockers(
@@ -720,9 +729,7 @@ func NewTerpApp(
 		ibcfeetypes.ModuleName,
 		intertxtypes.ModuleName,
 		wasm.ModuleName,
-		terpmoduletypes.ModuleName,
-		epochsmoduletypes.ModuleName,
-
+		tokenfactorytypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -757,9 +764,7 @@ func NewTerpApp(
 		intertxtypes.ModuleName,
 		// wasm after ibc transfer
 		wasm.ModuleName,
-		terpmoduletypes.ModuleName,
-		epochsmoduletypes.ModuleName,
-
+		tokenfactorytypes.ModuleName,
 	)
 
 	// Uncomment if you want to set a custom migration order here.
@@ -773,7 +778,6 @@ func NewTerpApp(
 
 	// create the simulation manager and define the order of the modules for deterministic simulations
 	//
-	app.RegisterUpgradeHandlers(app.configurator)
 	// NOTE: this is not required apps that don't use the simulator for fuzz testing
 	// transactions
 	app.sm = module.NewSimulationManager(
@@ -783,7 +787,7 @@ func NewTerpApp(
 		feegrantmodule.NewAppModule(appCodec, app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, app.interfaceRegistry),
 		authzmodule.NewAppModule(appCodec, app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper),
-		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper),
+		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper, nil),
 		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
 		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
 		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
@@ -792,9 +796,6 @@ func NewTerpApp(
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
 		ibc.NewAppModule(app.IBCKeeper),
 		transfer.NewAppModule(app.TransferKeeper),
-		terpModule,
-		epochsModule,
-
 	)
 
 	app.sm.RegisterStoreDecoders()
@@ -828,7 +829,8 @@ func NewTerpApp(
 
 	// must be before Loading version
 	// requires the snapshot store to be created and registered as a BaseAppOption
-	// see cmd/terpd/root.go: 206 - 214 approx
+	// see cmd/wasmd/root.go: 206 - 214 approx
+
 	if manager := app.SnapshotManager(); manager != nil {
 		err := manager.RegisterExtensions(
 			wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), &app.WasmKeeper),
@@ -838,17 +840,6 @@ func NewTerpApp(
 		}
 	}
 
-	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
-	if err != nil {
-		panic(err)
-	}
-
-	if upgradeInfo.Name == v040UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{}
-
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
-	}
 	app.ScopedIBCKeeper = scopedIBCKeeper
 	app.ScopedTransferKeeper = scopedTransferKeeper
 	app.ScopedWasmKeeper = scopedWasmKeeper
@@ -925,14 +916,14 @@ func (app *TerpApp) ModuleAccountAddrs() map[string]bool {
 //
 // NOTE: This is solely to be used for testing purposes as it may be desirable
 // for modules to register their own custom testing types.
-func (app *TerpApp) LegacyAmino() *codec.LegacyAmino { //nolint:staticcheck
+func (app *TerpApp) LegacyAmino() *codec.LegacyAmino {
 	return app.legacyAmino
 }
 
-// getSubspace returns a param subspace for a given module name.
+// GetSubspace returns a param subspace for a given module name.
 //
 // NOTE: This is solely to be used for testing purposes.
-func (app *TerpApp) getSubspace(moduleName string) paramstypes.Subspace {
+func (app *TerpApp) GetSubspace(moduleName string) paramstypes.Subspace {
 	subspace, _ := app.ParamsKeeper.GetSubspace(moduleName)
 	return subspace
 }
@@ -946,16 +937,11 @@ func (app *TerpApp) SimulationManager() *module.SimulationManager {
 // API server.
 func (app *TerpApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
 	clientCtx := apiSvr.ClientCtx
-	rpc.RegisterRoutes(clientCtx, apiSvr.Router)
-	// Register legacy tx routes.
-	authrest.RegisterTxRoutes(clientCtx, apiSvr.Router)
 	// Register new tx routes from grpc-gateway.
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 	// Register new tendermint queries routes from grpc-gateway.
 	tmservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// Register legacy and grpc-gateway routes for all modules.
-	ModuleBasics.RegisterRESTRoutes(clientCtx, apiSvr.Router)
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// register swagger API from root so that other applications can override easily
@@ -971,7 +957,12 @@ func (app *TerpApp) RegisterTxService(clientCtx client.Context) {
 
 // RegisterTendermintService implements the Application.RegisterTendermintService method.
 func (app *TerpApp) RegisterTendermintService(clientCtx client.Context) {
-	tmservice.RegisterTendermintService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.interfaceRegistry)
+	tmservice.RegisterTendermintService(
+		clientCtx,
+		app.BaseApp.GRPCQueryRouter(),
+		app.interfaceRegistry,
+		app.Query,
+	)
 }
 
 func (app *TerpApp) AppCodec() codec.Codec {
@@ -999,7 +990,7 @@ func GetMaccPerms() map[string][]string {
 }
 
 // initParamsKeeper init params keeper and its subspaces
-func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino, key, tkey sdk.StoreKey) paramskeeper.Keeper {
+func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino, key, tkey storetypes.StoreKey) paramskeeper.Keeper {
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
 
 	paramsKeeper.Subspace(authtypes.ModuleName)
@@ -1008,23 +999,14 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(minttypes.ModuleName)
 	paramsKeeper.Subspace(distrtypes.ModuleName)
 	paramsKeeper.Subspace(slashingtypes.ModuleName)
-	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypes.ParamKeyTable())
+	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govv1.ParamKeyTable())
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
-	paramsKeeper.Subspace(terpmoduletypes.ModuleName)
-	paramsKeeper.Subspace(epochsmoduletypes.ModuleName)
+	paramsKeeper.Subspace(tokenfactorytypes.ModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
 	paramsKeeper.Subspace(wasm.ModuleName)
 
 	return paramsKeeper
-}
-
-// RegisterUpgradeHandlers returns upgrade handlers
-func (app *TerpApp) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler(v040UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-
-		return app.mm.RunMigrations(ctx, cfg, vm)
-	})
 }

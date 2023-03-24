@@ -74,7 +74,7 @@ func TestConstructorOptions(t *testing.T) {
 		"api costs": {
 			srcOpt: WithAPICosts(1, 2),
 			verify: func(t *testing.T, k Keeper) {
-				t.Cleanup(setApiDefaults)
+				t.Cleanup(setAPIDefaults)
 				assert.Equal(t, uint64(1), costHumanize)
 				assert.Equal(t, uint64(2), costCanonical)
 			},
@@ -104,13 +104,13 @@ func TestConstructorOptions(t *testing.T) {
 	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
-			k := NewKeeper(nil, nil, paramtypes.NewSubspace(nil, nil, nil, nil, ""), authkeeper.AccountKeeper{}, &bankkeeper.BaseKeeper{}, stakingkeeper.Keeper{}, distributionkeeper.Keeper{}, nil, nil, nil, nil, nil, nil, "tempDir", types.DefaultWasmConfig(), AvailableCapabilities, spec.srcOpt)
+			k := NewKeeper(nil, nil, paramtypes.NewSubspace(nil, nil, nil, nil, ""), authkeeper.AccountKeeper{}, &bankkeeper.BaseKeeper{}, stakingkeeper.Keeper{}, distributionkeeper.Keeper{}, nil, nil, nil, nil, nil, "tempDir", types.DefaultWasmConfig(), AvailableCapabilities, spec.srcOpt)
 			spec.verify(t, k)
 		})
 	}
 }
 
-func setApiDefaults() {
+func setAPIDefaults() {
 	costHumanize = DefaultGasCostHumanAddress * DefaultGasMultiplier
 	costCanonical = DefaultGasCostCanonicalAddress * DefaultGasMultiplier
 }

@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	"github.com/terpnetwork/terp-core/x/wasm/keeper"
@@ -50,11 +49,11 @@ func setupTest(t *testing.T) testData {
 	return data
 }
 
-func keyPubAddr() (crypto.PrivKey, crypto.PubKey, sdk.AccAddress) {
+func keyPubAddr() sdk.AccAddress {
 	key := ed25519.GenPrivKey()
 	pub := key.PubKey()
 	addr := sdk.AccAddress(pub.Address())
-	return key, pub, addr
+	return addr
 }
 
 func mustLoad(path string) []byte {
@@ -66,11 +65,11 @@ func mustLoad(path string) []byte {
 }
 
 var (
-	_, _, addrAcc1 = keyPubAddr()
-	addr1          = addrAcc1.String()
-	testContract   = mustLoad("./keeper/testdata/hackatom.wasm")
-	maskContract   = testdata.ReflectContractWasm()
-	oldContract    = mustLoad("./testdata/escrow_0.7.wasm")
+	addrAcc1     = keyPubAddr()
+	addr1        = addrAcc1.String()
+	testContract = mustLoad("./keeper/testdata/hackatom.wasm")
+	maskContract = testdata.ReflectContractWasm()
+	oldContract  = mustLoad("./testdata/escrow_0.7.wasm")
 )
 
 func TestHandleCreate(t *testing.T) {
@@ -117,8 +116,8 @@ func TestHandleCreate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			data := setupTest(t)
 
-			h := data.module.Route().Handler()
-			q := data.module.LegacyQuerierHandler(nil)
+			h := data.module.Route().Handler()         //nolint:staticcheck // we want to use this deprecated handler
+			q := data.module.LegacyQuerierHandler(nil) //nolint:staticcheck // we want to use this deprecated handler
 
 			res, err := h(data.ctx, tc.msg)
 			if !tc.isValid {
@@ -148,8 +147,8 @@ func TestHandleInstantiate(t *testing.T) {
 	data := setupTest(t)
 	creator := data.faucet.NewFundedRandomAccount(data.ctx, sdk.NewInt64Coin("denom", 100000))
 
-	h := data.module.Route().Handler()
-	q := data.module.LegacyQuerierHandler(nil)
+	h := data.module.Route().Handler()         //nolint:staticcheck // we want to use this deprecated handler
+	q := data.module.LegacyQuerierHandler(nil) //nolint:staticcheck // we want to use this deprecated handler
 
 	msg := &MsgStoreCode{
 		Sender:       creator.String(),
@@ -159,8 +158,8 @@ func TestHandleInstantiate(t *testing.T) {
 	require.NoError(t, err)
 	assertStoreCodeResponse(t, res.Data, 1)
 
-	_, _, bob := keyPubAddr()
-	_, _, fred := keyPubAddr()
+	bob := keyPubAddr()
+	fred := keyPubAddr()
 
 	initMsg := initMsg{
 		Verifier:    fred,
@@ -211,8 +210,8 @@ func TestHandleExecute(t *testing.T) {
 	creator := data.faucet.NewFundedRandomAccount(data.ctx, deposit.Add(deposit...)...)
 	fred := data.faucet.NewFundedRandomAccount(data.ctx, topUp...)
 
-	h := data.module.Route().Handler()
-	q := data.module.LegacyQuerierHandler(nil)
+	h := data.module.Route().Handler()         //nolint:staticcheck // we want to use this deprecated handler
+	q := data.module.LegacyQuerierHandler(nil) //nolint:staticcheck // we want to use this deprecated handler
 
 	msg := &MsgStoreCode{
 		Sender:       creator.String(),
@@ -222,7 +221,7 @@ func TestHandleExecute(t *testing.T) {
 	require.NoError(t, err)
 	assertStoreCodeResponse(t, res.Data, 1)
 
-	_, _, bob := keyPubAddr()
+	bob := keyPubAddr()
 	initMsg := initMsg{
 		Verifier:    fred,
 		Beneficiary: bob,
@@ -348,16 +347,16 @@ func TestHandleExecuteEscrow(t *testing.T) {
 	data.faucet.Fund(data.ctx, creator, sdk.NewInt64Coin("denom", 100000))
 	fred := data.faucet.NewFundedRandomAccount(data.ctx, topUp...)
 
-	h := data.module.Route().Handler()
+	h := data.module.Route().Handler() //nolint:staticcheck // we want to use this deprecated handler
 
 	msg := &MsgStoreCode{
 		Sender:       creator.String(),
 		WASMByteCode: testContract,
 	}
-	res, err := h(data.ctx, msg)
+	_, err := h(data.ctx, msg)
 	require.NoError(t, err)
 
-	_, _, bob := keyPubAddr()
+	bob := keyPubAddr()
 	initMsg := map[string]interface{}{
 		"verifier":    fred.String(),
 		"beneficiary": bob.String(),
@@ -372,7 +371,7 @@ func TestHandleExecuteEscrow(t *testing.T) {
 		Funds:  deposit,
 		Label:  "testing",
 	}
-	res, err = h(data.ctx, &initCmd)
+	res, err := h(data.ctx, &initCmd)
 	require.NoError(t, err)
 	contractBech32Addr := parseInitResponse(t, res.Data)
 	require.Equal(t, "cosmos14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s4hmalr", contractBech32Addr)
@@ -514,7 +513,7 @@ func assertCodeList(t *testing.T, q sdk.Querier, ctx sdk.Context, expectedNum in
 	assert.Equal(t, expectedNum, len(res))
 }
 
-func assertCodeBytes(t *testing.T, q sdk.Querier, ctx sdk.Context, codeID uint64, expectedBytes []byte) {
+func assertCodeBytes(t *testing.T, q sdk.Querier, ctx sdk.Context, codeID uint64, expectedBytes []byte) { //nolint:unparam // codeID always receives 1
 	path := []string{QueryGetCode, fmt.Sprintf("%d", codeID)}
 	bz, sdkerr := q(ctx, path, abci.RequestQuery{})
 	require.NoError(t, sdkerr)
@@ -534,7 +533,7 @@ func assertCodeBytes(t *testing.T, q sdk.Querier, ctx sdk.Context, codeID uint64
 	assert.EqualValues(t, codeID, res["id"])
 }
 
-func assertContractList(t *testing.T, q sdk.Querier, ctx sdk.Context, codeID uint64, expContractAddrs []string) {
+func assertContractList(t *testing.T, q sdk.Querier, ctx sdk.Context, codeID uint64, expContractAddrs []string) { //nolint:unparam // codeID always receives 1
 	bz, sdkerr := q(ctx, []string{QueryListContractByCode, fmt.Sprintf("%d", codeID)}, abci.RequestQuery{})
 	require.NoError(t, sdkerr)
 
@@ -548,9 +547,7 @@ func assertContractList(t *testing.T, q sdk.Querier, ctx sdk.Context, codeID uin
 	require.NoError(t, err)
 
 	hasAddrs := make([]string, len(res))
-	for i, r := range res {
-		hasAddrs[i] = r
-	}
+	copy(hasAddrs, res)
 
 	assert.Equal(t, expContractAddrs, hasAddrs)
 }
@@ -572,7 +569,7 @@ func assertContractState(t *testing.T, q sdk.Querier, ctx sdk.Context, contractB
 	assert.Equal(t, expectedBz, res[0].Value)
 }
 
-func assertContractInfo(t *testing.T, q sdk.Querier, ctx sdk.Context, contractBech32Addr string, codeID uint64, creator sdk.AccAddress) {
+func assertContractInfo(t *testing.T, q sdk.Querier, ctx sdk.Context, contractBech32Addr string, codeID uint64, creator sdk.AccAddress) { //nolint:unparam // codeID always receives 1
 	t.Helper()
 	path := []string{QueryGetContract, contractBech32Addr}
 	bz, sdkerr := q(ctx, path, abci.RequestQuery{})

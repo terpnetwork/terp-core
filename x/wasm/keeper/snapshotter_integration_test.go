@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,7 +21,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/terpnetwork/terp-core/app"
-	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 )
 
 func TestSnapshotter(t *testing.T) {
