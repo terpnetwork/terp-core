@@ -1,5 +1,5 @@
-# docker build . -t cosmwasm/wasmd:latest
-# docker run --rm -it cosmwasm/wasmd:latest /bin/sh
+# docker build . -t terpnetwork/terpd:latest
+# docker run --rm -it terpnetwork/terpd:latest /bin/sh
 FROM golang:1.19-alpine3.15 AS go-builder
 ARG arch=x86_64
 
@@ -26,12 +26,12 @@ RUN cp /lib/libwasmvm_muslc.${arch}.a /lib/libwasmvm_muslc.a
 # force it to use static lib (from above) not standard libgo_cosmwasm.so file
 RUN LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build
 RUN echo "Ensuring binary is statically linked ..." \
-  && (file /code/build/wasmd | grep "statically linked")
+  && (file /code/build/terpd | grep "statically linked")
 
 # --------------------------------------------------------
 FROM alpine:3.15
 
-COPY --from=go-builder /code/build/wasmd /usr/bin/wasmd
+COPY --from=go-builder /code/build/terpd /usr/bin/terpd
 
 COPY docker/* /opt/
 RUN chmod +x /opt/*.sh
@@ -45,4 +45,4 @@ EXPOSE 26656
 # tendermint rpc
 EXPOSE 26657
 
-CMD ["/usr/bin/wasmd", "version"]
+CMD ["/usr/bin/terpd", "version"]

@@ -5,8 +5,7 @@
 
 This repository hosts `Terp-Core`, the Daemon binary logic of [Terp-Network](https://terp.network).
 
-This code was forked from the `terpnetwork/terp-core` repository as a basis and then we added `x/terp`, `x/epoch`, & `x/claims`.
-**Note**: Requires [Go 1.19+](https://golang.org/dl/)
+This code was forked from the `notional-labs/wasmd` repository as a basis for main-network development.
 
 For critical security issues & disclosure, see [SECURITY.md](SECURITY.md).
 ## Compatibility with CosmWasm contracts
@@ -17,32 +16,11 @@ A VM can support one or more contract-VM interface versions. The interface
 version is communicated by the contract via a Wasm export. This is the current
 compatibility list:
 
-| wasmd | wasmvm       | cosmwasm-vm | cosmwasm-std |
+| terpd | wasmvm       | cosmwasm-vm | cosmwasm-std |
 |-------|--------------|-------------|--------------|
-| 0.31  | v1.2.0       |             | 1.0-1.2      |
-| 0.30  | v1.1.0       |             | 1.0-1.1      |
-| 0.29  | v1.1.0       |             | 1.0-1.1      |
-| 0.28  | v1.0.0       |             | 1.0-1.1      |
-| 0.27  | v1.0.0       |             | 1.0          |
-| 0.26  | 1.0.0-beta10 |             | 1.0          |
-| 0.25  | 1.0.0-beta10 |             | 1.0          |
-| 0.24  | 1.0.0-beta7  | 1.0.0-beta6 | 1.0          |
-| 0.23  |              | 1.0.0-beta5 | 1.0          |
-| 0.22  |              | 1.0.0-beta5 | 1.0          |
-| 0.21  |              | 1.0.0-beta2 | 1.0          |
-| 0.20  |              | 1.0.0-beta  | 1.0          |
-| 0.19  |              | 0.16        | 0.16         |
-| 0.18  |              | 0.16        | 0.16         |
-| 0.17  |              | 0.14        | 0.14         |
-| 0.16  |              | 0.14        | 0.14         |
-| 0.15  |              | 0.13        | 0.11-0.13    |
-| 0.14  |              | 0.13        | 0.11-0.13    |
-| 0.13  |              | 0.12        | 0.11-0.13    |
-| 0.12  |              | 0.12        | 0.11-0.13    |
-| 0.11  |              | 0.11        | 0.11-0.13    |
-| 0.10  |              | 0.10        | 0.10         |
-| 0.9   |              | 0.9         | 0.9          |
-| 0.8   |              | 0.8         | 0.8          |
+| v1.0  | v1.2.0       |             | 1.0-1.2      |
+| v0.4.0| v1.2.0       |             | 1.0-1.1      |
+
 
 Note: `cosmwasm_std v1.0` means it supports contracts compiled by any `v1.0.0-betaX` or `1.0.x`.
 It will also run contracts compiled with 1.x assuming they don't opt into any newer features.
@@ -72,17 +50,9 @@ binary for `muslc`. (Or just use this Dockerfile for your production setup).
 ## Stability
 
 **This is beta software** It is run in some production systems, but we cannot yet provide a stability guarantee
-and have not yet gone through and audit of this codebase. Note that the
-[CosmWasm smart contract framework](https://github.com/CosmWasm/cosmwasm) used by `wasmd` is in a 1.0 release candidate
-as of March 2022, with stability guarantee and addressing audit results.
-
-As of `wasmd` 0.22, we will work to provide upgrade paths *for this module* for projects running a non-forked
-version on their live networks. If there are Cosmos SDK upgrades, you will have to run their migration code
-for their modules. If we change the internal storage of `x/wasm` we will provide a function to migrate state that
-can be called by an `x/upgrade` handler.
+and have not yet gone through and audit of this codebase. 
 
 The APIs are pretty stable, but we cannot guarantee their stability until we reach v1.0.
-However, we will provide a way for you to hard-fork your way to v1.0.
 
 Thank you to all projects who have run this code in your mainnets and testnets and
 given feedback to improve stability.
@@ -94,7 +64,7 @@ We use standard cosmos-sdk encoding (amino) for all sdk Messages. However, the m
 as well as the internal state is encoded using JSON. Cosmwasm allows arbitrary bytes with the contract itself 
 responsible for decoding. For better UX, we often use `json.RawMessage` to contain these bytes, which enforces that it is
 valid json, but also give a much more readable interface.  If you want to use another encoding in the contracts, that is
-a relatively minor change to wasmd but would currently require a fork. Please open an issue if this is important for 
+a relatively minor change to terpd but would currently require a fork. Please open an issue if this is important for 
 your use case.
 
 ## Quick Start
@@ -110,7 +80,7 @@ The protobuf files for this project are published automatically to the [buf repo
 
 | terpd version | buf tag                                                                                                                                     |
 |---------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| 1.0.x        | []() | 
+| 1.0.0        | []() | 
 
 Generate protobuf
 ```shell script
@@ -141,7 +111,7 @@ docker run --rm -it \
     --mount type=volume,source=terpd_data,target=/root \
     terpnetwork/terp-core:latest /opt/setup_terpd.sh cosmos1pkptre7fdkl6gfrzlesjjvhxhlc3r4gmmk8rs6
 
-# This will start both wasmd and rest-server, both are logged
+# This will start both terpd and rest-server, both are logged
 docker run --rm -it -p 26657:26657 -p 26656:26656 -p 1317:1317 \
     --mount type=volume,source=terpd_data,target=/root \
     terpnetwork/terp-core:latest /opt/run_terpd.sh
@@ -184,19 +154,19 @@ to the configuration.
 
 Available flags:
  
-* `-X github.com/terpnetwork/terp-core/app.NodeDir=.corald` - set the config/data directory for the node (default `~/.terp`)
-* `-X github.com/terpnetwork/terp-core/app.Bech32Prefix=coral` - set the bech32 prefix for all accounts (default `wasm`)
+* `-X github.com/terpnetwork/terp-core/app.NodeDir=.terp` - set the config/data directory for the node (default `~/.terp`)
+* `-X github.com/terpnetwork/terp-core/app.Bech32Prefix=terp` - set the bech32 prefix for all accounts (default `wasm`)
 * `-X github.com/terpnetwork/terp-core/app.ProposalsEnabled=true` - enable all x/wasm governance proposals (default `false`)
 * `-X github.com/terpnetwork/terp-core/app.EnableSpecificProposals=MigrateContract,UpdateAdmin,ClearAdmin` - 
     enable a subset of the x/wasm governance proposal types (overrides `ProposalsEnabled`)
 
 Examples:
 
-* [`wasmd`](./Makefile#L50-L55) is a generic, permissionless version using the `cosmos` bech32 prefix
+* [`terpd`](./Makefile#L50-L55) is a generic, permissionless version using the `terp` bech32 prefix
 
 ## Compile Time Parameters
 
-Besides those above variables (meant for custom wasmd compilation), there are a few more variables which
+Besides those above variables (meant for custom terp compilation), there are a few more variables which
 we allow blockchains to customize, but at compile time. If you build your own chain and import `x/wasm`,
 you can adjust a few items via module parameters, but a few others did not fit in that, as they need to be
 used by stateless `ValidateBasic()`. Thus, we made them public `var` and these can be overridden in the `app.go`
