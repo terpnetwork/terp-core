@@ -1,4 +1,4 @@
 #!/bin/sh
 
-./setup_wasmd.sh "$@"
-./run_wasmd.sh
+./setup_terpd.sh "$@"
+./run_terpd.sh
