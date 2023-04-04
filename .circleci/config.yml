@@ -160,11 +160,11 @@ jobs:
           version: 20.10.11
       - run:
           name: Build Docker artifact
-          command: docker build --pull -t "cosmwasm/wasmd:${CIRCLE_SHA1}" .
+          command: docker build --pull -t "terpnetwork/terp-core:${CIRCLE_SHA1}" .
       - run:
           name: Ensure libwasmvm version is correct
           command: |
-            IN_DOCKER=$(docker run --rm "cosmwasm/wasmd:${CIRCLE_SHA1}" /usr/bin/wasmd query wasm libwasmvm-version)
+            IN_DOCKER=$(docker run --rm "terpnetwork/terp-core:${CIRCLE_SHA1}" /usr/bin/terpd query wasm libwasmvm-version)
             echo "Runtime libwasmvm-version in docker: $IN_DOCKER"
             IN_GOMOD=$(go list -m github.com/CosmWasm/wasmvm | cut -d" " -f2 | cut -d"v" -f2)
             echo "wasmvm version in go.mod: $IN_GOMOD"
@@ -179,9 +179,9 @@ jobs:
             - run:
                 name: Push application Docker image to docker hub
                 command: |
-                  docker tag "cosmwasm/wasmd:${CIRCLE_SHA1}" cosmwasm/wasmd:latest
+                  docker tag "terpnetwork/terp-core:${CIRCLE_SHA1}" terpnetwork/terp-core:latest
                   docker login --password-stdin -u "$DOCKER_USER" \<<<"$DOCKER_PASS"
-                  docker push cosmwasm/wasmd:latest
+                  docker push terpnetwork/terp-core:latest
                   docker logout
 
   docker-tagged:
@@ -195,12 +195,12 @@ jobs:
           version: 20.10.11
       - run:
           name: Build Docker artifact
-          command: docker build --pull -t "cosmwasm/wasmd:${CIRCLE_TAG}" .
+          command: docker build --pull -t "terpnetwork/terp-core:${CIRCLE_TAG}" .
       - run:
           name: Push application Docker image to docker hub
           command: |
             docker login --password-stdin -u "$DOCKER_USER" \<<<"$DOCKER_PASS"
-            docker push "cosmwasm/wasmd:${CIRCLE_TAG}"
+            docker push "terpnetwork/terp-core:${CIRCLE_TAG}"
             docker logout
 
 workflows:

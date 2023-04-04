@@ -1,10 +1,10 @@
 accounts:
-  - name: alice
+  - name: alex
     coins: ["20000token", "200000000stake"]
   - name: bob
     coins: ["10000token", "100000000stake"]
 validator:
-  name: alice
+  name: alex
   staked: "100000000stake"
 client:
   openapi:
@@ -13,4 +13,4 @@ faucet:
   name: bob
   coins: ["5token", "100000stake"]
 build:
-  main: "cmd/wasmd"
+  main: "cmd/terpd"
