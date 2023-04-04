@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
+	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 )
 
 func TestBuildContractAddress(t *testing.T) {

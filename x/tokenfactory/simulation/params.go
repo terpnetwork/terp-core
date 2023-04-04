@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
+	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
 )
 
 func ParamChanges(_ *rand.Rand) []simtypes.ParamChange {

@@ -120,8 +120,7 @@ import (
 	wasmclient "github.com/terpnetwork/terp-core/x/wasm/client"
 	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
 
-	//TERP Module
-
+	// TERP Module
 
 	// token factory
 	"github.com/terpnetwork/terp-core/x/tokenfactory"
@@ -134,9 +133,9 @@ import (
 )
 
 const (
-	appName            = "TerpApp"
-	v420UpgradeName = "v420"
-	MockFeePort string = ibcmock.ModuleName + ibcfeetypes.ModuleName
+	appName                = "TerpApp"
+	v420UpgradeName        = "v420"
+	MockFeePort     string = ibcmock.ModuleName + ibcfeetypes.ModuleName
 )
 
 // We pull these out so we can set them with LDFLAGS in the Makefile

@@ -29,8 +29,8 @@ import (
 
 	authzcodec "github.com/terpnetwork/terp-core/x/tokenfactory/types/authzcodec"
 
-	"github.com/terpnetwork/terp-core/app"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	"github.com/terpnetwork/terp-core/app"
 )
 
 type KeeperTestHelper struct {

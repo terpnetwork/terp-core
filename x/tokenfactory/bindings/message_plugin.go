@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 
 	errorsmod "cosmossdk.io/errors"
-	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
 
 	bindingstypes "github.com/terpnetwork/terp-core/x/tokenfactory/bindings/types"
 	tokenfactorykeeper "github.com/terpnetwork/terp-core/x/tokenfactory/keeper"

@@ -15,12 +15,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/terpnetwork/terp-core/x/wasm/keeper/wasmtesting"
-	"github.com/terpnetwork/terp-core/x/wasm/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	"github.com/terpnetwork/terp-core/x/wasm/keeper/wasmtesting"
+	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
 func TestStoreCodeProposal(t *testing.T) {

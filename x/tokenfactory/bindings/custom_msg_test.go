@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 
 	"github.com/terpnetwork/terp-core/app"
 	bindings "github.com/terpnetwork/terp-core/x/tokenfactory/bindings/types"

@@ -23,8 +23,8 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	simulation "github.com/terpnetwork/terp-core/x/tokenfactory/simulation"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
+	simulation "github.com/terpnetwork/terp-core/x/tokenfactory/simulation"
 
 	"github.com/terpnetwork/terp-core/x/tokenfactory/client/cli"
 	"github.com/terpnetwork/terp-core/x/tokenfactory/keeper"

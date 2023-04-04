@@ -13,9 +13,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/terpnetwork/terp-core/app"
 	"github.com/terpnetwork/terp-core/x/wasm/keeper"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
 func CreateTestInput() (*app.TerpApp, sdk.Context) {

@@ -3,9 +3,9 @@ package simulation
 import (
 	"math/rand"
 
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
 )
 
 func RandDenomCreationFeeParam(r *rand.Rand) sdk.Coins {
