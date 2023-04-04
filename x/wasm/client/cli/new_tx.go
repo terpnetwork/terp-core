@@ -3,12 +3,12 @@ package cli
 import (
 	"strconv"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	errorsmod "cosmossdk.io/errors"
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
@@ -25,7 +25,7 @@ func MigrateContractCmd() *cobra.Command {
 				return err
 			}
 
-			msg, err := parseMigrateContractArgs(args, clientCtx)
+			msg, err := parseMigrateContractArgs(args, clientCtx.GetFromAddress().String())
 			if err != nil {
 				return err
 			}
@@ -34,12 +34,13 @@ func MigrateContractCmd() *cobra.Command {
 			}
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
 		},
+		SilenceUsage: true,
 	}
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
 
-func parseMigrateContractArgs(args []string, cliCtx client.Context) (types.MsgMigrateContract, error) {
+func parseMigrateContractArgs(args []string, sender string) (types.MsgMigrateContract, error) {
 	// get the id of the code to instantiate
 	codeID, err := strconv.ParseUint(args[1], 10, 64)
 	if err != nil {
@@ -49,7 +50,7 @@ func parseMigrateContractArgs(args []string, cliCtx client.Context) (types.MsgMi
 	migrateMsg := args[2]
 
 	msg := types.MsgMigrateContract{
-		Sender:   cliCtx.GetFromAddress().String(),
+		Sender:   sender,
 		Contract: args[0],
 		CodeID:   codeID,
 		Msg:      []byte(migrateMsg),
@@ -70,21 +71,21 @@ func UpdateContractAdminCmd() *cobra.Command {
 				return err
 			}
 
-			msg := parseUpdateContractAdminArgs(args, clientCtx)
-
+			msg := parseUpdateContractAdminArgs(args, clientCtx.GetFromAddress().String())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
 		},
+		SilenceUsage: true,
 	}
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
 
-func parseUpdateContractAdminArgs(args []string, cliCtx client.Context) types.MsgUpdateAdmin {
+func parseUpdateContractAdminArgs(args []string, sender string) types.MsgUpdateAdmin {
 	msg := types.MsgUpdateAdmin{
-		Sender:   cliCtx.GetFromAddress().String(),
+		Sender:   sender,
 		Contract: args[0],
 		NewAdmin: args[1],
 	}
@@ -113,6 +114,7 @@ func ClearContractAdminCmd() *cobra.Command {
 			}
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
 		},
+		SilenceUsage: true,
 	}
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd

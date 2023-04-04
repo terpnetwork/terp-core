@@ -1,15 +1,15 @@
 package keeper
 
 import (
-	"bytes"
 	"fmt"
 	"sort"
+	"strings"
 
 	errorsmod "cosmossdk.io/errors"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
@@ -116,7 +116,7 @@ func (d MessageDispatcher) DispatchSubmessages(ctx sdk.Context, contractAddr sdk
 				for _, e := range filteredEvents {
 					attributes := e.Attributes
 					sort.SliceStable(attributes, func(i, j int) bool {
-						return bytes.Compare(attributes[i].Key, attributes[j].Key) < 0
+						return strings.Compare(attributes[i].Key, attributes[j].Key) < 0
 					})
 				}
 			}
@@ -215,8 +215,8 @@ func sdkAttributesToWasmVMAttributes(attrs []abci.EventAttribute) []wasmvmtypes.
 	res := make([]wasmvmtypes.EventAttribute, len(attrs))
 	for i, attr := range attrs {
 		res[i] = wasmvmtypes.EventAttribute{
-			Key:   string(attr.Key),
-			Value: string(attr.Value),
+			Key:   attr.Key,
+			Value: attr.Value,
 		}
 	}
 	return res

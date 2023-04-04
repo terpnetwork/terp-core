@@ -6,11 +6,11 @@ Contributing to this repo can mean many things, such as participating in
 discussion or proposing code changes. To ensure a smooth workflow for all
 contributors, the general procedure for contributing has been established:
 
-1. Start by browsing [new issues](https://github.com/CosmWasm/wasmd/issues).
-   * Looking for a good place to start contributing? How about checking out some [good first issues](https://github.com/CosmWasm/wasmd/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) or [bugs](https://github.com/CosmWasm/wasmd/issues?q=is%3Aopen+is%3Aissue+label%3Abug)?
+1. Start by browsing [new issues](https://github.com/terpnetwork/terp-core/issues).
+   * Looking for a good place to start contributing? How about checking out some [good first issues](https://github.com/terpnetwork/terp-core/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) or [bugs](https://github.com/terpnetwork/terp-core/issues?q=is%3Aopen+is%3Aissue+label%3Abug)?
 2. Determine whether a GitHub issue or discussion is more appropriate for your needs:
-   1. If the issue you want addressed is a specific proposal or a bug, then open a [new issue](https://github.com/CosmWasm/wasmd/issues/new).
-   2. Review existing [issues](https://github.com/CosmWasm/wasmd/issues) to find an issue you'd like to help with.
+   1. If the issue you want addressed is a specific proposal or a bug, then open a [new issue](https://github.com/terpnetwork/terp-core/issues/new).
+   2. Review existing [issues](https://github.com/terpnetwork/terp-core/issues) to find an issue you'd like to help with.
 3. Participate in thoughtful discussion on that issue.
 4. If you would like to contribute:
    1. Ensure that the proposal has been accepted.

@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
+
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	channeltypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
-	host "github.com/cosmos/ibc-go/v6/modules/core/24-host"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
 
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
@@ -164,24 +165,17 @@ func (h IBCRawPacketHandler) DispatchMsg(ctx sdk.Context, _ sdk.AccAddress, cont
 		return nil, nil, errorsmod.Wrapf(types.ErrEmpty, "ibc channel")
 	}
 
-	_, found := h.channelKeeper.GetNextSequenceSend(ctx, contractIBCPortID, contractIBCChannelID)
-	if !found {
-		return nil, nil, errorsmod.Wrapf(channeltypes.ErrSequenceSendNotFound,
-			"source port: %s, source channel: %s", contractIBCPortID, contractIBCChannelID,
-		)
-	}
-
 	channelCap, ok := h.capabilityKeeper.GetCapability(ctx, host.ChannelCapabilityPath(contractIBCPortID, contractIBCChannelID))
 	if !ok {
 		return nil, nil, errorsmod.Wrap(channeltypes.ErrChannelCapabilityNotFound, "module does not own channel capability")
 	}
-
-	sequence, err := h.channelKeeper.SendPacket(ctx, channelCap, contractIBCPortID, contractIBCChannelID, ConvertWasmIBCTimeoutHeightToCosmosHeight(msg.IBC.SendPacket.Timeout.Block), msg.IBC.SendPacket.Timeout.Timestamp, msg.IBC.SendPacket.Data)
+	seq, err := h.channelKeeper.SendPacket(ctx, channelCap, contractIBCPortID, contractIBCChannelID, ConvertWasmIBCTimeoutHeightToCosmosHeight(msg.IBC.SendPacket.Timeout.Block), msg.IBC.SendPacket.Timeout.Timestamp, msg.IBC.SendPacket.Data)
 	if err != nil {
-		return nil, nil, errorsmod.Wrap(err, "failed to send packet")
+		return nil, nil, errorsmod.Wrap(err, "channel")
 	}
+	moduleLogger(ctx).Debug("ibc packet set", "seq", seq)
 
-	resp := &types.MsgIBCSendResponse{Sequence: sequence}
+	resp := &types.MsgIBCSendResponse{Sequence: seq}
 	val, err := resp.Marshal()
 	if err != nil {
 		return nil, nil, errorsmod.Wrap(err, "failed to marshal IBC send response")

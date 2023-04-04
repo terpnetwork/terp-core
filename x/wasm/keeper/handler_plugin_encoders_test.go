@@ -3,22 +3,19 @@ package keeper
 import (
 	"testing"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
-
-	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v6/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
-
-	"github.com/golang/protobuf/proto" //nolint:staticcheck // SA1019: proto is deprecated
-	"github.com/stretchr/testify/assert"
-
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	v1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	"github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/cosmos/gogoproto/proto"
+	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/terpnetwork/terp-core/x/wasm/keeper/wasmtesting"
@@ -53,7 +50,7 @@ func TestEncoding(t *testing.T) {
 	content, err := codectypes.NewAnyWithValue(types.StoreCodeProposalFixture())
 	require.NoError(t, err)
 
-	proposalMsg := &govtypes.MsgSubmitProposal{
+	proposalMsg := &v1beta1.MsgSubmitProposal{
 		Proposer:       addr1.String(),
 		InitialDeposit: sdk.NewCoins(sdk.NewInt64Coin("uatom", 12345)),
 		Content:        content,
@@ -585,10 +582,10 @@ func TestEncodeGovMsg(t *testing.T) {
 				},
 			},
 			output: []sdk.Msg{
-				&govv1.MsgVote{
+				&v1.MsgVote{
 					ProposalId: 1,
 					Voter:      myAddr.String(),
-					Option:     govv1.OptionYes,
+					Option:     v1.OptionYes,
 				},
 			},
 		},
@@ -600,10 +597,10 @@ func TestEncodeGovMsg(t *testing.T) {
 				},
 			},
 			output: []sdk.Msg{
-				&govv1.MsgVote{
+				&v1.MsgVote{
 					ProposalId: 1,
 					Voter:      myAddr.String(),
-					Option:     govv1.OptionNo,
+					Option:     v1.OptionNo,
 				},
 			},
 		},
@@ -615,10 +612,10 @@ func TestEncodeGovMsg(t *testing.T) {
 				},
 			},
 			output: []sdk.Msg{
-				&govv1.MsgVote{
+				&v1.MsgVote{
 					ProposalId: 10,
 					Voter:      myAddr.String(),
-					Option:     govv1.OptionAbstain,
+					Option:     v1.OptionAbstain,
 				},
 			},
 		},
@@ -630,10 +627,10 @@ func TestEncodeGovMsg(t *testing.T) {
 				},
 			},
 			output: []sdk.Msg{
-				&govv1.MsgVote{
+				&v1.MsgVote{
 					ProposalId: 1,
 					Voter:      myAddr.String(),
-					Option:     govv1.OptionNoWithVeto,
+					Option:     v1.OptionNoWithVeto,
 				},
 			},
 		},
@@ -659,11 +656,11 @@ func TestEncodeGovMsg(t *testing.T) {
 				},
 			},
 			output: []sdk.Msg{
-				&govv1.MsgVoteWeighted{
+				&v1.MsgVoteWeighted{
 					ProposalId: 1,
 					Voter:      myAddr.String(),
-					Options: []*govv1.WeightedVoteOption{
-						{Option: govv1.OptionYes, Weight: sdk.NewDec(1).String()},
+					Options: []*v1.WeightedVoteOption{
+						{Option: v1.OptionYes, Weight: sdk.NewDec(1).String()},
 					},
 				},
 			},
@@ -684,14 +681,14 @@ func TestEncodeGovMsg(t *testing.T) {
 				},
 			},
 			output: []sdk.Msg{
-				&govv1.MsgVoteWeighted{
+				&v1.MsgVoteWeighted{
 					ProposalId: 1,
 					Voter:      myAddr.String(),
-					Options: []*govv1.WeightedVoteOption{
-						{Option: govv1.OptionYes, Weight: sdk.NewDecWithPrec(23, 2).String()},
-						{Option: govv1.OptionNo, Weight: sdk.NewDecWithPrec(24, 2).String()},
-						{Option: govv1.OptionAbstain, Weight: sdk.NewDecWithPrec(26, 2).String()},
-						{Option: govv1.OptionNoWithVeto, Weight: sdk.NewDecWithPrec(27, 2).String()},
+					Options: []*v1.WeightedVoteOption{
+						{Option: v1.OptionYes, Weight: sdk.NewDecWithPrec(23, 2).String()},
+						{Option: v1.OptionNo, Weight: sdk.NewDecWithPrec(24, 2).String()},
+						{Option: v1.OptionAbstain, Weight: sdk.NewDecWithPrec(26, 2).String()},
+						{Option: v1.OptionNoWithVeto, Weight: sdk.NewDecWithPrec(27, 2).String()},
 					},
 				},
 			},
@@ -710,12 +707,12 @@ func TestEncodeGovMsg(t *testing.T) {
 				},
 			},
 			output: []sdk.Msg{
-				&govv1.MsgVoteWeighted{
+				&v1.MsgVoteWeighted{
 					ProposalId: 1,
 					Voter:      myAddr.String(),
-					Options: []*govv1.WeightedVoteOption{
-						{Option: govv1.OptionYes, Weight: sdk.NewDecWithPrec(5, 1).String()},
-						{Option: govv1.OptionYes, Weight: sdk.NewDecWithPrec(5, 1).String()},
+					Options: []*v1.WeightedVoteOption{
+						{Option: v1.OptionYes, Weight: sdk.NewDecWithPrec(5, 1).String()},
+						{Option: v1.OptionYes, Weight: sdk.NewDecWithPrec(5, 1).String()},
 					},
 				},
 			},
@@ -735,12 +732,12 @@ func TestEncodeGovMsg(t *testing.T) {
 				},
 			},
 			output: []sdk.Msg{
-				&govv1.MsgVoteWeighted{
+				&v1.MsgVoteWeighted{
 					ProposalId: 1,
 					Voter:      myAddr.String(),
-					Options: []*govv1.WeightedVoteOption{
-						{Option: govv1.OptionYes, Weight: sdk.NewDecWithPrec(51, 2).String()},
-						{Option: govv1.OptionNo, Weight: sdk.NewDecWithPrec(5, 1).String()},
+					Options: []*v1.WeightedVoteOption{
+						{Option: v1.OptionYes, Weight: sdk.NewDecWithPrec(51, 2).String()},
+						{Option: v1.OptionNo, Weight: sdk.NewDecWithPrec(5, 1).String()},
 					},
 				},
 			},
@@ -760,12 +757,12 @@ func TestEncodeGovMsg(t *testing.T) {
 				},
 			},
 			output: []sdk.Msg{
-				&govv1.MsgVoteWeighted{
+				&v1.MsgVoteWeighted{
 					ProposalId: 1,
 					Voter:      myAddr.String(),
-					Options: []*govv1.WeightedVoteOption{
-						{Option: govv1.OptionYes, Weight: sdk.NewDecWithPrec(49, 2).String()},
-						{Option: govv1.OptionNo, Weight: sdk.NewDecWithPrec(5, 1).String()},
+					Options: []*v1.WeightedVoteOption{
+						{Option: v1.OptionYes, Weight: sdk.NewDecWithPrec(49, 2).String()},
+						{Option: v1.OptionNo, Weight: sdk.NewDecWithPrec(5, 1).String()},
 					},
 				},
 			},

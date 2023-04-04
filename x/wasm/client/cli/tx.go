@@ -54,6 +54,7 @@ func GetTxCmd() *cobra.Command {
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
+		SilenceUsage:               true,
 	}
 	txCmd.AddCommand(
 		StoreCodeCmd(),
@@ -81,7 +82,7 @@ func StoreCodeCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			msg, err := parseStoreCodeArgs(args[0], clientCtx.GetFromAddress(), cmd.Flags())
+			msg, err := parseStoreCodeArgs(args[0], clientCtx.GetFromAddress().String(), cmd.Flags())
 			if err != nil {
 				return err
 			}
@@ -90,6 +91,7 @@ func StoreCodeCmd() *cobra.Command {
 			}
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
 		},
+		SilenceUsage: true,
 	}
 
 	addInstantiatePermissionFlags(cmd)
@@ -98,7 +100,7 @@ func StoreCodeCmd() *cobra.Command {
 }
 
 // Prepares MsgStoreCode object from flags with gzipped wasm byte code field
-func parseStoreCodeArgs(file string, sender sdk.AccAddress, flags *flag.FlagSet) (types.MsgStoreCode, error) {
+func parseStoreCodeArgs(file string, sender string, flags *flag.FlagSet) (types.MsgStoreCode, error) {
 	wasm, err := os.ReadFile(file)
 	if err != nil {
 		return types.MsgStoreCode{}, err
@@ -121,7 +123,7 @@ func parseStoreCodeArgs(file string, sender sdk.AccAddress, flags *flag.FlagSet)
 	}
 
 	msg := types.MsgStoreCode{
-		Sender:                sender.String(),
+		Sender:                sender,
 		WASMByteCode:          wasm,
 		InstantiatePermission: perm,
 	}
@@ -197,7 +199,7 @@ func InstantiateContractCmd() *cobra.Command {
 		Long: fmt.Sprintf(`Creates a new instance of an uploaded wasm code with the given 'constructor' message.
 Each contract instance has a unique address assigned.
 Example:
-$ %s wasmd tx wasm instantiate 1 '{"foo":"bar"}' --admin="$(%s keys show mykey -a)" \
+$ %s tx wasm instantiate 1 '{"foo":"bar"}' --admin="$(%s keys show mykey -a)" \
   --from mykey --amount="100ustake" --label "local0.1.0" 
 `, version.AppName, version.AppName),
 		Aliases: []string{"start", "init", "inst", "i"},
@@ -207,7 +209,7 @@ $ %s wasmd tx wasm instantiate 1 '{"foo":"bar"}' --admin="$(%s keys show mykey -
 			if err != nil {
 				return err
 			}
-			msg, err := parseInstantiateArgs(args[0], args[1], clientCtx.Keyring, clientCtx.GetFromAddress(), cmd.Flags())
+			msg, err := parseInstantiateArgs(args[0], args[1], clientCtx.Keyring, clientCtx.GetFromAddress().String(), cmd.Flags())
 			if err != nil {
 				return err
 			}
@@ -216,6 +218,7 @@ $ %s wasmd tx wasm instantiate 1 '{"foo":"bar"}' --admin="$(%s keys show mykey -
 			}
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
+		SilenceUsage: true,
 	}
 
 	cmd.Flags().String(flagAmount, "", "Coins to send to the contract during instantiation")
@@ -238,7 +241,7 @@ Each contract instance has a unique address assigned. They are assigned automati
 for special use cases, the given 'salt' argument and '--fix-msg' parameters can be used to generate a custom address.
 
 Predictable address example (also see '%s query wasm build-address -h'):
-$ %s wasmd tx wasm instantiate2 1 '{"foo":"bar"}' $(echo -n "testing" | xxd -ps) --admin="$(%s keys show mykey -a)" \
+$ %s tx wasm instantiate2 1 '{"foo":"bar"}' $(echo -n "testing" | xxd -ps) --admin="$(%s keys show mykey -a)" \
   --from mykey --amount="100ustake" --label "local0.1.0" \
    --fix-msg 
 `, version.AppName, version.AppName, version.AppName),
@@ -257,7 +260,7 @@ $ %s wasmd tx wasm instantiate2 1 '{"foo":"bar"}' $(echo -n "testing" | xxd -ps)
 			if err != nil {
 				return fmt.Errorf("fix msg: %w", err)
 			}
-			data, err := parseInstantiateArgs(args[0], args[1], clientCtx.Keyring, clientCtx.GetFromAddress(), cmd.Flags())
+			data, err := parseInstantiateArgs(args[0], args[1], clientCtx.Keyring, clientCtx.GetFromAddress().String(), cmd.Flags())
 			if err != nil {
 				return err
 			}
@@ -276,6 +279,7 @@ $ %s wasmd tx wasm instantiate2 1 '{"foo":"bar"}' $(echo -n "testing" | xxd -ps)
 			}
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
+		SilenceUsage: true,
 	}
 
 	cmd.Flags().String(flagAmount, "", "Coins to send to the contract during instantiation")
@@ -288,7 +292,7 @@ $ %s wasmd tx wasm instantiate2 1 '{"foo":"bar"}' $(echo -n "testing" | xxd -ps)
 	return cmd
 }
 
-func parseInstantiateArgs(rawCodeID, initMsg string, kr keyring.Keyring, sender sdk.AccAddress, flags *flag.FlagSet) (*types.MsgInstantiateContract, error) {
+func parseInstantiateArgs(rawCodeID, initMsg string, kr keyring.Keyring, sender string, flags *flag.FlagSet) (*types.MsgInstantiateContract, error) {
 	// get the id of the code to instantiate
 	codeID, err := strconv.ParseUint(rawCodeID, 10, 64)
 	if err != nil {
@@ -335,11 +339,11 @@ func parseInstantiateArgs(rawCodeID, initMsg string, kr keyring.Keyring, sender 
 			if err != nil {
 				return nil, fmt.Errorf("admin %s", err)
 			}
-			adminStrGet, err := info.GetAddress()
+			admin, err := info.GetAddress()
 			if err != nil {
-				return nil, fmt.Errorf("admin %s", err)
+				return nil, err
 			}
-			adminStr = adminStrGet.String()
+			adminStr = admin.String()
 		} else {
 			adminStr = addr.String()
 		}
@@ -347,7 +351,7 @@ func parseInstantiateArgs(rawCodeID, initMsg string, kr keyring.Keyring, sender 
 
 	// build and sign the transaction, then broadcast to Tendermint
 	msg := types.MsgInstantiateContract{
-		Sender: sender.String(),
+		Sender: sender,
 		CodeID: codeID,
 		Label:  label,
 		Funds:  amount,
@@ -379,6 +383,7 @@ func ExecuteContractCmd() *cobra.Command {
 			}
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), &msg)
 		},
+		SilenceUsage: true,
 	}
 
 	cmd.Flags().String(flagAmount, "", "Coins to send to the contract along with command")
@@ -524,8 +529,13 @@ $ %s tx grant <grantee_addr> execution <contract_addr> --allow-all-messages --ma
 			default:
 				return fmt.Errorf("%s authorization type not supported", args[1])
 			}
-			expiration := time.Unix(0, exp)
-			grantMsg, err := authz.NewMsgGrant(clientCtx.GetFromAddress(), grantee, authorization, &expiration)
+
+			expire, err := getExpireTime(cmd)
+			if err != nil {
+				return err
+			}
+
+			grantMsg, err := authz.NewMsgGrant(clientCtx.GetFromAddress(), grantee, authorization, expire)
 			if err != nil {
 				return err
 			}
@@ -541,4 +551,16 @@ $ %s tx grant <grantee_addr> execution <contract_addr> --allow-all-messages --ma
 	cmd.Flags().Bool(flagAllowAllMsgs, false, "Allow all messages")
 	cmd.Flags().Bool(flagNoTokenTransfer, false, "Don't allow token transfer")
 	return cmd
+}
+
+func getExpireTime(cmd *cobra.Command) (*time.Time, error) {
+	exp, err := cmd.Flags().GetInt64(flagExpiration)
+	if err != nil {
+		return nil, err
+	}
+	if exp == 0 {
+		return nil, nil
+	}
+	e := time.Unix(exp, 0)
+	return &e, nil
 }

@@ -15,7 +15,7 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/golang/protobuf/proto" //nolint:staticcheck // this is the correct import for protobuf
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -26,12 +26,16 @@ import (
 // ReflectInitMsg is {}
 
 func buildReflectQuery(t *testing.T, query *testdata.ReflectQueryMsg) []byte {
+	t.Helper()
+
 	bz, err := json.Marshal(query)
 	require.NoError(t, err)
 	return bz
 }
 
 func mustParse(t *testing.T, data []byte, res interface{}) {
+	t.Helper()
+
 	err := json.Unmarshal(data, res)
 	require.NoError(t, err)
 }
@@ -78,10 +82,10 @@ func TestReflectContractSend(t *testing.T) {
 	require.NotEmpty(t, escrowAddr)
 
 	// let's make sure all balances make sense
-	CheckAccount(t, ctx, accKeeper, bankKeeper, creator, sdk.NewCoins(sdk.NewInt64Coin("denom", 35000))) // 100k - 40k - 25k
-	CheckAccount(t, ctx, accKeeper, bankKeeper, reflectAddr, reflectStart)
-	CheckAccount(t, ctx, accKeeper, bankKeeper, escrowAddr, escrowStart)
-	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, nil)
+	checkAccount(t, ctx, accKeeper, bankKeeper, creator, sdk.NewCoins(sdk.NewInt64Coin("denom", 35000))) // 100k - 40k - 25k
+	checkAccount(t, ctx, accKeeper, bankKeeper, reflectAddr, reflectStart)
+	checkAccount(t, ctx, accKeeper, bankKeeper, escrowAddr, escrowStart)
+	checkAccount(t, ctx, accKeeper, bankKeeper, bob, nil)
 
 	// now for the trick.... we reflect a message through the reflect to call the escrow
 	// we also send an additional 14k tokens there.
@@ -111,10 +115,10 @@ func TestReflectContractSend(t *testing.T) {
 	require.NoError(t, err)
 
 	// did this work???
-	CheckAccount(t, ctx, accKeeper, bankKeeper, creator, sdk.NewCoins(sdk.NewInt64Coin("denom", 35000)))     // same as before
-	CheckAccount(t, ctx, accKeeper, bankKeeper, reflectAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 26000))) // 40k - 14k (from send)
-	CheckAccount(t, ctx, accKeeper, bankKeeper, escrowAddr, sdk.Coins{})                                     // emptied reserved
-	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, sdk.NewCoins(sdk.NewInt64Coin("denom", 39000)))         // all escrow of 25k + 14k
+	checkAccount(t, ctx, accKeeper, bankKeeper, creator, sdk.NewCoins(sdk.NewInt64Coin("denom", 35000)))     // same as before
+	checkAccount(t, ctx, accKeeper, bankKeeper, reflectAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 26000))) // 40k - 14k (from send)
+	checkAccount(t, ctx, accKeeper, bankKeeper, escrowAddr, sdk.Coins{})                                     // emptied reserved
+	checkAccount(t, ctx, accKeeper, bankKeeper, bob, sdk.NewCoins(sdk.NewInt64Coin("denom", 39000)))         // all escrow of 25k + 14k
 }
 
 func TestReflectCustomMsg(t *testing.T) {
@@ -150,9 +154,9 @@ func TestReflectCustomMsg(t *testing.T) {
 	require.NoError(t, err)
 
 	// check some account values
-	CheckAccount(t, ctx, accKeeper, bankKeeper, contractAddr, contractStart)
-	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
-	CheckAccount(t, ctx, accKeeper, bankKeeper, fred, nil)
+	checkAccount(t, ctx, accKeeper, bankKeeper, contractAddr, contractStart)
+	checkAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
+	checkAccount(t, ctx, accKeeper, bankKeeper, fred, nil)
 
 	// bob can send contract's tokens to fred (using SendMsg)
 	msgs := []wasmvmtypes.CosmosMsg{{
@@ -177,10 +181,10 @@ func TestReflectCustomMsg(t *testing.T) {
 	require.NoError(t, err)
 
 	// fred got coins
-	CheckAccount(t, ctx, accKeeper, bankKeeper, fred, sdk.NewCoins(sdk.NewInt64Coin("denom", 15000)))
+	checkAccount(t, ctx, accKeeper, bankKeeper, fred, sdk.NewCoins(sdk.NewInt64Coin("denom", 15000)))
 	// contract lost them
-	CheckAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 25000)))
-	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
+	checkAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 25000)))
+	checkAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
 
 	// construct an opaque message
 	var sdkSendMsg sdk.Msg = &banktypes.MsgSend{
@@ -202,10 +206,10 @@ func TestReflectCustomMsg(t *testing.T) {
 	require.NoError(t, err)
 
 	// fred got more coins
-	CheckAccount(t, ctx, accKeeper, bankKeeper, fred, sdk.NewCoins(sdk.NewInt64Coin("denom", 38000)))
+	checkAccount(t, ctx, accKeeper, bankKeeper, fred, sdk.NewCoins(sdk.NewInt64Coin("denom", 38000)))
 	// contract lost them
-	CheckAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 2000)))
-	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
+	checkAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 2000)))
+	checkAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
 }
 
 func TestMaskReflectCustomQuery(t *testing.T) {
@@ -375,7 +379,6 @@ func TestReflectInvalidStargateQuery(t *testing.T) {
 	}
 	protoQueryBin, err := proto.Marshal(&protoQuery)
 	require.NoError(t, err)
-
 	protoRequest := wasmvmtypes.QueryRequest{
 		Stargate: &wasmvmtypes.StargateQuery{
 			Path: "/cosmos.bank.v1beta1.Query/AllBalances",
@@ -387,10 +390,10 @@ func TestReflectInvalidStargateQuery(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// make a query on the chain, should be blacklisted
+	// make a query on the chain, should not be whitelisted
 	_, err = keeper.QuerySmart(ctx, contractAddr, protoQueryBz)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "Stargate queries are disabled")
+	require.Contains(t, err.Error(), "Unsupported query")
 
 	// now, try to build a protobuf query
 	protoRequest = wasmvmtypes.QueryRequest{
@@ -407,7 +410,7 @@ func TestReflectInvalidStargateQuery(t *testing.T) {
 	// make a query on the chain, should be blacklisted
 	_, err = keeper.QuerySmart(ctx, contractAddr, protoQueryBz)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "Stargate queries are disabled")
+	require.Contains(t, err.Error(), "Unsupported query")
 
 	// and another one
 	protoRequest = wasmvmtypes.QueryRequest{
@@ -424,7 +427,7 @@ func TestReflectInvalidStargateQuery(t *testing.T) {
 	// make a query on the chain, should be blacklisted
 	_, err = keeper.QuerySmart(ctx, contractAddr, protoQueryBz)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "Stargate queries are disabled")
+	require.Contains(t, err.Error(), "Unsupported query")
 }
 
 type reflectState struct {
@@ -568,7 +571,8 @@ func TestRustPanicIsHandled(t *testing.T) {
 	assert.Nil(t, gotData)
 }
 
-func CheckAccount(t *testing.T, ctx sdk.Context, accKeeper authkeeper.AccountKeeper, bankKeeper bankkeeper.Keeper, addr sdk.AccAddress, expected sdk.Coins) {
+func checkAccount(t *testing.T, ctx sdk.Context, accKeeper authkeeper.AccountKeeper, bankKeeper bankkeeper.Keeper, addr sdk.AccAddress, expected sdk.Coins) {
+	t.Helper()
 	acct := accKeeper.GetAccount(ctx, addr)
 	if expected == nil {
 		assert.Nil(t, acct)

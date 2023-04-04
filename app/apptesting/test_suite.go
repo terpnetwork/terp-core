@@ -3,10 +3,16 @@ package apptesting
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
 	"cosmossdk.io/math"
+	dbm "github.com/cometbft/cometbft-db"
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/crypto/ed25519"
+	"github.com/cometbft/cometbft/libs/log"
+	tmtypes "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -21,14 +27,10 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/libs/log"
-	tmtypes "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 
 	authzcodec "github.com/terpnetwork/terp-core/x/tokenfactory/types/authzcodec"
 
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/terpnetwork/terp-core/app"
 )
@@ -43,13 +45,13 @@ type KeeperTestHelper struct {
 }
 
 var (
-	SecondaryDenom  = "uion"
+	SecondaryDenom  = "uthiol"
 	SecondaryAmount = sdk.NewInt(100000000)
 )
 
 // Setup sets up basic environment for suite (App, Ctx, and test accounts)
 func (s *KeeperTestHelper) Setup() {
-	s.App = app.Setup(s.T(), false)
+	s.App = app.Setup(s.T())
 	s.Ctx = s.App.BaseApp.NewContext(false, tmtypes.Header{Height: 1, ChainID: "osmosis-1", Time: time.Now().UTC()})
 	s.QueryHelper = &baseapp.QueryServiceTestHelper{
 		GRPCQueryRouter: s.App.GRPCQueryRouter(),
@@ -59,8 +61,12 @@ func (s *KeeperTestHelper) Setup() {
 }
 
 func (s *KeeperTestHelper) SetupTestForInitGenesis() {
-	// Setting to True, leads to init genesis not running
-	s.App = app.Setup(s.T(), true)
+	db := dbm.NewMemDB()
+	s.App = app.NewTerpAppWithCustomOptions(s.T(), true, app.SetupOptions{
+		Logger:  log.NewTMLogger(log.NewSyncWriter(os.Stdout)),
+		DB:      db,
+		AppOpts: simtestutil.NewAppOptionsWithFlagHome(s.T().TempDir()),
+	})
 	s.Ctx = s.App.BaseApp.NewContext(true, tmtypes.Header{})
 }
 
@@ -177,7 +183,7 @@ func (s *KeeperTestHelper) BeginNewBlockWithProposer(proposer sdk.ValAddress) {
 	header := tmtypes.Header{Height: s.Ctx.BlockHeight() + 1, Time: newBlockTime}
 	newCtx := s.Ctx.WithBlockTime(newBlockTime).WithBlockHeight(s.Ctx.BlockHeight() + 1)
 	s.Ctx = newCtx
-	lastCommitInfo := abci.LastCommitInfo{
+	lastCommitInfo := abci.CommitInfo{
 		Votes: []abci.VoteInfo{{
 			Validator:       abci.Validator{Address: valAddr, Power: 1000},
 			SignedLastBlock: true,

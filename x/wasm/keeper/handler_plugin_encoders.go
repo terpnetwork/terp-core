@@ -5,17 +5,18 @@ import (
 	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
+	v1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
-	ibcclienttypes "github.com/cosmos/ibc-go/v6/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
@@ -319,10 +320,10 @@ func EncodeGovMsg(sender sdk.AccAddress, msg *wasmvmtypes.GovMsg) ([]sdk.Msg, er
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "vote option")
 		}
-		m := govv1.NewMsgVote(sender, msg.Vote.ProposalId, voteOption, "")
+		m := v1.NewMsgVote(sender, msg.Vote.ProposalId, voteOption, "")
 		return []sdk.Msg{m}, nil
 	case msg.VoteWeighted != nil:
-		opts := govv1.WeightedVoteOptions{}
+		opts := make([]*v1.WeightedVoteOption, len(msg.VoteWeighted.Options))
 		for i, v := range msg.VoteWeighted.Options {
 			weight, err := sdk.NewDecFromStr(v.Weight)
 			if err != nil {
@@ -332,9 +333,9 @@ func EncodeGovMsg(sender sdk.AccAddress, msg *wasmvmtypes.GovMsg) ([]sdk.Msg, er
 			if err != nil {
 				return nil, errorsmod.Wrap(err, "vote option")
 			}
-			opts = append(opts, &govv1.WeightedVoteOption{Option: voteOption, Weight: weight.String()})
+			opts[i] = &v1.WeightedVoteOption{Option: voteOption, Weight: weight.String()}
 		}
-		m := govv1.NewMsgVoteWeighted(sender, msg.VoteWeighted.ProposalId, opts, "")
+		m := v1.NewMsgVoteWeighted(sender, msg.VoteWeighted.ProposalId, opts, "")
 		return []sdk.Msg{m}, nil
 
 	default:
@@ -342,19 +343,19 @@ func EncodeGovMsg(sender sdk.AccAddress, msg *wasmvmtypes.GovMsg) ([]sdk.Msg, er
 	}
 }
 
-func convertVoteOption(s interface{}) (govv1.VoteOption, error) {
-	var option govv1.VoteOption
+func convertVoteOption(s interface{}) (v1.VoteOption, error) {
+	var option v1.VoteOption
 	switch s {
 	case wasmvmtypes.Yes:
-		option = govv1.OptionYes
+		option = v1.OptionYes
 	case wasmvmtypes.No:
-		option = govv1.OptionNo
+		option = v1.OptionNo
 	case wasmvmtypes.NoWithVeto:
-		option = govv1.OptionNoWithVeto
+		option = v1.OptionNoWithVeto
 	case wasmvmtypes.Abstain:
-		option = govv1.OptionAbstain
+		option = v1.OptionAbstain
 	default:
-		return govv1.OptionEmpty, types.ErrInvalid
+		return v1.OptionEmpty, types.ErrInvalid
 	}
 	return option, nil
 }

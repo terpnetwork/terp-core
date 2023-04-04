@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
-	ibctesting "github.com/cosmos/ibc-go/v6/testing"
+	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	ibctesting "github.com/cosmos/ibc-go/v7/testing"
 
 	wasmvm "github.com/CosmWasm/wasmvm"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	clienttypes "github.com/cosmos/ibc-go/v6/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
+	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -48,8 +48,8 @@ func TestPinPong(t *testing.T) {
 			wasmtesting.NewIBCContractMockWasmer(pongContract),
 		)}
 		coordinator = wasmibctesting.NewCoordinator(t, 2, chainAOpts, chainBOpts)
-		chainA      = coordinator.GetChain(wasmibctesting.GetChainID(0))
-		chainB      = coordinator.GetChain(wasmibctesting.GetChainID(1))
+		chainA      = coordinator.GetChain(wasmibctesting.GetChainID(1))
+		chainB      = coordinator.GetChain(wasmibctesting.GetChainID(2))
 	)
 	_ = chainB.SeedNewContractInstance() // skip 1 instance so that addresses are not the same
 	var (
@@ -229,7 +229,7 @@ func (p player) IBCPacketReceive(_ wasmvm.Checksum, _ wasmvmtypes.Env, msg wasmv
 	if err := json.Unmarshal(packet.Data, &receivedBall); err != nil {
 		return &wasmvmtypes.IBCReceiveResult{
 			Ok: &wasmvmtypes.IBCReceiveResponse{
-				Acknowledgement: HitAcknowledgement{Error: err.Error()}.GetBytes(),
+				Acknowledgement: hitAcknowledgement{Error: err.Error()}.GetBytes(),
 			},
 			// no hit msg, we stop the game
 		}, 0, nil
@@ -275,7 +275,7 @@ func (p player) IBCPacketAck(_ wasmvm.Checksum, _ wasmvmtypes.Env, msg wasmvmtyp
 		return nil, 0, err
 	}
 
-	var ack HitAcknowledgement
+	var ack hitAcknowledgement
 	if err := json.Unmarshal(msg.Acknowledgement.Data, &ack); err != nil {
 		return nil, 0, err
 	}
@@ -324,7 +324,7 @@ func counterParty(s string) string {
 // hit is ibc packet payload
 type hit map[string]uint64
 
-func NewHit(player string, count uint64) hit { //nolint:revive // no need to make this public
+func NewHit(player string, count uint64) hit {
 	return map[string]uint64{
 		player: count,
 	}
@@ -342,21 +342,21 @@ func (h hit) String() string {
 	return fmt.Sprintf("Ball %s", string(h.GetBytes()))
 }
 
-func (h hit) BuildAck() HitAcknowledgement {
-	return HitAcknowledgement{Success: &h}
+func (h hit) BuildAck() hitAcknowledgement {
+	return hitAcknowledgement{Success: &h}
 }
 
-func (h hit) BuildError(errMsg string) HitAcknowledgement {
-	return HitAcknowledgement{Error: errMsg}
+func (h hit) BuildError(errMsg string) hitAcknowledgement {
+	return hitAcknowledgement{Error: errMsg}
 }
 
 // hitAcknowledgement is ibc acknowledgment payload
-type HitAcknowledgement struct {
+type hitAcknowledgement struct {
 	Error   string `json:"error,omitempty"`
 	Success *hit   `json:"success,omitempty"`
 }
 
-func (a HitAcknowledgement) GetBytes() []byte {
+func (a hitAcknowledgement) GetBytes() []byte {
 	b, err := json.Marshal(a)
 	if err != nil {
 		panic(err)

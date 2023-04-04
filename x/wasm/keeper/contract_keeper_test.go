@@ -18,6 +18,8 @@ import (
 
 func TestInstantiate2(t *testing.T) {
 	parentCtx, keepers := CreateTestInput(t, false, AvailableCapabilities)
+	parentCtx = parentCtx.WithGasMeter(sdk.NewInfiniteGasMeter())
+
 	example := StoreHackatomExampleContract(t, parentCtx, keepers)
 	otherExample := StoreReflectContract(t, parentCtx, keepers)
 	mock := &wasmtesting.MockWasmer{}
@@ -27,7 +29,6 @@ func TestInstantiate2(t *testing.T) {
 	verifierAddr := RandomAccountAddress(t)
 	beneficiaryAddr := RandomAccountAddress(t)
 	initMsg := mustMarshal(t, HackatomExampleInitMsg{Verifier: verifierAddr, Beneficiary: beneficiaryAddr})
-
 	otherAddr := keepers.Faucet.NewFundedRandomAccount(parentCtx, sdk.NewInt64Coin("denom", 1_000_000_000))
 
 	const (
@@ -36,6 +37,7 @@ func TestInstantiate2(t *testing.T) {
 	)
 	// create instances for duplicate checks
 	exampleContract := func(t *testing.T, ctx sdk.Context, fixMsg bool) {
+		t.Helper()
 		_, _, err := keepers.ContractKeeper.Instantiate2(
 			ctx,
 			example.CodeID,
@@ -50,9 +52,11 @@ func TestInstantiate2(t *testing.T) {
 		require.NoError(t, err)
 	}
 	exampleWithFixMsg := func(t *testing.T, ctx sdk.Context) {
+		t.Helper()
 		exampleContract(t, ctx, true)
 	}
 	exampleWithoutFixMsg := func(t *testing.T, ctx sdk.Context) {
+		t.Helper()
 		exampleContract(t, ctx, false)
 	}
 	specs := map[string]struct {
