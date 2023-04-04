@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
-	ibctesting "github.com/cosmos/ibc-go/v4/testing"
+	channeltypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
+	host "github.com/cosmos/ibc-go/v6/modules/core/24-host"
+	ibctesting "github.com/cosmos/ibc-go/v6/testing"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -220,11 +220,9 @@ func (coord *Coordinator) ConnOpenInitOnBothChains(path *Path) error {
 		return err
 	}
 
-	if err := path.EndpointB.UpdateClient(); err != nil {
-		return err
-	}
+	err := path.EndpointB.UpdateClient()
 
-	return nil
+	return err
 }
 
 // ChanOpenInitOnBothChains initializes a channel on the source chain and counterparty chain
@@ -245,11 +243,9 @@ func (coord *Coordinator) ChanOpenInitOnBothChains(path *Path) error {
 		return err
 	}
 
-	if err := path.EndpointB.UpdateClient(); err != nil {
-		return err
-	}
+	err := path.EndpointB.UpdateClient()
 
-	return nil
+	return err
 }
 
 // RelayAndAckPendingPackets sends pending packages from path.EndpointA to the counterparty chain and acks

@@ -18,9 +18,9 @@ import (
 	"github.com/stretchr/testify/require"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 
 	"github.com/terpnetwork/terp-core/app"
-	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 )
 
 func TestSnapshotter(t *testing.T) {

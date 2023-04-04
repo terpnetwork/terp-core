@@ -55,7 +55,7 @@ build_tags_comma_sep := $(subst $(empty),$(comma),$(build_tags))
 
 # process linker flags
 
-ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=terpnetwork \
+ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=terp \
 		  -X github.com/cosmos/cosmos-sdk/version.AppName=terpd \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
@@ -80,10 +80,14 @@ all: install lint test
 
 build: go.sum
 ifeq ($(OS),Windows_NT)
+	$(error terpd server not supported. Use "make build-windows-client" for client)
 	exit 1
 else
 	go build -mod=readonly $(BUILD_FLAGS) -o build/terpd ./cmd/terpd
 endif
+
+build-windows-client: go.sum
+	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/terpd.exe ./cmd/terpd
 
 build-contract-tests-hooks:
 ifeq ($(OS),Windows_NT)
@@ -160,7 +164,7 @@ lint: format-tools
 format: format-tools
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs gofumpt -w -s
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs misspell -w
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs goimports -w -local github.com/terpnetwork/terp-core
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs goimports -w -local github.com/terpnetwork/terpd
 
 
 ###############################################################################
@@ -193,4 +197,4 @@ proto-check-breaking:
 .PHONY: all install install-debug \
 	go-mod-cache draw-deps clean build format \
 	test test-all test-build test-cover test-unit test-race \
-	test-sim-import-export \
+	test-sim-import-export build-windows-client \

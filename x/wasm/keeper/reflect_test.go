@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	errorsmod "cosmossdk.io/errors"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -14,7 +15,7 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/proto" //nolint:staticcheck // this is the correct import for protobuf
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -44,7 +45,7 @@ func TestReflectContractSend(t *testing.T) {
 
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
 	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
-	_, _, bob := keyPubAddr()
+	_, bob := keyPubAddr()
 
 	// upload reflect code
 	reflectID, _, err := keeper.Create(ctx, creator, testdata.ReflectContractWasm(), nil)
@@ -77,10 +78,10 @@ func TestReflectContractSend(t *testing.T) {
 	require.NotEmpty(t, escrowAddr)
 
 	// let's make sure all balances make sense
-	checkAccount(t, ctx, accKeeper, bankKeeper, creator, sdk.NewCoins(sdk.NewInt64Coin("denom", 35000))) // 100k - 40k - 25k
-	checkAccount(t, ctx, accKeeper, bankKeeper, reflectAddr, reflectStart)
-	checkAccount(t, ctx, accKeeper, bankKeeper, escrowAddr, escrowStart)
-	checkAccount(t, ctx, accKeeper, bankKeeper, bob, nil)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, creator, sdk.NewCoins(sdk.NewInt64Coin("denom", 35000))) // 100k - 40k - 25k
+	CheckAccount(t, ctx, accKeeper, bankKeeper, reflectAddr, reflectStart)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, escrowAddr, escrowStart)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, nil)
 
 	// now for the trick.... we reflect a message through the reflect to call the escrow
 	// we also send an additional 14k tokens there.
@@ -110,10 +111,10 @@ func TestReflectContractSend(t *testing.T) {
 	require.NoError(t, err)
 
 	// did this work???
-	checkAccount(t, ctx, accKeeper, bankKeeper, creator, sdk.NewCoins(sdk.NewInt64Coin("denom", 35000)))     // same as before
-	checkAccount(t, ctx, accKeeper, bankKeeper, reflectAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 26000))) // 40k - 14k (from send)
-	checkAccount(t, ctx, accKeeper, bankKeeper, escrowAddr, sdk.Coins{})                                     // emptied reserved
-	checkAccount(t, ctx, accKeeper, bankKeeper, bob, sdk.NewCoins(sdk.NewInt64Coin("denom", 39000)))         // all escrow of 25k + 14k
+	CheckAccount(t, ctx, accKeeper, bankKeeper, creator, sdk.NewCoins(sdk.NewInt64Coin("denom", 35000)))     // same as before
+	CheckAccount(t, ctx, accKeeper, bankKeeper, reflectAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 26000))) // 40k - 14k (from send)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, escrowAddr, sdk.Coins{})                                     // emptied reserved
+	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, sdk.NewCoins(sdk.NewInt64Coin("denom", 39000)))         // all escrow of 25k + 14k
 }
 
 func TestReflectCustomMsg(t *testing.T) {
@@ -124,7 +125,7 @@ func TestReflectCustomMsg(t *testing.T) {
 	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))
 	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
 	bob := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
-	_, _, fred := keyPubAddr()
+	_, fred := keyPubAddr()
 
 	// upload code
 	codeID, _, err := keeper.Create(ctx, creator, testdata.ReflectContractWasm(), nil)
@@ -149,9 +150,9 @@ func TestReflectCustomMsg(t *testing.T) {
 	require.NoError(t, err)
 
 	// check some account values
-	checkAccount(t, ctx, accKeeper, bankKeeper, contractAddr, contractStart)
-	checkAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
-	checkAccount(t, ctx, accKeeper, bankKeeper, fred, nil)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, contractAddr, contractStart)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, fred, nil)
 
 	// bob can send contract's tokens to fred (using SendMsg)
 	msgs := []wasmvmtypes.CosmosMsg{{
@@ -176,10 +177,10 @@ func TestReflectCustomMsg(t *testing.T) {
 	require.NoError(t, err)
 
 	// fred got coins
-	checkAccount(t, ctx, accKeeper, bankKeeper, fred, sdk.NewCoins(sdk.NewInt64Coin("denom", 15000)))
+	CheckAccount(t, ctx, accKeeper, bankKeeper, fred, sdk.NewCoins(sdk.NewInt64Coin("denom", 15000)))
 	// contract lost them
-	checkAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 25000)))
-	checkAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 25000)))
+	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
 
 	// construct an opaque message
 	var sdkSendMsg sdk.Msg = &banktypes.MsgSend{
@@ -201,10 +202,10 @@ func TestReflectCustomMsg(t *testing.T) {
 	require.NoError(t, err)
 
 	// fred got more coins
-	checkAccount(t, ctx, accKeeper, bankKeeper, fred, sdk.NewCoins(sdk.NewInt64Coin("denom", 38000)))
+	CheckAccount(t, ctx, accKeeper, bankKeeper, fred, sdk.NewCoins(sdk.NewInt64Coin("denom", 38000)))
 	// contract lost them
-	checkAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 2000)))
-	checkAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 2000)))
+	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, deposit)
 }
 
 func TestMaskReflectCustomQuery(t *testing.T) {
@@ -262,7 +263,7 @@ func TestReflectStargateQuery(t *testing.T) {
 
 	funds := sdk.NewCoins(sdk.NewInt64Coin("denom", 320000))
 	contractStart := sdk.NewCoins(sdk.NewInt64Coin("denom", 40000))
-	expectedBalance := funds.Sub(contractStart)
+	expectedBalance := funds.Sub(contractStart...)
 	creator := keepers.Faucet.NewFundedRandomAccount(ctx, funds...)
 
 	// upload code
@@ -331,7 +332,7 @@ func TestReflectTotalSupplyQuery(t *testing.T) {
 				Chain: &testdata.ChainQuery{
 					Request: &wasmvmtypes.QueryRequest{
 						Bank: &wasmvmtypes.BankQuery{
-							Supply: &wasmvmtypes.SupplyQuery{spec.denom},
+							Supply: &wasmvmtypes.SupplyQuery{Denom: spec.denom},
 						},
 					},
 				},
@@ -373,6 +374,8 @@ func TestReflectInvalidStargateQuery(t *testing.T) {
 		Address: creator.String(),
 	}
 	protoQueryBin, err := proto.Marshal(&protoQuery)
+	require.NoError(t, err)
+
 	protoRequest := wasmvmtypes.QueryRequest{
 		Stargate: &wasmvmtypes.StargateQuery{
 			Path: "/cosmos.bank.v1beta1.Query/AllBalances",
@@ -384,10 +387,10 @@ func TestReflectInvalidStargateQuery(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// make a query on the chain, should not be whitelisted
+	// make a query on the chain, should be blacklisted
 	_, err = keeper.QuerySmart(ctx, contractAddr, protoQueryBz)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "Unsupported query")
+	require.Contains(t, err.Error(), "Stargate queries are disabled")
 
 	// now, try to build a protobuf query
 	protoRequest = wasmvmtypes.QueryRequest{
@@ -404,7 +407,7 @@ func TestReflectInvalidStargateQuery(t *testing.T) {
 	// make a query on the chain, should be blacklisted
 	_, err = keeper.QuerySmart(ctx, contractAddr, protoQueryBz)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "Unsupported query")
+	require.Contains(t, err.Error(), "Stargate queries are disabled")
 
 	// and another one
 	protoRequest = wasmvmtypes.QueryRequest{
@@ -421,7 +424,7 @@ func TestReflectInvalidStargateQuery(t *testing.T) {
 	// make a query on the chain, should be blacklisted
 	_, err = keeper.QuerySmart(ctx, contractAddr, protoQueryBz)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "Unsupported query")
+	require.Contains(t, err.Error(), "Stargate queries are disabled")
 }
 
 type reflectState struct {
@@ -542,7 +545,30 @@ func TestWasmRawQueryWithNil(t *testing.T) {
 	require.Equal(t, []byte{}, reflectRawRes.Data)
 }
 
-func checkAccount(t *testing.T, ctx sdk.Context, accKeeper authkeeper.AccountKeeper, bankKeeper bankkeeper.Keeper, addr sdk.AccAddress, expected sdk.Coins) {
+func TestRustPanicIsHandled(t *testing.T) {
+	ctx, keepers := CreateTestInput(t, false, ReflectFeatures)
+	keeper := keepers.ContractKeeper
+
+	creator := keepers.Faucet.NewFundedRandomAccount(ctx, sdk.NewCoins(sdk.NewInt64Coin("denom", 100000))...)
+
+	// upload code
+	codeID, _, err := keeper.Create(ctx, creator, testdata.CyberpunkContractWasm(), nil)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), codeID)
+
+	contractAddr, _, err := keeper.Instantiate(ctx, codeID, creator, nil, []byte("{}"), "cyberpunk contract", nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, contractAddr)
+
+	// when panic is triggered
+	msg := []byte(`{"panic":{}}`)
+	gotData, err := keeper.Execute(ctx, contractAddr, creator, msg, nil)
+	require.ErrorIs(t, err, types.ErrExecuteFailed)
+	assert.Contains(t, err.Error(), "panicked at 'This page intentionally faulted'")
+	assert.Nil(t, gotData)
+}
+
+func CheckAccount(t *testing.T, ctx sdk.Context, accKeeper authkeeper.AccountKeeper, bankKeeper bankkeeper.Keeper, addr sdk.AccAddress, expected sdk.Coins) {
 	acct := accKeeper.GetAccount(ctx, addr)
 	if expected == nil {
 		assert.Nil(t, acct)
@@ -567,21 +593,21 @@ type reflectCustomMsg struct {
 // toReflectRawMsg encodes an sdk msg using any type with json encoding.
 // Then wraps it as an opaque message
 func toReflectRawMsg(cdc codec.Codec, msg sdk.Msg) (wasmvmtypes.CosmosMsg, error) {
-	any, err := codectypes.NewAnyWithValue(msg)
+	codecAny, err := codectypes.NewAnyWithValue(msg)
 	if err != nil {
 		return wasmvmtypes.CosmosMsg{}, err
 	}
-	rawBz, err := cdc.MarshalJSON(any)
+	rawBz, err := cdc.MarshalJSON(codecAny)
 	if err != nil {
-		return wasmvmtypes.CosmosMsg{}, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+		return wasmvmtypes.CosmosMsg{}, errorsmod.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
-	customMsg, err := json.Marshal(reflectCustomMsg{
+	customMsg, _ := json.Marshal(reflectCustomMsg{
 		Raw: rawBz,
 	})
 	res := wasmvmtypes.CosmosMsg{
 		Custom: customMsg,
 	}
-	return res, nil
+	return res, err
 }
 
 // reflectEncoders needs to be registered in test setup to handle custom message callbacks
@@ -598,23 +624,23 @@ func fromReflectRawMsg(cdc codec.Codec) CustomEncoder {
 		var custom reflectCustomMsg
 		err := json.Unmarshal(msg, &custom)
 		if err != nil {
-			return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
+			return nil, errorsmod.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 		}
 		if custom.Raw != nil {
-			var any codectypes.Any
-			if err := cdc.UnmarshalJSON(custom.Raw, &any); err != nil {
-				return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
+			var codecAny codectypes.Any
+			if err := cdc.UnmarshalJSON(custom.Raw, &codecAny); err != nil {
+				return nil, errorsmod.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 			}
 			var msg sdk.Msg
-			if err := cdc.UnpackAny(&any, &msg); err != nil {
+			if err := cdc.UnpackAny(&codecAny, &msg); err != nil {
 				return nil, err
 			}
 			return []sdk.Msg{msg}, nil
 		}
 		if custom.Debug != "" {
-			return nil, sdkerrors.Wrapf(types.ErrInvalidMsg, "Custom Debug: %s", custom.Debug)
+			return nil, errorsmod.Wrapf(types.ErrInvalidMsg, "Custom Debug: %s", custom.Debug)
 		}
-		return nil, sdkerrors.Wrap(types.ErrInvalidMsg, "Unknown Custom message variant")
+		return nil, errorsmod.Wrap(types.ErrInvalidMsg, "Unknown Custom message variant")
 	}
 }
 
@@ -628,17 +654,9 @@ type customQueryResponse struct {
 	Msg string `json:"msg"`
 }
 
-// these are the return values from contract -> go depending on type of query
-type ownerResponse struct {
-	Owner string `json:"owner"`
-}
-
+// this is from the contract to the go code (capitalized or ping)
 type capitalizedResponse struct {
 	Text string `json:"text"`
-}
-
-type chainResponse struct {
-	Data []byte `json:"data"`
 }
 
 // reflectPlugins needs to be registered in test setup to handle custom query callbacks
@@ -652,7 +670,7 @@ func performCustomQuery(_ sdk.Context, request json.RawMessage) ([]byte, error) 
 	var custom reflectCustomQuery
 	err := json.Unmarshal(request, &custom)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
+		return nil, errorsmod.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
 	}
 	if custom.Capitalized != nil {
 		msg := strings.ToUpper(custom.Capitalized.Text)
@@ -661,5 +679,5 @@ func performCustomQuery(_ sdk.Context, request json.RawMessage) ([]byte, error) 
 	if custom.Ping != nil {
 		return json.Marshal(customQueryResponse{Msg: "pong"})
 	}
-	return nil, sdkerrors.Wrap(types.ErrInvalidMsg, "Unknown Custom query variant")
+	return nil, errorsmod.Wrap(types.ErrInvalidMsg, "Unknown Custom query variant")
 }
