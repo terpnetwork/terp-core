@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	errorsmod "cosmossdk.io/errors"
 	wasmvm "github.com/CosmWasm/wasmvm"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -11,9 +12,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	clienttypes "github.com/cosmos/ibc-go/v6/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/v6/modules/core/exported"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -40,7 +41,7 @@ func TestMessageHandlerChainDispatch(t *testing.T) {
 	myMsg := wasmvmtypes.CosmosMsg{Custom: []byte(`{}`)}
 	specs := map[string]struct {
 		handlers  []Messenger
-		expErr    *sdkerrors.Error
+		expErr    *errorsmod.Error
 		expEvents []sdk.Event
 	}{
 		"single handler": {
@@ -120,7 +121,7 @@ func TestSDKMessageHandlerDispatch(t *testing.T) {
 	specs := map[string]struct {
 		srcRoute         MessageRouter
 		srcEncoder       CustomEncoder
-		expErr           *sdkerrors.Error
+		expErr           *errorsmod.Error
 		expMsgDispatched int
 	}{
 		"all good": {
@@ -239,11 +240,20 @@ func TestIBCRawPacketHandler(t *testing.T) {
 				),
 			}, true
 		},
-		SendPacketFn: func(ctx sdk.Context, channelCap *capabilitytypes.Capability, packet ibcexported.PacketI) error {
-			capturedPacket = packet
-			return nil
+
+		SendPacketFn: func(ctx sdk.Context, channelCap *capabilitytypes.Capability, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
+			capturedPacket = channeltypes.Packet{
+				Sequence:         1,
+				SourcePort:       sourcePort,
+				SourceChannel:    sourceChannel,
+				TimeoutHeight:    timeoutHeight,
+				TimeoutTimestamp: timeoutTimestamp,
+				Data:             data,
+			}
+			return 1, nil
 		},
 	}
+
 	capKeeper := &wasmtesting.MockCapabilityKeeper{
 		GetCapabilityFn: func(ctx sdk.Context, name string) (*capabilitytypes.Capability, bool) {
 			return &capabilitytypes.Capability{}, true
@@ -255,7 +265,7 @@ func TestIBCRawPacketHandler(t *testing.T) {
 		chanKeeper    types.ChannelKeeper
 		capKeeper     types.CapabilityKeeper
 		expPacketSent channeltypes.Packet
-		expErr        *sdkerrors.Error
+		expErr        *errorsmod.Error
 	}{
 		"all good": {
 			srcMsg: wasmvmtypes.SendPacketMsg{
@@ -266,13 +276,11 @@ func TestIBCRawPacketHandler(t *testing.T) {
 			chanKeeper: chanKeeper,
 			capKeeper:  capKeeper,
 			expPacketSent: channeltypes.Packet{
-				Sequence:           1,
-				SourcePort:         ibcPort,
-				SourceChannel:      "channel-1",
-				DestinationPort:    "other-port",
-				DestinationChannel: "other-channel-1",
-				Data:               []byte("myData"),
-				TimeoutHeight:      clienttypes.Height{RevisionNumber: 1, RevisionHeight: 2},
+				Sequence:      1,
+				SourcePort:    ibcPort,
+				SourceChannel: "channel-1",
+				Data:          []byte("myData"),
+				TimeoutHeight: clienttypes.Height{RevisionNumber: 1, RevisionHeight: 2},
 			},
 		},
 		"sequence not found returns error": {
@@ -286,6 +294,13 @@ func TestIBCRawPacketHandler(t *testing.T) {
 					return 0, false
 				},
 			},
+
+			capKeeper: wasmtesting.MockCapabilityKeeper{
+				GetCapabilityFn: func(ctx sdk.Context, name string) (*capabilitytypes.Capability, bool) {
+					return nil, false
+				},
+			},
+
 			expErr: channeltypes.ErrSequenceSendNotFound,
 		},
 		"capability not found returns error": {
@@ -308,14 +323,23 @@ func TestIBCRawPacketHandler(t *testing.T) {
 			capturedPacket = nil
 			// when
 			h := NewIBCRawPacketHandler(spec.chanKeeper, spec.capKeeper)
-			data, evts, gotErr := h.DispatchMsg(ctx, RandomAccountAddress(t), ibcPort, wasmvmtypes.CosmosMsg{IBC: &wasmvmtypes.IBCMsg{SendPacket: &spec.srcMsg}})
+			evts, data, gotErr := h.DispatchMsg(ctx, RandomAccountAddress(t), ibcPort, wasmvmtypes.CosmosMsg{IBC: &wasmvmtypes.IBCMsg{SendPacket: &spec.srcMsg}})
 			// then
 			require.True(t, spec.expErr.Is(gotErr), "exp %v but got %#+v", spec.expErr, gotErr)
 			if spec.expErr != nil {
 				return
 			}
-			assert.Nil(t, data)
+
 			assert.Nil(t, evts)
+			require.NotNil(t, data)
+
+			expMsg := types.MsgIBCSendResponse{Sequence: 1}
+
+			actualMsg := types.MsgIBCSendResponse{}
+			err := actualMsg.Unmarshal(data[0])
+			require.NoError(t, err)
+
+			assert.Equal(t, expMsg, actualMsg)
 			assert.Equal(t, spec.expPacketSent, capturedPacket)
 		})
 	}
@@ -400,7 +424,7 @@ func TestBurnCoinMessageHandlerIntegration(t *testing.T) {
 			// and total supply reduced by burned amount
 			after, err := keepers.BankKeeper.TotalSupply(sdk.WrapSDKContext(ctx), &banktypes.QueryTotalSupplyRequest{})
 			require.NoError(t, err)
-			diff := before.Supply.Sub(after.Supply)
+			diff := before.Supply.Sub(after.Supply...)
 			assert.Equal(t, sdk.NewCoins(sdk.NewCoin("denom", sdk.NewInt(100))), diff)
 		})
 	}

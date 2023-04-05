@@ -4,30 +4,17 @@
 
 ## Table of Contents
 
-- [cosmwasm/wasm/v1/authz.proto](#cosmwasm/wasm/v1/authz.proto)
-    - [AcceptedMessageKeysFilter](#cosmwasm.wasm.v1.AcceptedMessageKeysFilter)
-    - [AcceptedMessagesFilter](#cosmwasm.wasm.v1.AcceptedMessagesFilter)
-    - [AllowAllMessagesFilter](#cosmwasm.wasm.v1.AllowAllMessagesFilter)
-    - [CombinedLimit](#cosmwasm.wasm.v1.CombinedLimit)
-    - [ContractExecutionAuthorization](#cosmwasm.wasm.v1.ContractExecutionAuthorization)
-    - [ContractGrant](#cosmwasm.wasm.v1.ContractGrant)
-    - [ContractMigrationAuthorization](#cosmwasm.wasm.v1.ContractMigrationAuthorization)
-    - [MaxCallsLimit](#cosmwasm.wasm.v1.MaxCallsLimit)
-    - [MaxFundsLimit](#cosmwasm.wasm.v1.MaxFundsLimit)
+- [cosmwasm/tokenfactory/v1beta1/authorityMetadata.proto](#cosmwasm/tokenfactory/v1beta1/authorityMetadata.proto)
+    - [DenomAuthorityMetadata](#cosmwasm.tokenfactory.v1beta1.DenomAuthorityMetadata)
   
-- [cosmwasm/wasm/v1/types.proto](#cosmwasm/wasm/v1/types.proto)
-    - [AbsoluteTxPosition](#cosmwasm.wasm.v1.AbsoluteTxPosition)
-    - [AccessConfig](#cosmwasm.wasm.v1.AccessConfig)
-    - [AccessTypeParam](#cosmwasm.wasm.v1.AccessTypeParam)
-    - [CodeInfo](#cosmwasm.wasm.v1.CodeInfo)
-    - [ContractCodeHistoryEntry](#cosmwasm.wasm.v1.ContractCodeHistoryEntry)
-    - [ContractInfo](#cosmwasm.wasm.v1.ContractInfo)
-    - [Model](#cosmwasm.wasm.v1.Model)
-    - [Params](#cosmwasm.wasm.v1.Params)
+- [cosmwasm/tokenfactory/v1beta1/params.proto](#cosmwasm/tokenfactory/v1beta1/params.proto)
+    - [Params](#cosmwasm.tokenfactory.v1beta1.Params)
   
-    - [AccessType](#cosmwasm.wasm.v1.AccessType)
-    - [ContractCodeHistoryOperationType](#cosmwasm.wasm.v1.ContractCodeHistoryOperationType)
+- [cosmwasm/tokenfactory/v1beta1/genesis.proto](#cosmwasm/tokenfactory/v1beta1/genesis.proto)
+    - [GenesisDenom](#cosmwasm.tokenfactory.v1beta1.GenesisDenom)
+    - [GenesisState](#cosmwasm.tokenfactory.v1beta1.GenesisState)
   
+<<<<<<< HEAD
 - [cosmwasm/wasm/v1/genesis.proto](#cosmwasm/wasm/v1/genesis.proto)
     - [Code](#cosmwasm.wasm.v1.Code)
     - [Contract](#cosmwasm.wasm.v1.Contract)
@@ -37,6 +24,7 @@
 - [cosmwasm/wasm/v1/ibc.proto](#cosmwasm/wasm/v1/ibc.proto)
     - [MsgIBCCloseChannel](#cosmwasm.wasm.v1.MsgIBCCloseChannel)
     - [MsgIBCSend](#cosmwasm.wasm.v1.MsgIBCSend)
+    - [MsgIBCSendResponse](#cosmwasm.wasm.v1.MsgIBCSendResponse)
   
 - [cosmwasm/wasm/v1/proposal.proto](#cosmwasm/wasm/v1/proposal.proto)
     - [AccessConfigUpdate](#cosmwasm.wasm.v1.AccessConfigUpdate)
@@ -79,6 +67,31 @@
     - [QuerySmartContractStateResponse](#cosmwasm.wasm.v1.QuerySmartContractStateResponse)
   
     - [Query](#cosmwasm.wasm.v1.Query)
+=======
+- [cosmwasm/tokenfactory/v1beta1/query.proto](#cosmwasm/tokenfactory/v1beta1/query.proto)
+    - [QueryDenomAuthorityMetadataRequest](#cosmwasm.tokenfactory.v1beta1.QueryDenomAuthorityMetadataRequest)
+    - [QueryDenomAuthorityMetadataResponse](#cosmwasm.tokenfactory.v1beta1.QueryDenomAuthorityMetadataResponse)
+    - [QueryDenomsFromCreatorRequest](#cosmwasm.tokenfactory.v1beta1.QueryDenomsFromCreatorRequest)
+    - [QueryDenomsFromCreatorResponse](#cosmwasm.tokenfactory.v1beta1.QueryDenomsFromCreatorResponse)
+    - [QueryParamsRequest](#cosmwasm.tokenfactory.v1beta1.QueryParamsRequest)
+    - [QueryParamsResponse](#cosmwasm.tokenfactory.v1beta1.QueryParamsResponse)
+  
+    - [Query](#cosmwasm.tokenfactory.v1beta1.Query)
+  
+- [cosmwasm/tokenfactory/v1beta1/tx.proto](#cosmwasm/tokenfactory/v1beta1/tx.proto)
+    - [MsgBurn](#cosmwasm.tokenfactory.v1beta1.MsgBurn)
+    - [MsgBurnResponse](#cosmwasm.tokenfactory.v1beta1.MsgBurnResponse)
+    - [MsgChangeAdmin](#cosmwasm.tokenfactory.v1beta1.MsgChangeAdmin)
+    - [MsgChangeAdminResponse](#cosmwasm.tokenfactory.v1beta1.MsgChangeAdminResponse)
+    - [MsgCreateDenom](#cosmwasm.tokenfactory.v1beta1.MsgCreateDenom)
+    - [MsgCreateDenomResponse](#cosmwasm.tokenfactory.v1beta1.MsgCreateDenomResponse)
+    - [MsgMint](#cosmwasm.tokenfactory.v1beta1.MsgMint)
+    - [MsgMintResponse](#cosmwasm.tokenfactory.v1beta1.MsgMintResponse)
+    - [MsgSetDenomMetadata](#cosmwasm.tokenfactory.v1beta1.MsgSetDenomMetadata)
+    - [MsgSetDenomMetadataResponse](#cosmwasm.tokenfactory.v1beta1.MsgSetDenomMetadataResponse)
+  
+    - [Msg](#cosmwasm.tokenfactory.v1beta1.Msg)
+>>>>>>> notional/release/v0.30.0-sdk-v0.46.x
   
 - [cosmwasm/wasm/v1/tx.proto](#cosmwasm/wasm/v1/tx.proto)
     - [MsgClearAdmin](#cosmwasm.wasm.v1.MsgClearAdmin)
@@ -95,6 +108,8 @@
     - [MsgStoreCodeResponse](#cosmwasm.wasm.v1.MsgStoreCodeResponse)
     - [MsgUpdateAdmin](#cosmwasm.wasm.v1.MsgUpdateAdmin)
     - [MsgUpdateAdminResponse](#cosmwasm.wasm.v1.MsgUpdateAdminResponse)
+    - [MsgUpdateInstantiateConfig](#cosmwasm.wasm.v1.MsgUpdateInstantiateConfig)
+    - [MsgUpdateInstantiateConfigResponse](#cosmwasm.wasm.v1.MsgUpdateInstantiateConfigResponse)
   
     - [Msg](#cosmwasm.wasm.v1.Msg)
   
@@ -102,153 +117,24 @@
 
 
 
-<a name="cosmwasm/wasm/v1/authz.proto"></a>
+<a name="cosmwasm/tokenfactory/v1beta1/authorityMetadata.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## cosmwasm/wasm/v1/authz.proto
+## cosmwasm/tokenfactory/v1beta1/authorityMetadata.proto
 
 
 
-<a name="cosmwasm.wasm.v1.AcceptedMessageKeysFilter"></a>
+<a name="cosmwasm.tokenfactory.v1beta1.DenomAuthorityMetadata"></a>
 
-### AcceptedMessageKeysFilter
-AcceptedMessageKeysFilter accept only the specific contract message keys in
-the json object to be executed.
-Since: terpd 0.2.0
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `keys` | [string](#string) | repeated | Messages is the list of unique keys |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.AcceptedMessagesFilter"></a>
-
-### AcceptedMessagesFilter
-AcceptedMessagesFilter accept only the specific raw contract messages to be
-executed.
-Since: terpd 0.2.0
+### DenomAuthorityMetadata
+DenomAuthorityMetadata specifies metadata for addresses that have specific
+capabilities over a token factory denom. Right now there is only one Admin
+permission, but is planned to be extended to the future.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `messages` | [bytes](#bytes) | repeated | Messages is the list of raw contract messages |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.AllowAllMessagesFilter"></a>
-
-### AllowAllMessagesFilter
-AllowAllMessagesFilter is a wildcard to allow any type of contract payload
-message.
-Since: terpd 0.2.0
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.CombinedLimit"></a>
-
-### CombinedLimit
-CombinedLimit defines the maximal amounts that can be sent to a contract and
-the maximal number of calls executable. Both need to remain >0 to be valid.
-Since: terpd 0.2.0
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `calls_remaining` | [uint64](#uint64) |  | Remaining number that is decremented on each execution |
-| `amounts` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated | Amounts is the maximal amount of tokens transferable to the contract. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.ContractExecutionAuthorization"></a>
-
-### ContractExecutionAuthorization
-ContractExecutionAuthorization defines authorization for wasm execute.
-Since: terpd 0.2.0
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `grants` | [ContractGrant](#cosmwasm.wasm.v1.ContractGrant) | repeated | Grants for contract executions |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.ContractGrant"></a>
-
-### ContractGrant
-ContractGrant a granted permission for a single contract
-Since: terpd 0.2.0
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `contract` | [string](#string) |  | Contract is the bech32 address of the smart contract |
-| `limit` | [google.protobuf.Any](#google.protobuf.Any) |  | Limit defines execution limits that are enforced and updated when the grant is applied. When the limit lapsed the grant is removed. |
-| `filter` | [google.protobuf.Any](#google.protobuf.Any) |  | Filter define more fine-grained control on the message payload passed to the contract in the operation. When no filter applies on execution, the operation is prohibited. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.ContractMigrationAuthorization"></a>
-
-### ContractMigrationAuthorization
-ContractMigrationAuthorization defines authorization for wasm contract
-migration. Since: terpd 0.2.0
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `grants` | [ContractGrant](#cosmwasm.wasm.v1.ContractGrant) | repeated | Grants for contract migrations |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.MaxCallsLimit"></a>
-
-### MaxCallsLimit
-MaxCallsLimit limited number of calls to the contract. No funds transferable.
-Since: terpd 0.2.0
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `remaining` | [uint64](#uint64) |  | Remaining number that is decremented on each execution |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.MaxFundsLimit"></a>
-
-### MaxFundsLimit
-MaxFundsLimit defines the maximal amounts that can be sent to the contract.
-Since: terpd 0.2.0
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `amounts` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated | Amounts is the maximal amount of tokens transferable to the contract. |
+| `admin` | [string](#string) |  | Can be empty for no admin, or a valid osmosis address |
 
 
 
@@ -264,144 +150,27 @@ Since: terpd 0.2.0
 
 
 
-<a name="cosmwasm/wasm/v1/types.proto"></a>
+<a name="cosmwasm/tokenfactory/v1beta1/params.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## cosmwasm/wasm/v1/types.proto
+## cosmwasm/tokenfactory/v1beta1/params.proto
 
 
 
-<a name="cosmwasm.wasm.v1.AbsoluteTxPosition"></a>
-
-### AbsoluteTxPosition
-AbsoluteTxPosition is a unique transaction position that allows for global
-ordering of transactions.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `block_height` | [uint64](#uint64) |  | BlockHeight is the block the contract was created at |
-| `tx_index` | [uint64](#uint64) |  | TxIndex is a monotonic counter within the block (actual transaction index, or gas consumed) |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.AccessConfig"></a>
-
-### AccessConfig
-AccessConfig access control type.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `permission` | [AccessType](#cosmwasm.wasm.v1.AccessType) |  |  |
-| `address` | [string](#string) |  | Address Deprecated: replaced by addresses |
-| `addresses` | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.AccessTypeParam"></a>
-
-### AccessTypeParam
-AccessTypeParam
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `value` | [AccessType](#cosmwasm.wasm.v1.AccessType) |  |  |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.CodeInfo"></a>
-
-### CodeInfo
-CodeInfo is data for the uploaded contract WASM code
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `code_hash` | [bytes](#bytes) |  | CodeHash is the unique identifier created by wasmvm |
-| `creator` | [string](#string) |  | Creator address who initially stored the code |
-| `instantiate_config` | [AccessConfig](#cosmwasm.wasm.v1.AccessConfig) |  | InstantiateConfig access control to apply on contract creation, optional |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.ContractCodeHistoryEntry"></a>
-
-### ContractCodeHistoryEntry
-ContractCodeHistoryEntry metadata to a contract.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `operation` | [ContractCodeHistoryOperationType](#cosmwasm.wasm.v1.ContractCodeHistoryOperationType) |  |  |
-| `code_id` | [uint64](#uint64) |  | CodeID is the reference to the stored WASM code |
-| `updated` | [AbsoluteTxPosition](#cosmwasm.wasm.v1.AbsoluteTxPosition) |  | Updated Tx position when the operation was executed. |
-| `msg` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.ContractInfo"></a>
-
-### ContractInfo
-ContractInfo stores a WASM contract instance
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `code_id` | [uint64](#uint64) |  | CodeID is the reference to the stored Wasm code |
-| `creator` | [string](#string) |  | Creator address who initially instantiated the contract |
-| `admin` | [string](#string) |  | Admin is an optional address that can execute migrations |
-| `label` | [string](#string) |  | Label is optional metadata to be stored with a contract instance. |
-| `created` | [AbsoluteTxPosition](#cosmwasm.wasm.v1.AbsoluteTxPosition) |  | Created Tx position when the contract was instantiated. |
-| `ibc_port_id` | [string](#string) |  |  |
-| `extension` | [google.protobuf.Any](#google.protobuf.Any) |  | Extension is an extension point to store custom metadata within the persistence model. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.Model"></a>
-
-### Model
-Model is a struct that holds a KV pair
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [bytes](#bytes) |  | hex-encode key to read it better (this is often ascii) |
-| `value` | [bytes](#bytes) |  | base64-encode raw value |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.Params"></a>
+<a name="cosmwasm.tokenfactory.v1beta1.Params"></a>
 
 ### Params
-Params defines the set of wasm parameters.
+Params defines the parameters for the tokenfactory module.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+<<<<<<< HEAD
 | `code_upload_access` | [AccessConfig](#cosmwasm.wasm.v1.AccessConfig) |  |  |
 | `instantiate_default_permission` | [AccessType](#cosmwasm.wasm.v1.AccessType) |  |  |
+=======
+| `denom_creation_fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+>>>>>>> notional/release/v0.30.0-sdk-v0.46.x
 
 
 
@@ -409,6 +178,7 @@ Params defines the set of wasm parameters.
 
  <!-- end messages -->
 
+<<<<<<< HEAD
 
 <a name="cosmwasm.wasm.v1.AccessType"></a>
 
@@ -438,6 +208,8 @@ ContractCodeHistoryOperationType actions that caused a code change
 | CONTRACT_CODE_HISTORY_OPERATION_TYPE_GENESIS | 3 | ContractCodeHistoryOperationTypeGenesis based on genesis data |
 
 
+=======
+>>>>>>> notional/release/v0.30.0-sdk-v0.46.x
  <!-- end enums -->
 
  <!-- end HasExtensions -->
@@ -446,57 +218,44 @@ ContractCodeHistoryOperationType actions that caused a code change
 
 
 
+<<<<<<< HEAD
 <a name="cosmwasm/wasm/v1/genesis.proto"></a>
+=======
+<a name="cosmwasm/tokenfactory/v1beta1/genesis.proto"></a>
+>>>>>>> notional/release/v0.30.0-sdk-v0.46.x
 <p align="right"><a href="#top">Top</a></p>
 
-## cosmwasm/wasm/v1/genesis.proto
+## cosmwasm/tokenfactory/v1beta1/genesis.proto
 
 
 
-<a name="cosmwasm.wasm.v1.Code"></a>
+<a name="cosmwasm.tokenfactory.v1beta1.GenesisDenom"></a>
 
-### Code
-Code struct encompasses CodeInfo and CodeBytes
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `code_id` | [uint64](#uint64) |  |  |
-| `code_info` | [CodeInfo](#cosmwasm.wasm.v1.CodeInfo) |  |  |
-| `code_bytes` | [bytes](#bytes) |  |  |
-| `pinned` | [bool](#bool) |  | Pinned to wasmvm cache |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.Contract"></a>
-
-### Contract
-Contract struct encompasses ContractAddress, ContractInfo, and ContractState
+### GenesisDenom
+GenesisDenom defines a tokenfactory denom that is defined within genesis
+state. The structure contains DenomAuthorityMetadata which defines the
+denom's admin.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `contract_address` | [string](#string) |  |  |
-| `contract_info` | [ContractInfo](#cosmwasm.wasm.v1.ContractInfo) |  |  |
-| `contract_state` | [Model](#cosmwasm.wasm.v1.Model) | repeated |  |
-| `contract_code_history` | [ContractCodeHistoryEntry](#cosmwasm.wasm.v1.ContractCodeHistoryEntry) | repeated |  |
+| `denom` | [string](#string) |  |  |
+| `authority_metadata` | [DenomAuthorityMetadata](#cosmwasm.tokenfactory.v1beta1.DenomAuthorityMetadata) |  |  |
 
 
 
 
 
 
-<a name="cosmwasm.wasm.v1.GenesisState"></a>
+<a name="cosmwasm.tokenfactory.v1beta1.GenesisState"></a>
 
 ### GenesisState
-GenesisState - genesis state of x/wasm
+GenesisState defines the tokenfactory module's genesis state.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+<<<<<<< HEAD
 | `params` | [Params](#cosmwasm.wasm.v1.Params) |  |  |
 | `codes` | [Code](#cosmwasm.wasm.v1.Code) | repeated |  |
 | `contracts` | [Contract](#cosmwasm.wasm.v1.Contract) | repeated |  |
@@ -517,6 +276,10 @@ Sequence key and value of an id generation counter
 | ----- | ---- | ----- | ----------- |
 | `id_key` | [bytes](#bytes) |  |  |
 | `value` | [uint64](#uint64) |  |  |
+=======
+| `params` | [Params](#cosmwasm.tokenfactory.v1beta1.Params) |  | params defines the paramaters of the module. |
+| `factory_denoms` | [GenesisDenom](#cosmwasm.tokenfactory.v1beta1.GenesisDenom) | repeated |  |
+>>>>>>> notional/release/v0.30.0-sdk-v0.46.x
 
 
 
@@ -532,71 +295,74 @@ Sequence key and value of an id generation counter
 
 
 
-<a name="cosmwasm/wasm/v1/ibc.proto"></a>
+<a name="cosmwasm/tokenfactory/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## cosmwasm/wasm/v1/ibc.proto
+## cosmwasm/tokenfactory/v1beta1/query.proto
 
 
 
-<a name="cosmwasm.wasm.v1.MsgIBCCloseChannel"></a>
+<a name="cosmwasm.tokenfactory.v1beta1.QueryDenomAuthorityMetadataRequest"></a>
 
-### MsgIBCCloseChannel
-MsgIBCCloseChannel port and channel need to be owned by the contract
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `channel` | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.MsgIBCSend"></a>
-
-### MsgIBCSend
-MsgIBCSend
+### QueryDenomAuthorityMetadataRequest
+QueryDenomAuthorityMetadataRequest defines the request structure for the
+DenomAuthorityMetadata gRPC query.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `channel` | [string](#string) |  | the channel by which the packet will be sent |
-| `timeout_height` | [uint64](#uint64) |  | Timeout height relative to the current block height. The timeout is disabled when set to 0. |
-| `timeout_timestamp` | [uint64](#uint64) |  | Timeout timestamp (in nanoseconds) relative to the current block timestamp. The timeout is disabled when set to 0. |
-| `data` | [bytes](#bytes) |  | Data is the payload to transfer. We must not make assumption what format or content is in here. |
+| `denom` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.QueryDenomAuthorityMetadataResponse"></a>
+
+### QueryDenomAuthorityMetadataResponse
+QueryDenomAuthorityMetadataResponse defines the response structure for the
+DenomAuthorityMetadata gRPC query.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority_metadata` | [DenomAuthorityMetadata](#cosmwasm.tokenfactory.v1beta1.DenomAuthorityMetadata) |  |  |
+
+
+
+
+
+<<<<<<< HEAD
+
+<a name="cosmwasm.wasm.v1.MsgIBCSendResponse"></a>
+
+### MsgIBCSendResponse
+MsgIBCSendResponse
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sequence` | [uint64](#uint64) |  | Sequence number of the IBC packet sent |
 
 
 
 
 
  <!-- end messages -->
+=======
+>>>>>>> notional/release/v0.30.0-sdk-v0.46.x
 
- <!-- end enums -->
+<a name="cosmwasm.tokenfactory.v1beta1.QueryDenomsFromCreatorRequest"></a>
 
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="cosmwasm/wasm/v1/proposal.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## cosmwasm/wasm/v1/proposal.proto
-
-
-
-<a name="cosmwasm.wasm.v1.AccessConfigUpdate"></a>
-
-### AccessConfigUpdate
-AccessConfigUpdate contains the code id and the access config to be
-applied.
+### QueryDenomsFromCreatorRequest
+QueryDenomsFromCreatorRequest defines the request structure for the
+DenomsFromCreator gRPC query.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+<<<<<<< HEAD
 | `code_id` | [uint64](#uint64) |  | CodeID is the reference to the stored WASM code to be updated |
 | `instantiate_permission` | [AccessConfig](#cosmwasm.wasm.v1.AccessConfig) |  | InstantiatePermission to apply to the set of code ids |
 
@@ -879,247 +645,32 @@ CodeInfoResponse contains code meta data from CodeInfo
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `code_id` | [uint64](#uint64) |  | id for legacy support |
+=======
+>>>>>>> notional/release/v0.30.0-sdk-v0.46.x
 | `creator` | [string](#string) |  |  |
-| `data_hash` | [bytes](#bytes) |  |  |
-| `instantiate_permission` | [AccessConfig](#cosmwasm.wasm.v1.AccessConfig) |  |  |
 
 
 
 
 
 
-<a name="cosmwasm.wasm.v1.QueryAllContractStateRequest"></a>
+<a name="cosmwasm.tokenfactory.v1beta1.QueryDenomsFromCreatorResponse"></a>
 
-### QueryAllContractStateRequest
-QueryAllContractStateRequest is the request type for the
-Query/AllContractState RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  | address is the address of the contract |
-| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines an optional pagination for the request. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryAllContractStateResponse"></a>
-
-### QueryAllContractStateResponse
-QueryAllContractStateResponse is the response type for the
-Query/AllContractState RPC method
+### QueryDenomsFromCreatorResponse
+QueryDenomsFromCreatorRequest defines the response structure for the
+DenomsFromCreator gRPC query.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `models` | [Model](#cosmwasm.wasm.v1.Model) | repeated |  |
-| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
+| `denoms` | [string](#string) | repeated |  |
 
 
 
 
 
 
-<a name="cosmwasm.wasm.v1.QueryCodeRequest"></a>
-
-### QueryCodeRequest
-QueryCodeRequest is the request type for the Query/Code RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `code_id` | [uint64](#uint64) |  | grpc-gateway_out does not support Go style CodID |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryCodeResponse"></a>
-
-### QueryCodeResponse
-QueryCodeResponse is the response type for the Query/Code RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `code_info` | [CodeInfoResponse](#cosmwasm.wasm.v1.CodeInfoResponse) |  |  |
-| `data` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryCodesRequest"></a>
-
-### QueryCodesRequest
-QueryCodesRequest is the request type for the Query/Codes RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines an optional pagination for the request. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryCodesResponse"></a>
-
-### QueryCodesResponse
-QueryCodesResponse is the response type for the Query/Codes RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `code_infos` | [CodeInfoResponse](#cosmwasm.wasm.v1.CodeInfoResponse) | repeated |  |
-| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryContractHistoryRequest"></a>
-
-### QueryContractHistoryRequest
-QueryContractHistoryRequest is the request type for the Query/ContractHistory
-RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  | address is the address of the contract to query |
-| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines an optional pagination for the request. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryContractHistoryResponse"></a>
-
-### QueryContractHistoryResponse
-QueryContractHistoryResponse is the response type for the
-Query/ContractHistory RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `entries` | [ContractCodeHistoryEntry](#cosmwasm.wasm.v1.ContractCodeHistoryEntry) | repeated |  |
-| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryContractInfoRequest"></a>
-
-### QueryContractInfoRequest
-QueryContractInfoRequest is the request type for the Query/ContractInfo RPC
-method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  | address is the address of the contract to query |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryContractInfoResponse"></a>
-
-### QueryContractInfoResponse
-QueryContractInfoResponse is the response type for the Query/ContractInfo RPC
-method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  | address is the address of the contract |
-| `contract_info` | [ContractInfo](#cosmwasm.wasm.v1.ContractInfo) |  |  |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryContractsByCodeRequest"></a>
-
-### QueryContractsByCodeRequest
-QueryContractsByCodeRequest is the request type for the Query/ContractsByCode
-RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `code_id` | [uint64](#uint64) |  | grpc-gateway_out does not support Go style CodID |
-| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines an optional pagination for the request. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryContractsByCodeResponse"></a>
-
-### QueryContractsByCodeResponse
-QueryContractsByCodeResponse is the response type for the
-Query/ContractsByCode RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `contracts` | [string](#string) | repeated | contracts are a set of contract addresses |
-| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryContractsByCreatorRequest"></a>
-
-### QueryContractsByCreatorRequest
-QueryContractsByCreatorRequest is the request type for the
-Query/ContractsByCreator RPC method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `creator_address` | [string](#string) |  | CreatorAddress is the address of contract creator |
-| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | Pagination defines an optional pagination for the request. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryContractsByCreatorResponse"></a>
-
-### QueryContractsByCreatorResponse
-QueryContractsByCreatorResponse is the response type for the
-Query/ContractsByCreator RPC method.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `contract_addresses` | [string](#string) | repeated | ContractAddresses result set |
-| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | Pagination defines the pagination in the response. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryParamsRequest"></a>
+<a name="cosmwasm.tokenfactory.v1beta1.QueryParamsRequest"></a>
 
 ### QueryParamsRequest
 QueryParamsRequest is the request type for the Query/Params RPC method.
@@ -1129,7 +680,7 @@ QueryParamsRequest is the request type for the Query/Params RPC method.
 
 
 
-<a name="cosmwasm.wasm.v1.QueryParamsResponse"></a>
+<a name="cosmwasm.tokenfactory.v1beta1.QueryParamsResponse"></a>
 
 ### QueryParamsResponse
 QueryParamsResponse is the response type for the Query/Params RPC method.
@@ -1137,106 +688,7 @@ QueryParamsResponse is the response type for the Query/Params RPC method.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#cosmwasm.wasm.v1.Params) |  | params defines the parameters of the module. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryPinnedCodesRequest"></a>
-
-### QueryPinnedCodesRequest
-QueryPinnedCodesRequest is the request type for the Query/PinnedCodes
-RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines an optional pagination for the request. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryPinnedCodesResponse"></a>
-
-### QueryPinnedCodesResponse
-QueryPinnedCodesResponse is the response type for the
-Query/PinnedCodes RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `code_ids` | [uint64](#uint64) | repeated |  |
-| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryRawContractStateRequest"></a>
-
-### QueryRawContractStateRequest
-QueryRawContractStateRequest is the request type for the
-Query/RawContractState RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  | address is the address of the contract |
-| `query_data` | [bytes](#bytes) |  |  |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QueryRawContractStateResponse"></a>
-
-### QueryRawContractStateResponse
-QueryRawContractStateResponse is the response type for the
-Query/RawContractState RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `data` | [bytes](#bytes) |  | Data contains the raw store data |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QuerySmartContractStateRequest"></a>
-
-### QuerySmartContractStateRequest
-QuerySmartContractStateRequest is the request type for the
-Query/SmartContractState RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  | address is the address of the contract |
-| `query_data` | [bytes](#bytes) |  | QueryData contains the query data passed to the contract |
-
-
-
-
-
-
-<a name="cosmwasm.wasm.v1.QuerySmartContractStateResponse"></a>
-
-### QuerySmartContractStateResponse
-QuerySmartContractStateResponse is the response type for the
-Query/SmartContractState RPC method
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `data` | [bytes](#bytes) |  | Data contains the json data returned from the smart contract |
+| `params` | [Params](#cosmwasm.tokenfactory.v1beta1.Params) |  | params defines the parameters of the module. |
 
 
 
@@ -1249,24 +701,197 @@ Query/SmartContractState RPC method
  <!-- end HasExtensions -->
 
 
-<a name="cosmwasm.wasm.v1.Query"></a>
+<a name="cosmwasm.tokenfactory.v1beta1.Query"></a>
 
 ### Query
-Query provides defines the gRPC querier service
+Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `ContractInfo` | [QueryContractInfoRequest](#cosmwasm.wasm.v1.QueryContractInfoRequest) | [QueryContractInfoResponse](#cosmwasm.wasm.v1.QueryContractInfoResponse) | ContractInfo gets the contract meta data | GET|/cosmwasm/wasm/v1/contract/{address}|
-| `ContractHistory` | [QueryContractHistoryRequest](#cosmwasm.wasm.v1.QueryContractHistoryRequest) | [QueryContractHistoryResponse](#cosmwasm.wasm.v1.QueryContractHistoryResponse) | ContractHistory gets the contract code history | GET|/cosmwasm/wasm/v1/contract/{address}/history|
-| `ContractsByCode` | [QueryContractsByCodeRequest](#cosmwasm.wasm.v1.QueryContractsByCodeRequest) | [QueryContractsByCodeResponse](#cosmwasm.wasm.v1.QueryContractsByCodeResponse) | ContractsByCode lists all smart contracts for a code id | GET|/cosmwasm/wasm/v1/code/{code_id}/contracts|
-| `AllContractState` | [QueryAllContractStateRequest](#cosmwasm.wasm.v1.QueryAllContractStateRequest) | [QueryAllContractStateResponse](#cosmwasm.wasm.v1.QueryAllContractStateResponse) | AllContractState gets all raw store data for a single contract | GET|/cosmwasm/wasm/v1/contract/{address}/state|
-| `RawContractState` | [QueryRawContractStateRequest](#cosmwasm.wasm.v1.QueryRawContractStateRequest) | [QueryRawContractStateResponse](#cosmwasm.wasm.v1.QueryRawContractStateResponse) | RawContractState gets single key from the raw store data of a contract | GET|/cosmwasm/wasm/v1/contract/{address}/raw/{query_data}|
-| `SmartContractState` | [QuerySmartContractStateRequest](#cosmwasm.wasm.v1.QuerySmartContractStateRequest) | [QuerySmartContractStateResponse](#cosmwasm.wasm.v1.QuerySmartContractStateResponse) | SmartContractState get smart query result from the contract | GET|/cosmwasm/wasm/v1/contract/{address}/smart/{query_data}|
-| `Code` | [QueryCodeRequest](#cosmwasm.wasm.v1.QueryCodeRequest) | [QueryCodeResponse](#cosmwasm.wasm.v1.QueryCodeResponse) | Code gets the binary code and metadata for a singe wasm code | GET|/cosmwasm/wasm/v1/code/{code_id}|
-| `Codes` | [QueryCodesRequest](#cosmwasm.wasm.v1.QueryCodesRequest) | [QueryCodesResponse](#cosmwasm.wasm.v1.QueryCodesResponse) | Codes gets the metadata for all stored wasm codes | GET|/cosmwasm/wasm/v1/code|
-| `PinnedCodes` | [QueryPinnedCodesRequest](#cosmwasm.wasm.v1.QueryPinnedCodesRequest) | [QueryPinnedCodesResponse](#cosmwasm.wasm.v1.QueryPinnedCodesResponse) | PinnedCodes gets the pinned code ids | GET|/cosmwasm/wasm/v1/codes/pinned|
-| `Params` | [QueryParamsRequest](#cosmwasm.wasm.v1.QueryParamsRequest) | [QueryParamsResponse](#cosmwasm.wasm.v1.QueryParamsResponse) | Params gets the module params | GET|/cosmwasm/wasm/v1/codes/params|
-| `ContractsByCreator` | [QueryContractsByCreatorRequest](#cosmwasm.wasm.v1.QueryContractsByCreatorRequest) | [QueryContractsByCreatorResponse](#cosmwasm.wasm.v1.QueryContractsByCreatorResponse) | ContractsByCreator gets the contracts by creator | GET|/cosmwasm/wasm/v1/contracts/creator/{creator_address}|
+| `Params` | [QueryParamsRequest](#cosmwasm.tokenfactory.v1beta1.QueryParamsRequest) | [QueryParamsResponse](#cosmwasm.tokenfactory.v1beta1.QueryParamsResponse) | Params defines a gRPC query method that returns the tokenfactory module's parameters. | GET|/osmosis/tokenfactory/v1beta1/params|
+| `DenomAuthorityMetadata` | [QueryDenomAuthorityMetadataRequest](#cosmwasm.tokenfactory.v1beta1.QueryDenomAuthorityMetadataRequest) | [QueryDenomAuthorityMetadataResponse](#cosmwasm.tokenfactory.v1beta1.QueryDenomAuthorityMetadataResponse) | DenomAuthorityMetadata defines a gRPC query method for fetching DenomAuthorityMetadata for a particular denom. | GET|/osmosis/tokenfactory/v1beta1/denoms/{denom}/authority_metadata|
+| `DenomsFromCreator` | [QueryDenomsFromCreatorRequest](#cosmwasm.tokenfactory.v1beta1.QueryDenomsFromCreatorRequest) | [QueryDenomsFromCreatorResponse](#cosmwasm.tokenfactory.v1beta1.QueryDenomsFromCreatorResponse) | DenomsFromCreator defines a gRPC query method for fetching all denominations created by a specific admin/creator. | GET|/osmosis/tokenfactory/v1beta1/denoms_from_creator/{creator}|
+
+ <!-- end services -->
+
+
+
+<a name="cosmwasm/tokenfactory/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## cosmwasm/tokenfactory/v1beta1/tx.proto
+
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.MsgBurn"></a>
+
+### MsgBurn
+MsgBurn is the sdk.Msg type for allowing an admin account to burn
+a token.  For now, we only support burning from the sender account.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.MsgBurnResponse"></a>
+
+### MsgBurnResponse
+
+
+
+
+
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.MsgChangeAdmin"></a>
+
+### MsgChangeAdmin
+MsgChangeAdmin is the sdk.Msg type for allowing an admin account to reassign
+adminship of a denom to a new account
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `denom` | [string](#string) |  |  |
+| `new_admin` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.MsgChangeAdminResponse"></a>
+
+### MsgChangeAdminResponse
+MsgChangeAdminResponse defines the response structure for an executed
+MsgChangeAdmin message.
+
+
+
+
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.MsgCreateDenom"></a>
+
+### MsgCreateDenom
+MsgCreateDenom defines the message structure for the CreateDenom gRPC service
+method. It allows an account to create a new denom. It requires a sender
+address and a sub denomination. The (sender_address, sub_denomination) tuple
+must be unique and cannot be re-used.
+
+The resulting denom created is defined as
+<factory/{creatorAddress}/{subdenom}>. The resulting denom's admin is
+originally set to be the creator, but this can be changed later. The token
+denom does not indicate the current admin.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `subdenom` | [string](#string) |  | subdenom can be up to 44 "alphanumeric" characters long. |
+
+
+
+
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.MsgCreateDenomResponse"></a>
+
+### MsgCreateDenomResponse
+MsgCreateDenomResponse is the return value of MsgCreateDenom
+It returns the full string of the newly created denom
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `new_token_denom` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.MsgMint"></a>
+
+### MsgMint
+MsgMint is the sdk.Msg type for allowing an admin account to mint
+more of a token.  For now, we only support minting to the sender account
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `amount` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
+
+
+
+
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.MsgMintResponse"></a>
+
+### MsgMintResponse
+
+
+
+
+
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.MsgSetDenomMetadata"></a>
+
+### MsgSetDenomMetadata
+MsgSetDenomMetadata is the sdk.Msg type for allowing an admin account to set
+the denom's bank metadata
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  |  |
+| `metadata` | [cosmos.bank.v1beta1.Metadata](#cosmos.bank.v1beta1.Metadata) |  |  |
+
+
+
+
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.MsgSetDenomMetadataResponse"></a>
+
+### MsgSetDenomMetadataResponse
+MsgSetDenomMetadataResponse defines the response structure for an executed
+MsgSetDenomMetadata message.
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="cosmwasm.tokenfactory.v1beta1.Msg"></a>
+
+### Msg
+Msg defines the tokefactory module's gRPC message service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `CreateDenom` | [MsgCreateDenom](#cosmwasm.tokenfactory.v1beta1.MsgCreateDenom) | [MsgCreateDenomResponse](#cosmwasm.tokenfactory.v1beta1.MsgCreateDenomResponse) |  | |
+| `Mint` | [MsgMint](#cosmwasm.tokenfactory.v1beta1.MsgMint) | [MsgMintResponse](#cosmwasm.tokenfactory.v1beta1.MsgMintResponse) |  | |
+| `Burn` | [MsgBurn](#cosmwasm.tokenfactory.v1beta1.MsgBurn) | [MsgBurnResponse](#cosmwasm.tokenfactory.v1beta1.MsgBurnResponse) |  | |
+| `ChangeAdmin` | [MsgChangeAdmin](#cosmwasm.tokenfactory.v1beta1.MsgChangeAdmin) | [MsgChangeAdminResponse](#cosmwasm.tokenfactory.v1beta1.MsgChangeAdminResponse) |  | |
+| `SetDenomMetadata` | [MsgSetDenomMetadata](#cosmwasm.tokenfactory.v1beta1.MsgSetDenomMetadata) | [MsgSetDenomMetadataResponse](#cosmwasm.tokenfactory.v1beta1.MsgSetDenomMetadataResponse) |  | |
 
  <!-- end services -->
 
@@ -1287,7 +912,7 @@ MsgClearAdmin removes any admin stored for a smart contract
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  | Sender is the that actor that signed the messages |
+| `sender` | [string](#string) |  | Sender is the actor that signed the messages |
 | `contract` | [string](#string) |  | Contract is the address of the smart contract |
 
 
@@ -1455,7 +1080,7 @@ MsgStoreCode submit Wasm code to the system
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  | Sender is the that actor that signed the messages |
+| `sender` | [string](#string) |  | Sender is the actor that signed the messages |
 | `wasm_byte_code` | [bytes](#bytes) |  | WASMByteCode can be raw or gzip compressed |
 | `instantiate_permission` | [AccessConfig](#cosmwasm.wasm.v1.AccessConfig) |  | InstantiatePermission access control to apply on contract creation, optional |
 
@@ -1506,6 +1131,33 @@ MsgUpdateAdminResponse returns empty data
 
 
 
+
+<a name="cosmwasm.wasm.v1.MsgUpdateInstantiateConfig"></a>
+
+### MsgUpdateInstantiateConfig
+MsgUpdateInstantiateConfig updates instantiate config for a smart contract
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [string](#string) |  | Sender is the that actor that signed the messages |
+| `code_id` | [uint64](#uint64) |  | CodeID references the stored WASM code |
+| `new_instantiate_permission` | [AccessConfig](#cosmwasm.wasm.v1.AccessConfig) |  | NewInstantiatePermission is the new access control |
+
+
+
+
+
+
+<a name="cosmwasm.wasm.v1.MsgUpdateInstantiateConfigResponse"></a>
+
+### MsgUpdateInstantiateConfigResponse
+MsgUpdateInstantiateConfigResponse returns empty data
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -1527,6 +1179,7 @@ Msg defines the wasm Msg service.
 | `MigrateContract` | [MsgMigrateContract](#cosmwasm.wasm.v1.MsgMigrateContract) | [MsgMigrateContractResponse](#cosmwasm.wasm.v1.MsgMigrateContractResponse) | Migrate runs a code upgrade/ downgrade for a smart contract | |
 | `UpdateAdmin` | [MsgUpdateAdmin](#cosmwasm.wasm.v1.MsgUpdateAdmin) | [MsgUpdateAdminResponse](#cosmwasm.wasm.v1.MsgUpdateAdminResponse) | UpdateAdmin sets a new admin for a smart contract | |
 | `ClearAdmin` | [MsgClearAdmin](#cosmwasm.wasm.v1.MsgClearAdmin) | [MsgClearAdminResponse](#cosmwasm.wasm.v1.MsgClearAdminResponse) | ClearAdmin removes any admin stored for a smart contract | |
+| `UpdateInstantiateConfig` | [MsgUpdateInstantiateConfig](#cosmwasm.wasm.v1.MsgUpdateInstantiateConfig) | [MsgUpdateInstantiateConfigResponse](#cosmwasm.wasm.v1.MsgUpdateInstantiateConfigResponse) | UpdateInstantiateConfig updates instantiate config for a smart contract | |
 
  <!-- end services -->
 

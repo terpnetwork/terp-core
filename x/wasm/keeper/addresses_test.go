@@ -1,4 +1,4 @@
-package keeper
+package keeper_test
 
 import (
 	"encoding/json"
@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
+	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 )
 
 func TestBuildContractAddress(t *testing.T) {
@@ -35,7 +36,7 @@ func TestBuildContractAddress(t *testing.T) {
 	for i, spec := range specs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			// when
-			gotAddr := BuildContractAddressPredictable(spec.In.Checksum, spec.In.Creator, spec.In.Salt.Bytes(), []byte(spec.In.Msg))
+			gotAddr := keeper.BuildContractAddressPredictable(spec.In.Checksum, spec.In.Creator, spec.In.Salt.Bytes(), []byte(spec.In.Msg))
 
 			require.Equal(t, spec.Out.Address.String(), gotAddr.String())
 			require.NoError(t, sdk.VerifyAddressFormat(gotAddr))

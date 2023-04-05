@@ -30,7 +30,7 @@ func TestLegacyQueryContractState(t *testing.T) {
 	contractID, _, err := keepers.ContractKeeper.Create(ctx, creator, wasmCode, nil)
 	require.NoError(t, err)
 
-	_, _, bob := keyPubAddr()
+	_, bob := keyPubAddr()
 	initMsg := HackatomExampleInitMsg{
 		Verifier:    anyAddr,
 		Beneficiary: bob,
@@ -45,7 +45,8 @@ func TestLegacyQueryContractState(t *testing.T) {
 		{Key: []byte("foo"), Value: []byte(`"bar"`)},
 		{Key: []byte{0x0, 0x1}, Value: []byte(`{"count":8}`)},
 	}
-	keeper.importContractState(ctx, addr, contractModel)
+	err = keeper.importContractState(ctx, addr, contractModel)
+	require.NoError(t, err)
 
 	// this gets us full error, not redacted sdk.Error
 	var defaultQueryGasLimit sdk.Gas = 3000000
@@ -168,7 +169,7 @@ func TestLegacyQueryContractListByCodeOrdering(t *testing.T) {
 	codeID, _, err := keepers.ContractKeeper.Create(ctx, creator, wasmCode, nil)
 	require.NoError(t, err)
 
-	_, _, bob := keyPubAddr()
+	_, bob := keyPubAddr()
 	initMsg := HackatomExampleInitMsg{
 		Verifier:    anyAddr,
 		Beneficiary: bob,
@@ -285,7 +286,7 @@ func TestLegacyQueryContractHistory(t *testing.T) {
 	}
 	for msg, spec := range specs {
 		t.Run(msg, func(t *testing.T) {
-			_, _, myContractAddr := keyPubAddr()
+			_, myContractAddr := keyPubAddr()
 			keeper.appendToContractHistory(ctx, myContractAddr, spec.srcHistory...)
 
 			var defaultQueryGasLimit sdk.Gas = 3000000

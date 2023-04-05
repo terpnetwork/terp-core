@@ -17,14 +17,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/terpnetwork/terp-core/x/wasm/client/cli"
-	"github.com/terpnetwork/terp-core/x/wasm/client/rest" //nolint:staticcheck
 	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 	"github.com/terpnetwork/terp-core/x/wasm/simulation"
 	"github.com/terpnetwork/terp-core/x/wasm/types"
@@ -45,7 +43,7 @@ const (
 // AppModuleBasic defines the basic application module used by the wasm module.
 type AppModuleBasic struct{}
 
-func (b AppModuleBasic) RegisterLegacyAminoCodec(amino *codec.LegacyAmino) { //nolint:staticcheck
+func (b AppModuleBasic) RegisterLegacyAminoCodec(amino *codec.LegacyAmino) {
 	RegisterCodec(amino)
 }
 
@@ -70,18 +68,13 @@ func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 }
 
 // ValidateGenesis performs genesis state validation for the wasm module.
-func (b AppModuleBasic) ValidateGenesis(marshaler codec.JSONCodec, config client.TxEncodingConfig, message json.RawMessage) error {
+func (b AppModuleBasic) ValidateGenesis(marshaler codec.JSONCodec, _ client.TxEncodingConfig, message json.RawMessage) error {
 	var data GenesisState
 	err := marshaler.UnmarshalJSON(message, &data)
 	if err != nil {
 		return err
 	}
 	return ValidateGenesis(data)
-}
-
-// RegisterRESTRoutes registers the REST routes for the wasm module.
-func (AppModuleBasic) RegisterRESTRoutes(cliCtx client.Context, rtr *mux.Router) {
-	rest.RegisterRoutes(cliCtx, rtr)
 }
 
 // GetTxCmd returns the root tx command for the wasm module.
@@ -146,12 +139,12 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	}
 }
 
-func (am AppModule) LegacyQuerierHandler(amino *codec.LegacyAmino) sdk.Querier { //nolint:staticcheck
+func (am AppModule) LegacyQuerierHandler(_ *codec.LegacyAmino) sdk.Querier {
 	return keeper.NewLegacyQuerier(am.keeper, am.keeper.QueryGasLimit())
 }
 
 // RegisterInvariants registers the wasm module invariants.
-func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
+func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // Route returns the message routing key for the wasm module.
 func (am AppModule) Route() sdk.Route {
@@ -201,7 +194,7 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 }
 
 // ProposalContents doesn't return any content functions for governance proposals.
-func (am AppModule) ProposalContents(simState module.SimulationState) []simtypes.WeightedProposalContent {
+func (am AppModule) ProposalContents(_ module.SimulationState) []simtypes.WeightedProposalContent {
 	return simulation.ProposalContents(am.bankKeeper, am.keeper)
 }
 
@@ -211,7 +204,7 @@ func (am AppModule) RandomizedParams(r *rand.Rand) []simtypes.ParamChange {
 }
 
 // RegisterStoreDecoder registers a decoder for supply module's types
-func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
+func (am AppModule) RegisterStoreDecoder(_ sdk.StoreDecoderRegistry) {
 }
 
 // WeightedOperations returns the all the gov module operations with their respective weights.
@@ -280,7 +273,7 @@ func getExpectedLibwasmVersion() string {
 	return ""
 }
 
-func checkLibwasmVersion(cmd *cobra.Command, args []string) error {
+func checkLibwasmVersion(_ *cobra.Command, _ []string) error {
 	wasmVersion, err := wasmvm.LibwasmvmVersion()
 	if err != nil {
 		return fmt.Errorf("unable to retrieve libwasmversion %w", err)

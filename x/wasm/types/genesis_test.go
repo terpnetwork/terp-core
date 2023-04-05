@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/rand"
 
@@ -37,7 +37,7 @@ func TestValidateGenesisState(t *testing.T) {
 		},
 		"contract invalid": {
 			srcMutator: func(s *GenesisState) {
-				s.Contracts[0].ContractAddress = "invalid"
+				s.Contracts[0].ContractAddress = invalidAddress
 			},
 			expError: true,
 		},
@@ -119,13 +119,13 @@ func TestContractValidateBasic(t *testing.T) {
 		"all good": {srcMutator: func(_ *Contract) {}},
 		"contract address invalid": {
 			srcMutator: func(c *Contract) {
-				c.ContractAddress = "invalid"
+				c.ContractAddress = invalidAddress
 			},
 			expError: true,
 		},
 		"contract info invalid": {
 			srcMutator: func(c *Contract) {
-				c.ContractInfo.Creator = "invalid"
+				c.ContractInfo.Creator = invalidAddress
 			},
 			expError: true,
 		},

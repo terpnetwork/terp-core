@@ -15,7 +15,6 @@ import (
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	"github.com/cosmos/cosmos-sdk/x/staking/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +29,7 @@ type StakingInitMsg struct {
 	Decimals  uint8          `json:"decimals"`
 	Validator sdk.ValAddress `json:"validator"`
 	ExitTax   sdk.Dec        `json:"exit_tax"`
-	// MinWithdrawal is uint128 encoded as a string (use sdk.Int?)
+	// MinWithdrawal is uint128 encoded as a string (use math.Int?)
 	MinWithdrawl string `json:"min_withdrawal"`
 }
 
@@ -88,7 +87,7 @@ type InvestmentResponse struct {
 	Owner        sdk.AccAddress `json:"owner"`
 	Validator    sdk.ValAddress `json:"validator"`
 	ExitTax      sdk.Dec        `json:"exit_tax"`
-	// MinWithdrawl is uint128 encoded as a string (use sdk.Int?)
+	// MinWithdrawl is uint128 encoded as a string (use math.Int?)
 	MinWithdrawl string `json:"min_withdrawal"`
 }
 
@@ -129,10 +128,10 @@ func TestInitializeStaking(t *testing.T) {
 	require.NotEmpty(t, stakingAddr)
 
 	// nothing spent here
-	checkAccount(t, ctx, accKeeper, bankKeeper, creator, deposit)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, creator, deposit)
 
 	// try to register with a validator not on the list and it fails
-	_, _, bob := keyPubAddr()
+	_, bob := keyPubAddr()
 	badInitMsg := StakingInitMsg{
 		Name:         "Missing Validator",
 		Symbol:       "MISS",
@@ -255,8 +254,8 @@ func TestBonding(t *testing.T) {
 	require.NoError(t, err)
 
 	// check some account values - the money is on neither account (cuz it is bonded)
-	checkAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.Coins{})
-	checkAccount(t, ctx, accKeeper, bankKeeper, bob, funds)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.Coins{})
+	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, funds)
 
 	// make sure the proper number of tokens have been bonded
 	val, _ = stakingKeeper.GetValidator(ctx, valAddr)
@@ -313,8 +312,8 @@ func TestUnbonding(t *testing.T) {
 
 	// check some account values - the money is on neither account (cuz it is bonded)
 	// Note: why is this immediate? just test setup?
-	checkAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.Coins{})
-	checkAccount(t, ctx, accKeeper, bankKeeper, bob, funds)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.Coins{})
+	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, funds)
 
 	// make sure the proper number of tokens have been bonded (80k - 27k = 53k)
 	val, _ = stakingKeeper.GetValidator(ctx, valAddr)
@@ -382,8 +381,8 @@ func TestReinvest(t *testing.T) {
 
 	// check some account values - the money is on neither account (cuz it is bonded)
 	// Note: why is this immediate? just test setup?
-	checkAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.Coins{})
-	checkAccount(t, ctx, accKeeper, bankKeeper, bob, funds)
+	CheckAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.Coins{})
+	CheckAccount(t, ctx, accKeeper, bankKeeper, bob, funds)
 
 	// check the delegation itself
 	d, found := stakingKeeper.GetDelegation(ctx, contractAddr, valAddr)
@@ -661,10 +660,10 @@ func addValidator(t *testing.T, ctx sdk.Context, stakingKeeper stakingkeeper.Kee
 	pkAny, err := codectypes.NewAnyWithValue(pubKey)
 	require.NoError(t, err)
 	msg := stakingtypes.MsgCreateValidator{
-		Description: types.Description{
+		Description: stakingtypes.Description{
 			Moniker: "Validator power",
 		},
-		Commission: types.CommissionRates{
+		Commission: stakingtypes.CommissionRates{
 			Rate:          sdk.MustNewDecFromStr("0.1"),
 			MaxRate:       sdk.MustNewDecFromStr("0.2"),
 			MaxChangeRate: sdk.MustNewDecFromStr("0.01"),
@@ -676,8 +675,8 @@ func addValidator(t *testing.T, ctx sdk.Context, stakingKeeper stakingkeeper.Kee
 		Value:             value,
 	}
 
-	h := staking.NewHandler(stakingKeeper)
-	_, err = h(ctx, &msg)
+	h := stakingkeeper.NewMsgServerImpl(stakingKeeper)
+	_, err = h.CreateValidator(ctx, &msg)
 	require.NoError(t, err)
 	return addr
 }
