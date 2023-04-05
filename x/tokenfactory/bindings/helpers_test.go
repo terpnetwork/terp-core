@@ -7,24 +7,28 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"github.com/cometbft/cometbft/crypto"
+	"github.com/cometbft/cometbft/crypto/ed25519"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/terpnetwork/terp-core/app"
+	"github.com/terpnetwork/terp-core/x/wasm"
 	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 )
 
 func CreateTestInput() (*app.TerpApp, sdk.Context) {
-	osmosis := app.Setup(&testing.T{}, false)
+	var emptyWasmOpts []wasm.Option
+
+	osmosis := app.Setup(&testing.T{}, emptyWasmOpts...)
 	ctx := osmosis.BaseApp.NewContext(false, tmproto.Header{Height: 1, ChainID: "osmosis-1", Time: time.Now().UTC()})
 	return osmosis, ctx
 }
 
-func FundAccount(_ *testing.T, _ sdk.Context, _ *app.TerpApp, _ sdk.AccAddress) {
+func FundAccount(t *testing.T, ctx sdk.Context, osmosis *app.TerpApp, acct sdk.AccAddress) {
+	t.Helper()
 	// TODO:
 	// err := simapp.FundAccount(osmosis.BankKeeper, ctx, acct, sdk.NewCoins(
 	// 	sdk.NewCoin("uosmo", sdk.NewInt(10000000000)),
@@ -45,13 +49,12 @@ func RandomAccountAddress() sdk.AccAddress {
 	return addr
 }
 
-// RandomBech32AccountAddress returns a random account address in bech32 format
 func RandomBech32AccountAddress() string {
 	return RandomAccountAddress().String()
 }
 
-// storeReflectCode stores the reflect contract code in the store
 func storeReflectCode(t *testing.T, ctx sdk.Context, tokenz *app.TerpApp, addr sdk.AccAddress) uint64 {
+	t.Helper()
 	wasmCode, err := os.ReadFile("./testdata/token_reflect.wasm")
 	require.NoError(t, err)
 
@@ -63,6 +66,7 @@ func storeReflectCode(t *testing.T, ctx sdk.Context, tokenz *app.TerpApp, addr s
 }
 
 func instantiateReflectContract(t *testing.T, ctx sdk.Context, tokenz *app.TerpApp, funder sdk.AccAddress) sdk.AccAddress {
+	t.Helper()
 	initMsgBz := []byte("{}")
 	contractKeeper := keeper.NewDefaultPermissionKeeper(tokenz.WasmKeeper)
 	codeID := uint64(1)
@@ -73,6 +77,7 @@ func instantiateReflectContract(t *testing.T, ctx sdk.Context, tokenz *app.TerpA
 }
 
 func fundAccount(t *testing.T, ctx sdk.Context, tokenz *app.TerpApp, addr sdk.AccAddress, coins sdk.Coins) {
+	t.Helper()
 	// TODO:
 	// err := simapp.FundAccount(
 	// 	tokenz.BankKeeper,
@@ -89,6 +94,7 @@ func fundAccount(t *testing.T, ctx sdk.Context, tokenz *app.TerpApp, addr sdk.Ac
 }
 
 func SetupCustomApp(t *testing.T, addr sdk.AccAddress) (*app.TerpApp, sdk.Context) {
+	t.Helper()
 	tokenz, ctx := CreateTestInput()
 	wasmKeeper := tokenz.WasmKeeper
 

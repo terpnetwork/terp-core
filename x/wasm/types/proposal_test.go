@@ -7,13 +7,11 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	"github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 )
-
-const invalidAddress = "invalid address"
 
 func TestValidateProposalCommons(t *testing.T) {
 	type commonProposal struct {
@@ -50,7 +48,7 @@ func TestValidateProposalCommons(t *testing.T) {
 		},
 		"prevent title exceeds max length ": {
 			src: commonProposal{
-				Title:       strings.Repeat("a", govv1beta1.MaxTitleLength+1),
+				Title:       strings.Repeat("a", v1beta1.MaxTitleLength+1),
 				Description: "Bar",
 			},
 			expErr: true,
@@ -78,7 +76,7 @@ func TestValidateProposalCommons(t *testing.T) {
 		"prevent descr exceeds max length ": {
 			src: commonProposal{
 				Title:       "Foo",
-				Description: strings.Repeat("a", govv1beta1.MaxDescriptionLength+1),
+				Description: strings.Repeat("a", v1beta1.MaxDescriptionLength+1),
 			},
 			expErr: true,
 		},
@@ -768,7 +766,7 @@ func TestValidateClearAdminProposal(t *testing.T) {
 
 func TestProposalStrings(t *testing.T) {
 	specs := map[string]struct {
-		src govv1beta1.Content
+		src v1beta1.Content
 		exp string
 	}{
 		"store code": {
@@ -887,7 +885,7 @@ func TestProposalStrings(t *testing.T) {
 
 func TestProposalYaml(t *testing.T) {
 	specs := map[string]struct {
-		src govv1beta1.Content
+		src v1beta1.Content
 		exp string
 	}{
 		"store code": {
@@ -1035,8 +1033,8 @@ func TestConvertToProposals(t *testing.T) {
 func TestUnmarshalContentFromJson(t *testing.T) {
 	specs := map[string]struct {
 		src string
-		got govv1beta1.Content
-		exp govv1beta1.Content
+		got v1beta1.Content
+		exp v1beta1.Content
 	}{
 		"instantiate ": {
 			src: `
@@ -1093,7 +1091,7 @@ func TestUnmarshalContentFromJson(t *testing.T) {
 func TestProposalJsonSignBytes(t *testing.T) {
 	const myInnerMsg = `{"foo":"bar"}`
 	specs := map[string]struct {
-		src govv1beta1.Content
+		src v1beta1.Content
 		exp string
 	}{
 		"instantiate contract": {
@@ -1115,11 +1113,11 @@ func TestProposalJsonSignBytes(t *testing.T) {
 	}
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
-			msg, err := govv1beta1.NewMsgSubmitProposal(spec.src, sdk.NewCoins(), []byte{})
+			msg, err := v1beta1.NewMsgSubmitProposal(spec.src, sdk.NewCoins(), []byte{})
 			require.NoError(t, err)
 
 			bz := msg.GetSignBytes()
-			assert.JSONEq(t, spec.exp, string(bz), "raw: %s", string(bz))
+			assert.JSONEq(t, spec.exp, string(bz), "exp %s\n got: %s\n", spec.exp, string(bz))
 		})
 	}
 }

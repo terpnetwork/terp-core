@@ -50,3 +50,24 @@ func (k Keeper) burnFrom(ctx sdk.Context, amount sdk.Coin, burnFrom string) erro
 
 	return k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(amount))
 }
+
+// forceTransfer is a helper function to transfer coins from one account to another
+func (k Keeper) forceTransfer(ctx sdk.Context, amount sdk.Coin, fromAddr string, toAddr string) error { //nolint:unused
+	// verify that denom is an x/tokenfactory denom
+	_, _, err := types.DeconstructDenom(amount.Denom)
+	if err != nil {
+		return err
+	}
+
+	fromSdkAddr, err := sdk.AccAddressFromBech32(fromAddr)
+	if err != nil {
+		return err
+	}
+
+	toSdkAddr, err := sdk.AccAddressFromBech32(toAddr)
+	if err != nil {
+		return err
+	}
+
+	return k.bankKeeper.SendCoins(ctx, fromSdkAddr, toSdkAddr, sdk.NewCoins(amount))
+}

@@ -5,20 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	errorsmod "cosmossdk.io/errors"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
+	dbm "github.com/cometbft/cometbft-db"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/store"
-
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	channeltypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
-	dbm "github.com/tendermint/tm-db"
-
-	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/cosmos/gogoproto/proto"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -556,6 +559,72 @@ func TestQueryErrors(t *testing.T) {
 			q := keeper.NewQueryHandler(ctx, mock, sdk.AccAddress{}, keeper.NewDefaultWasmGasRegister())
 			_, gotErr := q.Query(wasmvmtypes.QueryRequest{}, 1)
 			assert.Equal(t, spec.expErr, gotErr)
+		})
+	}
+}
+
+func TestAcceptListStargateQuerier(t *testing.T) {
+	wasmApp := app.SetupWithEmptyStore(t)
+	ctx := wasmApp.NewUncachedContext(false, tmproto.Header{ChainID: "foo", Height: 1, Time: time.Now()})
+	err := wasmApp.StakingKeeper.SetParams(ctx, stakingtypes.DefaultParams())
+	require.NoError(t, err)
+
+	addrs := app.AddTestAddrsIncremental(wasmApp, ctx, 2, sdk.NewInt(1_000_000))
+	accepted := keeper.AcceptedStargateQueries{
+		"/cosmos.auth.v1beta1.Query/Account": &authtypes.QueryAccountResponse{},
+		"/no/route/to/this":                  &authtypes.QueryAccountResponse{},
+	}
+
+	marshal := func(pb proto.Message) []byte {
+		b, err := proto.Marshal(pb)
+		require.NoError(t, err)
+		return b
+	}
+
+	specs := map[string]struct {
+		req     *wasmvmtypes.StargateQuery
+		expErr  bool
+		expResp string
+	}{
+		"in accept list - success result": {
+			req: &wasmvmtypes.StargateQuery{
+				Path: "/cosmos.auth.v1beta1.Query/Account",
+				Data: marshal(&authtypes.QueryAccountRequest{Address: addrs[0].String()}),
+			},
+			expResp: fmt.Sprintf(`{"account":{"@type":"/cosmos.auth.v1beta1.BaseAccount","address":%q,"pub_key":null,"account_number":"1","sequence":"0"}}`, addrs[0].String()),
+		},
+		"in accept list - error result": {
+			req: &wasmvmtypes.StargateQuery{
+				Path: "/cosmos.auth.v1beta1.Query/Account",
+				Data: marshal(&authtypes.QueryAccountRequest{Address: sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()}),
+			},
+			expErr: true,
+		},
+		"not in accept list": {
+			req: &wasmvmtypes.StargateQuery{
+				Path: "/cosmos.bank.v1beta1.Query/AllBalances",
+				Data: marshal(&banktypes.QueryAllBalancesRequest{Address: addrs[0].String()}),
+			},
+			expErr: true,
+		},
+		"unknown route": {
+			req: &wasmvmtypes.StargateQuery{
+				Path: "/no/route/to/this",
+				Data: marshal(&banktypes.QueryAllBalancesRequest{Address: addrs[0].String()}),
+			},
+			expErr: true,
+		},
+	}
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			q := keeper.AcceptListStargateQuerier(accepted, wasmApp.GRPCQueryRouter(), wasmApp.AppCodec())
+			gotBz, gotErr := q(ctx, spec.req)
+			if spec.expErr {
+				require.Error(t, gotErr)
+				return
+			}
+			require.NoError(t, gotErr)
+			assert.JSONEq(t, spec.expResp, string(gotBz), string(gotBz))
 		})
 	}
 }

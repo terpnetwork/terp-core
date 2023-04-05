@@ -9,10 +9,21 @@ option go_package = "github.com/terpnetwork/terp-core/x/tokenfactory/types";
 
 // Msg defines the tokefactory module's gRPC message service.
 service Msg {
+
+  // Creates a denom of factory/{creator address}/{subdenom} given the denom creator address and the subdenom. Subdenoms can contain [a-zA-Z0-9./].
   rpc CreateDenom(MsgCreateDenom) returns (MsgCreateDenomResponse);
+
+  // Mint of any specific denom is only allowed for the current admin. Note, the current admin is defaulted to the creator of the denom.
   rpc Mint(MsgMint) returns (MsgMintResponse);
+
+  // Burning of a specific denom is only allowed for the current admin. Note, the current admin is defaulted to the creator of the denom.
   rpc Burn(MsgBurn) returns (MsgBurnResponse);
+
+  // ChangeAdmin changes the admin of a denom. Note, this is only allowed to be called by the current admin of the denom.
   rpc ChangeAdmin(MsgChangeAdmin) returns (MsgChangeAdminResponse);
+
+  // SetDenomMetadata is setting of metadata for a specific denom, only allowed for the admin of the denom. 
+  // It allows the overwriting of the denom metadata in the bank module.
   rpc SetDenomMetadata(MsgSetDenomMetadata)
       returns (MsgSetDenomMetadataResponse);
 
@@ -53,6 +64,7 @@ message MsgMint {
   ];
 }
 
+// MsgMintResponse responds the message of MsgBurn from the SDK.
 message MsgMintResponse {}
 
 // MsgBurn is the sdk.Msg type for allowing an admin account to burn
@@ -64,7 +76,7 @@ message MsgBurn {
     (gogoproto.nullable) = false
   ];
 }
-
+// MsgBurnResponse responds the message of MsgBurn from the SDK.
 message MsgBurnResponse {}
 
 // MsgChangeAdmin is the sdk.Msg type for allowing an admin account to reassign

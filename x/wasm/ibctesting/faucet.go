@@ -30,7 +30,7 @@ func (chain *TestChain) SendNonDefaultSenderMsgs(senderPrivKey cryptotypes.PrivK
 	addr := sdk.AccAddress(senderPrivKey.PubKey().Address().Bytes())
 	account := chain.App.AccountKeeper.GetAccount(chain.GetContext(), addr)
 	require.NotNil(chain.t, account)
-	_, r, err := app.SignAndDeliver(
+	_, r, err := app.SignAndDeliverWithoutCommit(
 		chain.t,
 		chain.TxConfig,
 		chain.App.BaseApp,
@@ -42,7 +42,7 @@ func (chain *TestChain) SendNonDefaultSenderMsgs(senderPrivKey cryptotypes.PrivK
 		senderPrivKey,
 	)
 
-	// SignAndDeliver calls app.Commit()
+	// SignAndDeliverWithoutCommit calls app.Commit()
 	chain.NextBlock()
 	chain.Coordinator.IncrementTime()
 	if err != nil {

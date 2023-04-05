@@ -6,7 +6,7 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	host "github.com/cosmos/ibc-go/v6/modules/core/24-host"
+	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
 
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )

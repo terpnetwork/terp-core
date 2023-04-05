@@ -41,9 +41,9 @@ func TestDispatchSubMsgSuccessCase(t *testing.T) {
 	require.NotEmpty(t, contractAddr)
 
 	// check some account values
-	CheckAccount(t, ctx, accKeeper, bankKeeper, contractAddr, contractStart)
-	CheckAccount(t, ctx, accKeeper, bankKeeper, creator, creatorBalance)
-	CheckAccount(t, ctx, accKeeper, bankKeeper, fred, nil)
+	checkAccount(t, ctx, accKeeper, bankKeeper, contractAddr, contractStart)
+	checkAccount(t, ctx, accKeeper, bankKeeper, creator, creatorBalance)
+	checkAccount(t, ctx, accKeeper, bankKeeper, fred, nil)
 
 	// creator can send contract's tokens to fred (using SendMsg)
 	msg := wasmvmtypes.CosmosMsg{
@@ -72,10 +72,10 @@ func TestDispatchSubMsgSuccessCase(t *testing.T) {
 	require.NoError(t, err)
 
 	// fred got coins
-	CheckAccount(t, ctx, accKeeper, bankKeeper, fred, sdk.NewCoins(sdk.NewInt64Coin("denom", 15000)))
+	checkAccount(t, ctx, accKeeper, bankKeeper, fred, sdk.NewCoins(sdk.NewInt64Coin("denom", 15000)))
 	// contract lost them
-	CheckAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 25000)))
-	CheckAccount(t, ctx, accKeeper, bankKeeper, creator, creatorBalance)
+	checkAccount(t, ctx, accKeeper, bankKeeper, contractAddr, sdk.NewCoins(sdk.NewInt64Coin("denom", 25000)))
+	checkAccount(t, ctx, accKeeper, bankKeeper, creator, creatorBalance)
 
 	// query the reflect state to ensure the result was stored
 	query := testdata.ReflectQueryMsg{
@@ -187,12 +187,14 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 
 	assertReturnedEvents := func(expectedEvents int) assertion {
 		return func(t *testing.T, ctx sdk.Context, contract, emptyAccount string, response wasmvmtypes.SubMsgResult) {
+			t.Helper()
 			require.Len(t, response.Ok.Events, expectedEvents)
 		}
 	}
 
 	assertGasUsed := func(minGas, maxGas uint64) assertion {
 		return func(t *testing.T, ctx sdk.Context, contract, emptyAccount string, response wasmvmtypes.SubMsgResult) {
+			t.Helper()
 			gasUsed := ctx.GasMeter().GasConsumed()
 			assert.True(t, gasUsed >= minGas, "Used %d gas (less than expected %d)", gasUsed, minGas)
 			assert.True(t, gasUsed <= maxGas, "Used %d gas (more than expected %d)", gasUsed, maxGas)
@@ -201,11 +203,13 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 
 	assertErrorString := func(shouldContain string) assertion {
 		return func(t *testing.T, ctx sdk.Context, contract, emptyAccount string, response wasmvmtypes.SubMsgResult) {
+			t.Helper()
 			assert.Contains(t, response.Err, shouldContain)
 		}
 	}
 
 	assertGotContractAddr := func(t *testing.T, ctx sdk.Context, contract, emptyAccount string, response wasmvmtypes.SubMsgResult) {
+		t.Helper()
 		// should get the events emitted on new contract
 		event := response.Ok.Events[0]
 		require.Equal(t, event.Type, "instantiate")
@@ -236,7 +240,7 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 		"send tokens": {
 			submsgID:         5,
 			msg:              validBankSend,
-			resultAssertions: []assertion{assertReturnedEvents(0), assertGasUsed(95000, 104000)},
+			resultAssertions: []assertion{assertReturnedEvents(0), assertGasUsed(102000, 103000)},
 		},
 		"not enough tokens": {
 			submsgID:    6,
@@ -256,7 +260,7 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 			msg:      validBankSend,
 			gasLimit: &subGasLimit,
 			// uses same gas as call without limit (note we do not charge the 40k on reply)
-			resultAssertions: []assertion{assertReturnedEvents(0), assertGasUsed(95000, 104000)},
+			resultAssertions: []assertion{assertReturnedEvents(0), assertGasUsed(102000, 103000)},
 		},
 		"not enough tokens with limit": {
 			submsgID:    16,
@@ -264,7 +268,7 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 			subMsgError: true,
 			gasLimit:    &subGasLimit,
 			// uses same gas as call without limit (note we do not charge the 40k on reply)
-			resultAssertions: []assertion{assertGasUsed(77800, 77900), assertErrorString("codespace: sdk, code: 5")},
+			resultAssertions: []assertion{assertGasUsed(77700, 77800), assertErrorString("codespace: sdk, code: 5")},
 		},
 		"out of gas caught with gas limit": {
 			submsgID:    17,

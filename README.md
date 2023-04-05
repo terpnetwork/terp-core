@@ -16,10 +16,11 @@ A VM can support one or more contract-VM interface versions. The interface
 version is communicated by the contract via a Wasm export. This is the current
 compatibility list:
 
-| terpd | wasmvm       | cosmwasm-vm | cosmwasm-std |
-|-------|--------------|-------------|--------------|
-| v1.0  | v1.2.0       |             | 1.0-1.2      |
-| v0.4.0| v1.2.0       |             | 1.0-1.1      |
+| terpd  | wasmvm       | cosmwasm-vm | cosmwasm-std |
+|--------|--------------|-------------|--------------|
+| v1.0.0  | v1.2.0      |             | 1.0-1.2      |
+| v0.5.0 | v1.2.0       |             | 1.0-1.2      |
+| v0.4.0 | v1.2.0       |             | 1.0-1.1      |
 
 
 Note: `cosmwasm_std v1.0` means it supports contracts compiled by any `v1.0.0-betaX` or `1.0.x`.
@@ -73,7 +74,7 @@ your use case.
 make install
 make test
 ```
-if you are using a linux without X or headless linux, look at [this article](https://ahelpme.com/linux/dbusexception-could-not-get-owner-of-name-org-freedesktop-secrets-no-such-name) or [#31](https://github.com/CosmWasm/wasmd/issues/31#issuecomment-577058321).
+if you are using a linux without X or headless linux, look at [this article](https://ahelpme.com/linux/dbusexception-could-not-get-owner-of-name-org-freedesktop-secrets-no-such-name) or [#31](https://github.com/terpnetwork/terp-core/issues/31#issuecomment-577058321).
 
 ## Protobuf
 The protobuf files for this project are published automatically to the [buf repository](https://buf.build/) to make integration easier:

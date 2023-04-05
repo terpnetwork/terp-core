@@ -7,17 +7,17 @@ import (
 	"testing"
 	"time"
 
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
+
+	dbm "github.com/cometbft/cometbft-db"
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtypes "github.com/tendermint/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
-
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/simapp/helpers"
-	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -34,25 +34,26 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 )
 
-func setup(db dbm.DB, withGenesis bool, invCheckPeriod uint, opts ...wasm.Option) (*app.TerpApp, app.GenesisState) {
-	encodingConfig := app.MakeEncodingConfig()
-	wasmApp := app.NewTerpApp(log.NewNopLogger(), db, nil, true, map[int64]bool{}, app.DefaultNodeHome, invCheckPeriod, encodingConfig, wasm.EnableAllProposals, app.EmptyBaseAppOptions{}, opts)
+func setup(db dbm.DB, withGenesis bool, invCheckPeriod uint, opts ...wasm.Option) (*app.TerpApp, app.GenesisState) { //nolint:unparam
+	wasmApp := app.NewTerpApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)), db, nil, true, wasm.EnableAllProposals, simtestutil.EmptyAppOptions{}, nil)
+
 	if withGenesis {
-		return wasmApp, app.NewDefaultGenesisState()
+		return wasmApp, app.NewDefaultGenesisState(wasmApp.AppCodec())
 	}
 	return wasmApp, app.GenesisState{}
 }
 
-// SetupWithGenesisAccounts initializes a new TerpApp with the provided genesis
+// SetupWithGenesisAccountsAndValSet initializes a new TerpApp with the provided genesis
 // accounts and possible balances.
-func SetupWithGenesisAccountsAndValSet(b testing.TB, db dbm.DB, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *app.TerpApp {
+func SetupWithGenesisAccountsAndValSet(tb testing.TB, db dbm.DB, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *app.TerpApp {
+	tb.Helper()
 	wasmApp, genesisState := setup(db, true, 0)
 	authGenesis := authtypes.NewGenesisState(authtypes.DefaultParams(), genAccs)
-	appCodec := app.NewTestSupport(b, wasmApp).AppCodec()
+	appCodec := wasmApp.AppCodec()
 
 	privVal := mock.NewPV()
 	pubKey, err := privVal.GetPubKey()
-	require.NoError(b, err)
+	require.NoError(tb, err)
 
 	genesisState[authtypes.ModuleName] = appCodec.MustMarshalJSON(authGenesis)
 
@@ -100,7 +101,7 @@ func SetupWithGenesisAccountsAndValSet(b testing.TB, db dbm.DB, genAccs []authty
 		// add genesis acc tokens and delegated tokens to total supply
 		totalSupply = totalSupply.Add(b.Coins...)
 	}
-	bankGenesis := banktypes.NewGenesisState(banktypes.DefaultGenesisState().Params, balances, totalSupply, []banktypes.Metadata{})
+	bankGenesis := banktypes.NewGenesisState(banktypes.DefaultGenesisState().Params, balances, totalSupply, []banktypes.Metadata{}, nil)
 	genesisState[banktypes.ModuleName] = appCodec.MustMarshalJSON(bankGenesis)
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
@@ -108,10 +109,13 @@ func SetupWithGenesisAccountsAndValSet(b testing.TB, db dbm.DB, genAccs []authty
 		panic(err)
 	}
 
+	consensusParams := simtestutil.DefaultConsensusParams
+	consensusParams.Block.MaxGas = 100 * simtestutil.DefaultGenTxGas
+
 	wasmApp.InitChain(
 		abci.RequestInitChain{
 			Validators:      []abci.ValidatorUpdate{},
-			ConsensusParams: app.DefaultConsensusParams,
+			ConsensusParams: consensusParams,
 			AppStateBytes:   stateBytes,
 		},
 	)
@@ -133,7 +137,8 @@ type AppInfo struct {
 	TxConfig     client.TxConfig
 }
 
-func InitializeTerpApp(b testing.TB, db dbm.DB, numAccounts int) AppInfo {
+func InitializeTerpApp(tb testing.TB, db dbm.DB, numAccounts int) AppInfo {
+	tb.Helper()
 	// constants
 	minter := secp256k1.GenPrivKey()
 	addr := sdk.AccAddress(minter.PubKey().Address())
@@ -162,25 +167,25 @@ func InitializeTerpApp(b testing.TB, db dbm.DB, numAccounts int) AppInfo {
 			Coins:   sdk.NewCoins(sdk.NewInt64Coin(denom, 100000000000)),
 		}
 	}
-	wasmApp := SetupWithGenesisAccountsAndValSet(b, db, genAccs, bals...)
+	wasmApp := SetupWithGenesisAccountsAndValSet(tb, db, genAccs, bals...)
 
 	// add wasm contract
 	height := int64(2)
-	txGen := simappparams.MakeTestEncodingConfig().TxConfig
+	txGen := moduletestutil.MakeTestEncodingConfig().TxConfig
 	wasmApp.BeginBlock(abci.RequestBeginBlock{Header: tmproto.Header{Height: height, Time: time.Now()}})
 
 	// upload the code
 	cw20Code, err := os.ReadFile("./testdata/cw20_base.wasm")
-	require.NoError(b, err)
+	require.NoError(tb, err)
 	storeMsg := wasmtypes.MsgStoreCode{
 		Sender:       addr.String(),
 		WASMByteCode: cw20Code,
 	}
-	storeTx, err := helpers.GenSignedMockTx(rand.New(rand.NewSource(time.Now().UnixNano())),
-		txGen, []sdk.Msg{&storeMsg}, nil, 55123123, "", []uint64{0}, []uint64{0}, minter)
-	require.NoError(b, err)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	storeTx, err := simtestutil.GenSignedMockTx(r, txGen, []sdk.Msg{&storeMsg}, nil, 55123123, "", []uint64{0}, []uint64{0}, minter)
+	require.NoError(tb, err)
 	_, _, err = wasmApp.SimDeliver(txGen.TxEncoder(), storeTx)
-	require.NoError(b, err)
+	require.NoError(tb, err)
 	codeID := uint64(1)
 
 	// instantiate the contract
@@ -202,7 +207,7 @@ func InitializeTerpApp(b testing.TB, db dbm.DB, numAccounts int) AppInfo {
 		InitialBalances: initialBalances,
 	}
 	initBz, err := json.Marshal(init)
-	require.NoError(b, err)
+	require.NoError(tb, err)
 	initMsg := wasmtypes.MsgInstantiateContract{
 		Sender: addr.String(),
 		Admin:  addr.String(),
@@ -211,22 +216,15 @@ func InitializeTerpApp(b testing.TB, db dbm.DB, numAccounts int) AppInfo {
 		Msg:    initBz,
 	}
 	gasWanted := 500000 + 10000*uint64(numAccounts)
-	initTx, err := helpers.GenSignedMockTx(rand.New(rand.NewSource(time.Now().UnixNano())),
-		txGen,
-		[]sdk.Msg{&initMsg},
-		nil, gasWanted,
-		"",
-		[]uint64{0},
-		[]uint64{1},
-		minter)
-	require.NoError(b, err)
+	initTx, err := simtestutil.GenSignedMockTx(r, txGen, []sdk.Msg{&initMsg}, nil, gasWanted, "", []uint64{0}, []uint64{1}, minter)
+	require.NoError(tb, err)
 	_, res, err := wasmApp.SimDeliver(txGen.TxEncoder(), initTx)
-	require.NoError(b, err)
+	require.NoError(tb, err)
 
 	// TODO: parse contract address better
 	evt := res.Events[len(res.Events)-1]
 	attr := evt.Attributes[0]
-	contractAddr := string(attr.Value)
+	contractAddr := attr.Value
 
 	wasmApp.EndBlock(abci.RequestEndBlock{Height: height})
 	wasmApp.Commit()
@@ -239,19 +237,21 @@ func InitializeTerpApp(b testing.TB, db dbm.DB, numAccounts int) AppInfo {
 		Denom:        denom,
 		AccNum:       0,
 		SeqNum:       2,
-		TxConfig:     simappparams.MakeTestEncodingConfig().TxConfig,
+		TxConfig:     moduletestutil.MakeTestEncodingConfig().TxConfig,
 	}
 }
 
-func GenSequenceOfTxs(b testing.TB, info *AppInfo, msgGen func(*AppInfo) ([]sdk.Msg, error), numToGenerate int) []sdk.Tx {
+func GenSequenceOfTxs(tb testing.TB, info *AppInfo, msgGen func(*AppInfo) ([]sdk.Msg, error), numToGenerate int) []sdk.Tx {
+	tb.Helper()
 	fees := sdk.Coins{sdk.NewInt64Coin(info.Denom, 0)}
 	txs := make([]sdk.Tx, numToGenerate)
 
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < numToGenerate; i++ {
 		msgs, err := msgGen(info)
-		require.NoError(b, err)
-		txs[i], err = helpers.GenSignedMockTx(
-			rand.New(rand.NewSource(time.Now().UnixNano())),
+		require.NoError(tb, err)
+		txs[i], err = simtestutil.GenSignedMockTx(
+			r,
 			info.TxConfig,
 			msgs,
 			fees,
@@ -261,7 +261,7 @@ func GenSequenceOfTxs(b testing.TB, info *AppInfo, msgGen func(*AppInfo) ([]sdk.
 			[]uint64{info.SeqNum},
 			info.MinterKey,
 		)
-		require.NoError(b, err)
+		require.NoError(tb, err)
 		info.SeqNum++
 	}
 

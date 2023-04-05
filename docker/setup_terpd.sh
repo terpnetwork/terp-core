@@ -17,12 +17,12 @@ if ! terpd keys show validator; then
   (echo "$PASSWORD"; echo "$PASSWORD") | terpd keys add validator
 fi
 # hardcode the validator account for this instance
-echo "$PASSWORD" | terpd add-genesis-account validator "1000000000$STAKE,1000000000$FEE"
+echo "$PASSWORD" | terpd genesis add-genesis-account validator "1000000000$STAKE,1000000000$FEE"
 
 # (optionally) add a few more genesis accounts
 for addr in "$@"; do
   echo $addr
-  terpd add-genesis-account "$addr" "1000000000$STAKE,1000000000$FEE"
+  terpd genesis add-genesis-account "$addr" "1000000000$STAKE,1000000000$FEE"
 done
 
 # submit a genesis validator tx
@@ -30,4 +30,4 @@ done
 (echo "$PASSWORD"; echo "$PASSWORD"; echo "$PASSWORD") | terpd gentx validator "1000000$STAKE" --chain-id="$CHAIN_ID" --amount="1000000$STAKE"
 ## should be:
 # (echo "$PASSWORD"; echo "$PASSWORD"; echo "$PASSWORD") | terpd gentx validator "1000000$STAKE" --chain-id="$CHAIN_ID"
-terpd collect-gentxs
+terpd genesis collect-gentxs

@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"runtime/debug"
 	"strings"
 
+	"cosmossdk.io/core/appmodule"
+
+	"github.com/cosmos/cosmos-sdk/baseapp"
+
 	wasmvm "github.com/CosmWasm/wasmvm"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -20,17 +24,17 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/terpnetwork/terp-core/x/wasm/client/cli"
+	"github.com/terpnetwork/terp-core/x/wasm/exported"
 	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 	"github.com/terpnetwork/terp-core/x/wasm/simulation"
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
 var (
-	_ module.AppModule      = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ module.AppModuleBasic      = AppModuleBasic{}
+	_ module.AppModuleSimulation = AppModule{}
 )
 
 // Module init related flags
@@ -93,6 +97,7 @@ func (b AppModuleBasic) RegisterInterfaces(registry cdctypes.InterfaceRegistry) 
 }
 
 // ____________________________________________________________________________
+var _ appmodule.AppModule = AppModule{}
 
 // AppModule implements an application module for the wasm module.
 type AppModule struct {
@@ -102,13 +107,10 @@ type AppModule struct {
 	validatorSetSource keeper.ValidatorSetSource
 	accountKeeper      types.AccountKeeper // for simulation
 	bankKeeper         simulation.BankKeeper
+	router             keeper.MessageRouter
+	// legacySubspace is used solely for migration of x/params managed parameters
+	legacySubspace exported.Subspace
 }
-
-// ConsensusVersion is a sequence number for state-breaking change of the
-// module. It should be incremented on each consensus-breaking change
-// introduced by the module. To avoid wrong/empty versions, the initial version
-// should be set to 1.
-func (AppModule) ConsensusVersion() uint64 { return 2 }
 
 // NewAppModule creates a new AppModule object
 func NewAppModule(
@@ -117,6 +119,8 @@ func NewAppModule(
 	validatorSetSource keeper.ValidatorSetSource,
 	ak types.AccountKeeper,
 	bk simulation.BankKeeper,
+	router *baseapp.MsgServiceRouter,
+	ss exported.Subspace,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic:     AppModuleBasic{},
@@ -125,31 +129,42 @@ func NewAppModule(
 		validatorSetSource: validatorSetSource,
 		accountKeeper:      ak,
 		bankKeeper:         bk,
+		router:             router,
+		legacySubspace:     ss,
 	}
 }
 
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() { // marker
+}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() { // marker
+}
+
+// ConsensusVersion is a sequence number for state-breaking change of the
+// module. It should be incremented on each consensus-breaking change
+// introduced by the module. To avoid wrong/empty versions, the initial version
+// should be set to 1.
+func (AppModule) ConsensusVersion() uint64 { return 3 }
+
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(keeper.NewDefaultPermissionKeeper(am.keeper)))
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
 	types.RegisterQueryServer(cfg.QueryServer(), NewQuerier(am.keeper))
 
-	m := keeper.NewMigrator(*am.keeper)
+	m := keeper.NewMigrator(*am.keeper, am.legacySubspace)
 	err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2)
+	if err != nil {
+		panic(err)
+	}
+	err = cfg.RegisterMigration(types.ModuleName, 2, m.Migrate2to3)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (am AppModule) LegacyQuerierHandler(_ *codec.LegacyAmino) sdk.Querier {
-	return keeper.NewLegacyQuerier(am.keeper, am.keeper.QueryGasLimit())
-}
-
 // RegisterInvariants registers the wasm module invariants.
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
-
-// Route returns the message routing key for the wasm module.
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(RouterKey, NewHandler(keeper.NewDefaultPermissionKeeper(am.keeper)))
-}
 
 // QuerierRoute returns the wasm module's querier route name.
 func (AppModule) QuerierRoute() string {
@@ -193,14 +208,9 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	simulation.RandomizedGenState(simState)
 }
 
-// ProposalContents doesn't return any content functions for governance proposals.
-func (am AppModule) ProposalContents(_ module.SimulationState) []simtypes.WeightedProposalContent {
-	return simulation.ProposalContents(am.bankKeeper, am.keeper)
-}
-
-// RandomizedParams creates randomized bank param changes for the simulator.
-func (am AppModule) RandomizedParams(r *rand.Rand) []simtypes.ParamChange {
-	return simulation.ParamChanges(r, am.cdc)
+// ProposalMsgs returns msgs used for governance proposals for simulations.
+func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.WeightedProposalMsg {
+	return simulation.ProposalMsgs(am.bankKeeper, am.keeper)
 }
 
 // RegisterStoreDecoder registers a decoder for supply module's types
@@ -239,7 +249,7 @@ func ReadWasmConfig(opts servertypes.AppOptions) (types.WasmConfig, error) {
 		}
 	}
 	if v := opts.Get(flagWasmSimulationGasLimit); v != nil {
-		if raw, ok := v.(string); ok && raw != "" {
+		if raw, ok := v.(string); !ok || raw != "" {
 			limit, err := cast.ToUint64E(v) // non empty string set
 			if err != nil {
 				return cfg, err

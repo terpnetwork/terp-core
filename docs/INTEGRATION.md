@@ -19,16 +19,9 @@ hardware it runs on.
 
 | wasmd | Cosmos SDK |
 |:-----:|:----------:|
-| v0.30 |  v0.45.11  |
-| v0.29 |  v0.45.8   |
-| v0.28 |  v0.45.5   |
-| v0.27 |  v0.45.4   |
-| v0.26 |  v0.45.1   |
-| v0.25 |  v0.45.1   |
-| v0.24 |  v0.45.0   |
-| v0.23 |  v0.45.0   |
-| v0.22 |  v0.45.0   |
-| v0.21 |  v0.42.x   |
+| 1.0.0 |  v0.47.1   |
+| v0.5  |  v0.45.14  |
+| v0.4.0 |  v0.45.9   |
 
 
 We currently only support Intel/AMD64 CPUs and OSX or Linux. For Linux, the standard build
@@ -65,7 +58,7 @@ to `bank` and `staking`... more below on [customization](#Adding-Custom-Hooks)).
 
 The requirement here is that you have imported the standard sdk modules
 from the Cosmos SDK, and enabled them in `app.go`. If so, you can just look
-at [`wasmd/app/app.go`](https://github.com/CosmWasm/wasmd/blob/master/app/app.go#)
+at [`wasmd/app/app.go`](https://github.com/terpnetwork/terp-core/blob/master/app/app.go#)
 for how to do so (just search there for lines with `wasm`).
 
 `wasmd` also comes with 2 custom `ante handlers`: 
@@ -73,7 +66,7 @@ for how to do so (just search there for lines with `wasm`).
 * `LimitSimulationGasDecorator` prevents an "infinite gas" query
 
 In order to support these features you would need to add our custom
-ante handlers into the `ante handler chain` as in: [`app/ante.go`](https://github.com/CosmWasm/wasmd/blob/master/app/ante.go)
+ante handlers into the `ante handler chain` as in: [`app/ante.go`](https://github.com/terpnetwork/terp-core/blob/master/app/ante.go)
 
 ### Copied into your app
 
@@ -122,7 +115,7 @@ token contracts, your exchange code can simply call `wasm.Keeper.Execute`
 with a properly formatted message to move funds, or `wasm.Keeper.SmartQuery`
 to check balances.
 
-If you look at the unit tests in [`x/wasm/internal/keeper`](https://github.com/CosmWasm/wasmd/tree/master/x/wasm/internal/keeper),
+If you look at the unit tests in [`x/wasm/internal/keeper`](https://github.com/terpnetwork/terp-core/tree/master/x/wasm/internal/keeper),
 it should be pretty straight forward.
 
 ### Extending the Contract Interface
@@ -165,22 +158,22 @@ please **do not make these changes to `x/wasm`**.
 We will add a new module, eg. `x/contracts`, that will contain custom
 bindings between CosmWasm contracts and your native modules. There are two entry points
 for you to use. The first is 
-[`CustomQuerier`](https://github.com/CosmWasm/wasmd/blob/v0.8.0-rc1/x/wasm/internal/keeper/query_plugins.go#L35),
+[`CustomQuerier`](https://github.com/terpnetwork/terp-core/blob/v0.8.0-rc1/x/wasm/internal/keeper/query_plugins.go#L35),
 which allows you to handle your custom queries. The second is 
-[`CustomEncoder`](https://github.com/CosmWasm/wasmd/blob/v0.8.0-rc1/x/wasm/internal/keeper/handler_plugin.go#L30)
+[`CustomEncoder`](https://github.com/terpnetwork/terp-core/blob/v0.8.0-rc1/x/wasm/internal/keeper/handler_plugin.go#L30)
 which allows you to convert the `CosmosMsg::Custom(YourMessage)` types to `[]sdk.Msg` to be dispatched.
 
 Writing stubs for these is rather simple. You can look at the `reflect_test.go` file to see this in action.
-In particular, here [we define a `CustomQuerier`](https://github.com/CosmWasm/wasmd/blob/v0.8.0-rc1/x/wasm/internal/keeper/reflect_test.go#L355-L385),
-and here [we define a `CustomHandler`](https://github.com/CosmWasm/wasmd/blob/v0.8.0-rc1/x/wasm/internal/keeper/reflect_test.go#L303-L353).
+In particular, here [we define a `CustomQuerier`](https://github.com/terpnetwork/terp-core/blob/v0.8.0-rc1/x/wasm/internal/keeper/reflect_test.go#L355-L385),
+and here [we define a `CustomHandler`](https://github.com/terpnetwork/terp-core/blob/v0.8.0-rc1/x/wasm/internal/keeper/reflect_test.go#L303-L353).
 This code is responsible to take `json.RawMessage` from the raw bytes serialized from your custom types in rust and parse it into
 Go structs. Then take these go structs and properly convert them for your custom SDK modules.
 
 You can look at the implementations for the `staking` module to see how to build these for non-trivial
 cases, including passing in the `Keeper` via a closure. Here we 
-[encode staking messages](https://github.com/CosmWasm/wasmd/blob/v0.8.0-rc1/x/wasm/internal/keeper/handler_plugin.go#L114-L192).
+[encode staking messages](https://github.com/terpnetwork/terp-core/blob/v0.8.0-rc1/x/wasm/internal/keeper/handler_plugin.go#L114-L192).
 Note that withdraw returns 2 messages, which is an option you can use if needed to translate into native messages.
-When we [handle staking queries](https://github.com/CosmWasm/wasmd/blob/v0.8.0-rc1/x/wasm/internal/keeper/query_plugins.go#L109-L172)
+When we [handle staking queries](https://github.com/terpnetwork/terp-core/blob/v0.8.0-rc1/x/wasm/internal/keeper/query_plugins.go#L109-L172)
 we take in a `Keeper in the closure` and dispatch the custom `QueryRequest` from the contract to the native `Keeper` interface,
 then encodes a response. When defining the return types, note that for proper parsing in the Rust contract, you 
 should properly name the JSON fields and use the `omitempty` keyword if Rust expects `Option<T>`. You must also use

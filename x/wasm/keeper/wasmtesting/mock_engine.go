@@ -5,9 +5,10 @@ import (
 	"crypto/sha256"
 
 	errorsmod "cosmossdk.io/errors"
+
 	wasmvm "github.com/CosmWasm/wasmvm"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
-	"github.com/tendermint/tendermint/libs/rand"
+	"github.com/cometbft/cometbft/libs/rand"
 
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )

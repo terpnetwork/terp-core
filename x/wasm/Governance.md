@@ -20,7 +20,7 @@ We have added 9 new wasm specific proposal types that cover the contract's live 
 * `UpdateInstantiateConfigProposal` - update instantiate permissions to a list of given code ids.
 * `StoreAndInstantiateContractProposal` - upload and instantiate a wasm contract.
 
-For details see the proposal type [implementation](https://github.com/CosmWasm/wasmd/blob/master/x/wasm/types/proposal.go)
+For details see the proposal type [implementation](https://github.com/terpnetwork/terp-core/blob/master/x/wasm/types/proposal.go)
 
 ### Unit tests
 [Proposal type validations](https://github.com/terpnetwork/terp-core/blob/master/x/wasm/types/proposal_test.go)
@@ -197,9 +197,9 @@ In [abci app](https://github.com/terpnetwork/terp-core/blob/master/app/app.go#L1
 
 
 ## Pull requests
-* https://github.com/CosmWasm/wasmd/pull/190
-* https://github.com/CosmWasm/wasmd/pull/186
-* https://github.com/CosmWasm/wasmd/pull/183
-* https://github.com/CosmWasm/wasmd/pull/180
-* https://github.com/CosmWasm/wasmd/pull/179
-* https://github.com/CosmWasm/wasmd/pull/173
+* https://github.com/terpnetwork/terp-core/pull/190
+* https://github.com/terpnetwork/terp-core/pull/186
+* https://github.com/terpnetwork/terp-core/pull/183
+* https://github.com/terpnetwork/terp-core/pull/180
+* https://github.com/terpnetwork/terp-core/pull/179
+* https://github.com/terpnetwork/terp-core/pull/173

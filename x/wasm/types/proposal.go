@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	"github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 )
 
 type ProposalType string
@@ -68,28 +68,18 @@ func ConvertToProposals(keys []string) ([]ProposalType, error) {
 }
 
 func init() { // register new content types with the sdk
-	govv1beta1.RegisterProposalType(string(ProposalTypeStoreCode))
-	govv1beta1.RegisterProposalType(string(ProposalTypeInstantiateContract))
-	govv1beta1.RegisterProposalType(string(ProposalTypeMigrateContract))
-	govv1beta1.RegisterProposalType(string(ProposalTypeSudoContract))
-	govv1beta1.RegisterProposalType(string(ProposalTypeExecuteContract))
-	govv1beta1.RegisterProposalType(string(ProposalTypeUpdateAdmin))
-	govv1beta1.RegisterProposalType(string(ProposalTypeClearAdmin))
-	govv1beta1.RegisterProposalType(string(ProposalTypePinCodes))
-	govv1beta1.RegisterProposalType(string(ProposalTypeUnpinCodes))
-	govv1beta1.RegisterProposalType(string(ProposalTypeUpdateInstantiateConfig))
-	govv1beta1.RegisterProposalType(string(ProposalTypeStoreAndInstantiateContractProposal))
-	govv1beta1.ModuleCdc.LegacyAmino.RegisterConcrete(&StoreCodeProposal{}, "wasm/StoreCodeProposal", nil)
-	govv1beta1.ModuleCdc.LegacyAmino.RegisterConcrete(&InstantiateContractProposal{}, "wasm/InstantiateContractProposal", nil)
-	govv1beta1.ModuleCdc.LegacyAmino.RegisterConcrete(&MigrateContractProposal{}, "wasm/MigrateContractProposal", nil)
-	govv1beta1.ModuleCdc.LegacyAmino.RegisterConcrete(&SudoContractProposal{}, "wasm/SudoContractProposal", nil)
-	govv1beta1.ModuleCdc.LegacyAmino.RegisterConcrete(&ExecuteContractProposal{}, "wasm/ExecuteContractProposal", nil)
-	govv1beta1.ModuleCdc.LegacyAmino.RegisterConcrete(&UpdateAdminProposal{}, "wasm/UpdateAdminProposal", nil)
-	govv1beta1.ModuleCdc.LegacyAmino.RegisterConcrete(&ClearAdminProposal{}, "wasm/ClearAdminProposal", nil)
-	govv1beta1.ModuleCdc.LegacyAmino.RegisterConcrete(&PinCodesProposal{}, "wasm/PinCodesProposal", nil)
-	govv1beta1.ModuleCdc.LegacyAmino.RegisterConcrete(&UnpinCodesProposal{}, "wasm/UnpinCodesProposal", nil)
-	govv1beta1.ModuleCdc.LegacyAmino.RegisterConcrete(&UpdateInstantiateConfigProposal{}, "wasm/UpdateInstantiateConfigProposal", nil)
-	govv1beta1.ModuleCdc.LegacyAmino.RegisterConcrete(&StoreAndInstantiateContractProposal{}, "wasm/StoreAndInstantiateContractProposal", nil)
+	v1beta1.RegisterProposalType(string(ProposalTypeStoreCode))
+	v1beta1.RegisterProposalType(string(ProposalTypeInstantiateContract))
+	v1beta1.RegisterProposalType(string(ProposalTypeInstantiateContract2))
+	v1beta1.RegisterProposalType(string(ProposalTypeMigrateContract))
+	v1beta1.RegisterProposalType(string(ProposalTypeSudoContract))
+	v1beta1.RegisterProposalType(string(ProposalTypeExecuteContract))
+	v1beta1.RegisterProposalType(string(ProposalTypeUpdateAdmin))
+	v1beta1.RegisterProposalType(string(ProposalTypeClearAdmin))
+	v1beta1.RegisterProposalType(string(ProposalTypePinCodes))
+	v1beta1.RegisterProposalType(string(ProposalTypeUnpinCodes))
+	v1beta1.RegisterProposalType(string(ProposalTypeUpdateInstantiateConfig))
+	v1beta1.RegisterProposalType(string(ProposalTypeStoreAndInstantiateContractProposal))
 }
 
 func NewStoreCodeProposal(
@@ -915,8 +905,8 @@ func validateProposalCommons(title, description string) error {
 	if len(title) == 0 {
 		return errorsmod.Wrap(govtypes.ErrInvalidProposalContent, "proposal title cannot be blank")
 	}
-	if len(title) > govv1beta1.MaxTitleLength {
-		return errorsmod.Wrapf(govtypes.ErrInvalidProposalContent, "proposal title is longer than max length of %d", govv1beta1.MaxTitleLength)
+	if len(title) > v1beta1.MaxTitleLength {
+		return errorsmod.Wrapf(govtypes.ErrInvalidProposalContent, "proposal title is longer than max length of %d", v1beta1.MaxTitleLength)
 	}
 	if strings.TrimSpace(description) != description {
 		return errorsmod.Wrap(govtypes.ErrInvalidProposalContent, "proposal description must not start/end with white spaces")
@@ -924,8 +914,8 @@ func validateProposalCommons(title, description string) error {
 	if len(description) == 0 {
 		return errorsmod.Wrap(govtypes.ErrInvalidProposalContent, "proposal description cannot be blank")
 	}
-	if len(description) > govv1beta1.MaxDescriptionLength {
-		return errorsmod.Wrapf(govtypes.ErrInvalidProposalContent, "proposal description is longer than max length of %d", govv1beta1.MaxDescriptionLength)
+	if len(description) > v1beta1.MaxDescriptionLength {
+		return errorsmod.Wrapf(govtypes.ErrInvalidProposalContent, "proposal description is longer than max length of %d", v1beta1.MaxDescriptionLength)
 	}
 	return nil
 }

@@ -2,8 +2,8 @@ package keeper
 
 import (
 	errorsmod "cosmossdk.io/errors"
+	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
@@ -18,7 +18,11 @@ type ValidatorSetSource interface {
 // CONTRACT: all types of accounts must have been already initialized/created
 func InitGenesis(ctx sdk.Context, keeper *Keeper, data types.GenesisState) ([]abci.ValidatorUpdate, error) {
 	contractKeeper := NewGovPermissionKeeper(keeper)
-	keeper.SetParams(ctx, data.Params)
+	err := keeper.SetParams(ctx, data.Params)
+	if err != nil {
+		return nil, errorsmod.Wrapf(err, "set params")
+	}
+
 	var maxCodeID uint64
 	for i, code := range data.Codes {
 		err := keeper.importCode(ctx, code.CodeID, code.CodeInfo, code.CodeBytes)

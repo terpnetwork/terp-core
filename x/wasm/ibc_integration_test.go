@@ -5,9 +5,9 @@ import (
 
 	wasmvm "github.com/CosmWasm/wasmvm"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v6/modules/apps/transfer/types"
-	channeltypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
-	ibctesting "github.com/cosmos/ibc-go/v6/testing"
+	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	ibctesting "github.com/cosmos/ibc-go/v7/testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,7 +17,7 @@ import (
 )
 
 func TestOnChanOpenInitVersion(t *testing.T) {
-	const startVersion = "v2"
+	const startVersion = "v1"
 	specs := map[string]struct {
 		contractRsp *wasmvmtypes.IBC3ChannelOpenResponse
 		expVersion  string
@@ -47,10 +47,10 @@ func TestOnChanOpenInitVersion(t *testing.T) {
 						wasmtesting.NewIBCContractMockWasmer(myContract)),
 				}
 				coordinator    = wasmibctesting.NewCoordinator(t, 2, chainAOpts)
-				chainA         = coordinator.GetChain(wasmibctesting.GetChainID(0))
-				chainB         = coordinator.GetChain(wasmibctesting.GetChainID(1))
+				chainA         = coordinator.GetChain(wasmibctesting.GetChainID(1))
+				chainB         = coordinator.GetChain(wasmibctesting.GetChainID(2))
 				myContractAddr = chainA.SeedNewContractInstance()
-				contractInfo   = chainA.App.WasmKeeper.GetContractInfo(chainA.GetContext(), myContractAddr)
+				contractInfo   = chainA.App.WasmKeeper.GetContractInfo(chainA.App.NewUncachedContext(false, chainA.CurrentHeader), myContractAddr)
 			)
 
 			path := wasmibctesting.NewPath(chainA, chainB)
@@ -98,8 +98,8 @@ func TestOnChanOpenTryVersion(t *testing.T) {
 						wasmtesting.NewIBCContractMockWasmer(myContract)),
 				}
 				coordinator    = wasmibctesting.NewCoordinator(t, 2, chainAOpts)
-				chainA         = coordinator.GetChain(wasmibctesting.GetChainID(0))
-				chainB         = coordinator.GetChain(wasmibctesting.GetChainID(1))
+				chainA         = coordinator.GetChain(wasmibctesting.GetChainID(1))
+				chainB         = coordinator.GetChain(wasmibctesting.GetChainID(2))
 				myContractAddr = chainA.SeedNewContractInstance()
 				contractInfo   = chainA.ContractInfo(myContractAddr)
 			)

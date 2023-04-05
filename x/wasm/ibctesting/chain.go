@@ -1,44 +1,44 @@
 package ibctesting
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
 
-	tmprotoversion "github.com/tendermint/tendermint/proto/tendermint/version"
-
 	errorsmod "cosmossdk.io/errors"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+
+	"github.com/terpnetwork/terp-core/app"
+	"github.com/terpnetwork/terp-core/x/wasm"
+
+	// simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/crypto/tmhash"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	tmprotoversion "github.com/cometbft/cometbft/proto/tendermint/version"
+	tmtypes "github.com/cometbft/cometbft/types"
+	tmversion "github.com/cometbft/cometbft/version"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	"github.com/cosmos/cosmos-sdk/x/staking/teststaking"
+	"github.com/cosmos/cosmos-sdk/x/staking/testutil"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	clienttypes "github.com/cosmos/ibc-go/v6/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
-	commitmenttypes "github.com/cosmos/ibc-go/v6/modules/core/23-commitment/types"
-	host "github.com/cosmos/ibc-go/v6/modules/core/24-host"
-	"github.com/cosmos/ibc-go/v6/modules/core/exported"
-	"github.com/cosmos/ibc-go/v6/modules/core/types"
-	ibctmtypes "github.com/cosmos/ibc-go/v6/modules/light-clients/07-tendermint/types"
-	ibctesting "github.com/cosmos/ibc-go/v6/testing"
-	"github.com/cosmos/ibc-go/v6/testing/mock"
+	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	commitmenttypes "github.com/cosmos/ibc-go/v7/modules/core/23-commitment/types"
+	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
+	"github.com/cosmos/ibc-go/v7/modules/core/exported"
+	"github.com/cosmos/ibc-go/v7/modules/core/types"
+	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
+	ibctesting "github.com/cosmos/ibc-go/v7/testing"
+	"github.com/cosmos/ibc-go/v7/testing/mock"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtypes "github.com/tendermint/tendermint/types"
-	tmversion "github.com/tendermint/tendermint/version"
-
-	"github.com/terpnetwork/terp-core/app"
-	"github.com/terpnetwork/terp-core/app/params"
-	"github.com/terpnetwork/terp-core/x/wasm"
 )
 
 var MaxAccounts = 10
@@ -59,8 +59,8 @@ type TestChain struct {
 	Coordinator   *Coordinator
 	App           *app.TerpApp
 	ChainID       string
-	LastHeader    *ibctmtypes.Header // header for last block height committed
-	CurrentHeader tmproto.Header     // header for current block height
+	LastHeader    *ibctm.Header  // header for last block height committed
+	CurrentHeader tmproto.Header // header for current block height
 	QueryServer   types.QueryServer
 	TxConfig      client.TxConfig
 	Codec         codec.BinaryCodec
@@ -91,6 +91,7 @@ type PacketAck struct {
 // NewTestChain initializes a new test chain with a default of 4 validators
 // Use this function if the tests do not need custom control over the validator set
 func NewTestChain(t *testing.T, coord *Coordinator, chainID string, opts ...wasm.Option) *TestChain {
+	t.Helper()
 	// generate validators private/public key
 	var (
 		validatorsPerChain = 4
@@ -130,6 +131,7 @@ func NewTestChain(t *testing.T, coord *Coordinator, chainID string, opts ...wasm
 // CONTRACT: Validator array must be provided in the order expected by Tendermint.
 // i.e. sorted first by power and then lexicographically by address.
 func NewTestChainWithValSet(t *testing.T, coord *Coordinator, chainID string, valSet *tmtypes.ValidatorSet, signers map[string]tmtypes.PrivValidator, opts ...wasm.Option) *TestChain {
+	t.Helper()
 	genAccs := []authtypes.GenesisAccount{}
 	genBals := []banktypes.Balance{}
 	senderAccs := []SenderAccount{}
@@ -167,7 +169,7 @@ func NewTestChainWithValSet(t *testing.T, coord *Coordinator, chainID string, va
 		Time:    coord.CurrentTime.UTC(),
 	}
 
-	txConfig := params.MakeEncodingConfig().TxConfig
+	txConfig := wasmApp.TxConfig()
 
 	// create an account to send transactions from
 	chain := &TestChain{
@@ -204,10 +206,17 @@ func (chain *TestChain) QueryProof(key []byte) ([]byte, clienttypes.Height) {
 }
 
 // QueryProofAtHeight performs an abci query with the given key and returns the proto encoded merkle proof
-// for the query and the height at which the proof will succeed on a tendermint verifier.
+// for the query and the height at which the proof will succeed on a tendermint verifier. Only the IBC
+// store is supported
 func (chain *TestChain) QueryProofAtHeight(key []byte, height int64) ([]byte, clienttypes.Height) {
+	return chain.QueryProofForStore(exported.StoreKey, key, height)
+}
+
+// QueryProofForStore performs an abci query with the given key and returns the proto encoded merkle proof
+// for the query and the height at which the proof will succeed on a tendermint verifier.
+func (chain *TestChain) QueryProofForStore(storeKey string, key []byte, height int64) ([]byte, clienttypes.Height) {
 	res := chain.App.Query(abci.RequestQuery{
-		Path:   fmt.Sprintf("store/%s/key", host.StoreKey),
+		Path:   fmt.Sprintf("store/%s/key", storeKey),
 		Height: height - 1,
 		Data:   key,
 		Prove:  true,
@@ -293,6 +302,7 @@ func (chain *TestChain) NextBlock() {
 		Time:               chain.CurrentHeader.Time,
 		ValidatorsHash:     chain.Vals.Hash(),
 		NextValidatorsHash: chain.NextVals.Hash(),
+		ProposerAddress:    chain.CurrentHeader.ProposerAddress,
 	}
 
 	chain.App.BeginBlock(abci.RequestBeginBlock{Header: chain.CurrentHeader})
@@ -311,7 +321,7 @@ func (chain *TestChain) SendMsgs(msgs ...sdk.Msg) (*sdk.Result, error) {
 	// ensure the chain has the latest time
 	chain.Coordinator.UpdateTimeForChain(chain)
 
-	_, r, err := app.SignAndDeliver(
+	_, r, err := app.SignAndDeliverWithoutCommit(
 		chain.t,
 		chain.TxConfig,
 		chain.App.BaseApp,
@@ -322,12 +332,12 @@ func (chain *TestChain) SendMsgs(msgs ...sdk.Msg) (*sdk.Result, error) {
 		[]uint64{chain.SenderAccount.GetSequence()},
 		chain.SenderPrivKey,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	// NextBlock calls app.Commit()
 	chain.NextBlock()
-	if err != nil {
-		return r, err
-	}
 
 	// increment sequence for successful transaction execution
 	err = chain.SenderAccount.SetSequence(chain.SenderAccount.GetSequence() + 1)
@@ -375,7 +385,7 @@ func (chain *TestChain) GetValsAtHeight(height int64) (*tmtypes.ValidatorSet, bo
 
 	valSet := stakingtypes.Validators(histInfo.Valset)
 
-	tmValidators, err := teststaking.ToTmValidators(valSet, sdk.DefaultPowerReduction)
+	tmValidators, err := testutil.ToTmValidators(valSet, sdk.DefaultPowerReduction)
 	if err != nil {
 		panic(err)
 	}
@@ -398,13 +408,13 @@ func (chain *TestChain) GetPrefix() commitmenttypes.MerklePrefix {
 
 // ConstructUpdateTMClientHeader will construct a valid 07-tendermint Header to update the
 // light client on the source chain.
-func (chain *TestChain) ConstructUpdateTMClientHeader(counterparty *TestChain, clientID string) (*ibctmtypes.Header, error) {
+func (chain *TestChain) ConstructUpdateTMClientHeader(counterparty *TestChain, clientID string) (*ibctm.Header, error) {
 	return chain.ConstructUpdateTMClientHeaderWithTrustedHeight(counterparty, clientID, clienttypes.ZeroHeight())
 }
 
 // ConstructUpdateTMClientHeader will construct a valid 07-tendermint Header to update the
 // light client on the source chain.
-func (chain *TestChain) ConstructUpdateTMClientHeaderWithTrustedHeight(counterparty *TestChain, clientID string, trustedHeight clienttypes.Height) (*ibctmtypes.Header, error) {
+func (chain *TestChain) ConstructUpdateTMClientHeaderWithTrustedHeight(counterparty *TestChain, clientID string, trustedHeight clienttypes.Height) (*ibctm.Header, error) {
 	header := counterparty.LastHeader
 	// Relayer must query for LatestHeight on client to get TrustedHeight if the trusted height is not set
 	if trustedHeight.IsZero() {
@@ -426,7 +436,7 @@ func (chain *TestChain) ConstructUpdateTMClientHeaderWithTrustedHeight(counterpa
 		// NextValidatorsHash
 		tmTrustedVals, ok = counterparty.GetValsAtHeight(int64(trustedHeight.RevisionHeight + 1))
 		if !ok {
-			return nil, errorsmod.Wrapf(ibctmtypes.ErrInvalidHeaderHeight, "could not retrieve trusted validators at trustedHeight: %d", trustedHeight)
+			return nil, errorsmod.Wrapf(ibctm.ErrInvalidHeaderHeight, "could not retrieve trusted validators at trustedHeight: %d", trustedHeight)
 		}
 	}
 	// inject trusted fields into last header
@@ -450,13 +460,13 @@ func (chain *TestChain) ExpireClient(amount time.Duration) {
 
 // CurrentTMClientHeader creates a TM header using the current header parameters
 // on the chain. The trusted fields in the header are set to nil.
-func (chain *TestChain) CurrentTMClientHeader() *ibctmtypes.Header {
+func (chain *TestChain) CurrentTMClientHeader() *ibctm.Header {
 	return chain.CreateTMClientHeader(chain.ChainID, chain.CurrentHeader.Height, clienttypes.Height{}, chain.CurrentHeader.Time, chain.Vals, chain.NextVals, nil, chain.Signers)
 }
 
 // CreateTMClientHeader creates a TM header to update the TM client. Args are passed in to allow
 // caller flexibility to use params that differ from the chain.
-func (chain *TestChain) CreateTMClientHeader(chainID string, blockHeight int64, trustedHeight clienttypes.Height, timestamp time.Time, tmValSet, nextVals, tmTrustedVals *tmtypes.ValidatorSet, signers map[string]tmtypes.PrivValidator) *ibctmtypes.Header {
+func (chain *TestChain) CreateTMClientHeader(chainID string, blockHeight int64, trustedHeight clienttypes.Height, timestamp time.Time, tmValSet, nextVals, tmTrustedVals *tmtypes.ValidatorSet, signers map[string]tmtypes.PrivValidator) *ibctm.Header {
 	var (
 		valSet      *tmproto.ValidatorSet
 		trustedVals *tmproto.ValidatorSet
@@ -480,18 +490,17 @@ func (chain *TestChain) CreateTMClientHeader(chainID string, blockHeight int64, 
 		AppHash:            chain.CurrentHeader.AppHash,
 		LastResultsHash:    tmhash.Sum([]byte("last_results_hash")),
 		EvidenceHash:       tmhash.Sum([]byte("evidence_hash")),
-		ProposerAddress:    tmValSet.Proposer.Address,
+		ProposerAddress:    tmValSet.Proposer.Address, //nolint:staticcheck // SA5011: possible nil pointer dereference
 	}
 
 	hhash := tmHeader.Hash()
 	blockID := MakeBlockID(hhash, 3, tmhash.Sum([]byte("part_set")))
 	voteSet := tmtypes.NewVoteSet(chainID, blockHeight, 1, tmproto.PrecommitType, tmValSet)
-
 	// MakeCommit expects a signer array in the same order as the validator array.
 	// Thus we iterate over the ordered validator set and construct a signer array
 	// from the signer map in the same order.
-	signerArr := make([]tmtypes.PrivValidator, len(tmValSet.Validators))
-	for i, v := range tmValSet.Validators {
+	signerArr := make([]tmtypes.PrivValidator, len(tmValSet.Validators)) //nolint:staticcheck
+	for i, v := range tmValSet.Validators {                              //nolint:staticcheck
 		signerArr[i] = signers[v.Address.String()]
 	}
 
@@ -503,8 +512,10 @@ func (chain *TestChain) CreateTMClientHeader(chainID string, blockHeight int64, 
 		Commit: commit.ToProto(),
 	}
 
-	valSet, err = tmValSet.ToProto()
-	require.NoError(chain.t, err)
+	if tmValSet != nil { //nolint:staticcheck
+		valSet, err = tmValSet.ToProto()
+		require.NoError(chain.t, err)
+	}
 
 	if tmTrustedVals != nil {
 		trustedVals, err = tmTrustedVals.ToProto()
@@ -513,7 +524,7 @@ func (chain *TestChain) CreateTMClientHeader(chainID string, blockHeight int64, 
 
 	// The trusted fields may be nil. They may be filled before relaying messages to a client.
 	// The relayer is responsible for querying client and injecting appropriate trusted fields.
-	return &ibctmtypes.Header{
+	return &ibctm.Header{
 		SignedHeader:      signedHeader,
 		ValidatorSet:      valSet,
 		TrustedHeight:     trustedHeight,
@@ -587,41 +598,16 @@ func (chain *TestChain) GetChannelCapability(portID, channelID string) *capabili
 	return chanCap
 }
 
+// GetTimeoutHeight is a convenience function which returns a IBC packet timeout height
+// to be used for testing. It returns the current IBC height + 100 blocks
+func (chain *TestChain) GetTimeoutHeight() clienttypes.Height {
+	return clienttypes.NewHeight(clienttypes.ParseChainID(chain.ChainID), uint64(chain.GetContext().BlockHeight())+100)
+}
+
 func (chain *TestChain) Balance(acc sdk.AccAddress, denom string) sdk.Coin {
 	return chain.App.BankKeeper.GetBalance(chain.GetContext(), acc, denom)
 }
 
 func (chain *TestChain) AllBalances(acc sdk.AccAddress) sdk.Coins {
 	return chain.App.BankKeeper.GetAllBalances(chain.GetContext(), acc)
-}
-
-func MakeCommit(_ context.Context, blockID tmtypes.BlockID, height int64, round int32, voteSet *tmtypes.VoteSet, validators []tmtypes.PrivValidator, now time.Time) (*tmtypes.Commit, error) {
-	// all sign
-	for i := 0; i < len(validators); i++ {
-		pubKey, err := validators[i].GetPubKey()
-		if err != nil {
-			return nil, err
-		}
-		vote := &tmtypes.Vote{
-			ValidatorAddress: pubKey.Address(),
-			ValidatorIndex:   int32(i),
-			Height:           height,
-			Round:            round,
-			Type:             tmproto.PrecommitType,
-			BlockID:          blockID,
-			Timestamp:        now,
-		}
-
-		v := vote.ToProto()
-
-		if err := validators[i].SignVote(voteSet.ChainID(), v); err != nil {
-			return nil, err
-		}
-		vote.Signature = v.Signature
-		if _, err := voteSet.AddVote(vote); err != nil {
-			return nil, err
-		}
-	}
-
-	return voteSet.MakeCommit(), nil
 }

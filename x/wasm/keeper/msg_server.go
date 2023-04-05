@@ -11,14 +11,17 @@ import (
 
 var _ types.MsgServer = msgServer{}
 
+// grpc message server implementation
 type msgServer struct {
-	keeper types.ContractOpsKeeper
+	keeper *Keeper
 }
 
-func NewMsgServerImpl(k types.ContractOpsKeeper) types.MsgServer {
+// NewMsgServerImpl default constructor
+func NewMsgServerImpl(k *Keeper) types.MsgServer {
 	return &msgServer{keeper: k}
 }
 
+// StoreCode stores a new wasm code on chain
 func (m msgServer) StoreCode(goCtx context.Context, msg *types.MsgStoreCode) (*types.MsgStoreCodeResponse, error) {
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
@@ -29,13 +32,9 @@ func (m msgServer) StoreCode(goCtx context.Context, msg *types.MsgStoreCode) (*t
 		return nil, errorsmod.Wrap(err, "sender")
 	}
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender),
-	))
+	policy := m.selectAuthorizationPolicy(msg.Sender)
 
-	codeID, checksum, err := m.keeper.Create(ctx, senderAddr, msg.WASMByteCode, msg.InstantiatePermission)
+	codeID, checksum, err := m.keeper.create(ctx, senderAddr, msg.WASMByteCode, msg.InstantiatePermission, policy)
 	if err != nil {
 		return nil, err
 	}
@@ -64,13 +63,9 @@ func (m msgServer) InstantiateContract(goCtx context.Context, msg *types.MsgInst
 		}
 	}
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender),
-	))
+	policy := m.selectAuthorizationPolicy(msg.Sender)
 
-	contractAddr, data, err := m.keeper.Instantiate(ctx, msg.CodeID, senderAddr, adminAddr, msg.Msg, msg.Label, msg.Funds)
+	contractAddr, data, err := m.keeper.instantiate(ctx, msg.CodeID, senderAddr, adminAddr, msg.Msg, msg.Label, msg.Funds, m.keeper.ClassicAddressGenerator(), policy)
 	if err != nil {
 		return nil, err
 	}
@@ -99,12 +94,11 @@ func (m msgServer) InstantiateContract2(goCtx context.Context, msg *types.MsgIns
 		}
 	}
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender),
-	))
-	contractAddr, data, err := m.keeper.Instantiate2(ctx, msg.CodeID, senderAddr, adminAddr, msg.Msg, msg.Label, msg.Funds, msg.Salt, msg.FixMsg)
+	policy := m.selectAuthorizationPolicy(msg.Sender)
+
+	addrGenerator := PredicableAddressGenerator(senderAddr, msg.Salt, msg.Msg, msg.FixMsg)
+
+	contractAddr, data, err := m.keeper.instantiate(ctx, msg.CodeID, senderAddr, adminAddr, msg.Msg, msg.Label, msg.Funds, addrGenerator, policy)
 	if err != nil {
 		return nil, err
 	}
@@ -130,13 +124,7 @@ func (m msgServer) ExecuteContract(goCtx context.Context, msg *types.MsgExecuteC
 		return nil, errorsmod.Wrap(err, "contract")
 	}
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender),
-	))
-
-	data, err := m.keeper.Execute(ctx, contractAddr, senderAddr, msg.Msg, msg.Funds)
+	data, err := m.keeper.execute(ctx, contractAddr, senderAddr, msg.Msg, msg.Funds)
 	if err != nil {
 		return nil, err
 	}
@@ -161,13 +149,9 @@ func (m msgServer) MigrateContract(goCtx context.Context, msg *types.MsgMigrateC
 		return nil, errorsmod.Wrap(err, "contract")
 	}
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender),
-	))
+	policy := m.selectAuthorizationPolicy(msg.Sender)
 
-	data, err := m.keeper.Migrate(ctx, contractAddr, senderAddr, msg.CodeID, msg.Msg)
+	data, err := m.keeper.migrate(ctx, contractAddr, senderAddr, msg.CodeID, msg.Msg, policy)
 	if err != nil {
 		return nil, err
 	}
@@ -196,13 +180,9 @@ func (m msgServer) UpdateAdmin(goCtx context.Context, msg *types.MsgUpdateAdmin)
 		return nil, errorsmod.Wrap(err, "new admin")
 	}
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender),
-	))
+	policy := m.selectAuthorizationPolicy(msg.Sender)
 
-	if err := m.keeper.UpdateContractAdmin(ctx, contractAddr, senderAddr, newAdminAddr); err != nil {
+	if err := m.keeper.setContractAdmin(ctx, contractAddr, senderAddr, newAdminAddr, policy); err != nil {
 		return nil, err
 	}
 
@@ -224,13 +204,9 @@ func (m msgServer) ClearAdmin(goCtx context.Context, msg *types.MsgClearAdmin) (
 		return nil, errorsmod.Wrap(err, "contract")
 	}
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender),
-	))
+	policy := m.selectAuthorizationPolicy(msg.Sender)
 
-	if err := m.keeper.ClearContractAdmin(ctx, contractAddr, senderAddr); err != nil {
+	if err := m.keeper.setContractAdmin(ctx, contractAddr, senderAddr, nil, policy); err != nil {
 		return nil, err
 	}
 
@@ -243,14 +219,147 @@ func (m msgServer) UpdateInstantiateConfig(goCtx context.Context, msg *types.Msg
 	}
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	if err := m.keeper.SetAccessConfig(ctx, msg.CodeID, sdk.AccAddress(msg.Sender), *msg.NewInstantiatePermission); err != nil {
+	senderAddr, err := sdk.AccAddressFromBech32(msg.Sender)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "sender")
+	}
+	policy := m.selectAuthorizationPolicy(msg.Sender)
+
+	if err := m.keeper.setAccessConfig(ctx, msg.CodeID, senderAddr, *msg.NewInstantiatePermission, policy); err != nil {
 		return nil, err
 	}
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender),
-	))
 
 	return &types.MsgUpdateInstantiateConfigResponse{}, nil
+}
+
+// UpdateParams updates the module parameters
+func (m msgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
+	if err := req.ValidateBasic(); err != nil {
+		return nil, err
+	}
+	authority := m.keeper.GetAuthority()
+	if authority != req.Authority {
+		return nil, errorsmod.Wrapf(types.ErrInvalid, "invalid authority; expected %s, got %s", authority, req.Authority)
+	}
+
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	if err := m.keeper.SetParams(ctx, req.Params); err != nil {
+		return nil, err
+	}
+
+	return &types.MsgUpdateParamsResponse{}, nil
+}
+
+// PinCodes pins a set of code ids in the wasmvm cache.
+func (m msgServer) PinCodes(goCtx context.Context, req *types.MsgPinCodes) (*types.MsgPinCodesResponse, error) {
+	if err := req.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
+	authority := m.keeper.GetAuthority()
+	if authority != req.Authority {
+		return nil, errorsmod.Wrapf(types.ErrInvalid, "invalid authority; expected %s, got %s", authority, req.Authority)
+	}
+
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	for _, codeID := range req.CodeIDs {
+		if err := m.keeper.pinCode(ctx, codeID); err != nil {
+			return nil, err
+		}
+	}
+
+	return &types.MsgPinCodesResponse{}, nil
+}
+
+// UnpinCodes unpins a set of code ids in the wasmvm cache.
+func (m msgServer) UnpinCodes(goCtx context.Context, req *types.MsgUnpinCodes) (*types.MsgUnpinCodesResponse, error) {
+	if err := req.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
+	authority := m.keeper.GetAuthority()
+	if authority != req.Authority {
+		return nil, errorsmod.Wrapf(types.ErrInvalid, "invalid authority; expected %s, got %s", authority, req.Authority)
+	}
+
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	for _, codeID := range req.CodeIDs {
+		if err := m.keeper.unpinCode(ctx, codeID); err != nil {
+			return nil, err
+		}
+	}
+
+	return &types.MsgUnpinCodesResponse{}, nil
+}
+
+// SudoContract calls sudo on a contract.
+func (m msgServer) SudoContract(goCtx context.Context, req *types.MsgSudoContract) (*types.MsgSudoContractResponse, error) {
+	if err := req.ValidateBasic(); err != nil {
+		return nil, err
+	}
+	authority := m.keeper.GetAuthority()
+	if authority != req.Authority {
+		return nil, errorsmod.Wrapf(types.ErrInvalid, "invalid authority; expected %s, got %s", authority, req.Authority)
+	}
+
+	contractAddr, err := sdk.AccAddressFromBech32(req.Contract)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "contract")
+	}
+
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	data, err := m.keeper.Sudo(ctx, contractAddr, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.MsgSudoContractResponse{Data: data}, nil
+}
+
+// StoreAndInstantiateContract stores and instantiates the contract.
+func (m msgServer) StoreAndInstantiateContract(goCtx context.Context, req *types.MsgStoreAndInstantiateContract) (*types.MsgStoreAndInstantiateContractResponse, error) {
+	if err := req.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
+	authorityAddr, err := sdk.AccAddressFromBech32(req.Authority)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "authority")
+	}
+
+	if err = req.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
+	var adminAddr sdk.AccAddress
+	if req.Admin != "" {
+		if adminAddr, err = sdk.AccAddressFromBech32(req.Admin); err != nil {
+			return nil, errorsmod.Wrap(err, "admin")
+		}
+	}
+
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	policy := m.selectAuthorizationPolicy(req.Authority)
+
+	codeID, _, err := m.keeper.create(ctx, authorityAddr, req.WASMByteCode, req.InstantiatePermission, policy)
+	if err != nil {
+		return nil, err
+	}
+
+	contractAddr, data, err := m.keeper.instantiate(ctx, codeID, authorityAddr, adminAddr, req.Msg, req.Label, req.Funds, m.keeper.ClassicAddressGenerator(), policy)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.MsgStoreAndInstantiateContractResponse{
+		Address: contractAddr.String(),
+		Data:    data,
+	}, nil
+}
+
+func (m msgServer) selectAuthorizationPolicy(actor string) AuthorizationPolicy {
+	if actor == m.keeper.GetAuthority() {
+		return GovAuthorizationPolicy{}
+	}
+	return DefaultAuthorizationPolicy{}
 }
