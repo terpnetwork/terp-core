@@ -32,6 +32,7 @@ import (
 
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+
 	"github.com/terpnetwork/terp-core/app"
 )
 

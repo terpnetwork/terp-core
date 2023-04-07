@@ -9,6 +9,7 @@ import (
 
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 
 	"github.com/terpnetwork/terp-core/app"
@@ -246,7 +247,7 @@ type ReflectSubMsgs struct {
 	Msgs []wasmvmtypes.SubMsg `json:"msgs"`
 }
 
-func executeCustom(t *testing.T, ctx sdk.Context, osmosis *app.TerpApp, contract sdk.AccAddress, sender sdk.AccAddress, msg bindings.TokenMsg, funds sdk.Coin) error {
+func executeCustom(t *testing.T, ctx sdk.Context, terp *app.TerpApp, contract sdk.AccAddress, sender sdk.AccAddress, msg bindings.TokenMsg, funds sdk.Coin) error {
 	t.Helper()
 	wrapped := bindings.TokenFactoryMsg{
 		Token: &msg,

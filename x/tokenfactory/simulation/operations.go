@@ -9,6 +9,7 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
+
 	appparams "github.com/terpnetwork/terp-core/app/params"
 	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
 )
