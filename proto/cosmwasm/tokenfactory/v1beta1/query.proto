@@ -3,17 +3,18 @@ package cosmwasm.tokenfactory.v1beta1;
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmwasm/tokenfactory/v1beta1/authority_metadata.proto";
 import "cosmwasm/tokenfactory/v1beta1/params.proto";
 
-option go_package = "github.com/terpnetwork/terp-core/x/tokenfactory/types";
+option go_package = "github.com/CosmWasm/wasmd/x/tokenfactory/types";
 
 // Query defines the gRPC querier service.
 service Query {
   // Params defines a gRPC query method that returns the tokenfactory module's
   // parameters.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/cosmwasm/tokenfactory/v1beta1/params";
+    option (google.api.http).get = "/osmosis/tokenfactory/v1beta1/params";
   }
 
   // DenomAuthorityMetadata defines a gRPC query method for fetching
@@ -21,7 +22,7 @@ service Query {
   rpc DenomAuthorityMetadata(QueryDenomAuthorityMetadataRequest)
       returns (QueryDenomAuthorityMetadataResponse) {
     option (google.api.http).get =
-        "/cosmwasm/tokenfactory/v1beta1/denoms/{denom}/authority_metadata";
+        "/osmosis/tokenfactory/v1beta1/denoms/{denom}/authority_metadata";
   }
 
   // DenomsFromCreator defines a gRPC query method for fetching all
@@ -29,7 +30,7 @@ service Query {
   rpc DenomsFromCreator(QueryDenomsFromCreatorRequest)
       returns (QueryDenomsFromCreatorResponse) {
     option (google.api.http).get =
-        "/cosmwasm/tokenfactory/v1beta1/denoms_from_creator/{creator}";
+        "/osmosis/tokenfactory/v1beta1/denoms_from_creator/{creator}";
   }
 }
 
