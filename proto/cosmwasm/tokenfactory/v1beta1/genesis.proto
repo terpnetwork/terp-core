@@ -2,7 +2,7 @@ syntax = "proto3";
 package cosmwasm.tokenfactory.v1beta1;
 
 import "gogoproto/gogo.proto";
-import "cosmwasm/tokenfactory/v1beta1/authorityMetadata.proto";
+import "cosmwasm/tokenfactory/v1beta1/authority_metadata.proto";
 import "cosmwasm/tokenfactory/v1beta1/params.proto";
 
 option go_package = "github.com/terpnetwork/terp-core/x/tokenfactory/types";
@@ -36,7 +36,7 @@ import "gogoproto/gogo.proto";
 import "cosmwasm/tokenfactory/v1beta1/authorityMetadata.proto";
 import "cosmwasm/tokenfactory/v1beta1/params.proto";
 
-option go_package = "github.com/CosmWasm/wasmd/x/tokenfactory/types";
+option go_package = "github.com/terpnetwork/terp-core/x/tokenfactory/types";
 
 // GenesisState defines the tokenfactory module's genesis state.
 message GenesisState {
