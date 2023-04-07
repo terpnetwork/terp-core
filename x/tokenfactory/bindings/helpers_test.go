@@ -24,14 +24,14 @@ func CreateTestInput() (*app.TerpApp, sdk.Context) {
 	var emptyWasmOpts []wasm.Option
 
 	terp := app.Setup(&testing.T{}, emptyWasmOpts...)
-	ctx := osmosis.BaseApp.NewContext(false, tmproto.Header{Height: 1, ChainID: "osmosis-1", Time: time.Now().UTC()})
-	return osmosis, ctx
+	ctx := terp.BaseApp.NewContext(false, tmproto.Header{Height: 1, ChainID: "terp-1", Time: time.Now().UTC()})
+	return terp, ctx
 }
 
 func FundAccount(t *testing.T, ctx sdk.Context, terp *app.TerpApp, acct sdk.AccAddress) {
 	t.Helper()
 	// TODO:
-	// err := simapp.FundAccount(osmosis.BankKeeper, ctx, acct, sdk.NewCoins(
+	// err := simapp.FundAccount(terp.BankKeeper, ctx, acct, sdk.NewCoins(
 	// 	sdk.NewCoin("uosmo", sdk.NewInt(10000000000)),
 	// ))
 	// require.NoError(t, err)
