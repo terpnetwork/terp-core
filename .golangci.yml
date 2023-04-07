@@ -38,12 +38,6 @@ issues:
     - text: "Use of weak random number generator"
       linters:
         - gosec
-    - text: "comment on exported var"
-      linters:
-        - golint
-    - text: "don't use an underscore in package name"
-      linters:
-        - golint
     - text: "ST1003:"
       linters:
         - stylecheck
@@ -62,9 +56,8 @@ issues:
 
 linters-settings:
   revive:
-    enableAllRules: true
     # When set to false, ignores files with "GENERATED" header, similar to golint
-    ignoreGeneratedHeader: true
+    ignore-generated-header: true
 
   nolintlint:
     allow-unused: false
