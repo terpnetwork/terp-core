@@ -10,14 +10,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/terpnetwork/terp-core/app"
 	"github.com/terpnetwork/terp-core/x/wasm/keeper"
@@ -48,7 +48,7 @@ func TestSnapshotter(t *testing.T) {
 				Height:  srcTerpApp.LastBlockHeight() + 1,
 				Time:    time.Now(),
 			})
-			wasmKeeper := app.NewTestSupport(t, srcTerpApp).WasmKeeper()
+			wasmKeeper := srcTerpApp.WasmKeeper
 			contractKeeper := keeper.NewDefaultPermissionKeeper(&wasmKeeper)
 
 			srcCodeIDToChecksum := make(map[uint64][]byte, len(spec.wasmFiles))
@@ -81,7 +81,7 @@ func TestSnapshotter(t *testing.T) {
 			}
 
 			// then all wasm contracts are imported
-			wasmKeeper = app.NewTestSupport(t, destTerpApp).WasmKeeper()
+			wasmKeeper = destTerpApp.WasmKeeper
 			ctx = destTerpApp.NewUncachedContext(false, tmproto.Header{
 				ChainID: "foo",
 				Height:  destTerpApp.LastBlockHeight() + 1,
@@ -103,6 +103,7 @@ func TestSnapshotter(t *testing.T) {
 }
 
 func newWasmExampleApp(t *testing.T) (*app.TerpApp, sdk.AccAddress) {
+	t.Helper()
 	senderPrivKey := ed25519.GenPrivKey()
 	pubKey, err := cryptocodec.ToTmPubKeyInterface(senderPrivKey.PubKey())
 	require.NoError(t, err)

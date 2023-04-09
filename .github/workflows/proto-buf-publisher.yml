@@ -1,5 +1,5 @@
 name: Proto Buf Publishing - Action
-# Protobuf runs buf (https://buf.build/) push updated proto files to https://buf.build/terpnetwork/terp-core
+# Protobuf runs buf (https://buf.build/) push updated proto files to https://buf.build/cosmwasm/wasmd
 # This workflow is only run when a .proto file has been changed
 on:
   push:
@@ -16,8 +16,8 @@ jobs:
   push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.1.0
-      - uses: bufbuild/buf-setup-action@v1.13.1
+      - uses: actions/checkout@v3.5.0
+      - uses: bufbuild/buf-setup-action@v1.16.0
 
       # lint checks
       - uses: bufbuild/buf-lint-action@v1

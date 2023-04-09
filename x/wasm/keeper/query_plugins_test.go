@@ -7,23 +7,23 @@ import (
 	"testing"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
+	dbm "github.com/cometbft/cometbft-db"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 
 	"github.com/terpnetwork/terp-core/app"
 	"github.com/terpnetwork/terp-core/x/wasm/keeper"
@@ -89,8 +89,8 @@ func TestIBCQuerier(t *testing.T) {
 		srcQuery      *wasmvmtypes.IBCQuery
 		wasmKeeper    *mockWasmQueryKeeper
 		channelKeeper *wasmtesting.MockChannelKeeper
-		expJsonResult string
-		expErr        *sdkerrors.Error
+		expJSONResult string
+		expErr        *errorsmod.Error
 	}{
 		"query port id": {
 			srcQuery: &wasmvmtypes.IBCQuery{
@@ -102,7 +102,7 @@ func TestIBCQuerier(t *testing.T) {
 				},
 			},
 			channelKeeper: &wasmtesting.MockChannelKeeper{},
-			expJsonResult: `{"port_id":"myIBCPortID"}`,
+			expJSONResult: `{"port_id":"myIBCPortID"}`,
 		},
 		"query list channels - all": {
 			srcQuery: &wasmvmtypes.IBCQuery{
@@ -111,7 +111,7 @@ func TestIBCQuerier(t *testing.T) {
 			channelKeeper: &wasmtesting.MockChannelKeeper{
 				IterateChannelsFn: wasmtesting.MockChannelKeeperIterator(myExampleChannels),
 			},
-			expJsonResult: `{
+			expJSONResult: `{
   "channels": [
     {
       "endpoint": {
@@ -151,7 +151,7 @@ func TestIBCQuerier(t *testing.T) {
 			channelKeeper: &wasmtesting.MockChannelKeeper{
 				IterateChannelsFn: wasmtesting.MockChannelKeeperIterator(myExampleChannels),
 			},
-			expJsonResult: `{
+			expJSONResult: `{
   "channels": [
     {
       "endpoint": {
@@ -178,7 +178,7 @@ func TestIBCQuerier(t *testing.T) {
 			channelKeeper: &wasmtesting.MockChannelKeeper{
 				IterateChannelsFn: wasmtesting.MockChannelKeeperIterator(myExampleChannels),
 			},
-			expJsonResult: `{"channels": []}`,
+			expJSONResult: `{"channels": []}`,
 		},
 		"query channel": {
 			srcQuery: &wasmvmtypes.IBCQuery{
@@ -201,7 +201,7 @@ func TestIBCQuerier(t *testing.T) {
 					}, true
 				},
 			},
-			expJsonResult: `{
+			expJSONResult: `{
   "channel": {
     "endpoint": {
       "port_id": "myQueryPortID",
@@ -242,7 +242,7 @@ func TestIBCQuerier(t *testing.T) {
 					}, true
 				},
 			},
-			expJsonResult: `{
+			expJSONResult: `{
   "channel": {
     "endpoint": {
       "port_id": "myLoadedPortID",
@@ -278,7 +278,7 @@ func TestIBCQuerier(t *testing.T) {
 					}, true
 				},
 			},
-			expJsonResult: "{}",
+			expJSONResult: "{}",
 		},
 		"query channel in closed state": {
 			srcQuery: &wasmvmtypes.IBCQuery{
@@ -301,7 +301,7 @@ func TestIBCQuerier(t *testing.T) {
 					}, true
 				},
 			},
-			expJsonResult: "{}",
+			expJSONResult: "{}",
 		},
 		"query channel - empty result": {
 			srcQuery: &wasmvmtypes.IBCQuery{
@@ -315,7 +315,7 @@ func TestIBCQuerier(t *testing.T) {
 					return channeltypes.Channel{}, false
 				},
 			},
-			expJsonResult: "{}",
+			expJSONResult: "{}",
 		},
 	}
 	for name, spec := range specs {
@@ -326,7 +326,7 @@ func TestIBCQuerier(t *testing.T) {
 			if spec.expErr != nil {
 				return
 			}
-			assert.JSONEq(t, spec.expJsonResult, string(gotResult), string(gotResult))
+			assert.JSONEq(t, spec.expJSONResult, string(gotResult), string(gotResult))
 		})
 	}
 }
@@ -460,6 +460,73 @@ func TestContractInfoWasmQuerier(t *testing.T) {
 	}
 }
 
+func TestCodeInfoWasmQuerier(t *testing.T) {
+	myCreatorAddr := keeper.RandomBech32AccountAddress(t)
+	var ctx sdk.Context
+
+	myRawChecksum := []byte("myHash78901234567890123456789012")
+	specs := map[string]struct {
+		req    *wasmvmtypes.WasmQuery
+		mock   mockWasmQueryKeeper
+		expRes wasmvmtypes.CodeInfoResponse
+		expErr bool
+	}{
+		"all good": {
+			req: &wasmvmtypes.WasmQuery{
+				CodeInfo: &wasmvmtypes.CodeInfoQuery{CodeID: 1},
+			},
+			mock: mockWasmQueryKeeper{
+				GetCodeInfoFn: func(ctx sdk.Context, codeID uint64) *types.CodeInfo {
+					return &types.CodeInfo{
+						CodeHash: myRawChecksum,
+						Creator:  myCreatorAddr,
+						InstantiateConfig: types.AccessConfig{
+							Permission: types.AccessTypeNobody,
+							Addresses:  []string{myCreatorAddr},
+						},
+					}
+				},
+			},
+			expRes: wasmvmtypes.CodeInfoResponse{
+				CodeID:   1,
+				Creator:  myCreatorAddr,
+				Checksum: myRawChecksum,
+			},
+		},
+		"empty code id": {
+			req: &wasmvmtypes.WasmQuery{
+				CodeInfo: &wasmvmtypes.CodeInfoQuery{},
+			},
+			expErr: true,
+		},
+		"unknown code id": {
+			req: &wasmvmtypes.WasmQuery{
+				CodeInfo: &wasmvmtypes.CodeInfoQuery{CodeID: 1},
+			},
+			mock: mockWasmQueryKeeper{
+				GetCodeInfoFn: func(ctx sdk.Context, codeID uint64) *types.CodeInfo {
+					return nil
+				},
+			},
+			expErr: true,
+		},
+	}
+	for name, spec := range specs {
+		t.Run(name, func(t *testing.T) {
+			q := keeper.WasmQuerier(spec.mock)
+			gotBz, gotErr := q(ctx, spec.req)
+			if spec.expErr {
+				require.Error(t, gotErr)
+				return
+			}
+			require.NoError(t, gotErr)
+			var gotRes wasmvmtypes.CodeInfoResponse
+			require.NoError(t, json.Unmarshal(gotBz, &gotRes), string(gotBz))
+			assert.Equal(t, spec.expRes, gotRes)
+		})
+	}
+}
+
 func TestQueryErrors(t *testing.T) {
 	specs := map[string]struct {
 		src    error
@@ -467,12 +534,20 @@ func TestQueryErrors(t *testing.T) {
 	}{
 		"no error": {},
 		"no such contract": {
-			src:    &types.ErrNoSuchContract{Addr: "contract-addr"},
+			src:    types.ErrNoSuchContractFn("contract-addr"),
 			expErr: wasmvmtypes.NoSuchContract{Addr: "contract-addr"},
 		},
 		"no such contract - wrapped": {
-			src:    sdkerrors.Wrap(&types.ErrNoSuchContract{Addr: "contract-addr"}, "my additional data"),
+			src:    errorsmod.Wrap(types.ErrNoSuchContractFn("contract-addr"), "my additional data"),
 			expErr: wasmvmtypes.NoSuchContract{Addr: "contract-addr"},
+		},
+		"no such code": {
+			src:    types.ErrNoSuchCodeFn(123),
+			expErr: wasmvmtypes.NoSuchCode{CodeID: 123},
+		},
+		"no such code - wrapped": {
+			src:    errorsmod.Wrap(types.ErrNoSuchCodeFn(123), "my additional data"),
+			expErr: wasmvmtypes.NoSuchCode{CodeID: 123},
 		},
 	}
 	for name, spec := range specs {
@@ -491,9 +566,10 @@ func TestQueryErrors(t *testing.T) {
 func TestAcceptListStargateQuerier(t *testing.T) {
 	wasmApp := app.SetupWithEmptyStore(t)
 	ctx := wasmApp.NewUncachedContext(false, tmproto.Header{ChainID: "foo", Height: 1, Time: time.Now()})
-	wasmApp.StakingKeeper.SetParams(ctx, stakingtypes.DefaultParams())
+	err := wasmApp.StakingKeeper.SetParams(ctx, stakingtypes.DefaultParams())
+	require.NoError(t, err)
 
-	addrs := app.AddTestAddrs(wasmApp, ctx, 2, sdk.NewInt(1_000_000))
+	addrs := app.AddTestAddrsIncremental(wasmApp, ctx, 2, sdk.NewInt(1_000_000))
 	accepted := keeper.AcceptedStargateQueries{
 		"/cosmos.auth.v1beta1.Query/Account": &authtypes.QueryAccountResponse{},
 		"/no/route/to/this":                  &authtypes.QueryAccountResponse{},
@@ -558,6 +634,7 @@ type mockWasmQueryKeeper struct {
 	QueryRawFn        func(ctx sdk.Context, contractAddress sdk.AccAddress, key []byte) []byte
 	QuerySmartFn      func(ctx sdk.Context, contractAddr sdk.AccAddress, req types.RawContractMessage) ([]byte, error)
 	IsPinnedCodeFn    func(ctx sdk.Context, codeID uint64) bool
+	GetCodeInfoFn     func(ctx sdk.Context, codeID uint64) *types.CodeInfo
 }
 
 func (m mockWasmQueryKeeper) GetContractInfo(ctx sdk.Context, contractAddress sdk.AccAddress) *types.ContractInfo {
@@ -586,6 +663,13 @@ func (m mockWasmQueryKeeper) IsPinnedCode(ctx sdk.Context, codeID uint64) bool {
 		panic("not expected to be called")
 	}
 	return m.IsPinnedCodeFn(ctx, codeID)
+}
+
+func (m mockWasmQueryKeeper) GetCodeInfo(ctx sdk.Context, codeID uint64) *types.CodeInfo {
+	if m.GetCodeInfoFn == nil {
+		panic("not expected to be called")
+	}
+	return m.GetCodeInfoFn(ctx, codeID)
 }
 
 type bankKeeperMock struct {
@@ -664,6 +748,31 @@ func TestConvertProtoToJSONMarshal(t *testing.T) {
 			require.JSONEq(t, string(jsonMarshalledResponse), string(jsonMarshalExpectedResponse))
 		})
 	}
+}
+
+func TestResetProtoMarshalerAfterJsonMarshal(t *testing.T) {
+	appCodec := app.MakeEncodingConfig().Marshaler
+
+	protoMarshaler := &banktypes.QueryAllBalancesResponse{}
+	expected := appCodec.MustMarshalJSON(&banktypes.QueryAllBalancesResponse{
+		Balances: sdk.NewCoins(sdk.NewCoin("bar", sdk.NewInt(30))),
+		Pagination: &query.PageResponse{
+			NextKey: []byte("foo"),
+		},
+	})
+
+	bz, err := hex.DecodeString("0a090a036261721202333012050a03666f6f")
+	require.NoError(t, err)
+
+	// first marshal
+	response, err := keeper.ConvertProtoToJSONMarshal(appCodec, protoMarshaler, bz)
+	require.NoError(t, err)
+	require.Equal(t, expected, response)
+
+	// second marshal
+	response, err = keeper.ConvertProtoToJSONMarshal(appCodec, protoMarshaler, bz)
+	require.NoError(t, err)
+	require.Equal(t, expected, response)
 }
 
 // TestDeterministicJsonMarshal tests that we get deterministic JSON marshalled response upon

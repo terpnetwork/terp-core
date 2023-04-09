@@ -4,18 +4,16 @@ import (
 	"testing"
 	"time"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/terpnetwork/terp-core/x/wasm/keeper"
-
+	dbm "github.com/cometbft/cometbft-db"
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/store"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 
+	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 	"github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
@@ -23,7 +21,7 @@ func TestCountTxDecorator(t *testing.T) {
 	keyWasm := sdk.NewKVStoreKey(types.StoreKey)
 	db := dbm.NewMemDB()
 	ms := store.NewCommitMultiStore(db)
-	ms.MountStoreWithDB(keyWasm, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(keyWasm, storetypes.StoreTypeIAVL, db)
 	require.NoError(t, ms.LoadLatestVersion())
 	const myCurrentBlockHeight = 100
 
@@ -34,7 +32,9 @@ func TestCountTxDecorator(t *testing.T) {
 		expErr         bool
 	}{
 		"no initial counter set": {
-			setupDB: func(t *testing.T, ctx sdk.Context) {},
+			setupDB: func(t *testing.T, ctx sdk.Context) {
+				t.Helper()
+			},
 			nextAssertAnte: func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
 				gotCounter, ok := types.TXCounter(ctx)
 				require.True(t, ok)
@@ -47,6 +47,7 @@ func TestCountTxDecorator(t *testing.T) {
 		},
 		"persistent counter incremented - big endian": {
 			setupDB: func(t *testing.T, ctx sdk.Context) {
+				t.Helper()
 				bz := []byte{0, 0, 0, 0, 0, 0, 0, myCurrentBlockHeight, 1, 0, 0, 2}
 				ctx.MultiStore().GetKVStore(keyWasm).Set(types.TXCounterPrefix, bz)
 			},
@@ -62,6 +63,7 @@ func TestCountTxDecorator(t *testing.T) {
 		},
 		"old height counter replaced": {
 			setupDB: func(t *testing.T, ctx sdk.Context) {
+				t.Helper()
 				previousHeight := byte(myCurrentBlockHeight - 1)
 				bz := []byte{0, 0, 0, 0, 0, 0, 0, previousHeight, 0, 0, 0, 1}
 				ctx.MultiStore().GetKVStore(keyWasm).Set(types.TXCounterPrefix, bz)
@@ -78,6 +80,7 @@ func TestCountTxDecorator(t *testing.T) {
 		},
 		"simulation not persisted": {
 			setupDB: func(t *testing.T, ctx sdk.Context) {
+				t.Helper()
 			},
 			simulate: true,
 			nextAssertAnte: func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
@@ -164,19 +167,21 @@ func TestLimitSimulationGasDecorator(t *testing.T) {
 			nextAnte := consumeGasAnteHandler(spec.consumeGas)
 			ctx := sdk.Context{}.
 				WithGasMeter(sdk.NewInfiniteGasMeter()).
-				WithConsensusParams(&abci.ConsensusParams{
-					Block: &abci.BlockParams{MaxGas: spec.maxBlockGas},
+				WithConsensusParams(&tmproto.ConsensusParams{
+					Block: &tmproto.BlockParams{MaxGas: spec.maxBlockGas},
 				})
 			// when
 			if spec.expErr != nil {
 				require.PanicsWithValue(t, spec.expErr, func() {
 					ante := keeper.NewLimitSimulationGasDecorator(spec.customLimit)
-					ante.AnteHandle(ctx, nil, spec.simulation, nextAnte)
+					_, err := ante.AnteHandle(ctx, nil, spec.simulation, nextAnte)
+					require.NoError(t, err)
 				})
 				return
 			}
 			ante := keeper.NewLimitSimulationGasDecorator(spec.customLimit)
-			ante.AnteHandle(ctx, nil, spec.simulation, nextAnte)
+			_, err := ante.AnteHandle(ctx, nil, spec.simulation, nextAnte)
+			require.NoError(t, err)
 		})
 	}
 }

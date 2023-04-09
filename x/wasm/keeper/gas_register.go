@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,20 +23,20 @@ const (
 	// in the 0.16 -> 1.0 upgrade (https://github.com/CosmWasm/cosmwasm/pull/1120).
 	//
 	// The multiplier deserves more reproducible benchmarking and a strategy that allows easy adjustments.
-	// This is tracked in https://github.com/CosmWasm/wasmd/issues/566 and https://github.com/CosmWasm/wasmd/issues/631.
+	// This is tracked in https://github.com/terpnetwork/terp-core/issues/566 and https://github.com/terpnetwork/terp-core/issues/631.
 	// Gas adjustments are consensus breaking but may happen in any release marked as consensus breaking.
 	// Do not make assumptions on how much gas an operation will consume in places that are hard to adjust,
 	// such as hardcoding them in contracts.
 	//
 	// Please note that all gas prices returned to wasmvm should have this multiplied.
-	// Benchmarks and numbers were discussed in: https://github.com/CosmWasm/wasmd/pull/634#issuecomment-938055852
+	// Benchmarks and numbers were discussed in: https://github.com/terpnetwork/terp-core/pull/634#issuecomment-938055852
 	DefaultGasMultiplier uint64 = 140_000_000
 	// DefaultInstanceCost is how much SDK gas we charge each time we load a WASM instance.
 	// Creating a new instance is costly, and this helps put a recursion limit to contracts calling contracts.
-	// Benchmarks and numbers were discussed in: https://github.com/CosmWasm/wasmd/pull/634#issuecomment-938056803
+	// Benchmarks and numbers were discussed in: https://github.com/terpnetwork/terp-core/pull/634#issuecomment-938056803
 	DefaultInstanceCost uint64 = 60_000
 	// DefaultCompileCost is how much SDK gas is charged *per byte* for compiling WASM code.
-	// Benchmarks and numbers were discussed in: https://github.com/CosmWasm/wasmd/pull/634#issuecomment-938056803
+	// Benchmarks and numbers were discussed in: https://github.com/terpnetwork/terp-core/pull/634#issuecomment-938056803
 	DefaultCompileCost uint64 = 3
 	// DefaultEventAttributeDataCost is how much SDK gas is charged *per byte* for attribute data in events.
 	// This is used with len(key) + len(value)
@@ -55,7 +56,7 @@ const (
 )
 
 // default: 0.15 gas.
-// see https://github.com/CosmWasm/wasmd/pull/898#discussion_r937727200
+// see https://github.com/terpnetwork/terp-core/pull/898#discussion_r937727200
 var defaultPerByteUncompressCost = wasmvmtypes.UFraction{
 	Numerator:   15,
 	Denominator: 100,
@@ -68,7 +69,7 @@ func DefaultPerByteUncompressCost() wasmvmtypes.UFraction {
 
 // GasRegister abstract source for gas costs
 type GasRegister interface {
-	// NewContractInstanceCosts costs to crate a new contract instance from code
+	// NewContractInstanceCosts costs to create a new contract instance from code
 	NewContractInstanceCosts(pinned bool, msgLen int) sdk.Gas
 	// CompileCosts costs to persist and "compile" a new wasm contract
 	CompileCosts(byteLength int) sdk.Gas
@@ -140,14 +141,14 @@ func NewDefaultWasmGasRegister() WasmGasRegister {
 // NewWasmGasRegister constructor
 func NewWasmGasRegister(c WasmGasRegisterConfig) WasmGasRegister {
 	if c.GasMultiplier == 0 {
-		panic(sdkerrors.Wrap(sdkerrors.ErrLogic, "GasMultiplier can not be 0"))
+		panic(errorsmod.Wrap(sdkerrors.ErrLogic, "GasMultiplier can not be 0"))
 	}
 	return WasmGasRegister{
 		c: c,
 	}
 }
 
-// NewContractInstanceCosts costs to crate a new contract instance from code
+// NewContractInstanceCosts costs to create a new contract instance from code
 func (g WasmGasRegister) NewContractInstanceCosts(pinned bool, msgLen int) storetypes.Gas {
 	return g.InstantiateContractCosts(pinned, msgLen)
 }
@@ -155,7 +156,7 @@ func (g WasmGasRegister) NewContractInstanceCosts(pinned bool, msgLen int) store
 // CompileCosts costs to persist and "compile" a new wasm contract
 func (g WasmGasRegister) CompileCosts(byteLength int) storetypes.Gas {
 	if byteLength < 0 {
-		panic(sdkerrors.Wrap(types.ErrInvalid, "negative length"))
+		panic(errorsmod.Wrap(types.ErrInvalid, "negative length"))
 	}
 	return g.c.CompileCost * uint64(byteLength)
 }
@@ -163,7 +164,7 @@ func (g WasmGasRegister) CompileCosts(byteLength int) storetypes.Gas {
 // UncompressCosts costs to unpack a new wasm contract
 func (g WasmGasRegister) UncompressCosts(byteLength int) sdk.Gas {
 	if byteLength < 0 {
-		panic(sdkerrors.Wrap(types.ErrInvalid, "negative length"))
+		panic(errorsmod.Wrap(types.ErrInvalid, "negative length"))
 	}
 	return g.c.UncompressCost.Mul(uint64(byteLength)).Floor()
 }
@@ -171,7 +172,7 @@ func (g WasmGasRegister) UncompressCosts(byteLength int) sdk.Gas {
 // InstantiateContractCosts costs when interacting with a wasm contract
 func (g WasmGasRegister) InstantiateContractCosts(pinned bool, msgLen int) sdk.Gas {
 	if msgLen < 0 {
-		panic(sdkerrors.Wrap(types.ErrInvalid, "negative length"))
+		panic(errorsmod.Wrap(types.ErrInvalid, "negative length"))
 	}
 	dataCosts := sdk.Gas(msgLen) * g.c.ContractMessageDataCost
 	if pinned {
