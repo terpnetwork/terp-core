@@ -3,6 +3,7 @@ package cosmwasm.tokenfactory.v1beta1;
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmwasm/tokenfactory/v1beta1/authority_metadata.proto";
 import "cosmwasm/tokenfactory/v1beta1/params.proto";
 

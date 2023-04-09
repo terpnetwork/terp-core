@@ -156,7 +156,7 @@ to the configuration.
 Available flags:
  
 * `-X github.com/terpnetwork/terp-core/app.NodeDir=.terp` - set the config/data directory for the node (default `~/.terp`)
-* `-X github.com/terpnetwork/terp-core/app.Bech32Prefix=terp` - set the bech32 prefix for all accounts (default `wasm`)
+* `-X github.com/terpnetwork/terp-core/app.Bech32Prefix=terp` - set the bech32 prefix for all accounts (default `terp`)
 * `-X github.com/terpnetwork/terp-core/app.ProposalsEnabled=true` - enable all x/wasm governance proposals (default `false`)
 * `-X github.com/terpnetwork/terp-core/app.EnableSpecificProposals=MigrateContract,UpdateAdmin,ClearAdmin` - 
     enable a subset of the x/wasm governance proposal types (overrides `ProposalsEnabled`)

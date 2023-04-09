@@ -9,7 +9,7 @@ import (
 )
 
 func TestDeconstructDenom(t *testing.T) {
-	// Note: this seems to be used in osmosis to add some more checks (only 20 or 32 byte addresses),
+	// Note: this seems to be used in terp to add some more checks (only 20 or 32 byte addresses),
 	// which is good, but not required for these tests as they make code less reuable
 	// appparams.SetAddressPrefixes()
 

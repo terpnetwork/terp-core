@@ -6,6 +6,7 @@ import (
 	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
 
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+
 	tokenfactorykeeper "github.com/terpnetwork/terp-core/x/tokenfactory/keeper"
 )
 

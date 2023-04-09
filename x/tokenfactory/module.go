@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
+
 	simulation "github.com/terpnetwork/terp-core/x/tokenfactory/simulation"
 
 	"github.com/terpnetwork/terp-core/x/tokenfactory/client/cli"
