@@ -45,15 +45,14 @@ func setup(db dbm.DB, withGenesis bool, invCheckPeriod uint, opts ...wasm.Option
 
 // SetupWithGenesisAccountsAndValSet initializes a new TerpApp with the provided genesis
 // accounts and possible balances.
-func SetupWithGenesisAccountsAndValSet(tb testing.TB, db dbm.DB, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *app.TerpApp {
-	tb.Helper()
+func SetupWithGenesisAccountsAndValSet(b testing.TB, db dbm.DB, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *app.TerpApp {
 	wasmApp, genesisState := setup(db, true, 0)
 	authGenesis := authtypes.NewGenesisState(authtypes.DefaultParams(), genAccs)
 	appCodec := wasmApp.AppCodec()
 
 	privVal := mock.NewPV()
 	pubKey, err := privVal.GetPubKey()
-	require.NoError(tb, err)
+	require.NoError(b, err)
 
 	genesisState[authtypes.ModuleName] = appCodec.MustMarshalJSON(authGenesis)
 
@@ -137,8 +136,7 @@ type AppInfo struct {
 	TxConfig     client.TxConfig
 }
 
-func InitializeTerpApp(tb testing.TB, db dbm.DB, numAccounts int) AppInfo {
-	tb.Helper()
+func InitializeTerpApp(b testing.TB, db dbm.DB, numAccounts int) AppInfo {
 	// constants
 	minter := secp256k1.GenPrivKey()
 	addr := sdk.AccAddress(minter.PubKey().Address())
@@ -167,7 +165,7 @@ func InitializeTerpApp(tb testing.TB, db dbm.DB, numAccounts int) AppInfo {
 			Coins:   sdk.NewCoins(sdk.NewInt64Coin(denom, 100000000000)),
 		}
 	}
-	wasmApp := SetupWithGenesisAccountsAndValSet(tb, db, genAccs, bals...)
+	wasmApp := SetupWithGenesisAccountsAndValSet(b, db, genAccs, bals...)
 
 	// add wasm contract
 	height := int64(2)
@@ -176,16 +174,16 @@ func InitializeTerpApp(tb testing.TB, db dbm.DB, numAccounts int) AppInfo {
 
 	// upload the code
 	cw20Code, err := os.ReadFile("./testdata/cw20_base.wasm")
-	require.NoError(tb, err)
+	require.NoError(b, err)
 	storeMsg := wasmtypes.MsgStoreCode{
 		Sender:       addr.String(),
 		WASMByteCode: cw20Code,
 	}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	storeTx, err := simtestutil.GenSignedMockTx(r, txGen, []sdk.Msg{&storeMsg}, nil, 55123123, "", []uint64{0}, []uint64{0}, minter)
-	require.NoError(tb, err)
+	require.NoError(b, err)
 	_, _, err = wasmApp.SimDeliver(txGen.TxEncoder(), storeTx)
-	require.NoError(tb, err)
+	require.NoError(b, err)
 	codeID := uint64(1)
 
 	// instantiate the contract
@@ -207,7 +205,7 @@ func InitializeTerpApp(tb testing.TB, db dbm.DB, numAccounts int) AppInfo {
 		InitialBalances: initialBalances,
 	}
 	initBz, err := json.Marshal(init)
-	require.NoError(tb, err)
+	require.NoError(b, err)
 	initMsg := wasmtypes.MsgInstantiateContract{
 		Sender: addr.String(),
 		Admin:  addr.String(),
@@ -217,9 +215,9 @@ func InitializeTerpApp(tb testing.TB, db dbm.DB, numAccounts int) AppInfo {
 	}
 	gasWanted := 500000 + 10000*uint64(numAccounts)
 	initTx, err := simtestutil.GenSignedMockTx(r, txGen, []sdk.Msg{&initMsg}, nil, gasWanted, "", []uint64{0}, []uint64{1}, minter)
-	require.NoError(tb, err)
+	require.NoError(b, err)
 	_, res, err := wasmApp.SimDeliver(txGen.TxEncoder(), initTx)
-	require.NoError(tb, err)
+	require.NoError(b, err)
 
 	// TODO: parse contract address better
 	evt := res.Events[len(res.Events)-1]
