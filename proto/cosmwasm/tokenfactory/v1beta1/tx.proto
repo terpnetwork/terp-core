@@ -9,15 +9,20 @@ option go_package = "github.com/terpnetwork/terp-core/x/tokenfactory/types";
 
 // Msg defines the tokefactory module's gRPC message service.
 service Msg {
-  //  CreateDenom Creates a denom of factory/{creator address}/{subdenom} given the denom creator address and the subdenom. Subdenoms can contain [a-zA-Z0-9./].
+  //  CreateDenom Creates a denom of factory/{creator address}/{subdenom} given
+  //  the denom creator address and the subdenom. Subdenoms can contain
+  //  [a-zA-Z0-9./].
   rpc CreateDenom(MsgCreateDenom) returns (MsgCreateDenomResponse);
   // Mint is  message type that represents a request to mint a new denom.
   rpc Mint(MsgMint) returns (MsgMintResponse);
-  //  Burn message type that represents a request to burn (i.e., destroy) a denom.
+  //  Burn message type that represents a request to burn (i.e., destroy) a
+  //  denom.
   rpc Burn(MsgBurn) returns (MsgBurnResponse);
-  // A message type that represents a request to change the administrator of the denom.
+  // A message type that represents a request to change the administrator of the
+  // denom.
   rpc ChangeAdmin(MsgChangeAdmin) returns (MsgChangeAdminResponse);
-  // A message type that represents a request to set metadata for a denomination.
+  // A message type that represents a request to set metadata for a
+  // denomination.
   rpc SetDenomMetadata(MsgSetDenomMetadata)
       returns (MsgSetDenomMetadataResponse);
 
