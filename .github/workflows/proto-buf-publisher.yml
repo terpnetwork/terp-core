@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - "proto/**"
+      - 'proto/**'
 
     # Sequence of patterns matched against refs/tags
     tags:
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3.5.0
-      - uses: bufbuild/buf-setup-action@v1.16.0
+      - uses: bufbuild/buf-setup-action@v1.17.0
 
       # lint checks
       - uses: bufbuild/buf-lint-action@v1
@@ -34,5 +34,5 @@ jobs:
       # publish proto files
       - uses: bufbuild/buf-push-action@v1
         with:
-          input: "proto"
+          input: 'proto'
           buf_token: ${{ secrets.BUF_TOKEN }}
