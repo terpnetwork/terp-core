@@ -7,7 +7,6 @@ import "cosmos/base/v1beta1/coin.proto";
 import "cosmwasm/wasm/v1/types.proto";
 import "amino/amino.proto";
 
-
 option go_package = "github.com/terpnetwork/terp-core/x/wasm/types";
 option (gogoproto.goproto_stringer_all) = false;
 option (gogoproto.goproto_getters_all) = false;
@@ -264,7 +263,7 @@ message AccessConfigUpdate {
   uint64 code_id = 1 [ (gogoproto.customname) = "CodeID" ];
   // InstantiatePermission to apply to the set of code ids
   AccessConfig instantiate_permission = 2
-    [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // Deprecated: Do not use. Since wasmd v0.40, there is no longer a need for
@@ -283,7 +282,7 @@ message UpdateInstantiateConfigProposal {
   // AccessConfigUpdate contains the list of code ids and the access config
   // to be applied.
   repeated AccessConfigUpdate access_config_updates = 3
-    [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
+      [ (gogoproto.nullable) = false, (amino.dont_omitempty) = true ];
 }
 
 // Deprecated: Do not use. Since wasmd v0.40, there is no longer a need for
