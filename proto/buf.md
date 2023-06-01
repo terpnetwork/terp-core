@@ -1,6 +1,7 @@
 # Protobufs
 
-This is the public protocol buffers API for [Terpd](https://github.com/terpnetwork/terp-core).
+This is the public protocol buffers API for [Terp-Core](https://github.com/terpnetwork/terp-core).
+
 ## Download
 
 The `buf` CLI comes with an export command. Use `buf export -h` for details
@@ -9,7 +10,7 @@ The `buf` CLI comes with an export command. Use `buf export -h` for details
 
 Download cosmwasm protos for a commit:
 ```bash
-buf export buf.build/terpnetwork/terpd:${commit} --output ./tmp
+buf export buf.build/terpnetwork/terp-core:${commit} --output ./tmp
 ```
 
 Download all project protos:

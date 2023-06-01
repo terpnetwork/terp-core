@@ -5,7 +5,7 @@
 
 This repository hosts `Terp-Core`, the Daemon binary logic of [Terp-Network](https://terp.network).
 
-This code was forked from the `notional-labs/wasmd` repository as a basis for main-network development.
+This code was forked from the `terpnetwork/terp-core` repository as a basis for main-network development.
 
 For critical security issues & disclosure, see [SECURITY.md](SECURITY.md).
 ## Compatibility with CosmWasm contracts
@@ -16,11 +16,14 @@ A VM can support one or more contract-VM interface versions. The interface
 version is communicated by the contract via a Wasm export. This is the current
 compatibility list:
 
-| terpd  | wasmvm       | cosmwasm-vm | cosmwasm-std |
-|--------|--------------|-------------|--------------|
-| v1.0.0  | v1.2.0      |             | 1.0-1.2      |
-| v0.5.0 | v1.2.0       |             | 1.0-1.2      |
-| v0.4.0 | v1.2.0       |             | 1.0-1.1      |
+| terpd        |    wasmvm    | cosmwasm-vm | cosmwasm-std |
+|--------------|--------------|-------------|--------------|
+| huckleberry  | v1.2.0       |             | 1.0-1.2      |
+| v1.0.1       | v1.2.0       |             | 1.0-1.2      |
+| v1.0.0-proto | v1.2.0       |             | 1.0-1.2      |
+| v1.0.0       | v1.2.0       |             | 1.0-1.2      |
+| v0.5.0       | v1.2.0       |             | 1.0-1.2      |
+| v0.4.0       | v1.2.0       |             | 1.0-1.1      |
 
 
 Note: `cosmwasm_std v1.0` means it supports contracts compiled by any `v1.0.0-betaX` or `1.0.x`.
@@ -36,7 +39,7 @@ using [wasmer](https://github.com/wasmerio/wasmer/) 1.0, which is significantly 
 ## Supported Systems
 
 The supported systems are limited by the dlls created in [`wasmvm`](https://github.com/CosmWasm/wasmvm). In particular, **we only support MacOS and Linux**.
-However, **M1 macs are not fully supported.** (Experimental support was merged with wasmd 0.24)
+However, **M1 macs are not fully supported.** (Experimental support was merged with terpd v0.4.0)
 For linux, the default is to build for glibc, and we cross-compile with CentOS 7 to provide
 backwards compatibility for `glibc 2.12+`. This includes all known supported distributions
 using glibc (CentOS 7 uses 2.12, obsolete Debian Jessy uses 2.19). 

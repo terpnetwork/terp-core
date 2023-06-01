@@ -34,7 +34,7 @@ taken place in a GitHub issue, that PR runs a high likelihood of being rejected.
 * Create a branch to start work:
     * Fork the repo (core developers must create a branch directly in the Wasmd repo),
     branch from the HEAD of `main`, make some commits, and submit a PR to `main`.
-    * For core developers working within the `wasmd` repo, follow branch name conventions to ensure a clear
+    * For core developers working within the `terpd` repo, follow branch name conventions to ensure a clear
     ownership of branches: `{issue#}-branch-name`.
     * See [Branching Model](#branching-model-and-release) for more details.
 * Be sure to run `make format` before every commit. The easiest way
@@ -46,7 +46,7 @@ Code is merged into main through pull request procedure.
 
 ### Testing
 
-Tests can be executed by running `make test` at the top level of the wasmd repository.
+Tests can be executed by running `make test` at the top level of the terpd repository.
 
 ### Pull Requests
 

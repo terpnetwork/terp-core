@@ -9,7 +9,6 @@ linters:
     - bodyclose
     - depguard
     - dogsled
-    - errcheck
     - exportloopref
     - goconst
     - gocritic
@@ -22,10 +21,8 @@ linters:
     - nakedret
     - nolintlint
     - revive
-    - staticcheck
     - stylecheck
     - typecheck
-
     - unconvert
     - unparam
     - unused

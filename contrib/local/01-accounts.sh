@@ -8,11 +8,11 @@ echo "## Add new account"
 terpd keys add fred --keyring-backend=test
 
 echo "## Check balance"
-NEW_ACCOUNT=$(terpd keys show fred -a --keyring-backend=test )
+NEW_ACCOUNT=$(terpd keys show fred -a --keyring-backend=test)
 terpd q bank balances "$NEW_ACCOUNT" -o json || true
 
 echo "## Transfer tokens"
-terpd tx bank send validator "$NEW_ACCOUNT" 1ustake --gas 1000000 -y --chain-id=testing --node=http://localhost:26657 -b sync -o json | jq --keyring-backend=test
+terpd tx bank send validator "$NEW_ACCOUNT" 1ustake --gas 1000000 -y --chain-id=testing --node=http://localhost:26657 -b sync -o json --keyring-backend=test | jq
 
 echo "## Check balance again"
 terpd q bank balances "$NEW_ACCOUNT" -o json | jq

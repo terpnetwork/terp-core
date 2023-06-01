@@ -5,17 +5,7 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 TERPD_DATA="$(pwd)/data"
 RELAYER_CONF="$(pwd)/.relayer"
 
-# Ensure relayer is installed
-if ! [ -x "$(which rly)" ]; then
-  echo "Error: terpd is not installed. Try running 'make build-terpd'" >&2
-  exit 1
-fi
 
-# Ensure terpd is installed
-if ! [ -x "$(which terpd)" ]; then
-  echo "Error: terpd is not installed. Try running 'make build-terpd'" >&2
-  exit 1
-fi
 
 # Display software version for testers
 echo "TERPD VERSION INFO:"

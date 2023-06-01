@@ -4,7 +4,7 @@ queue_rules:
       - "#approved-reviews-by>0"
 
 pull_request_rules:
- - name: backport patches to main branch
+  - name: backport patches to main branch
     conditions:
       - base=releases/v0.3x
       - label=backport/main

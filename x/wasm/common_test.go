@@ -23,7 +23,6 @@ func assertExecuteResponse(t *testing.T, data []byte, expected []byte) {
 
 // ensures this returns a valid bech32 address and returns it
 func parseInitResponse(t *testing.T, data []byte) string {
-	t.Helper()
 	var pInstResp MsgInstantiateContractResponse
 	require.NoError(t, pInstResp.Unmarshal(data))
 	require.NotEmpty(t, pInstResp.Address)

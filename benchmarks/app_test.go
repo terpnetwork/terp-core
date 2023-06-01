@@ -239,15 +239,14 @@ func InitializeTerpApp(b testing.TB, db dbm.DB, numAccounts int) AppInfo {
 	}
 }
 
-func GenSequenceOfTxs(tb testing.TB, info *AppInfo, msgGen func(*AppInfo) ([]sdk.Msg, error), numToGenerate int) []sdk.Tx {
-	tb.Helper()
+func GenSequenceOfTxs(b testing.TB, info *AppInfo, msgGen func(*AppInfo) ([]sdk.Msg, error), numToGenerate int) []sdk.Tx {
 	fees := sdk.Coins{sdk.NewInt64Coin(info.Denom, 0)}
 	txs := make([]sdk.Tx, numToGenerate)
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < numToGenerate; i++ {
 		msgs, err := msgGen(info)
-		require.NoError(tb, err)
+		require.NoError(b, err)
 		txs[i], err = simtestutil.GenSignedMockTx(
 			r,
 			info.TxConfig,
@@ -259,7 +258,7 @@ func GenSequenceOfTxs(tb testing.TB, info *AppInfo, msgGen func(*AppInfo) ([]sdk
 			[]uint64{info.SeqNum},
 			info.MinterKey,
 		)
-		require.NoError(tb, err)
+		require.NoError(b, err)
 		info.SeqNum++
 	}
 

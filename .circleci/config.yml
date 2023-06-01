@@ -3,7 +3,7 @@ version: 2.1
 executors:
   golang:
     docker:
-      - image: cimg/go:1.20.0
+      - image: cimg/go:1.19
 
 commands:
   make:
@@ -61,7 +61,7 @@ jobs:
 
   lint:
     docker:
-        - image: golangci/golangci-lint:v1.51.1
+      - image: golangci/golangci-lint:v1.50.1
     steps:
       - checkout
       - run:
@@ -125,8 +125,6 @@ jobs:
           name: Run simulations
           command: |
             make test-sim-multi-seed-short test-sim-import-export test-sim-deterministic
-      - store_artifacts:
-          path: /tmp
 
   upload-coverage:
     executor: golang
@@ -156,8 +154,7 @@ jobs:
           at: /tmp/workspace
       - checkout
       - setup_remote_docker:
-          # >= v20.10 https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0#faccessat2
-          version: 20.10.11
+          version: 20.10.18
       - run:
           name: Build Docker artifact
           command: docker build --pull -t "terpnetwork/terp-core:${CIRCLE_SHA1}" .

@@ -347,6 +347,7 @@ func TestHandleExecute(t *testing.T) {
 	assert.Equal(t, deposit.Add(topUp...), balance)
 
 	// ensure contract has updated balance
+
 	contractAcct = data.acctKeeper.GetAccount(data.ctx, contractAddr)
 	require.NotNil(t, contractAcct)
 	assert.Equal(t, sdk.Coins{}, data.bankKeeper.GetAllBalances(data.ctx, contractAcct.GetAddress()))
@@ -577,7 +578,7 @@ func assertCodeBytes(t *testing.T, q *baseapp.GRPCQueryRouter, ctx sdk.Context, 
 	path := "/cosmwasm.wasm.v1.Query/Code"
 	resp, err := q.Route(path)(ctx, abci.RequestQuery{Path: path, Data: bz})
 	if len(expectedBytes) == 0 {
-		assert.ErrorIs(t, err, types.ErrNotFound)
+		require.Equal(t, types.ErrNoSuchCodeFn(codeID).Wrapf("code id %d", codeID).Error(), err.Error())
 		return
 	}
 	require.NoError(t, err)
