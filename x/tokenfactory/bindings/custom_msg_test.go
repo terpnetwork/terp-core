@@ -247,7 +247,7 @@ type ReflectSubMsgs struct {
 	Msgs []wasmvmtypes.SubMsg `json:"msgs"`
 }
 
-func executeCustom(t *testing.T, ctx sdk.Context, terp *app.TerpApp, contract sdk.AccAddress, sender sdk.AccAddress, msg bindings.TokenMsg, funds sdk.Coin) error { //nolint:unparam // funds currently always recieves nil, but it may recieve something else in the future
+func executeCustom(t *testing.T, ctx sdk.Context, terp *app.TerpApp, contract sdk.AccAddress, sender sdk.AccAddress, msg bindings.TokenMsg, funds sdk.Coin) error { //nolint:unparam // funds currently always receives nil, but it may receive something else in the future
 	t.Helper()
 	wrapped := bindings.TokenFactoryMsg{
 		Token: &msg,
