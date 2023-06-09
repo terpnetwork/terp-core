@@ -445,7 +445,7 @@ func TestValidateContractGrant(t *testing.T) {
 		},
 
 		"wrong filter type": {
-			setup: func(t *testing.T) ContractGrant {	
+			setup: func(t *testing.T) ContractGrant {
 				r := mustGrant(randBytes(ContractAddrLen), NewMaxCallsLimit(1), NewAcceptedMessageKeysFilter())
 				r.Filter = r.Limit
 				return r

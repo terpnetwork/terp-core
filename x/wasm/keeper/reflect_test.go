@@ -26,14 +26,12 @@ import (
 // ReflectInitMsg is {}
 
 func buildReflectQuery(t *testing.T, query *testdata.ReflectQueryMsg) []byte {
-
 	bz, err := json.Marshal(query)
 	require.NoError(t, err)
 	return bz
 }
 
 func mustParse(t *testing.T, data []byte, res interface{}) {
-
 	err := json.Unmarshal(data, res)
 	require.NoError(t, err)
 }
@@ -377,7 +375,7 @@ func TestReflectInvalidStargateQuery(t *testing.T) {
 	}
 	protoQueryBin, err := proto.Marshal(&protoQuery)
 	require.NoError(t, err)
-	
+
 	protoRequest := wasmvmtypes.QueryRequest{
 		Stargate: &wasmvmtypes.StargateQuery{
 			Path: "/cosmos.bank.v1beta1.Query/AllBalances",

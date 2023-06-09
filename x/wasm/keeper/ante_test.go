@@ -45,7 +45,6 @@ func TestCountTxDecorator(t *testing.T) {
 		},
 		"persistent counter incremented - big endian": {
 			setupDB: func(t *testing.T, ctx sdk.Context) {
-
 				bz := []byte{0, 0, 0, 0, 0, 0, 0, myCurrentBlockHeight, 1, 0, 0, 2}
 				ctx.MultiStore().GetKVStore(keyWasm).Set(types.TXCounterPrefix, bz)
 			},
