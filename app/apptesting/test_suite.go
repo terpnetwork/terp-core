@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	authzcodec "github.com/terpnetwork/terp-core/x/tokenfactory/types/authzcodec"
+	authzcodec "github.com/cosmos/cosmos-sdk/x/authz/codec"
 
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"

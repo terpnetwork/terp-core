@@ -1,6 +1,6 @@
 module github.com/terpnetwork/terp-core
 
-go 1.19
+go 1.20
 
 require (
 	github.com/CosmWasm/wasmvm v1.2.4
@@ -17,7 +17,7 @@ require (
 	github.com/dvsekhvalnov/jose2go v1.5.0 // indirect
 	github.com/golang/protobuf v1.5.3
 	github.com/google/gofuzz v1.2.0
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.15.0
