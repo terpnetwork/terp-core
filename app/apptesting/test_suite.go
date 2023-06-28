@@ -32,7 +32,7 @@ import (
 	authzcodec "github.com/cosmos/cosmos-sdk/x/authz/codec"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 
-	"github.com/terpnetwork/terp-core/app"
+	"github.com/terpnetwork/terp-core/v2/app"
 )
 
 type KeeperTestHelper struct {

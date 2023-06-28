@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"errors"
@@ -30,11 +30,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/terpnetwork/terp-core/app"
-	"github.com/terpnetwork/terp-core/app/params"
-	"github.com/terpnetwork/terp-core/x/wasm"
-	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
-	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
+	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/terpnetwork/terp-core/v2/app"
+	"github.com/terpnetwork/terp-core/v2/app/params"
 )
 
 // NewRootCmd creates a new root command for terpd. It is called once in the
@@ -56,12 +56,13 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithLegacyAmino(encodingConfig.Amino).
 		WithInput(os.Stdin).
 		WithAccountRetriever(authtypes.AccountRetriever{}).
+		WithBroadcastMode(flags.FlagBroadcastMode).
 		WithHomeDir(app.DefaultNodeHome).
 		WithViper("") // In terpd, we don't use any prefix for env variables.
 
 	rootCmd := &cobra.Command{
 		Use:   version.AppName,
-		Short: "Terp Network Daemon (server)",
+		Short: "Terp Network Community Network",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			// set the default command outputs
 			cmd.SetOut(cmd.OutOrStdout())

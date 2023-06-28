@@ -21,7 +21,7 @@ import (
 	icahosttypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/host/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 
-	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 )
 
 // UpgradeName defines the on-chain upgrade name for the sample SimApp upgrade
