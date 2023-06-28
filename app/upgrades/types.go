@@ -38,10 +38,10 @@ type Upgrade struct {
 	StoreUpgrades store.StoreUpgrades
 }
 
-// Returns "ujunox" if the chain is uni, else returns the standard ujuno token denom.
+// Returns "uterpx" if the chain is 90u-, else returns the standard uterp token denom.
 func GetChainsDenomToken(chainID string) string {
-	if strings.HasPrefix(chainID, "uni-") {
-		return "ujunox"
+	if strings.HasPrefix(chainID, "90u-") {
+		return "uterpx"
 	}
-	return "ujuno"
+	return "uterp"
 }

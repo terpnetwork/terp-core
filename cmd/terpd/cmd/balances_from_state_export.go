@@ -89,7 +89,7 @@ func ExportDeriveBalancesCmd() *cobra.Command {
 		Short: "Export a derive balances from a provided genesis export",
 		Long: `Export a derive balances from a provided genesis export
 Example:
-	junod export-derive-balances ../genesis.json ../snapshot.json
+	terpd export-derive-balances ../genesis.json ../snapshot.json
 `,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -134,12 +134,12 @@ Example:
 					acc = newDerivedAccount(address)
 				}
 
-				unbondingJunos := sdk.NewInt(0)
+				unbondingTerps := sdk.NewInt(0)
 				for _, entry := range unbonding.Entries {
-					unbondingJunos = unbondingJunos.Add(entry.Balance)
+					unbondingTerps = unbondingTerps.Add(entry.Balance)
 				}
 
-				acc.UnbondingStake = acc.UnbondingStake.Add(unbondingJunos)
+				acc.UnbondingStake = acc.UnbondingStake.Add(unbondingTerps)
 
 				snapshotAccs[address] = acc
 			}
@@ -159,9 +159,9 @@ Example:
 				}
 
 				val := validators[delegation.ValidatorAddress]
-				stakedJuno := delegation.Shares.MulInt(val.Tokens).Quo(val.DelegatorShares).RoundInt()
+				stakedTerps := delegation.Shares.MulInt(val.Tokens).Quo(val.DelegatorShares).RoundInt()
 
-				acc.Staked = acc.Staked.Add(stakedJuno)
+				acc.Staked = acc.Staked.Add(stakedTerps)
 
 				snapshotAccs[address] = acc
 			}

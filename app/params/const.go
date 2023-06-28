@@ -7,13 +7,13 @@ const (
 	// BondDenom defines the native staking token denomination.
 	BondDenom = "uterp"
 
-	// DisplayDenom defines the name, symbol, and display value of the Juno token.
+	// DisplayBondDenom defines the name, symbol, and display value of the Terp token.
 	DisplayBondDenom = "TERP"
 
 	// BondDenom defines the native gas token denomination.
 	GasDenom = "uthiol"
 
-	// DisplayDenom defines the name, symbol, and display value of the Thiol token.
+	// DisplayGasDenom defines the name, symbol, and display value of the Thiol token.
 	DisplayGasDenom = "THIOL"
 
 	// DefaultGasLimit - set to the same value as cosmos-sdk flags.DefaultGasLimit

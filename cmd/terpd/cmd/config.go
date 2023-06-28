@@ -176,12 +176,12 @@ node = "{{ .Node }}"
 broadcast-mode = "{{ .BroadcastMode }}"
 
 ###############################################################################
-###                          Juno Tx Configuration                          ###
+###                          Terp Tx Configuration                          ###
 ###############################################################################
 
 # Amount of gas per transaction
 gas = "{{ .Gas }}"
-# Price per unit of gas (ex: 0.005ujuno)
+# Price per unit of gas (ex: 0.005uthiol)
 gas-prices = "{{ .GasPrices }}"
 gas-adjustment = "{{ .GasAdjustment }}"
 

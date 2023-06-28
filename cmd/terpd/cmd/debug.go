@@ -45,7 +45,7 @@ func ConvertBech32Cmd() *cobra.Command {
 		Long: `Convert any bech32 string to the terp prefix
 Especially useful for converting cosmos addresses to terp addresses
 Example:
-	terpd bech32-convert juno1ey69r37gfxvxg62sh4r0ktpuc46pzjrm5cxnjg -p osmo
+	terpd bech32-convert terp1ey69r37gfxvxg62sh4r0ktpuc46pzjrm9qvyl8 -p osmo
 	`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
