@@ -99,6 +99,10 @@ endif
 install: go.sum
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/terpd
 
+test-node:
+	CHAIN_ID="local-1" HOME_DIR="~/.terp1" TIMEOUT_COMMIT="500ms" CLEAN=true sh scripts/test_node.sh
+
+
 ########################################
 ### Tools & dependencies
 
