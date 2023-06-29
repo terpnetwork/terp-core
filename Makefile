@@ -179,6 +179,36 @@ format: format-tools
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs gofumpt -w
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs goimports -w -local github.com/terpnetwork/terp-core
 
+###############################################################################
+###                             e2e interchain test                         ###
+###############################################################################
+
+ # Executes basic chain tests via interchaintest
+ictest-basic: rm-testcache
+	cd interchaintest && go test -race -v -run TestBasicTerpStart .
+
+ictest-ibchooks: rm-testcache
+	cd interchaintest && go test -race -v -run TestTerpIBCHooks .
+
+ictest-pfm: rm-testcache
+	cd interchaintest && go test -race -v -run TestPacketForwardMiddlewareRouter .
+
+
+# Executes a basic chain upgrade test via interchaintest
+ictest-upgrade: rm-testcache
+	cd interchaintest && go test -race -v -run TestBasicTerpUpgrade .
+
+# Executes a basic chain upgrade locally via interchaintest after compiling a local image as terp-core:local
+ictest-upgrade-local: local-image ictest-upgrade
+
+# Executes IBC tests via interchaintest
+ictest-ibc: rm-testcache
+	cd interchaintest && go test -race -v -run TestTerpGaiaIBCTransfer .
+
+rm-testcache:
+	go clean -testcache
+
+.PHONY: test-mutation ictest-basic ictest-upgrade ictest-ibc 
 
 ###############################################################################
 ###                                  heighliner                             ###

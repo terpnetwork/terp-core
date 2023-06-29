@@ -2,7 +2,14 @@
 name: Build Docker Image on PR
 
 on:
-  pull_request:
+  push:
+    branches:
+      - master
+      - main
+      
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   docker:
