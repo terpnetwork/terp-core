@@ -11,7 +11,7 @@ import (
 	"github.com/strangelove-ventures/interchaintest/v7/ibc"
 	"github.com/strangelove-ventures/interchaintest/v7/testutil"
 	"github.com/stretchr/testify/require"
-	helpers "github.com/terpnetwork/terp-core/tests/interchaintest/helpers"
+	helpers "github.com/terpnetwork/terp-core/v2/tests/interchaintest/helpers"
 	"go.uber.org/zap/zaptest"
 )
 
