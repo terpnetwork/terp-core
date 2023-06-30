@@ -2,6 +2,7 @@
 
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT := $(shell git log -1 --format='%H')
+VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 BINDIR ?= $(GOPATH)/bin
 APP = ./app
 
@@ -17,15 +18,24 @@ endif
 PACKAGES_SIMTEST=$(shell go list ./... | grep '/simulation')
 LEDGER_ENABLED ?= true
 SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
-BFT_VERSION := $(shell go list -m github.com/cometbft/cometbft | sed 's:.* ::') # grab everything after the space in "github.com/cometbft/cometbft v0.34.7"
-DOCKER := $(shell which docker)
-DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(BUF_IMAGE)
-BUILDDIR ?= $(CURDIR)/build
-VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
-E2E_UPGRADE_VERSION := "v14"
-export GO111MODULE = on
+
+# don't override user values
+ifeq (,$(VERSION))
+  VERSION := $(shell git describe --tags)
+  # if VERSION is empty, then populate it with branch's name and raw commit hash
+  ifeq (,$(VERSION))
+    VERSION := $(BRANCH)-$(COMMIT)
+  endif
+endif
 
 # for dockerized protobuf tools
+DOCKER := $(shell which docker)
+BUF_IMAGE=bufbuild/buf@sha256:3cb1f8a4b48bd5ad8f09168f10f607ddc318af202f5c057d52a45216793d85e5 #v1.4.0
+DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(BUF_IMAGE)
+HTTPS_GIT := https://github.com/terpnetwork/terp-core.git
+
+export GO111MODULE = on
+
 # process build tags
 
 build_tags = netgo
@@ -52,8 +62,8 @@ ifeq ($(LEDGER_ENABLED),true)
   endif
 endif
 
-ifeq (cleveldb,$(findstring cleveldb,$(TERP_BUILD_OPTIONS)))
-  build_tags += gcc cleveldb
+ifeq ($(WITH_CLEVELDB),yes)
+  build_tags += gcc
 endif
 build_tags += $(BUILD_TAGS)
 build_tags := $(strip $(build_tags))
@@ -71,25 +81,17 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=terp \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X github.com/terpnetwork/terp-core/app.Bech32Prefix=terp \
 		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)"
-		  -X github.com/cometbft/cometbft/version.TMCoreSemVer=$(BFT_VERSION)
 
-ifeq (cleveldb,$(findstring cleveldb,$(TERP_BUILD_OPTIONS)))
+ifeq ($(WITH_CLEVELDB),yes)
   ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
 endif
 ifeq ($(LINK_STATICALLY),true)
 	ldflags += -linkmode=external -extldflags "-Wl,-z,muldefs -static"
 endif
-ifeq (,$(findstring nostrip,$(TERP_BUILD_OPTIONS)))
-  ldflags += -w -s
-endif
 ldflags += $(LDFLAGS)
 ldflags := $(strip $(ldflags))
 
-BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
-# check for nostrip option
-ifeq (,$(findstring nostrip,$(TERP_BUILD_OPTIONS)))
-  BUILD_FLAGS += -trimpath
-endif
+BUILD_FLAGS := -tags "$(build_tags_comma_sep)" -ldflags '$(ldflags)' -trimpath
 
 # The below include contains the tools and runsim targets.
 include contrib/devtools/Makefile
@@ -123,9 +125,6 @@ endif
 
 test-node:
 	CHAIN_ID="local-1" HOME_DIR="~/.terp1" TIMEOUT_COMMIT="500ms" CLEAN=true sh scripts/test_node.sh
-
-
-
 
 ###############################################################################
 ###                                Testing                                  ###
@@ -161,6 +160,29 @@ test-sim-deterministic: runsim
 benchmark:
 	@go test -mod=readonly -bench=. $(PACKAGES_UNIT)
 
+
+###############################################################################
+###                                Tools & dependencies                     ###
+###############################################################################
+
+go-mod-cache: go.sum
+	@echo "--> Download go modules to local cache"
+	@go mod download
+
+go.sum: go.mod
+	@echo "--> Ensure dependencies have not been modified"
+	@go mod verify
+
+draw-deps:
+	@# requires brew install graphviz or apt-get install graphviz
+	go install github.com/RobotsAndPencils/goviz@latest
+	@goviz -i ./cmd/terpd -d 2 | dot -Tpng -o dependency-graph.png
+
+clean:
+	rm -rf snapcraft-local.yaml build/
+
+distclean: clean
+	rm -rf vendor/
 
 ###############################################################################
 ###                                Linting                                  ###

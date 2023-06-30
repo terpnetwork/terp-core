@@ -1,0 +1,4 @@
+github.com/CosmWasm/wasmd v0.40.2/go.mod h1:vqI238yb4D6aNuigS8mCqTyyCV9HN5eBEZARKRoK3ts=
+github.com/strangelove-ventures/interchaintest/v7 v7.0.0-20230622193330-220ce33823c0/go.mod h1:CQxeTz7/TUfTbwJ3hJgHwxaZGfeJUuyIXvSQOz5gH38=
+github.com/terpnetwork/terp-core/v2 v2.0.0-20230630074246-7e7c06f1a193/go.mod h1:JmoWqm6o9grCBMY9UqYczQ4wshEyEKNj1vj+FX8muAI=
+go.uber.org/zap v1.24.0/go.mod h1:2kMP+WWQ8aoFoedH3T2sq6iJ2yDWpHbP0f6MQbS9Gkg=
