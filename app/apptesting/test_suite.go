@@ -28,12 +28,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	authzcodec "github.com/terpnetwork/terp-core/x/tokenfactory/types/authzcodec"
-
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	authzcodec "github.com/cosmos/cosmos-sdk/x/authz/codec"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 
-	"github.com/terpnetwork/terp-core/app"
+	"github.com/terpnetwork/terp-core/v2/app"
 )
 
 type KeeperTestHelper struct {

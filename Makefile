@@ -1,21 +1,31 @@
 #!/usr/bin/make -f
 
-PACKAGES_SIMTEST=$(shell go list ./... | grep '/simulation')
-VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT := $(shell git log -1 --format='%H')
+BINDIR ?= $(GOPATH)/bin
+APP = ./app
+
+# don't override user values
+ifeq (,$(VERSION))
+  VERSION := $(shell git describe --tags)
+  # if VERSION is empty, then populate it with branch's name and raw commit hash
+  ifeq (,$(VERSION))
+    VERSION := $(BRANCH)-$(COMMIT)
+  endif
+endif
+
+PACKAGES_SIMTEST=$(shell go list ./... | grep '/simulation')
 LEDGER_ENABLED ?= true
 SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
-BINDIR ?= $(GOPATH)/bin
-SIMAPP = ./app
-
-# for dockerized protobuf tools
+BFT_VERSION := $(shell go list -m github.com/cometbft/cometbft | sed 's:.* ::') # grab everything after the space in "github.com/cometbft/cometbft v0.34.7"
 DOCKER := $(shell which docker)
-BUF_IMAGE=bufbuild/buf@sha256:3cb1f8a4b48bd5ad8f09168f10f607ddc318af202f5c057d52a45216793d85e5 #v1.4.0
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(BUF_IMAGE)
-HTTPS_GIT := https://github.com/terpnetwork/terp-core.git
-
+BUILDDIR ?= $(CURDIR)/build
+VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+E2E_UPGRADE_VERSION := "v14"
 export GO111MODULE = on
 
+# for dockerized protobuf tools
 # process build tags
 
 build_tags = netgo
@@ -42,8 +52,8 @@ ifeq ($(LEDGER_ENABLED),true)
   endif
 endif
 
-ifeq ($(WITH_CLEVELDB),yes)
-  build_tags += gcc
+ifeq (cleveldb,$(findstring cleveldb,$(TERP_BUILD_OPTIONS)))
+  build_tags += gcc cleveldb
 endif
 build_tags += $(BUILD_TAGS)
 build_tags := $(strip $(build_tags))
@@ -61,22 +71,37 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=terp \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X github.com/terpnetwork/terp-core/app.Bech32Prefix=terp \
 		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)"
+		  -X github.com/cometbft/cometbft/version.TMCoreSemVer=$(BFT_VERSION)
 
-ifeq ($(WITH_CLEVELDB),yes)
+ifeq (cleveldb,$(findstring cleveldb,$(TERP_BUILD_OPTIONS)))
   ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
 endif
 ifeq ($(LINK_STATICALLY),true)
 	ldflags += -linkmode=external -extldflags "-Wl,-z,muldefs -static"
 endif
+ifeq (,$(findstring nostrip,$(TERP_BUILD_OPTIONS)))
+  ldflags += -w -s
+endif
 ldflags += $(LDFLAGS)
 ldflags := $(strip $(ldflags))
 
-BUILD_FLAGS := -tags "$(build_tags_comma_sep)" -ldflags '$(ldflags)' -trimpath
+BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
+# check for nostrip option
+ifeq (,$(findstring nostrip,$(TERP_BUILD_OPTIONS)))
+  BUILD_FLAGS += -trimpath
+endif
 
 # The below include contains the tools and runsim targets.
 include contrib/devtools/Makefile
 
-all: install lint test
+all: install
+	@echo "--> project root: go mod tidy"	
+	@go mod tidy	
+	@echo "--> project root: linting --fix"	
+	@GOGC=1 golangci-lint run --fix --timeout=8m
+
+install: go.sum
+	go install -mod=readonly $(BUILD_FLAGS) ./cmd/terpd
 
 build: go.sum
 ifeq ($(OS),Windows_NT)
@@ -96,34 +121,15 @@ else
 	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
 endif
 
-install: go.sum
-	go install -mod=readonly $(BUILD_FLAGS) ./cmd/terpd
+test-node:
+	CHAIN_ID="local-1" HOME_DIR="~/.terp1" TIMEOUT_COMMIT="500ms" CLEAN=true sh scripts/test_node.sh
 
-########################################
-### Tools & dependencies
 
-go-mod-cache: go.sum
-	@echo "--> Download go modules to local cache"
-	@go mod download
 
-go.sum: go.mod
-	@echo "--> Ensure dependencies have not been modified"
-	@go mod verify
 
-draw-deps:
-	@# requires brew install graphviz or apt-get install graphviz
-	go install github.com/RobotsAndPencils/goviz@latest
-	@goviz -i ./cmd/terpd -d 2 | dot -Tpng -o dependency-graph.png
-
-clean:
-	rm -rf snapcraft-local.yaml build/
-
-distclean: clean
-	rm -rf vendor/
-
-########################################
-### Testing
-
+###############################################################################
+###                                Testing                                  ###
+###############################################################################
 
 test: test-unit
 test-all: check test-race test-cover
@@ -142,15 +148,18 @@ benchmark:
 
 test-sim-import-export: runsim
 	@echo "Running application import/export simulation. This may take several minutes..."
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 5 TestAppImportExport
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(APP) -ExitOnFail 50 5 TestAppImportExport
 
 test-sim-multi-seed-short: runsim
 	@echo "Running short multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 5 TestFullAppSimulation
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(APP) -ExitOnFail 50 5 TestFullAppSimulation
 
 test-sim-deterministic: runsim
 	@echo "Running short multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 1 1 TestAppStateDeterminism
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(APP) -ExitOnFail 1 1 TestAppStateDeterminism
+
+benchmark:
+	@go test -mod=readonly -bench=. $(PACKAGES_UNIT)
 
 
 ###############################################################################
@@ -170,11 +179,57 @@ format: format-tools
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs gofumpt -w
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs goimports -w -local github.com/terpnetwork/terp-core
 
+###############################################################################
+###                             e2e interchain test                         ###
+###############################################################################
 
+ # Executes basic chain tests via interchaintest
+ictest-basic: rm-testcache
+	cd interchaintest && go test -race -v -run TestBasicTerpStart .
+
+ictest-ibchooks: rm-testcache
+	cd interchaintest && go test -race -v -run TestTerpIBCHooks .
+
+ictest-pfm: rm-testcache
+	cd interchaintest && go test -race -v -run TestPacketForwardMiddlewareRouter .
+
+
+# Executes a basic chain upgrade test via interchaintest
+ictest-upgrade: rm-testcache
+	cd interchaintest && go test -race -v -run TestBasicTerpUpgrade .
+
+# Executes a basic chain upgrade locally via interchaintest after compiling a local image as terp-core:local
+ictest-upgrade-local: local-image ictest-upgrade
+
+# Executes IBC tests via interchaintest
+ictest-ibc: rm-testcache
+	cd interchaintest && go test -race -v -run TestTerpGaiaIBCTransfer .
+
+rm-testcache:
+	go clean -testcache
+
+.PHONY: test-mutation ictest-basic ictest-upgrade ictest-ibc 
+
+###############################################################################
+###                                  heighliner                             ###
+###############################################################################
+
+get-heighliner:
+	git clone https://github.com/strangelove-ventures/heighliner.git
+	cd heighliner && go install
+
+local-image:
+ifeq (,$(shell which heighliner))
+	echo 'heighliner' binary not found. Consider running `make get-heighliner`
+else
+	heighliner build -c terpnetwork --local -f ./chains.yaml
+endif
+
+.PHONY: get-heighliner local-image
 ###############################################################################
 ###                                Protobuf                                 ###
 ###############################################################################
-protoVer=0.11.6
+protoVer=0.13.1
 protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
 protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
 
@@ -184,11 +239,14 @@ proto-gen:
 	@echo "Generating Protobuf files"
 	@$(protoImage) sh ./scripts/protocgen.sh
 
+proto-swagger-gen:
+	@echo "Generating Protobuf Swagger"
+	@$(protoImage) sh ./scripts/protoc_swagger_openapi_gen.sh
+	$(MAKE) update-swagger-docs
+
 proto-format:
 	@echo "Formatting Protobuf files"
 	@$(protoImage) find ./ -name "*.proto" -exec clang-format -i {} \;
-proto-swagger-gen:
-	@./scripts/protoc-swagger-gen.sh
 
 proto-lint:
 	@$(DOCKER_BUF) lint --error-format=json
