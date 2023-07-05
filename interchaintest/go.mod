@@ -11,15 +11,18 @@ replace (
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	// For this nested module, you always want to replace the parent reference with the current worktree.
 	// github.com/terpnetwork/terp-core => ../../
-	github.com/terpnetwork/terp-core/ => github.com/terpnetwork/terp-core/v2 v2.0.0-20230630074246-7e7c06f1a193
 
 	github.com/vedhavyas/go-subkey => github.com/strangelove-ventures/go-subkey v1.0.7
 )
 
 require (
 	github.com/CosmWasm/wasmd v0.40.2
+	github.com/cosmos/cosmos-sdk v0.47.3
+	github.com/cosmos/gogoproto v1.4.10
+	github.com/cosmos/ibc-go/v7 v7.2.0
+	github.com/docker/docker v24.0.2+incompatible
 	github.com/strangelove-ventures/interchaintest/v7 v7.0.0-20230622193330-220ce33823c0
-	github.com/terpnetwork/terp-core/v2 v2.0.0
+	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.24.0
 )
 
