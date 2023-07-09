@@ -18,7 +18,6 @@ func CreateV2UpgradeHandler(
 	cfg module.Configurator,
 	keepers *app.TerpApp,
 ) upgradetypes.UpgradeHandler {
-
 	return func(ctx sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		// transfer module consensus version has been bumped to 2
 		// the above is https://github.com/cosmos/ibc-go/blob/v5.1.0/docs/migrations/v3-to-v4.md
@@ -49,5 +48,4 @@ func CreateV2UpgradeHandler(
 
 		return versionMap, err
 	}
-
 }
