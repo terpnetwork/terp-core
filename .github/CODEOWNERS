@@ -1,5 +1,6 @@
 # CODEOWNERS: https://help.github.com/articles/about-codeowners/
 
 # Primary repo maintainers
-*       @terpnetwork
+*       @ethanfrey
+*       @alpe
 *       @discoverdefiteam

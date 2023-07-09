@@ -42,6 +42,7 @@ import (
 	packetforward "github.com/strangelove-ventures/packet-forward-middleware/v7/router"
 	packetforwardkeeper "github.com/strangelove-ventures/packet-forward-middleware/v7/router/keeper"
 	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v7/router/types"
+	"github.com/terpnetwork/terp-core/v2/x/feeshare"
 	"github.com/terpnetwork/terp-core/v2/x/ibchooks"
 	ibchookskeeper "github.com/terpnetwork/terp-core/v2/x/ibchooks/keeper"
 	ibchookstypes "github.com/terpnetwork/terp-core/v2/x/ibchooks/types"
@@ -133,6 +134,8 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v7/modules/core/keeper"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
 	ibcmock "github.com/cosmos/ibc-go/v7/testing/mock"
+	feesharekeeper "github.com/terpnetwork/terp-core/v2/x/feeshare/keeper"
+	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 
 	"github.com/spf13/cast"
 
@@ -276,6 +279,7 @@ var (
 		icq.AppModuleBasic{},
 		ibchooks.AppModuleBasic{},
 		packetforward.AppModuleBasic{},
+		feeshare.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -331,6 +335,7 @@ type TerpApp struct {
 	FeeGrantKeeper        feegrantkeeper.Keeper
 	GroupKeeper           groupkeeper.Keeper
 	NFTKeeper             nftkeeper.Keeper
+	FeeShareKeeper        feesharekeeper.Keeper
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
 
 	IBCKeeper           *ibckeeper.Keeper // IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
@@ -415,6 +420,7 @@ func NewTerpApp(
 		icqtypes.StoreKey,
 		packetforwardtypes.StoreKey,
 		ibchookstypes.StoreKey,
+		feesharetypes.StoreKey,
 		icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey,
 	)
@@ -747,6 +753,16 @@ func NewTerpApp(
 		wasmOpts...,
 	)
 
+	app.FeeShareKeeper = feesharekeeper.NewKeeper(
+		app.keys[feesharetypes.StoreKey],
+		appCodec,
+		app.BankKeeper,
+		app.WasmKeeper,
+		app.AccountKeeper,
+		authtypes.FeeCollectorName,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
 	// The gov proposal types can be individually enabled
 	if len(enabledProposals) != 0 {
 		govRouter.AddRoute(wasm.RouterKey, wasm.NewWasmProposalHandler(app.WasmKeeper, enabledProposals))
@@ -832,6 +848,7 @@ func NewTerpApp(
 		groupmodule.NewAppModule(appCodec, app.GroupKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		nftmodule.NewAppModule(appCodec, app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
+		feeshare.NewAppModule(app.FeeShareKeeper, app.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), app.GetSubspace(wasmtypes.ModuleName)),
 		ibc.NewAppModule(app.IBCKeeper),
 		transfer.NewAppModule(app.TransferKeeper),
@@ -861,6 +878,7 @@ func NewTerpApp(
 		ibcfeetypes.ModuleName,
 		icqtypes.ModuleName,
 		packetforwardtypes.ModuleName,
+		feesharetypes.ModuleName,
 		ibchookstypes.ModuleName,
 		wasm.ModuleName,
 	)
@@ -879,6 +897,7 @@ func NewTerpApp(
 		ibcfeetypes.ModuleName,
 		icqtypes.ModuleName,
 		packetforwardtypes.ModuleName,
+		feesharetypes.ModuleName,
 		ibchookstypes.ModuleName,
 		wasm.ModuleName,
 	)
@@ -905,6 +924,7 @@ func NewTerpApp(
 		icqtypes.ModuleName,
 		packetforwardtypes.ModuleName,
 		ibchookstypes.ModuleName,
+		feesharetypes.ModuleName,
 		// wasm after ibc transfer
 		wasm.ModuleName,
 	}
@@ -938,8 +958,7 @@ func NewTerpApp(
 	// NOTE: this is not required apps that don't use the simulator for fuzz testing
 	// transactions
 	overrideModules := map[string]module.AppModuleSimulation{
-		authtypes.ModuleName: auth.NewAppModule(app.appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
-	}
+		authtypes.ModuleName: auth.NewAppModule(app.appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName))}
 	app.sm = module.NewSimulationManagerFromAppModules(app.ModuleManager.Modules, overrideModules)
 
 	app.sm.RegisterStoreDecoders()
@@ -1043,6 +1062,8 @@ func (app *TerpApp) setAnteHandler(txConfig client.TxConfig, wasmConfig wasmtype
 				FeegrantKeeper:  app.FeeGrantKeeper,
 				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 			},
+			FeeShareKeeper:    app.FeeShareKeeper,
+			BankKeeperFork:    app.BankKeeper, // since we need extra methods
 			IBCKeeper:         app.IBCKeeper,
 			WasmConfig:        &wasmConfig,
 			TXCounterStoreKey: txCounterStoreKey,
@@ -1246,6 +1267,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
 	paramsKeeper.Subspace(icqtypes.ModuleName)
 	paramsKeeper.Subspace(packetforwardtypes.ModuleName)
+	paramsKeeper.Subspace(feesharetypes.ModuleName)
 	paramsKeeper.Subspace(wasm.ModuleName)
 
 	return paramsKeeper

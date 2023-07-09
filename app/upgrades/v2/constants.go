@@ -4,6 +4,7 @@ import (
 	store "github.com/cosmos/cosmos-sdk/store/types"
 	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v7/router/types"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
+	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 	ibchookstypes "github.com/terpnetwork/terp-core/v2/x/ibchooks/types"
 )
 
@@ -17,6 +18,7 @@ var Upgrade = upgrades.Upgrade{
 		Added: []string{
 			ibchookstypes.StoreKey,
 			packetforwardtypes.StoreKey,
+			feesharetypes.ModuleName,
 		},
 	},
 }

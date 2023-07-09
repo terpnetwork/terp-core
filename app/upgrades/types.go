@@ -39,7 +39,14 @@ type Upgrade struct {
 }
 
 // Returns "uterpx" if the chain is 90u-, else returns the standard uterp token denom.
-func GetChainsDenomToken(chainID string) string {
+func GetChainsFeeDenomToken(chainID string) string {
+	if strings.HasPrefix(chainID, "90u-") {
+		return "uthiolx"
+	}
+	return "uthiol"
+}
+
+func GetChainsBondDenomToken(chainID string) string {
 	if strings.HasPrefix(chainID, "90u-") {
 		return "uterpx"
 	}

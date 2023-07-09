@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v7/router/types"
+	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -23,8 +24,9 @@ func CreateV2UpgradeHandler(
 		// the above is https://github.com/cosmos/ibc-go/blob/v5.1.0/docs/migrations/v3-to-v4.md
 		logger := ctx.Logger().With("upgrade", UpgradeName)
 
-		nativeDenom := upgrades.GetChainsDenomToken(ctx.ChainID())
-		logger.Info(fmt.Sprintf("With native denom %s", nativeDenom))
+		nativeFeeDenom := upgrades.GetChainsFeeDenomToken(ctx.ChainID())
+		nativeBondDenom := upgrades.GetChainsBondDenomToken(ctx.ChainID())
+		logger.Info(fmt.Sprintf("With native fee denom %s and native gas denom %s", nativeFeeDenom, nativeBondDenom))
 
 		// Run migrations
 		versionMap, err := mm.RunMigrations(ctx, cfg, vm)
@@ -33,6 +35,17 @@ func CreateV2UpgradeHandler(
 
 		// Packet Forward middleware initial params
 		keepers.PacketForwardKeeper.SetParams(ctx, packetforwardtypes.DefaultParams())
+
+		// FeeShare
+		newFeeShareParams := feesharetypes.Params{
+			EnableFeeShare:  true,
+			DeveloperShares: sdk.NewDecWithPrec(50, 2), // = 50%
+			AllowedDenoms:   []string{nativeFeeDenom, nativeBondDenom},
+		}
+		if err := keepers.FeeShareKeeper.SetParams(ctx, newFeeShareParams); err != nil {
+			return nil, err
+		}
+		logger.Info("set feeshare params")
 
 		return versionMap, err
 	}

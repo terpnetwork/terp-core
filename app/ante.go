@@ -8,6 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	ibcante "github.com/cosmos/ibc-go/v7/modules/core/ante"
 	"github.com/cosmos/ibc-go/v7/modules/core/keeper"
+	feeshareante "github.com/terpnetwork/terp-core/v2/x/feeshare/ante"
+	feesharekeeper "github.com/terpnetwork/terp-core/v2/x/feeshare/keeper"
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmTypes "github.com/CosmWasm/wasmd/x/wasm/types"
@@ -20,6 +22,8 @@ type HandlerOptions struct {
 
 	IBCKeeper         *keeper.Keeper
 	WasmConfig        *wasmTypes.WasmConfig
+	FeeShareKeeper    feesharekeeper.Keeper
+	BankKeeperFork    feeshareante.BankKeeper
 	TXCounterStoreKey storetypes.StoreKey
 }
 
@@ -50,6 +54,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		ante.NewValidateMemoDecorator(options.AccountKeeper),
 		ante.NewConsumeGasForTxSizeDecorator(options.AccountKeeper),
 		ante.NewDeductFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.TxFeeChecker),
+		feeshareante.NewFeeSharePayoutDecorator(options.BankKeeperFork, options.FeeShareKeeper),
 		ante.NewSetPubKeyDecorator(options.AccountKeeper), // SetPubKeyDecorator must be called before all signature verification decorators
 		ante.NewValidateSigCountDecorator(options.AccountKeeper),
 		ante.NewSigGasConsumeDecorator(options.AccountKeeper, options.SigGasConsumer),
