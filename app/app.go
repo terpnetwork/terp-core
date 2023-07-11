@@ -36,6 +36,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	icq "github.com/strangelove-ventures/async-icq/v7"
 	icqkeeper "github.com/strangelove-ventures/async-icq/v7/keeper"
 	icqtypes "github.com/strangelove-ventures/async-icq/v7/types"
@@ -43,6 +44,7 @@ import (
 	packetforwardkeeper "github.com/strangelove-ventures/packet-forward-middleware/v7/router/keeper"
 	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v7/router/types"
 	"github.com/terpnetwork/terp-core/v2/x/feeshare"
+	"github.com/terpnetwork/terp-core/v2/x/globalfee"
 	"github.com/terpnetwork/terp-core/v2/x/ibchooks"
 	ibchookskeeper "github.com/terpnetwork/terp-core/v2/x/ibchooks/keeper"
 	ibchookstypes "github.com/terpnetwork/terp-core/v2/x/ibchooks/types"
@@ -134,6 +136,9 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v7/modules/core/keeper"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
 	ibcmock "github.com/cosmos/ibc-go/v7/testing/mock"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v2/x/globalfee/keeper"
+	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
+
 	feesharekeeper "github.com/terpnetwork/terp-core/v2/x/feeshare/keeper"
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 
@@ -336,6 +341,7 @@ type TerpApp struct {
 	GroupKeeper           groupkeeper.Keeper
 	NFTKeeper             nftkeeper.Keeper
 	FeeShareKeeper        feesharekeeper.Keeper
+	GlobalFeeKeeper       globalfeekeeper.Keeper
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
 
 	IBCKeeper           *ibckeeper.Keeper // IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
@@ -421,6 +427,7 @@ func NewTerpApp(
 		packetforwardtypes.StoreKey,
 		ibchookstypes.StoreKey,
 		feesharetypes.StoreKey,
+		globalfeetypes.StoreKey,
 		icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey,
 	)
@@ -763,6 +770,12 @@ func NewTerpApp(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
+	app.GlobalFeeKeeper = globalfeekeeper.NewKeeper(
+		appCodec,
+		app.keys[globalfeetypes.StoreKey],
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
 	// The gov proposal types can be individually enabled
 	if len(enabledProposals) != 0 {
 		govRouter.AddRoute(wasm.RouterKey, wasm.NewWasmProposalHandler(app.WasmKeeper, enabledProposals))
@@ -879,6 +892,7 @@ func NewTerpApp(
 		icqtypes.ModuleName,
 		packetforwardtypes.ModuleName,
 		feesharetypes.ModuleName,
+		globalfee.ModuleName,
 		ibchookstypes.ModuleName,
 		wasm.ModuleName,
 	)
@@ -898,6 +912,7 @@ func NewTerpApp(
 		icqtypes.ModuleName,
 		packetforwardtypes.ModuleName,
 		feesharetypes.ModuleName,
+		globalfee.ModuleName,
 		ibchookstypes.ModuleName,
 		wasm.ModuleName,
 	)
@@ -925,6 +940,7 @@ func NewTerpApp(
 		packetforwardtypes.ModuleName,
 		ibchookstypes.ModuleName,
 		feesharetypes.ModuleName,
+		globalfee.ModuleName,
 		// wasm after ibc transfer
 		wasm.ModuleName,
 	}
@@ -1053,6 +1069,18 @@ func NewTerpApp(
 	return app
 }
 
+func GetDefaultBypassFeeMessages() []string {
+	return []string{
+		// IBC
+		sdk.MsgTypeURL(&ibcchanneltypes.MsgRecvPacket{}),
+		sdk.MsgTypeURL(&ibcchanneltypes.MsgAcknowledgement{}),
+		sdk.MsgTypeURL(&ibcclienttypes.MsgUpdateClient{}),
+		sdk.MsgTypeURL(&ibctransfertypes.MsgTransfer{}),
+		sdk.MsgTypeURL(&ibcchanneltypes.MsgTimeout{}),
+		sdk.MsgTypeURL(&ibcchanneltypes.MsgTimeoutOnClose{}),
+	}
+}
+
 func (app *TerpApp) setAnteHandler(txConfig client.TxConfig, wasmConfig wasmtypes.WasmConfig, txCounterStoreKey storetypes.StoreKey) {
 	anteHandler, err := NewAnteHandler(
 		HandlerOptions{
@@ -1068,6 +1096,9 @@ func (app *TerpApp) setAnteHandler(txConfig client.TxConfig, wasmConfig wasmtype
 			IBCKeeper:         app.IBCKeeper,
 			WasmConfig:        &wasmConfig,
 			TXCounterStoreKey: txCounterStoreKey,
+
+			BypassMinFeeMsgTypes: GetDefaultBypassFeeMessages(),
+			GlobalFeeKeeper:      app.GlobalFeeKeeper,
 		},
 	)
 	if err != nil {

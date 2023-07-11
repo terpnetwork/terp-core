@@ -11,6 +11,7 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	"github.com/terpnetwork/terp-core/v2/app"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
+	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 )
 
 func CreateV2UpgradeHandler(
@@ -34,6 +35,20 @@ func CreateV2UpgradeHandler(
 
 		// Packet Forward middleware initial params
 		keepers.PacketForwardKeeper.SetParams(ctx, packetforwardtypes.DefaultParams())
+
+		// GlobalFee
+		minGasPrices := sdk.DecCoins{
+			// 0.005uthiol
+			sdk.NewDecCoinFromDec(nativeFeeDenom, sdk.NewDecWithPrec(25, 4)),
+			// 0.0025uterp
+			sdk.NewDecCoinFromDec(nativeBondDenom, sdk.NewDecWithPrec(25, 4)),
+		}
+		s, ok := keepers.ParamsKeeper.GetSubspace(globalfeetypes.ModuleName)
+		if !ok {
+			panic("global fee params subspace not found")
+		}
+		s.Set(ctx, globalfeetypes.ParamStoreKeyMinGasPrices, minGasPrices)
+		logger.Info(fmt.Sprintf("upgraded global fee params to %s", minGasPrices))
 
 		// FeeShare
 		newFeeShareParams := feesharetypes.Params{

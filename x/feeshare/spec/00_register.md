@@ -1,6 +1,6 @@
 # Register a contract
 
-`junod tx feeshare register [contract_bech32] [withdraw_bech32] --from [key]`
+`terpd tx feeshare register [contract_bech32] [withdraw_bech32] --from [key]`
 
 Registers the withdrawal address for the given contract.
 

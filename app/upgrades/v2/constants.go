@@ -5,6 +5,7 @@ import (
 	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v7/router/types"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v2/x/globalfee"
 	ibchookstypes "github.com/terpnetwork/terp-core/v2/x/ibchooks/types"
 )
 
@@ -16,6 +17,7 @@ var Upgrade = upgrades.Upgrade{
 	CreateUpgradeHandler: CreateV2UpgradeHandler,
 	StoreUpgrades: store.StoreUpgrades{
 		Added: []string{
+			globalfee.ModuleName,
 			ibchookstypes.StoreKey,
 			packetforwardtypes.StoreKey,
 			feesharetypes.ModuleName,
