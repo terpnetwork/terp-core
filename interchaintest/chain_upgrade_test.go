@@ -25,7 +25,7 @@ func TestBasicTerpUpgrade(t *testing.T) {
 	// TODO: Use v15 version in the future after we get PR https://github.com/CosmosContracts/juno/pull/693 on mainnet
 	startVersion := "huckleberry"
 	upgradeName := "v2.0.0"
-	CosmosChainUpgradeTest(t, "terp-core", startVersion, version, repo, upgradeName)
+	CosmosChainUpgradeTest(t, "terpnetwork", startVersion, version, repo, upgradeName)
 }
 
 func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBranchVersion, upgradeRepo, upgradeName string) {
