@@ -16,6 +16,7 @@ examples/build/*
 docs/_build
 docs/tutorial
 dist
+heighliner*
 tools-stamp
 docs/node_modules
 
