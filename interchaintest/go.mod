@@ -1,4 +1,4 @@
-module github.com/terpnework/terp-core/tests/interchaintest
+module github.com/terpnetwork/terp-core/tests/interchaintest
 
 go 1.20
 
@@ -10,7 +10,7 @@ replace (
 	github.com/btcsuite/btcd => github.com/btcsuite/btcd v0.22.2 //indirect
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	// For this nested module, you always want to replace the parent reference with the current worktree.
-	github.com/terpnetwork/terp-core =>  ../
+	github.com/terpnetwork/terp-core => ../
 
 	github.com/vedhavyas/go-subkey => github.com/strangelove-ventures/go-subkey v1.0.7
 )
@@ -18,7 +18,6 @@ replace (
 require (
 	github.com/CosmWasm/wasmd v0.40.2
 	github.com/cosmos/cosmos-sdk v0.47.3
-	github.com/cosmos/gogoproto v1.4.10
 	github.com/cosmos/ibc-go/v7 v7.2.0
 	github.com/docker/docker v24.0.2+incompatible
 	github.com/strangelove-ventures/interchaintest/v7 v7.0.0-20230628163313-cedf87f4624d
@@ -71,6 +70,7 @@ require (
 	github.com/cosmos/cosmos-proto v1.0.0-beta.2 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
+	github.com/cosmos/gogoproto v1.4.10 // indirect
 	github.com/cosmos/iavl v0.20.0 // indirect
 	github.com/cosmos/ics23/go v0.10.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.12.1 // indirect

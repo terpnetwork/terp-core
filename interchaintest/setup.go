@@ -53,7 +53,7 @@ var (
 		},
 		{
 			Key:   "app_state.gov.params.min_deposit.0.denom",
-			Value: Denom,
+			Value: BondDenom,
 		},
 	}
 
@@ -65,7 +65,6 @@ var (
 		Bin:                    "terpd",
 		Bech32Prefix:           "terp",
 		Denom:                  BondDenom,
-		FeeDenom:               FeeDenom,
 		CoinType:               "118",
 		GasPrices:              fmt.Sprintf("0%s", FeeDenom),
 		GasAdjustment:          2.0,
