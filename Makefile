@@ -220,7 +220,7 @@ ictest-pfm: rm-testcache
 ictest-upgrade: rm-testcache
 	cd interchaintest && go test -race -v -run TestBasicTerpUpgrade .
 
-# Executes a basic chain upgrade locally via interchaintest after compiling a local image as terp-core:local
+# Executes a basic chain upgrade locally via interchaintest after compiling a local image as terpnetwork:local
 ictest-upgrade-local: local-image ictest-upgrade
 
 # Executes IBC tests via interchaintest

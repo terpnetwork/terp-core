@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
@@ -285,6 +286,7 @@ var (
 		ibchooks.AppModuleBasic{},
 		packetforward.AppModuleBasic{},
 		feeshare.AppModuleBasic{},
+		globalfee.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -300,6 +302,7 @@ var (
 		ibcfeetypes.ModuleName:         nil,
 		icqtypes.ModuleName:            nil,
 		icatypes.ModuleName:            nil,
+		globalfee.ModuleName:           nil,
 		wasm.ModuleName:                {authtypes.Burner},
 	}
 )
@@ -831,6 +834,8 @@ func NewTerpApp(
 
 	/****  Module Options ****/
 
+	bondDenom := app.GetChainBondDenom()
+
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
 	skipGenesisInvariants := cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
@@ -866,6 +871,7 @@ func NewTerpApp(
 		ibc.NewAppModule(app.IBCKeeper),
 		transfer.NewAppModule(app.TransferKeeper),
 		ibcfee.NewAppModule(app.IBCFeeKeeper),
+		globalfee.NewAppModule(appCodec, app.GlobalFeeKeeper, bondDenom),
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		icq.NewAppModule(app.ICQKeeper),
 		packetforward.NewAppModule(app.PacketForwardKeeper),
@@ -1293,14 +1299,31 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(slashingtypes.ModuleName)
 	paramsKeeper.Subspace(govtypes.ModuleName)
 	paramsKeeper.Subspace(crisistypes.ModuleName)
+	paramsKeeper.Subspace(stakingtypes.ModuleName).WithKeyTable(stakingtypes.ParamKeyTable()) // Used for GlobalFee
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibcexported.ModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
 	paramsKeeper.Subspace(icqtypes.ModuleName)
 	paramsKeeper.Subspace(packetforwardtypes.ModuleName)
+	paramsKeeper.Subspace(globalfee.ModuleName)
 	paramsKeeper.Subspace(feesharetypes.ModuleName)
 	paramsKeeper.Subspace(wasm.ModuleName)
 
 	return paramsKeeper
+}
+
+// ChainID gets chainID from private fields of BaseApp
+// Should be removed once SDK 0.50.x will be adopted
+func (app *TerpApp) ChainID() string {
+	field := reflect.ValueOf(app.BaseApp).Elem().FieldByName("chainID")
+	return field.String()
+}
+
+func (app *TerpApp) GetChainBondDenom() string {
+	d := "uterp"
+	if strings.HasPrefix(app.ChainID(), "90u-") {
+		d = "uterpx"
+	}
+	return d
 }
