@@ -64,12 +64,12 @@ func TestMigrateTestnet(t *testing.T) {
 
 	params := types.Params{
 		MinimumGasPrices: sdk.DecCoins{
-			sdk.NewDecCoinFromDec("uterpx", sdk.NewDecWithPrec(75, 3)),
-			sdk.NewDecCoinFromDec("uthiolx", sdk.NewDecWithPrec(75, 3)),
+			sdk.NewDecCoinFromDec("uterp", sdk.NewDecWithPrec(75, 3)),
+			sdk.NewDecCoinFromDec("uthiol", sdk.NewDecWithPrec(75, 3)),
 		},
 	}
 
-	require.NoError(t, v2.Migrate(ctx, store, cdc, "uterpx"))
+	require.NoError(t, v2.Migrate(ctx, store, cdc, "uterp"))
 
 	var res types.Params
 	bz := store.Get(v2.ParamsKey)

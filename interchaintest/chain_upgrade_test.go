@@ -18,7 +18,7 @@ import (
 const (
 	haltHeightDelta    = uint64(10) // will propose upgrade this many blocks in the future
 	blocksAfterUpgrade = uint64(7)
-	repoName           = "terpnetwork"
+	repoName           = "terpnetwork/terp-core"
 	version            = "barberry"
 )
 

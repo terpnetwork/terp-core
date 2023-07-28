@@ -1,4 +1,4 @@
-# This workflow pushes new juno docker images on every new tag.
+# This workflow pushes new terp docker images on every new tag.
 #
 # On every new `vX.Y.Z` tag the following images are pushed:
 #

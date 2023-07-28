@@ -204,7 +204,6 @@ ictest-pfm: rm-testcache
 ictest-feeshare: rm-testcache
 	cd interchaintest && go test -race -v -run TestTerpFeeShare . 
 
-
 # Executes a basic chain upgrade test via interchaintest
 ictest-upgrade: rm-testcache
 	cd interchaintest && go test -race -v -run TestBasicTerpUpgrade .
