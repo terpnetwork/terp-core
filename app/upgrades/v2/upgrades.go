@@ -4,13 +4,14 @@ import (
 	"fmt"
 
 	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v7/router/types"
-	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
 	"github.com/terpnetwork/terp-core/v2/app"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
+	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 )
 

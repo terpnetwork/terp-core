@@ -1,8 +1,10 @@
 package v2
 
 import (
-	store "github.com/cosmos/cosmos-sdk/store/types"
 	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v7/router/types"
+
+	store "github.com/cosmos/cosmos-sdk/store/types"
+
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 	"github.com/terpnetwork/terp-core/v2/x/globalfee"

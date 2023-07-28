@@ -19,13 +19,12 @@ const (
 	haltHeightDelta    = uint64(10) // will propose upgrade this many blocks in the future
 	blocksAfterUpgrade = uint64(7)
 	repoName           = "terpnetwork"
-	version            = "local"
+	version            = "barberry"
 )
 
 func TestBasicTerpUpgrade(t *testing.T) {
 	repo, version := GetDockerImageInfo()
-	// TODO: Use v15 version in the future after we get PR https://github.com/CosmosContracts/juno/pull/693 on mainnet
-	startVersion := "local"
+	startVersion := "barberry"
 	upgradeName := "v2.0.0"
 	CosmosChainUpgradeTest(t, "terpnetwork", startVersion, version, repo, upgradeName)
 }

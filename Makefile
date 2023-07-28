@@ -136,18 +136,8 @@ test-all: check test-race test-cover
 test-unit:
 	@VERSION=$(VERSION) go test -mod=readonly -tags='ledger test_ledger_mock' ./...
 
-test-race:
-	@VERSION=$(VERSION) go test -mod=readonly -race -tags='ledger test_ledger_mock' ./...
-
-test-cover:
-	@go test -mod=readonly -timeout 30m -race -coverprofile=coverage.txt -covermode=atomic -tags='ledger test_ledger_mock' ./...
-
 benchmark:
 	@go test -mod=readonly -bench=. ./...
-
-test-sim-import-export: runsim
-	@echo "Running application import/export simulation. This may take several minutes..."
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(APP) -ExitOnFail 50 5 TestAppImportExport
 
 test-sim-multi-seed-short: runsim
 	@echo "Running short multi-seed application simulation. This may take awhile!"
@@ -156,10 +146,6 @@ test-sim-multi-seed-short: runsim
 test-sim-deterministic: runsim
 	@echo "Running short multi-seed application simulation. This may take awhile!"
 	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(APP) -ExitOnFail 1 1 TestAppStateDeterminism
-
-benchmark:
-	@go test -mod=readonly -bench=. $(PACKAGES_UNIT)
-
 
 ###############################################################################
 ###                                Tools & dependencies                     ###
@@ -214,6 +200,9 @@ ictest-ibchooks: rm-testcache
 
 ictest-pfm: rm-testcache
 	cd interchaintest && go test -race -v -run TestPacketForwardMiddlewareRouter .
+
+ictest-feeshare: rm-testcache
+	cd interchaintest && go test -race -v -run TestTerpFeeShare . 
 
 
 # Executes a basic chain upgrade test via interchaintest

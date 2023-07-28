@@ -4,12 +4,13 @@ import (
 	"strings"
 
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	"github.com/terpnetwork/terp-core/v2/app"
 
 	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
+	"github.com/terpnetwork/terp-core/v2/app"
 )
 
 // BaseAppParamManager defines an interrace that BaseApp is expected to fullfil

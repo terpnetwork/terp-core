@@ -127,11 +127,23 @@ func TestTerpGaiaIBCTransfer(t *testing.T) {
 	channel, err := ibc.GetTransferChannel(ctx, r, eRep, terp.Config().ChainID, gaia.Config().ChainID)
 	require.NoError(t, err)
 
+	terpHeight, err := terp.Height(ctx)
+	require.NoError(t, err)
+
 	transferTx, err := terp.SendIBCTransfer(ctx, channel.ChannelID, terpUserAddr, transfer, ibc.TransferOptions{})
 	require.NoError(t, err)
 
-	terpHeight, err := terp.Height(ctx)
+	err = r.StartRelayer(ctx, eRep, path)
 	require.NoError(t, err)
+
+	t.Cleanup(
+		func() {
+			err := r.StopRelayer(ctx, eRep)
+			if err != nil {
+				t.Logf("an error occured while stopping the relayer: %s", err)
+			}
+		},
+	)
 
 	// Poll for the ack to know the transfer was successful
 	// TODO: Remove after auto transfer is fixed in the relayer
@@ -162,15 +174,13 @@ func TestTerpGaiaIBCTransfer(t *testing.T) {
 		Amount:  transferAmount,
 	}
 
-	transferTx, err = gaia.SendIBCTransfer(ctx, channel.Counterparty.ChannelID, gaiaUserAddr, transfer, ibc.TransferOptions{})
-	require.NoError(t, err)
-
 	gaiaHeight, err := gaia.Height(ctx)
 	require.NoError(t, err)
 
+	transferTx, err = gaia.SendIBCTransfer(ctx, channel.Counterparty.ChannelID, gaiaUserAddr, transfer, ibc.TransferOptions{})
+	require.NoError(t, err)
+
 	// Poll for the ack to know the transfer was successful
-	// TODO: Remove after auto transfer is fixed in the relayer
-	r.Flush(ctx, eRep, path, channel.Counterparty.ChannelID)
 	_, err = testutil.PollForAck(ctx, gaia, gaiaHeight, gaiaHeight+25, transferTx.Packet)
 	require.NoError(t, err)
 

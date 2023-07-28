@@ -13,5 +13,5 @@ services:
       - 26657:26657 # rpc
     environment:
       - GAS_LIMIT=${GAS_LIMIT:-10000000}
-      - STAKE_TOKEN=${STAKE_TOKEN:-uterpx}
+      - STAKE_TOKEN=${STAKE_TOKEN:-uterp}
       - TIMEOUT_COMMIT=${TIMEOUT_COMMIT:-5s}

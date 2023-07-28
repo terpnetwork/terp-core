@@ -115,6 +115,18 @@ func TestTerpIBCHooks(t *testing.T) {
 	channel, err := ibc.GetTransferChannel(ctx, r, eRep, terp.Config().ChainID, terp2.Config().ChainID)
 	require.NoError(t, err)
 
+	err = r.StartRelayer(ctx, eRep, path)
+	require.NoError(t, err)
+
+	t.Cleanup(
+		func() {
+			err := r.StopRelayer(ctx, eRep)
+			if err != nil {
+				t.Logf("an error occured while stopping the relayer: %s", err)
+			}
+		},
+	)
+
 	_, contractAddr := helpers.SetupContract(t, ctx, terp2, terp2User.KeyName(), "contracts/ibchooks_counter.wasm", `{"count":0}`)
 
 	// do an ibc transfer through the memo to the other chain.

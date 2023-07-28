@@ -4,7 +4,7 @@
 PASSWORD=${PASSWORD:-1234567890}
 STAKE=${STAKE_TOKEN:-uterpx}
 FEE=${FEE_TOKEN:-uthiolx}
-CHAIN_ID=${CHAIN_ID:-athena-4}
+CHAIN_ID=${CHAIN_ID:-90u-2}
 MONIKER=${MONIKER:-node001}
 
 terpd init --chain-id "$CHAIN_ID" "$MONIKER"

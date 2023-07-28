@@ -15,10 +15,12 @@ import (
 	"github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 )
 
+//lint:ignore U1000 disregard lint check
 type mockSubspace struct {
 	ps types.Params
 }
 
+//lint:ignore U1000 disregard lint check
 func newMockSubspace(ps types.Params) mockSubspace {
 	return mockSubspace{ps: ps}
 }
@@ -38,8 +40,8 @@ func TestMigrateMainnet(t *testing.T) {
 
 	params := types.Params{
 		MinimumGasPrices: sdk.DecCoins{
-			sdk.NewDecCoinFromDec("ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9", sdk.NewDecWithPrec(3, 3)),
-			sdk.NewDecCoinFromDec("ujuno", sdk.NewDecWithPrec(75, 3)),
+			sdk.NewDecCoinFromDec("uterp", sdk.NewDecWithPrec(75, 3)),
+			sdk.NewDecCoinFromDec("uthiol", sdk.NewDecWithPrec(75, 3)),
 		},
 	}
 
@@ -62,12 +64,12 @@ func TestMigrateTestnet(t *testing.T) {
 
 	params := types.Params{
 		MinimumGasPrices: sdk.DecCoins{
-			sdk.NewDecCoinFromDec("ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9", sdk.NewDecWithPrec(3, 3)),
-			sdk.NewDecCoinFromDec("ujunox", sdk.NewDecWithPrec(75, 3)),
+			sdk.NewDecCoinFromDec("uterpx", sdk.NewDecWithPrec(75, 3)),
+			sdk.NewDecCoinFromDec("uthiolx", sdk.NewDecWithPrec(75, 3)),
 		},
 	}
 
-	require.NoError(t, v2.Migrate(ctx, store, cdc, "ujunox"))
+	require.NoError(t, v2.Migrate(ctx, store, cdc, "uterpx"))
 
 	var res types.Params
 	bz := store.Get(v2.ParamsKey)
