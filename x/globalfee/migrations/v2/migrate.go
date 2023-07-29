@@ -28,9 +28,7 @@ func Migrate(
 	// https://juno-api.reece.sh/gaia/globalfee/v1beta1/minimum_gas_prices
 	currParams := types.Params{
 		MinimumGasPrices: sdk.DecCoins{
-			// 0.003000000000000000uatom
-			sdk.NewDecCoinFromDec("ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9", sdk.NewDecWithPrec(3, 3)),
-			// 0.075000000000000000ujuno / ujunox
+			// 0.075000000000000000 / uterpx
 			sdk.NewDecCoinFromDec(bondDenom, sdk.NewDecWithPrec(75, 3)),
 		},
 	}

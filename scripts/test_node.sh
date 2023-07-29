@@ -47,7 +47,7 @@ from_scratch () {
   # terp1hj5fveer5cjtn4wd6wstzugjfdxzl0xppxm7xs
   echo "wealth flavor believe regret funny network recall kiss grape useless pepper cram hint member few certain unveil rather brick bargain curious require crowd raise" | BINARY keys add $KEY2 --keyring-backend $KEYRING --algo $KEYALGO --recover
   
-  BINARY init $MONIKER --chain-id $CHAIN_ID --default-denom uterp
+  BINARY init $MONIKER --chain-id $CHAIN_ID --default-denom uterpx
 
   # Function updates the config based on a jq argument as a string
   update_test_genesis () {    
@@ -57,23 +57,23 @@ from_scratch () {
   # Block
   update_test_genesis '.consensus_params["block"]["max_gas"]="100000000"'
   # Gov
-  update_test_genesis '.app_state["gov"]["params"]["min_deposit"]=[{"denom": "uterp","amount": "1000000"}]'
+  update_test_genesis '.app_state["gov"]["params"]["min_deposit"]=[{"denom": "uterpx","amount": "1000000"}]'
   update_test_genesis '.app_state["gov"]["voting_params"]["voting_period"]="15s"'
   # staking
-  update_test_genesis '.app_state["staking"]["params"]["bond_denom"]="uterp"'  
+  update_test_genesis '.app_state["staking"]["params"]["bond_denom"]="uterpx"'  
   update_test_genesis '.app_state["staking"]["params"]["min_commission_rate"]="0.050000000000000000"'  
   # mint
-  update_test_genesis '.app_state["mint"]["params"]["mint_denom"]="uterp"'  
+  update_test_genesis '.app_state["mint"]["params"]["mint_denom"]="uterpx"'  
   # crisis
-  update_test_genesis '.app_state["crisis"]["constant_fee"]={"denom": "uterp","amount": "1000"}'  
+  update_test_genesis '.app_state["crisis"]["constant_fee"]={"denom": "uterpx","amount": "1000"}'  
 
   # Custom Modules  
 
   # Allocate genesis accounts
-  BINARY genesis add-genesis-account $KEY 10000000uterp,1000utest --keyring-backend $KEYRING
-  BINARY genesis add-genesis-account $KEY2 1000000uterp,1000utest --keyring-backend $KEYRING
+  BINARY genesis add-genesis-account $KEY 10000000uterpx,1000utest --keyring-backend $KEYRING
+  BINARY genesis add-genesis-account $KEY2 1000000uterpx,1000utest --keyring-backend $KEYRING
 
-  BINARY genesis gentx $KEY 1000000uterp --keyring-backend $KEYRING --chain-id $CHAIN_ID
+  BINARY genesis gentx $KEY 1000000uterpx --keyring-backend $KEYRING --chain-id $CHAIN_ID
 
   # Collect genesis tx
   BINARY genesis collect-gentxs
@@ -115,4 +115,4 @@ sed -i 's/address = ":8080"/address = "0.0.0.0:'$ROSETTA'"/g' $HOME_DIR/config/a
 sed -i 's/timeout_commit = "5s"/timeout_commit = "'$TIMEOUT_COMMIT'"/g' $HOME_DIR/config/config.toml
 
 # Start the node with 0 gas fees
-BINARY start --pruning=nothing  --minimum-gas-prices=0uterp --rpc.laddr="tcp://0.0.0.0:$RPC"
+BINARY start --pruning=nothing  --minimum-gas-prices=0uterpx --rpc.laddr="tcp://0.0.0.0:$RPC"

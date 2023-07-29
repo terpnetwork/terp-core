@@ -24,8 +24,9 @@ import (
 var (
 	VotingPeriod     = "15s"
 	MaxDepositPeriod = "10s"
-	BondDenom        = "uterp"
-	FeeDenom         = "uthiol"
+	Denom            = "uterpx"
+	BondDenom        = "uterpx"
+	FeeDenom         = "uthiolx"
 
 	TerpE2ERepo  = "ghcr.io/terpnetwork/terp-core-e2e"
 	TerpMainRepo = "ghcr.io/terpnetwork/terp-core"
