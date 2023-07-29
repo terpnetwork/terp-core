@@ -45,7 +45,7 @@ func TestMigrateMainnet(t *testing.T) {
 		},
 	}
 
-	require.NoError(t, v2.Migrate(ctx, store, cdc, "ujuno"))
+	require.NoError(t, v2.Migrate(ctx, store, cdc, "uthiol"))
 
 	var res types.Params
 	bz := store.Get(v2.ParamsKey)
@@ -69,7 +69,7 @@ func TestMigrateTestnet(t *testing.T) {
 		},
 	}
 
-	require.NoError(t, v2.Migrate(ctx, store, cdc, "uterp"))
+	require.NoError(t, v2.Migrate(ctx, store, cdc, "uthiol"))
 
 	var res types.Params
 	bz := store.Get(v2.ParamsKey)
