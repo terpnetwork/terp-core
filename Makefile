@@ -231,7 +231,7 @@ get-heighliner:
 local-image:
 ifeq (,$(shell which heighliner))
 	echo 'heighliner' binary not found. Consider running `make get-heighliner`
-else
+else 
 	heighliner build -c terpnetwork --local -f ./chains.yaml
 endif
 
