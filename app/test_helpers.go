@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/stretchr/testify/require"
 
@@ -52,10 +52,10 @@ type SetupOptions struct {
 	Logger   log.Logger
 	DB       *dbm.MemDB
 	AppOpts  servertypes.AppOptions
-	WasmOpts []wasm.Option
+	WasmOpts []wasmkeeper.Option
 }
 
-func setup(tb testing.TB, chainID string, withGenesis bool, invCheckPeriod uint, opts ...wasm.Option) (*TerpApp, GenesisState) {
+func setup(tb testing.TB, chainID string, withGenesis bool, invCheckPeriod uint, opts ...wasmkeeper.Option) (*TerpApp, GenesisState) {
 	tb.Helper()
 	db := dbm.NewMemDB()
 	nodeHome := tb.TempDir()
@@ -120,7 +120,7 @@ func NewTerpAppWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOpti
 }
 
 // Setup initializes a new TerpApp. A Nop logger is set in TerpApp.
-func Setup(t *testing.T, opts ...wasm.Option) *TerpApp {
+func Setup(t *testing.T, opts ...wasmkeeper.Option) *TerpApp {
 	t.Helper()
 
 	privVal := mock.NewPV()
@@ -148,7 +148,7 @@ func Setup(t *testing.T, opts ...wasm.Option) *TerpApp {
 // that also act as delegators. For simplicity, each validator is bonded with a delegation
 // of one consensus engine unit in the default token of the TerpApp from first genesis
 // account. A Nop logger is set in TerpApp.
-func SetupWithGenesisValSet(t *testing.T, valSet *tmtypes.ValidatorSet, genAccs []authtypes.GenesisAccount, chainID string, opts []wasm.Option, balances ...banktypes.Balance) *TerpApp {
+func SetupWithGenesisValSet(t *testing.T, valSet *tmtypes.ValidatorSet, genAccs []authtypes.GenesisAccount, chainID string, opts []wasmkeeper.Option, balances ...banktypes.Balance) *TerpApp {
 	t.Helper()
 
 	app, genesisState := setup(t, chainID, true, 5, opts...)
@@ -257,7 +257,7 @@ func ModuleAccountAddrs() map[string]bool {
 	return BlockedAddresses()
 }
 
-var emptyWasmOptions []wasm.Option
+var emptyWasmOptions []wasmkeeper.Option
 
 // NewTestNetworkFixture returns a new TerpApp AppConstructor for network simulation tests
 func NewTestNetworkFixture() network.TestFixture {
