@@ -152,6 +152,10 @@ import (
 	"github.com/terpnetwork/terp-core/v2/x/ibchooks"
 	ibchookskeeper "github.com/terpnetwork/terp-core/v2/x/ibchooks/keeper"
 	ibchookstypes "github.com/terpnetwork/terp-core/v2/x/ibchooks/types"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/bindings"
+	tokenfactorykeeper "github.com/terpnetwork/terp-core/v2/x/tokenfactory/keeper"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 )
 
 const (
@@ -188,6 +192,12 @@ func GetEnabledProposals() []wasmtypes.ProposalType {
 		panic(err)
 	}
 	return proposals
+}
+
+var tokenFactoryCapabilities = []string{
+	tokenfactorytypes.EnableBurnFrom,
+	tokenfactorytypes.EnableForceTransfer,
+	tokenfactorytypes.EnableSetMetadata,
 }
 
 // These constants are derived from the above variables.
@@ -281,6 +291,7 @@ var (
 		transfer.AppModuleBasic{},
 		ica.AppModuleBasic{},
 		ibcfee.AppModuleBasic{},
+		tokenfactory.AppModuleBasic{},
 		icq.AppModuleBasic{},
 		ibchooks.AppModuleBasic{},
 		packetforward.AppModuleBasic{},
@@ -302,6 +313,7 @@ var (
 		icqtypes.ModuleName:            nil,
 		icatypes.ModuleName:            nil,
 		globalfee.ModuleName:           nil,
+		tokenfactorytypes.ModuleName:   {authtypes.Minter, authtypes.Burner},
 		wasmtypes.ModuleName:           {authtypes.Burner},
 	}
 )
@@ -349,6 +361,7 @@ type TerpApp struct {
 	IBCKeeper           *ibckeeper.Keeper // IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
 	IBCFeeKeeper        ibcfeekeeper.Keeper
 	IBCHooksKeeper      *ibchookskeeper.Keeper
+	TokenFactoryKeeper  tokenfactorykeeper.Keeper
 	PacketForwardKeeper *packetforwardkeeper.Keeper
 	ICQKeeper           icqkeeper.Keeper
 	ICAControllerKeeper icacontrollerkeeper.Keeper
@@ -417,6 +430,7 @@ func NewTerpApp(
 		ibchookstypes.StoreKey,
 		feesharetypes.StoreKey,
 		globalfeetypes.StoreKey,
+		tokenfactorytypes.StoreKey,
 		icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey,
 	)
@@ -608,6 +622,17 @@ func NewTerpApp(
 		),
 	)
 
+	// Create the TokenFactory Keeper
+	app.TokenFactoryKeeper = tokenfactorykeeper.NewKeeper(
+		appCodec,
+		app.keys[tokenfactorytypes.StoreKey],
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.DistrKeeper,
+		tokenFactoryCapabilities,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
 	app.NFTKeeper = nftkeeper.NewKeeper(
 		keys[nftkeeper.StoreKey],
 		appCodec,
@@ -721,14 +746,32 @@ func NewTerpApp(
 	)
 
 	wasmDir := filepath.Join(homePath, "wasm")
+
 	wasmConfig, err := wasm.ReadWasmConfig(appOpts)
 	if err != nil {
 		panic(fmt.Sprintf("error while reading wasm config: %s", err))
 	}
 
+	// Move custom query of token factory to stargate, still use custom msg which is tfOpts[1]
+	tfOpts := bindings.RegisterCustomPlugins(&app.BankKeeper, &app.TokenFactoryKeeper)
+	wasmOpts = append(wasmOpts, tfOpts...)
+
+	accepted := wasmkeeper.AcceptedStargateQueries{
+		"/osmosis.tokenfactory.v1.Query/Params":                 &tokenfactorytypes.QueryParamsResponse{},
+		"/osmosis.tokenfactory.v1.Query/DenomAuthorityMetadata": &tokenfactorytypes.QueryDenomAuthorityMetadataResponse{},
+		"/osmosis.tokenfactory.v1.Query/DenomsFromCreator":      &tokenfactorytypes.QueryDenomsFromCreatorResponse{},
+	}
+
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
 	availableCapabilities := strings.Join(AllCapabilities(), ",")
+
+	querierOpts := wasmkeeper.WithQueryPlugins(
+		&wasmkeeper.QueryPlugins{
+			Stargate: wasmkeeper.AcceptListStargateQuerier(accepted, bApp.GRPCQueryRouter(), appCodec),
+		})
+	wasmOpts = append(wasmOpts, querierOpts)
+
 	app.WasmKeeper = wasmkeeper.NewKeeper(
 		appCodec,
 		app.keys[wasmtypes.StoreKey],
@@ -863,6 +906,7 @@ func NewTerpApp(
 		icq.NewAppModule(app.ICQKeeper),
 		packetforward.NewAppModule(app.PacketForwardKeeper),
 		ibchooks.NewAppModule(app.AccountKeeper),
+		tokenfactory.NewAppModule(app.TokenFactoryKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(tokenfactorytypes.ModuleName)),
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 	)
 
@@ -887,6 +931,7 @@ func NewTerpApp(
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
 		ibchookstypes.ModuleName,
+		tokenfactorytypes.ModuleName,
 		wasmtypes.ModuleName,
 	)
 
@@ -907,6 +952,7 @@ func NewTerpApp(
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
 		ibchookstypes.ModuleName,
+		tokenfactorytypes.ModuleName,
 		wasmtypes.ModuleName,
 	)
 
@@ -1288,6 +1334,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibcexported.ModuleName)
+	paramsKeeper.Subspace(tokenfactorytypes.ModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
 	paramsKeeper.Subspace(icqtypes.ModuleName)

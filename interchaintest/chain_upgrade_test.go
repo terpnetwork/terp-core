@@ -100,43 +100,43 @@ func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBran
 	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), userFunds, chain)
 	chainUser := users[0]
 
-	// // create a tokenfactory denom before upgrade (invalid genesis for hard forking due to x/bank validation)
-	// emptyFullDenom := helpers.CreateTokenFactoryDenom(t, ctx, chain, chainUser, "empty")
+	// create a tokenfactory denom before upgrade (invalid genesis for hard forking due to x/bank validation)
+	emptyFullDenom := helpers.CreateTokenFactoryDenom(t, ctx, chain, chainUser, "empty")
 
-	// mintedDenom := helpers.CreateTokenFactoryDenom(t, ctx, chain, chainUser, "minted")
-	// helpers.MintToTokenFactoryDenom(t, ctx, chain, chainUser, chainUser, 100, mintedDenom)
+	mintedDenom := helpers.CreateTokenFactoryDenom(t, ctx, chain, chainUser, "minted")
+	helpers.MintToTokenFactoryDenom(t, ctx, chain, chainUser, chainUser, 100, mintedDenom)
 
-	// mintedAndModified := helpers.CreateTokenFactoryDenom(t, ctx, chain, chainUser, "mandm")
-	// helpers.MintToTokenFactoryDenom(t, ctx, chain, chainUser, chainUser, 100, mintedAndModified)
+	mintedAndModified := helpers.CreateTokenFactoryDenom(t, ctx, chain, chainUser, "mandm")
+	helpers.MintToTokenFactoryDenom(t, ctx, chain, chainUser, chainUser, 100, mintedAndModified)
 
-	// ticker, desc, exponent := "TICKER", "desc", "6"
-	// helpers.UpdateTokenFactoryMetadata(t, ctx, chain, chainUser, mintedAndModified, ticker, desc, exponent)
+	ticker, desc, exponent := "TICKER", "desc", "6"
+	helpers.UpdateTokenFactoryMetadata(t, ctx, chain, chainUser, mintedAndModified, ticker, desc, exponent)
 
-	// // Validate pre upgrade denoms do not have the proper metadata
-	// // metadata:<denom_units:<denom:"factory/juno1hql0qadnznq8skf5q2psqmwj4thl2ajnvr3qrx/empty" > base:"factory/juno1hql0qadnznq8skf5q2psqmwj4thl2ajnvr3qrx/empty" >
-	// res := helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, emptyFullDenom)
-	// require.Equal(t, res.DenomUnits[0].Denom, emptyFullDenom)
-	// require.Equal(t, res.Base, emptyFullDenom)
-	// require.Empty(t, res.Description)
-	// require.Empty(t, res.Display)
-	// require.Empty(t, res.Name)
-	// require.Empty(t, res.Symbol)
+	// Validate pre upgrade denoms do not have the proper metadata
+	// metadata:<denom_units:<denom:"factory/juno1hql0qadnznq8skf5q2psqmwj4thl2ajnvr3qrx/empty" > base:"factory/juno1hql0qadnznq8skf5q2psqmwj4thl2ajnvr3qrx/empty" >
+	res := helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, emptyFullDenom)
+	require.Equal(t, res.DenomUnits[0].Denom, emptyFullDenom)
+	require.Equal(t, res.Base, emptyFullDenom)
+	require.Empty(t, res.Description)
+	require.Empty(t, res.Display)
+	require.Empty(t, res.Name)
+	require.Empty(t, res.Symbol)
 
-	// res = helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, mintedDenom)
-	// require.Equal(t, res.DenomUnits[0].Denom, mintedDenom)
-	// require.Equal(t, res.Base, mintedDenom)
-	// require.Empty(t, res.Description)
-	// require.Empty(t, res.Display)
-	// require.Empty(t, res.Name)
-	// require.Empty(t, res.Symbol)
+	res = helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, mintedDenom)
+	require.Equal(t, res.DenomUnits[0].Denom, mintedDenom)
+	require.Equal(t, res.Base, mintedDenom)
+	require.Empty(t, res.Description)
+	require.Empty(t, res.Display)
+	require.Empty(t, res.Name)
+	require.Empty(t, res.Symbol)
 
-	// // Denom data should be as modified above
-	// modifiedRes := helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, mintedAndModified)
-	// require.Equal(t, modifiedRes.DenomUnits[0].Denom, mintedAndModified)
-	// require.Equal(t, modifiedRes.Base, mintedAndModified)
-	// require.Equal(t, modifiedRes.Name, mintedAndModified)
-	// require.Equal(t, modifiedRes.Symbol, ticker)
-	// require.NotEmpty(t, modifiedRes.Description)
+	// Denom data should be as modified above
+	modifiedRes := helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, mintedAndModified)
+	require.Equal(t, modifiedRes.DenomUnits[0].Denom, mintedAndModified)
+	require.Equal(t, modifiedRes.Base, mintedAndModified)
+	require.Equal(t, modifiedRes.Name, mintedAndModified)
+	require.Equal(t, modifiedRes.Symbol, ticker)
+	require.NotEmpty(t, modifiedRes.Description)
 
 	// upgrade
 	height, err := chain.Height(ctx)
@@ -203,29 +203,29 @@ func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBran
 
 	require.GreaterOrEqual(t, height, haltHeight+blocksAfterUpgrade, "height did not increment enough after upgrade")
 
-	// // Check that the tokenfactory denom's properly migrated
-	// postRes := helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, emptyFullDenom)
-	// require.Equal(t, postRes.DenomUnits[0].Denom, emptyFullDenom)
-	// require.Equal(t, postRes.Base, emptyFullDenom)
-	// require.Equal(t, postRes.Display, emptyFullDenom)
-	// require.Equal(t, postRes.Name, emptyFullDenom)
-	// require.Equal(t, postRes.Symbol, emptyFullDenom)
+	// Check that the tokenfactory denom's properly migrated
+	postRes := helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, emptyFullDenom)
+	require.Equal(t, postRes.DenomUnits[0].Denom, emptyFullDenom)
+	require.Equal(t, postRes.Base, emptyFullDenom)
+	require.Equal(t, postRes.Display, emptyFullDenom)
+	require.Equal(t, postRes.Name, emptyFullDenom)
+	require.Equal(t, postRes.Symbol, emptyFullDenom)
 
-	// postRes = helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, mintedDenom)
-	// require.Equal(t, postRes.DenomUnits[0].Denom, mintedDenom)
-	// require.Equal(t, postRes.Base, mintedDenom)
-	// require.Equal(t, postRes.Display, mintedDenom)
-	// require.Equal(t, postRes.Name, mintedDenom)
-	// require.Equal(t, postRes.Symbol, mintedDenom)
+	postRes = helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, mintedDenom)
+	require.Equal(t, postRes.DenomUnits[0].Denom, mintedDenom)
+	require.Equal(t, postRes.Base, mintedDenom)
+	require.Equal(t, postRes.Display, mintedDenom)
+	require.Equal(t, postRes.Name, mintedDenom)
+	require.Equal(t, postRes.Symbol, mintedDenom)
 
-	// // since we already set it, the should remain the same.
-	// postModified := helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, mintedAndModified)
-	// require.Equal(t, postModified, modifiedRes)
+	// since we already set it, the should remain the same.
+	postModified := helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, mintedAndModified)
+	require.Equal(t, postModified, modifiedRes)
 
-	// // Ensure after the upgrade, the denoms are properly set with the Denom Metadata.
-	// afterUpgrade := helpers.CreateTokenFactoryDenom(t, ctx, chain, chainUser, "post")
-	// newRes := helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, afterUpgrade)
-	// require.Equal(t, newRes.Display, afterUpgrade)
-	// require.Equal(t, newRes.Name, afterUpgrade)
-	// require.Equal(t, newRes.Symbol, afterUpgrade)
+	// Ensure after the upgrade, the denoms are properly set with the Denom Metadata.
+	afterUpgrade := helpers.CreateTokenFactoryDenom(t, ctx, chain, chainUser, "post")
+	newRes := helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, afterUpgrade)
+	require.Equal(t, newRes.Display, afterUpgrade)
+	require.Equal(t, newRes.Name, afterUpgrade)
+	require.Equal(t, newRes.Symbol, afterUpgrade)
 }

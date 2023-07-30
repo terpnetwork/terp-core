@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: Juno network
+  title: Terp network
   version: v15
 paths:
   /cosmos/auth/v1beta1/accounts:

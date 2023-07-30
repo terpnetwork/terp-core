@@ -25,7 +25,7 @@ func Migrate(
 	cdc codec.BinaryCodec,
 	bondDenom string,
 ) error {
-	// https://juno-api.reece.sh/gaia/globalfee/v1beta1/minimum_gas_prices
+	// https://api.terp.network/gaia/globalfee/v1beta1/minimum_gas_prices
 	currParams := types.Params{
 		MinimumGasPrices: sdk.DecCoins{
 			// 0.075000000000000000 / uterpx

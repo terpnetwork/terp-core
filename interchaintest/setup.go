@@ -80,7 +80,7 @@ var (
 	genesisWalletAmount = int64(10_000_000)
 )
 
-// terpEncoding registers the Juno specific module codecs so that the associated types and msgs
+// terpEncoding registers the Terp specific module codecs so that the associated types and msgs
 // will be supported when writing to the blocksdb sqlite database.
 func terpEncoding() *testutil.TestEncodingConfig {
 	cfg := cosmos.DefaultEncoding()
@@ -99,9 +99,9 @@ func FundSpecificUsers() {
 
 }
 
-// Base chain, no relaying off this branch (or juno:local if no branch is provided.)
+// Base chain, no relaying off this branch (or terpnetwork/terp-core:local if no branch is provided.)
 func CreateThisBranchChain(t *testing.T, numVals, numFull int) []ibc.Chain {
-	// Create chain factory with Juno on this current branch
+	// Create chain factory with Terp on this current branch
 
 	cf := interchaintest.NewBuiltinChainFactory(zaptest.NewLogger(t), []*interchaintest.ChainSpec{
 		{

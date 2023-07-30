@@ -24,10 +24,10 @@ var (
 
 const (
 	// Amino names
-	cancelFeeShareName   = "juno/MsgCancelFeeShare"
-	registerFeeShareName = "juno/MsgRegisterFeeShare"
-	updateFeeShareName   = "juno/MsgUpdateFeeShare"
-	updateFeeShareParams = "juno/MsgUpdateParams"
+	cancelFeeShareName   = "terp/MsgCancelFeeShare"
+	registerFeeShareName = "terp/MsgRegisterFeeShare"
+	updateFeeShareName   = "terp/MsgUpdateFeeShare"
+	updateFeeShareParams = "terp/MsgUpdateParams"
 )
 
 // NOTE: This is required for the GetSignBytes function

@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  title: Juno network
+  title: Terp network
   version: v15
 consumes:
   - application/json
@@ -11972,7 +11972,7 @@ paths:
           type: string
       tags:
         - gRPC Gateway API
-  /juno/feeshare/v1/fee_shares:
+  /terp/feeshare/v1/fee_shares:
     get:
       summary: FeeShares retrieves all registered FeeShares
       operationId: FeeShares_ARVUM
@@ -12118,7 +12118,7 @@ paths:
           type: boolean
       tags:
         - gRPC Gateway API
-  /juno/feeshare/v1/fee_shares/{contract_address}:
+  /terp/feeshare/v1/fee_shares/{contract_address}:
     get:
       summary: FeeShare retrieves a registered FeeShare for a given contract address
       operationId: FeeShare_0EHGG
@@ -12190,7 +12190,7 @@ paths:
           type: string
       tags:
         - gRPC Gateway API
-  /juno/feeshare/v1/fee_shares/{deployer_address}:
+  /terp/feeshare/v1/fee_shares/{deployer_address}:
     get:
       summary: |-
         DeployerFeeShares retrieves all FeeShares that a given deployer has
@@ -12318,7 +12318,7 @@ paths:
           type: boolean
       tags:
         - gRPC Gateway API
-  /juno/feeshare/v1/fee_shares/{withdrawer_address}:
+  /terp/feeshare/v1/fee_shares/{withdrawer_address}:
     get:
       summary: |-
         WithdrawerFeeShares retrieves all FeeShares with a given withdrawer
@@ -12446,7 +12446,7 @@ paths:
           type: boolean
       tags:
         - gRPC Gateway API
-  /juno/feeshare/v1/params:
+  /terp/feeshare/v1/params:
     get:
       summary: Params retrieves the FeeShare module params
       operationId: Params_4OI6Q

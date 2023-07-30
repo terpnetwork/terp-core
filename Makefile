@@ -201,6 +201,9 @@ ictest-ibchooks: rm-testcache
 ictest-pfm: rm-testcache
 	cd interchaintest && go test -race -v -run TestPacketForwardMiddlewareRouter .
 
+ictest-tokenfactory: rm-testcache
+	cd interchaintest && go test -race -v -run TestTerpTokenFactory .
+
 ictest-feeshare: rm-testcache
 	cd interchaintest && go test -race -v -run TestTerpFeeShare . 
 
