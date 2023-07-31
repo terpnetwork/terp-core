@@ -113,7 +113,7 @@ func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBran
 	helpers.UpdateTokenFactoryMetadata(t, ctx, chain, chainUser, mintedAndModified, ticker, desc, exponent)
 
 	// Validate pre upgrade denoms do not have the proper metadata
-	// metadata:<denom_units:<denom:"factory/juno1hql0qadnznq8skf5q2psqmwj4thl2ajnvr3qrx/empty" > base:"factory/juno1hql0qadnznq8skf5q2psqmwj4thl2ajnvr3qrx/empty" >
+	// metadata:<denom_units:<denom:"factory/terp1hql0qadnznq8skf5q2psqmwj4thl2ajnammhwf/empty" > base:"factory/terp1hql0qadnznq8skf5q2psqmwj4thl2ajnammhwf/empty" >
 	res := helpers.GetTokenFactoryDenomMetadata(t, ctx, chain, emptyFullDenom)
 	require.Equal(t, res.DenomUnits[0].Denom, emptyFullDenom)
 	require.Equal(t, res.Base, emptyFullDenom)

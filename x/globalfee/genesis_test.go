@@ -119,7 +119,7 @@ func setupTestStore(t *testing.T) (sdk.Context, appparams.EncodingConfig, global
 	// ms.MountStoreWithDB(tkeyParams, storetypes.StoreTypeTransient, db)
 	require.NoError(t, ms.LoadLatestVersion())
 
-	globalfeeKeeper := globalfeekeeper.NewKeeper(encCfg.Marshaler, keyParams, "juno1jv65s3grqf6v6jl3dp4t6c9t9rk99cd83d88wr")
+	globalfeeKeeper := globalfeekeeper.NewKeeper(encCfg.Marshaler, keyParams, "terp1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8q4dsrv")
 
 	ctx := sdk.NewContext(ms, tmproto.Header{
 		Height:  1234567,

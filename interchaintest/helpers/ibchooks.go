@@ -10,7 +10,7 @@ import (
 )
 
 func GetIBCHooksUserAddress(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, channel, uaddr string) string {
-	// terpd q ibchooks wasm-sender channel-0 "juno1hj5fveer5cjtn4wd6wstzugjfdxzl0xps73ftl" --node http://localhost:26657
+	// terpd q ibchooks wasm-sender channel-0 "terp1hj5fveer5cjtn4wd6wstzugjfdxzl0xppxm7xs" --node http://localhost:26657
 	cmd := []string{"terpd", "query", "ibchooks", "wasm-sender", channel, uaddr,
 		"--node", chain.GetRPCAddress(),
 		"--chain-id", chain.Config().ChainID,

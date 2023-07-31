@@ -87,7 +87,7 @@ func (suite *FeeShareTestSuite) TestFee() {
 		{
 			"Create feeshare- invalid contract address (invalid length 2)",
 			FeeShare{
-				"juno15u3dt79t6sxxa3x3kpkhzsy56edaa5a66kxmukqjz2sx0hes5sn38g",
+				"terp15u3dt79t6sxxa3x3kpkhzsy56edaa5a66kxmukqjz2sx0hes5sn38g",
 				suite.address1.String(),
 				suite.address2.String(),
 			},
@@ -97,7 +97,7 @@ func (suite *FeeShareTestSuite) TestFee() {
 			"Create feeshare- invalid deployer address",
 			FeeShare{
 				suite.contract.String(),
-				"juno1hj5fveer5cjtn4wd6wstzugjfdxzl0xps73ftl",
+				"terp1hj5fveer5cjtn4wd6wstzugjfdxzl0xppxm7xs",
 				suite.address2.String(),
 			},
 			false,
@@ -107,7 +107,7 @@ func (suite *FeeShareTestSuite) TestFee() {
 			FeeShare{
 				suite.contract.String(),
 				suite.address1.String(),
-				"juno1hj5fveer5cjtn4wd6wstzugjfdxzl0xps73ftl",
+				"terp1hj5fveer5cjtn4wd6wstzugjfdxzl0xppxm7xs",
 			},
 			false,
 		},
