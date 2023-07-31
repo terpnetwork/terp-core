@@ -977,6 +977,7 @@ func NewTerpApp(
 		ibcfeetypes.ModuleName,
 		icqtypes.ModuleName,
 		packetforwardtypes.ModuleName,
+		tokenfactorytypes.ModuleName,
 		ibchookstypes.ModuleName,
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
