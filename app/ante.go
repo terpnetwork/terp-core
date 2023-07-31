@@ -9,10 +9,12 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
 	feeshareante "github.com/terpnetwork/terp-core/v2/x/feeshare/ante"
@@ -28,11 +30,13 @@ const maxBypassMinFeeMsgGasUsage = 1_000_000
 type HandlerOptions struct {
 	ante.HandlerOptions
 
+	GovKeeper         govkeeper.Keeper
 	IBCKeeper         *keeper.Keeper
-	WasmConfig        *wasmTypes.WasmConfig
 	FeeShareKeeper    feesharekeeper.Keeper
 	BankKeeperFork    feeshareante.BankKeeper
 	TXCounterStoreKey storetypes.StoreKey
+	WasmConfig        *wasmTypes.WasmConfig
+	Cdc               codec.BinaryCodec
 
 	BypassMinFeeMsgTypes []string
 
