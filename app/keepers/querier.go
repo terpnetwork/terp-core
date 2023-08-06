@@ -1,7 +1,7 @@
 // this file used from osmosis
 // Original Author: https://github.com/nicolaslara
 
-package app
+package keepers
 
 import (
 	abci "github.com/cometbft/cometbft/abci/types"
