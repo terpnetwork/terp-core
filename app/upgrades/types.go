@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v2/app"
+	"github.com/terpnetwork/terp-core/v2/app/keepers"
 )
 
 // BaseAppParamManager defines an interrace that BaseApp is expected to fullfil
@@ -32,7 +32,7 @@ type Upgrade struct {
 	CreateUpgradeHandler func(
 		*module.Manager,
 		module.Configurator,
-		*app.TerpApp,
+		*keepers.AppKeepers,
 	) upgradetypes.UpgradeHandler
 
 	// Store upgrades, should be used for any new modules introduced, new modules deleted, or store names renamed.

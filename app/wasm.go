@@ -1,16 +1,25 @@
 package app
 
-// AllCapabilities returns all capabilities available with the current wasmvm
-// See https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
-// This functionality is going to be moved upstream: https://github.com/CosmWasm/wasmvm/issues/425
-func AllCapabilities() []string {
-	return []string{
-		"iterator",
-		"staking",
-		"stargate",
-		"cosmwasm_1_1",
-		"cosmwasm_1_2",
-		"cosmwasm_1_3",
-		"token_factory",
-	}
+import (
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+)
+
+const (
+	// DefaultTerpInstanceCost is initially set the same as in wasmd
+	DefaultTerpInstanceCost uint64 = 60_000
+	// DefaultTerpCompileCost set to a large number for testing
+	DefaultTerpCompileCost uint64 = 3
+)
+
+// TerpGasRegisterConfig is defaults plus a custom compile amount
+func TerpGasRegisterConfig() wasmkeeper.WasmGasRegisterConfig {
+	gasConfig := wasmkeeper.DefaultGasRegisterConfig()
+	gasConfig.InstanceCost = DefaultTerpInstanceCost
+	gasConfig.CompileCost = DefaultTerpCompileCost
+
+	return gasConfig
+}
+
+func NewTerpWasmGasRegister() wasmkeeper.WasmGasRegister {
+	return wasmkeeper.NewWasmGasRegister(TerpGasRegisterConfig())
 }

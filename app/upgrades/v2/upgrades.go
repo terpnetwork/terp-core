@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v2/app"
+	"github.com/terpnetwork/terp-core/v2/app/keepers"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
@@ -18,7 +18,7 @@ import (
 func CreateV2UpgradeHandler(
 	mm *module.Manager,
 	cfg module.Configurator,
-	keepers *app.TerpApp,
+	keepers *keepers.AppKeepers,
 ) upgradetypes.UpgradeHandler {
 	return func(ctx sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		// transfer module consensus version has been bumped to 2

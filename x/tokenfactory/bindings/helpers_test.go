@@ -25,7 +25,7 @@ func CreateTestInput(t *testing.T) (*app.TerpApp, sdk.Context) {
 }
 
 func FundAccount(t *testing.T, ctx sdk.Context, terpapp *app.TerpApp, acct sdk.AccAddress) {
-	err := banktestutil.FundAccount(terpapp.BankKeeper, ctx, acct, sdk.NewCoins(
+	err := banktestutil.FundAccount(terpapp.AppKeepers.BankKeeper, ctx, acct, sdk.NewCoins(
 		sdk.NewCoin("uosmo", sdk.NewInt(10000000000)),
 	))
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func storeReflectCode(t *testing.T, ctx sdk.Context, terpapp *app.TerpApp, addr 
 	wasmCode, err := os.ReadFile("./testdata/token_reflect.wasm")
 	require.NoError(t, err)
 
-	contractKeeper := keeper.NewDefaultPermissionKeeper(terpapp.WasmKeeper)
+	contractKeeper := keeper.NewDefaultPermissionKeeper(terpapp.AppKeepers.WasmKeeper)
 	codeID, _, err := contractKeeper.Create(ctx, addr, wasmCode, nil)
 	require.NoError(t, err)
 
@@ -61,7 +61,7 @@ func storeReflectCode(t *testing.T, ctx sdk.Context, terpapp *app.TerpApp, addr 
 
 func instantiateReflectContract(t *testing.T, ctx sdk.Context, terpapp *app.TerpApp, funder sdk.AccAddress) sdk.AccAddress {
 	initMsgBz := []byte("{}")
-	contractKeeper := keeper.NewDefaultPermissionKeeper(terpapp.WasmKeeper)
+	contractKeeper := keeper.NewDefaultPermissionKeeper(terpapp.AppKeepers.WasmKeeper)
 	codeID := uint64(1)
 	addr, _, err := contractKeeper.Instantiate(ctx, codeID, funder, funder, initMsgBz, "demo contract", nil)
 	require.NoError(t, err)
@@ -71,7 +71,7 @@ func instantiateReflectContract(t *testing.T, ctx sdk.Context, terpapp *app.Terp
 
 func fundAccount(t *testing.T, ctx sdk.Context, terpapp *app.TerpApp, addr sdk.AccAddress, coins sdk.Coins) {
 	err := banktestutil.FundAccount(
-		terpapp.BankKeeper,
+		terpapp.AppKeepers.BankKeeper,
 		ctx,
 		addr,
 		coins,
@@ -81,7 +81,7 @@ func fundAccount(t *testing.T, ctx sdk.Context, terpapp *app.TerpApp, addr sdk.A
 
 func SetupCustomApp(t *testing.T, addr sdk.AccAddress) (*app.TerpApp, sdk.Context) {
 	terpapp, ctx := CreateTestInput(t)
-	wasmKeeper := terpapp.WasmKeeper
+	wasmKeeper := terpapp.AppKeepers.WasmKeeper
 
 	storeReflectCode(t, ctx, terpapp, addr)
 
