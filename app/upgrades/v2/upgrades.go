@@ -9,20 +9,21 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
+	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"
+	icqtypes "github.com/strangelove-ventures/async-icq/v7/types"
 	"github.com/terpnetwork/terp-core/v2/app/keepers"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 )
 
-func CreateV2UpgradeHandler(
+func CreateUpgradeHandler(
 	mm *module.Manager,
-	cfg module.Configurator,
+	configurator module.Configurator,
+	bpm upgrades.BaseAppParamManager,
 	keepers *keepers.AppKeepers,
 ) upgradetypes.UpgradeHandler {
-	return func(ctx sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-		// transfer module consensus version has been bumped to 2
-		// the above is https://github.com/cosmos/ibc-go/blob/v5.1.0/docs/migrations/v3-to-v4.md
+	return func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) { // the above is https://github.com/cosmos/ibc-go/blob/v5.1.0/docs/migrations/v3-to-v4.md
 		logger := ctx.Logger().With("upgrade", UpgradeName)
 
 		nativeFeeDenom := upgrades.GetChainsFeeDenomToken(ctx.ChainID())
@@ -30,7 +31,16 @@ func CreateV2UpgradeHandler(
 		logger.Info(fmt.Sprintf("With native fee denom %s and native gas denom %s", nativeFeeDenom, nativeBondDenom))
 
 		// Run migrations
-		versionMap, err := mm.RunMigrations(ctx, cfg, vm)
+		logger.Info(fmt.Sprintf("pre migrate version map: %v", fromVM))
+		versionMap, err := mm.RunMigrations(ctx, configurator, fromVM)
+		if err != nil {
+			return nil, err
+		}
+		logger.Info(fmt.Sprintf("post migrate version map: %v", versionMap))
+
+		// IBCFee
+		// vm[ibcfeetypes.ModuleName] = mm.Modules[ibcfeetypes.ModuleName].ConsensusVersion()
+		logger.Info(fmt.Sprintf("ibcfee module version %s set", fmt.Sprint(fromVM[ibcfeetypes.ModuleName])))
 
 		// New modules run AFTER the migrations, so to set the correct params after the default.
 
@@ -62,6 +72,10 @@ func CreateV2UpgradeHandler(
 		}
 		logger.Info("set feeshare params")
 
-		return versionMap, err
+		// Interchain Queries
+		icqParams := icqtypes.NewParams(true, nil)
+		keepers.ICQKeeper.SetParams(ctx, icqParams)
+
+		return mm.RunMigrations(ctx, configurator, fromVM)
 	}
 }

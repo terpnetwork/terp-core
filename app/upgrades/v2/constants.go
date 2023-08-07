@@ -5,6 +5,8 @@ import (
 
 	store "github.com/cosmos/cosmos-sdk/store/types"
 
+	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"
+	icqtypes "github.com/strangelove-ventures/async-icq/v7/types"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 	"github.com/terpnetwork/terp-core/v2/x/globalfee"
@@ -12,14 +14,16 @@ import (
 )
 
 // UpgradeName defines the on-chain upgrade name for the upgrade.
-const UpgradeName = "v2.0.0"
+const UpgradeName = "v2"
 
 var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
-	CreateUpgradeHandler: CreateV2UpgradeHandler,
+	CreateUpgradeHandler: CreateUpgradeHandler,
 	StoreUpgrades: store.StoreUpgrades{
 		Added: []string{
+			icqtypes.ModuleName,
 			globalfee.ModuleName,
+			ibcfeetypes.ModuleName,
 			ibchookstypes.StoreKey,
 			packetforwardtypes.StoreKey,
 			feesharetypes.ModuleName,

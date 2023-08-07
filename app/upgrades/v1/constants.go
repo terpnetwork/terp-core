@@ -9,7 +9,6 @@ import (
 const UpgradeName = "v1"
 
 var Upgrade = upgrades.Upgrade{
-	UpgradeName:          UpgradeName,
-	CreateUpgradeHandler: CreateV1UpgradeHandler,
-	StoreUpgrades:        store.StoreUpgrades{},
+	UpgradeName:   UpgradeName,
+	StoreUpgrades: store.StoreUpgrades{},
 }

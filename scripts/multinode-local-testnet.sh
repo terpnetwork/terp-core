@@ -3,7 +3,7 @@ set -e
 
 # always returns true so set -e doesn't exit if it is not running.
 killall terpd || true
-rm -rf $HOME/.terpd/
+rm -rf $HOME/.terp/
 
 # make four terp directories
 mkdir $HOME/.terp
@@ -43,12 +43,9 @@ update_genesis '.app_state["crisis"]["constant_fee"]["denom"]="uterpx"'
 update_genesis '.app_state["gov"]["voting_params"]["voting_period"]="60s"'
 update_genesis '.app_state["gov"]["deposit_params"]["min_deposit"][0]["denom"]="uterpx"'
 
-# update epochs genesis
-update_genesis '.app_state["epochs"]["epochs"][1]["duration"]="60s"'
 
 # update mint genesis
 update_genesis '.app_state["mint"]["params"]["mint_denom"]="uthiolx"'
-update_genesis '.app_state["mint"]["params"]["epoch_identifier"]="day"'
 
 
 # port key (validator1 uses default ports)

@@ -55,7 +55,7 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 		Images:                 []ibc.DockerImage{TerpImage},
 		Bin:                    "terpd",
 		Bech32Prefix:           "terp",
-		Denom:                  "uterpx",
+		Denom:                  Denom,
 		CoinType:               "118",
 		GasPrices:              "0uterpx",
 		GasAdjustment:          2.0,

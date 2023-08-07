@@ -153,34 +153,34 @@ func appModules(
 }
 
 // simulationModules returns modules for simulation manager
-// define the order of the modules for deterministic simulationss
-// func simulationModules(
-// 	app *TerpApp,
-// 	encodingConfig encparams.EncodingConfig,
-// 	_ bool,
-// ) []module.AppModuleSimulation {
-// 	appCodec := encodingConfig.Marshaler
-// 	// bondDenom := app.GetChainBondDenom()
-// 	return []module.AppModuleSimulation{
-// 		auth.NewAppModule(appCodec, app.AppKeepers.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
-// 		bank.NewAppModule(appCodec, app.AppKeepers.BankKeeper, app.AppKeepers.AccountKeeper, app.GetSubspace(banktypes.ModuleName)),
-// 		capability.NewAppModule(appCodec, *app.AppKeepers.CapabilityKeeper, false),
-// 		feegrantmodule.NewAppModule(appCodec, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.AppKeepers.FeeGrantKeeper, app.interfaceRegistry),
-// 		authzmodule.NewAppModule(appCodec, app.AppKeepers.AuthzKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.interfaceRegistry),
-// 		gov.NewAppModule(appCodec, &app.AppKeepers.GovKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
-// 		mint.NewAppModule(appCodec, app.AppKeepers.MintKeeper, app.AppKeepers.AccountKeeper, nil, app.GetSubspace(minttypes.ModuleName)),
-// 		staking.NewAppModule(appCodec, app.AppKeepers.StakingKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.GetSubspace(stakingtypes.ModuleName)),
-// 		distr.NewAppModule(appCodec, app.AppKeepers.DistrKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.AppKeepers.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
-// 		slashing.NewAppModule(appCodec, app.AppKeepers.SlashingKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.AppKeepers.StakingKeeper, app.GetSubspace(stakingtypes.ModuleName)),
-// 		params.NewAppModule(app.AppKeepers.ParamsKeeper),
-// 		evidence.NewAppModule(app.AppKeepers.EvidenceKeeper),
-// 		wasm.NewAppModule(appCodec, &app.AppKeepers.WasmKeeper, app.AppKeepers.StakingKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.MsgServiceRouter(), app.GetSubspace(wasmtypes.ModuleName)),
-// 		ibc.NewAppModule(app.AppKeepers.IBCKeeper),
-// 		transfer.NewAppModule(app.AppKeepers.TransferKeeper),
-// 		feeshare.NewAppModule(app.AppKeepers.FeeShareKeeper, app.AppKeepers.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
-// 		ibcfee.NewAppModule(app.AppKeepers.IBCFeeKeeper),
-// 	}
-// }
+// define the order of the modules for deterministic simulations
+func simulationModules(
+	app *TerpApp,
+	encodingConfig encparams.EncodingConfig,
+	_ bool,
+) []module.AppModuleSimulation {
+	appCodec := encodingConfig.Marshaler
+	// bondDenom := app.GetChainBondDenom()
+	return []module.AppModuleSimulation{
+		auth.NewAppModule(appCodec, app.AppKeepers.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
+		bank.NewAppModule(appCodec, app.AppKeepers.BankKeeper, app.AppKeepers.AccountKeeper, app.GetSubspace(banktypes.ModuleName)),
+		capability.NewAppModule(appCodec, *app.AppKeepers.CapabilityKeeper, false),
+		feegrantmodule.NewAppModule(appCodec, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.AppKeepers.FeeGrantKeeper, app.interfaceRegistry),
+		authzmodule.NewAppModule(appCodec, app.AppKeepers.AuthzKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.interfaceRegistry),
+		gov.NewAppModule(appCodec, &app.AppKeepers.GovKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
+		mint.NewAppModule(appCodec, app.AppKeepers.MintKeeper, app.AppKeepers.AccountKeeper, nil, app.GetSubspace(minttypes.ModuleName)),
+		staking.NewAppModule(appCodec, app.AppKeepers.StakingKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.GetSubspace(stakingtypes.ModuleName)),
+		distr.NewAppModule(appCodec, app.AppKeepers.DistrKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.AppKeepers.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
+		slashing.NewAppModule(appCodec, app.AppKeepers.SlashingKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.AppKeepers.StakingKeeper, app.GetSubspace(stakingtypes.ModuleName)),
+		params.NewAppModule(app.AppKeepers.ParamsKeeper),
+		evidence.NewAppModule(app.AppKeepers.EvidenceKeeper),
+		wasm.NewAppModule(appCodec, &app.AppKeepers.WasmKeeper, app.AppKeepers.StakingKeeper, app.AppKeepers.AccountKeeper, app.AppKeepers.BankKeeper, app.MsgServiceRouter(), app.GetSubspace(wasmtypes.ModuleName)),
+		ibc.NewAppModule(app.AppKeepers.IBCKeeper),
+		transfer.NewAppModule(app.AppKeepers.TransferKeeper),
+		feeshare.NewAppModule(app.AppKeepers.FeeShareKeeper, app.AppKeepers.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
+		ibcfee.NewAppModule(app.AppKeepers.IBCFeeKeeper),
+	}
+}
 
 func orderBeginBlockers() []string {
 	return []string{
