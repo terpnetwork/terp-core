@@ -24,9 +24,7 @@ import (
 var (
 	VotingPeriod     = "15s"
 	MaxDepositPeriod = "10s"
-	Denom            = "uterpx"
-	BondDenom        = "uterpx"
-	FeeDenom         = "uthiolx"
+	Denom            = "uterp"
 
 	TerpE2ERepo  = "ghcr.io/terpnetwork/terp-core-e2e"
 	TerpMainRepo = "ghcr.io/terpnetwork/terp-core"
@@ -54,14 +52,14 @@ var (
 		},
 		{
 			Key:   "app_state.gov.params.min_deposit.0.denom",
-			Value: BondDenom,
+			Value: Denom,
 		},
 	}
 
 	terpConfig = ibc.ChainConfig{
 		Type:                   "cosmos",
 		Name:                   "terpnetwork",
-		ChainID:                "terp-2",
+		ChainID:                "120u-1",
 		Images:                 []ibc.DockerImage{TerpImage},
 		Bin:                    "terpd",
 		Bech32Prefix:           "terp",

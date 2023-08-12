@@ -38,7 +38,7 @@ func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBran
 
 	t.Log(chainName, initialVersion, upgradeBranchVersion, upgradeRepo, upgradeName)
 
-	numVals, numNodes := 4, 4
+	numVals, numNodes := 2, 2
 	chains := CreateThisBranchChain(t, numVals, numNodes)
 	chain := chains[0].(*cosmos.CosmosChain)
 
@@ -122,7 +122,7 @@ func SubmitUpgradeProposal(t *testing.T, ctx context.Context, chain *cosmos.Cosm
 	upgradeMsg := []cosmosproto.Message{
 		&upgradetypes.MsgSoftwareUpgrade{
 			// gGov Module account
-			Authority: "juno10d07y265gmmuvt4z0w9aw880jnsr700jvss730",
+			Authority: "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
 			Plan: upgradetypes.Plan{
 				Name:   upgradeName,
 				Height: int64(haltHeight),
