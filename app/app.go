@@ -321,18 +321,23 @@ func NewTerpApp(
 			HandlerOptions: ante.HandlerOptions{
 				AccountKeeper:   app.AppKeepers.AccountKeeper,
 				BankKeeper:      app.AppKeepers.BankKeeper,
-				SignModeHandler: txConfig.SignModeHandler(),
 				FeegrantKeeper:  app.AppKeepers.FeeGrantKeeper,
+				SignModeHandler: txConfig.SignModeHandler(),
 				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 			},
+			GovKeeper:         app.AppKeepers.GovKeeper,
+			IBCKeeper:         app.AppKeepers.IBCKeeper,
 			FeeShareKeeper:    app.AppKeepers.FeeShareKeeper,
 			BankKeeperFork:    app.AppKeepers.BankKeeper, // since we need extra methods
-			IBCKeeper:         app.AppKeepers.IBCKeeper,
-			WasmConfig:        wasmConfig,
 			TxCounterStoreKey: app.AppKeepers.GetKey(wasmtypes.StoreKey),
+			WasmConfig:        wasmConfig,
+			Cdc:               appCodec,
 
 			BypassMinFeeMsgTypes: GetDefaultBypassFeeMessages(),
 			GlobalFeeKeeper:      app.AppKeepers.GlobalFeeKeeper,
+			StakingKeeper:        *app.AppKeepers.StakingKeeper,
+
+			TxEncoder: app.txConfig.TxEncoder(),
 		},
 	)
 	if err != nil {
