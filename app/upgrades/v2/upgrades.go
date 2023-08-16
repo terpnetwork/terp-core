@@ -26,16 +26,19 @@ func CreateUpgradeHandler(
 	return func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) { // the above is https://github.com/cosmos/ibc-go/blob/v5.1.0/docs/migrations/v3-to-v4.md
 		logger := ctx.Logger().With("upgrade", UpgradeName)
 
-		nativeFeeDenom := upgrades.GetChainsFeeDenomToken(ctx.ChainID())
-		nativeBondDenom := upgrades.GetChainsBondDenomToken(ctx.ChainID())
+		nativeFeeDenom := "uterp"
+		nativeBondDenom := "uterp"
 		logger.Info(fmt.Sprintf("With native fee denom %s and native gas denom %s", nativeFeeDenom, nativeBondDenom))
 
 		// Run migrations
 		logger.Info(fmt.Sprintf("pre migrate version map: %v", fromVM))
+
 		versionMap, err := mm.RunMigrations(ctx, configurator, fromVM)
+
 		if err != nil {
 			return nil, err
 		}
+
 		logger.Info(fmt.Sprintf("post migrate version map: %v", versionMap))
 
 		// IBCFee
@@ -51,8 +54,6 @@ func CreateUpgradeHandler(
 		minGasPrices := sdk.DecCoins{
 			// 0.005uthiol
 			sdk.NewDecCoinFromDec(nativeFeeDenom, sdk.NewDecWithPrec(25, 4)),
-			// 0.0025uterp
-			sdk.NewDecCoinFromDec(nativeBondDenom, sdk.NewDecWithPrec(25, 4)),
 		}
 		s, ok := keepers.ParamsKeeper.GetSubspace(globalfeetypes.ModuleName)
 		if !ok {
