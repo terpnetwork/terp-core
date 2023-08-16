@@ -328,8 +328,8 @@ func NewTerpApp(
 			FeeShareKeeper:    app.AppKeepers.FeeShareKeeper,
 			BankKeeperFork:    app.AppKeepers.BankKeeper, // since we need extra methods
 			IBCKeeper:         app.AppKeepers.IBCKeeper,
-			WasmConfig:        &wasmConfig,
-			TXCounterStoreKey: app.AppKeepers.GetKey(wasmtypes.StoreKey),
+			WasmConfig:        wasmConfig,
+			TxCounterStoreKey: app.AppKeepers.GetKey(wasmtypes.StoreKey),
 
 			BypassMinFeeMsgTypes: GetDefaultBypassFeeMessages(),
 			GlobalFeeKeeper:      app.AppKeepers.GlobalFeeKeeper,
