@@ -45,21 +45,24 @@ func CreateUpgradeHandler(
 		// vm[ibcfeetypes.ModuleName] = mm.Modules[ibcfeetypes.ModuleName].ConsensusVersion()
 		logger.Info(fmt.Sprintf("ibcfee module version %s set", fmt.Sprint(fromVM[ibcfeetypes.ModuleName])))
 
-		// New modules run AFTER the migrations, so to set the correct params after the default.
-
 		// Packet Forward middleware initial params
 		keepers.PacketForwardKeeper.SetParams(ctx, packetforwardtypes.DefaultParams())
 
-		// GlobalFee
+		// x/global-fee
+		if err := keepers.GlobalFeeKeeper.SetParams(ctx, globalfeetypes.DefaultParams()); err != nil {
+			return nil, err
+		}
+
 		minGasPrices := sdk.DecCoins{
 			// 0.005uthiol
 			sdk.NewDecCoinFromDec(nativeFeeDenom, sdk.NewDecWithPrec(25, 4)),
 		}
-		s, ok := keepers.ParamsKeeper.GetSubspace(globalfeetypes.ModuleName)
-		if !ok {
-			panic("global fee params subspace not found")
+		newGlobalFeeParams := globalfeetypes.Params{
+			MinimumGasPrices: minGasPrices,
 		}
-		s.Set(ctx, globalfeetypes.ParamStoreKeyMinGasPrices, minGasPrices)
+		if err := keepers.GlobalFeeKeeper.SetParams(ctx, newGlobalFeeParams); err != nil {
+			return nil, err
+		}
 		logger.Info(fmt.Sprintf("upgraded global fee params to %s", minGasPrices))
 
 		// FeeShare

@@ -51,6 +51,10 @@ sh scripts/git/markdown_lint.sh
 ## Contributors
 This framework is like a craft genetics lineage, one that has been fine tuned with love, trial and error, patience, and iterations. The following is a list of teams, companies, and contributors that are impactful to Terp Network's creation, massive respect!
 
+- CosmosSDK Contributors
+- CosmWasm / Wasmd Contributors
+- IBC Protocol Contributors
+- Juno's Core-1 Contributors  
 - Hard-nett - TerpNet Foundation DAO
 - Xiti - TerpNet Foundation DAO
 
