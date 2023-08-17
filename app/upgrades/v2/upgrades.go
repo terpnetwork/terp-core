@@ -28,6 +28,92 @@ func CreateUpgradeHandler(
 
 		nativeFeeDenom := "uterp"
 		nativeBondDenom := "uterp"
+		ctx.Logger().Info(`
+	 
+
+                           ▄░ ▄
+
+                            ▓▓▀                                      ░░▐
+
+                            ▒▒                                      ▐▒▀▀
+
+                            ▓▓                                     ▐░▀
+
+             ▐▒▒▒         ▄▓▒▀▄                    ▒░▒            ▄▓▀               ▒░▐
+
+              ▒▒   ░░▒▄▒▓▓▓▓▓▓▓▓▄▄                ▓▓▒▀▄▄▄▄▄▄▄▄▄▄▓▒▒▓                ▒░
+
+              ▒▒   ▀▀▀     ▓▒▀    ▀▀▒▒▒         ▄▒▓▓▓▓▓▀▀▀▀▀▀▀▀▀░▐▓▓                ▒▐
+
+             ▄▓▓▄          ▓▓          ▄▄▄ ▄▄▒▒▓▀             ▓▒▒  ▓▓▄              ▒▓
+
+          ▄▄▓▓▓▓▓▌▄▄▄      ▓▓      ▄▄▄▓▓▒▒▓▀▀                        ▓▓▄          ▄▓▒▀▄
+
+     ▒▒▓▀▀▀  ▀▓▓▀ ▀▀▀▀▓▓▓▓▓▒▒▓▓▓▓▓▀▀▀▀▐▒ ▐▀                           ▀▓▓      ▄▄▓▓▓▓▓▓▄▄
+
+              ▒░          ▓▓▓▀         ▓▒▀                              ▓▒▒▒▓▓▓▓▓▓▀ ▀  ▀▀▒▄░▄
+
+             ▐░▄▒          ▓▓                                           ▓▓▓▓▓  ▀▀▀          ▓▄▒
+
+               ▀           ▓▓                                           ▓▓▓
+
+                           ▓▓                                           ▒▒▌
+
+                           ▓▓                                          ▓▓▒
+
+                           ▓▓                                          ▒▒▌
+
+                         ▐▓▒▒▓▄                                      ▄▓▓▓
+
+                   ▐░▐▒▒▓▓▓▓▓▓▓▒▄▄           ▒░▄░                   ▐▓▓▓▓▌
+
+                    ▀▀   ░░     ▀▀▓▓▒▄▄    ▄▒▄                  ▒░▄▒▀▀▓██
+
+                       ▒▄▄▒          ▀▀▓▓▒▒▒▓                          ▐█▌
+
+                                        ▀▓▓▓▓▄                          ▓▓▄
+
+                                           ▀▒▓▒                  ▐░ ▄    █▓▄      ░▄▄▒
+´
+                                             ▀▒▒▄                ▐░░    ▐▓▒▒▓▓▀▀▀
+
+                                              ▐▓▒▒▀▄           ▄▄▒▓▄▄▓▓▓▀▀▓▒▓
+
+                                               ▓▓▓▓▓▀▀▀▀▓▓▓▓▓▓▓▓▒▓▓▓▀      ▒░
+
+                                                ▒▓              ▀██        ▐
+
+                                             ▐░▄▒▌               ▀▓        ▒▄▄▒
+
+                                              ▓▓▒                 ▒▒
+
+                                             ▓▓█▒▓                ▒░░
+
+                                           ▒▓▓▓▓▓▓░               ▀▀▀
+
+                                     ▄  ▒▄▀       ▀▒
+
+                                     ▀▒▓             ▒░░▒
+
+                                                      ▀▀▀                                                                                                                                      
+   HHHHHHHHH     HHHHHHHHH                                                            lllllll                                                           
+   H:::::::H     H:::::::H                                                            l:::::l                                                           
+   H:::::::H     H:::::::H                                                            l:::::l                                                           
+   HH::::::H     H::::::HH                                                            l:::::l                                                           
+	 H:::::H     H:::::H  uuuuuu    uuuuuu     mmmmmmm    mmmmmmm   uuuuuu    uuuuuu   l::::l     eeeeeeeeeeee    nnnn  nnnnnnnn        eeeeeeeeeeee    
+	 H:::::H     H:::::H  u::::u    u::::u   mm:::::::m  m:::::::mm u::::u    u::::u   l::::l   ee::::::::::::ee  n:::nn::::::::nn    ee::::::::::::ee  
+	 H::::::HHHHH::::::H  u::::u    u::::u  m::::::::::mm::::::::::mu::::u    u::::u   l::::l  e::::::eeeee:::::een::::::::::::::nn  e::::::eeeee:::::ee
+	 H:::::::::::::::::H  u::::u    u::::u  m::::::::::::::::::::::mu::::u    u::::u   l::::l e::::::e     e:::::enn:::::::::::::::ne::::::e     e:::::e
+	 H:::::::::::::::::H  u::::u    u::::u  m:::::mmm::::::mmm:::::mu::::u    u::::u   l::::l e:::::::eeeee::::::e  n:::::nnnn:::::ne:::::::eeeee::::::e
+	 H::::::HHHHH::::::H  u::::u    u::::u  m::::m   m::::m   m::::mu::::u    u::::u   l::::l e:::::::::::::::::e   n::::n    n::::ne:::::::::::::::::e 
+	 H:::::H     H:::::H  u::::u    u::::u  m::::m   m::::m   m::::mu::::u    u::::u   l::::l e::::::eeeeeeeeeee    n::::n    n::::ne::::::eeeeeeeeeee  
+	 H:::::H     H:::::H  u:::::uuuu:::::u  m::::m   m::::m   m::::mu:::::uuuu:::::u   l::::l e:::::::e             n::::n    n::::ne:::::::e           
+   HH::::::H     H::::::HHu:::::::::::::::uum::::m   m::::m   m::::mu:::::::::::::::uul::::::le::::::::e            n::::n    n::::ne::::::::e          
+   H:::::::H     H:::::::H u:::::::::::::::um::::m   m::::m   m::::m u:::::::::::::::ul::::::l e::::::::eeeeeeee    n::::n    n::::n e::::::::eeeeeeee  
+   H:::::::H     H:::::::H  uu::::::::uu:::um::::m   m::::m   m::::m  uu::::::::uu:::ul::::::l  ee:::::::::::::e    n::::n    n::::n  ee:::::::::::::e  
+   HHHHHHHHH     HHHHHHHHH    uuuuuuuu  uuuummmmmm   mmmmmm   mmmmmm    uuuuuuuu  uuuullllllll    eeeeeeeeeeeeee    nnnnnn    nnnnnn    eeeeeeeeeeeeee  
+`)
+
 		logger.Info(fmt.Sprintf("With native fee denom %s and native gas denom %s", nativeFeeDenom, nativeBondDenom))
 
 		// Run migrations
