@@ -1,12 +1,10 @@
 package v2
 
 import (
-	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v7/router/types"
-
 	store "github.com/cosmos/cosmos-sdk/store/types"
-
 	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"
 	icqtypes "github.com/strangelove-ventures/async-icq/v7/types"
+	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v7/router/types"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 	"github.com/terpnetwork/terp-core/v2/x/globalfee"

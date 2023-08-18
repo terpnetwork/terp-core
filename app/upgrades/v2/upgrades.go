@@ -3,14 +3,12 @@ package v2
 import (
 	"fmt"
 
-	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v7/router/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-
 	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"
 	icqtypes "github.com/strangelove-ventures/async-icq/v7/types"
+	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v7/router/types"
 	"github.com/terpnetwork/terp-core/v2/app/keepers"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
@@ -120,7 +118,6 @@ func CreateUpgradeHandler(
 		logger.Info(fmt.Sprintf("pre migrate version map: %v", fromVM))
 
 		versionMap, err := mm.RunMigrations(ctx, configurator, fromVM)
-
 		if err != nil {
 			return nil, err
 		}

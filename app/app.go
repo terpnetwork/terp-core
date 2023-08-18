@@ -605,6 +605,7 @@ func (app *TerpApp) setupUpgradeStoreLoaders() {
 		}
 	}
 }
+
 func (app *TerpApp) setupUpgradeHandlers() {
 	for _, upgrade := range Upgrades {
 		app.AppKeepers.UpgradeKeeper.SetUpgradeHandler(

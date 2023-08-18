@@ -87,14 +87,13 @@ func terpEncoding() *testutil.TestEncodingConfig {
 	ibclocalhost.RegisterInterfaces(cfg.InterfaceRegistry)
 	wasmtypes.RegisterInterfaces(cfg.InterfaceRegistry)
 
-	//github.com/cosmos/cosmos-sdk/types/module/testutil
+	// github.com/cosmos/cosmos-sdk/types/module/testutil
 
 	return &cfg
 }
 
 // This allows for us to test
 func FundSpecificUsers() {
-
 }
 
 // Base chain, no relaying off this branch (or terpnetwork/terp-core:local if no branch is provided.)

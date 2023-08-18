@@ -13,6 +13,8 @@ import (
 	"github.com/terpnetwork/terp-core/v2/app/keepers"
 )
 
+const bondDenom = "uterp"
+
 // BaseAppParamManager defines an interrace that BaseApp is expected to fullfil
 // that allows upgrade handlers to modify BaseApp parameters.
 type BaseAppParamManager interface {
@@ -42,7 +44,7 @@ func GetChainsFeeDenomToken(chainID string) string {
 		return "uthiolx"
 	}
 	if strings.HasPrefix(chainID, "120u-1") {
-		return "uterp"
+		return bondDenom
 	}
 	return "uthiol"
 }
@@ -52,7 +54,7 @@ func GetChainsBondDenomToken(chainID string) string {
 		return "uterpx"
 	}
 	if strings.HasPrefix(chainID, "120u-1") {
-		return "uterp"
+		return bondDenom
 	}
-	return "uterp"
+	return bondDenom
 }
