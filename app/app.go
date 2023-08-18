@@ -25,12 +25,10 @@ import (
 	tmos "github.com/cometbft/cometbft/libs/os"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
-	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	ibcclientclient "github.com/cosmos/ibc-go/v7/modules/core/02-client/client"
 	ibcclienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	ibcchanneltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
-	ibcmock "github.com/cosmos/ibc-go/v7/testing/mock"
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
@@ -55,10 +53,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/posthandler"
-	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
@@ -75,9 +71,8 @@ import (
 )
 
 const (
-	AccountAddressPrefix        = "terp"
-	appName                     = "TerpApp"
-	MockFeePort          string = ibcmock.ModuleName + ibcfeetypes.ModuleName
+	AccountAddressPrefix = "terp"
+	appName              = "TerpApp"
 )
 
 // We pull these out so we can set them with LDFLAGS in the Makefile
@@ -285,10 +280,19 @@ func NewTerpApp(
 	app.ModuleManager = module.NewManager(appModules(app, encodingConfig, skipGenesisInvariants)...)
 	app.ModuleManager.RegisterServices(app.configurator)
 
+	// During begin block slashing happens after distr.BeginBlocker so that
+	// there is nothing left over in the validator fee pool, so as to keep the
+	// CanWithdrawInvariant invariant.
+	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.ModuleManager.SetOrderBeginBlockers(orderBeginBlockers()...)
 
 	app.ModuleManager.SetOrderEndBlockers(orderEndBlockers()...)
 
+	// NOTE: The genutils module must occur after staking so that pools are
+	// properly initialized with tokens from genesis accounts.
+	// NOTE: Capability module must occur first so that it can initialize any capabilities
+	// so that other modules that want to create or claim capabilities afterwards in InitChain
+	// can do so safely.
 	app.ModuleManager.SetOrderInitGenesis(orderInitBlockers()...)
 
 	app.ModuleManager.RegisterInvariants(app.AppKeepers.CrisisKeeper)
@@ -298,7 +302,7 @@ func NewTerpApp(
 	app.MountMemoryStores(app.AppKeepers.GetMemoryStoreKey())
 
 	// register upgrade
-	app.setupUpgradeHandlers(app.configurator)
+	app.setupUpgradeHandlers()
 
 	autocliv1.RegisterQueryServer(app.GRPCQueryRouter(), runtimeservices.NewAutoCLIQueryService(app.ModuleManager.Modules))
 	reflectionSvc, err := runtimeservices.NewReflectionService()
@@ -317,18 +321,23 @@ func NewTerpApp(
 			HandlerOptions: ante.HandlerOptions{
 				AccountKeeper:   app.AppKeepers.AccountKeeper,
 				BankKeeper:      app.AppKeepers.BankKeeper,
-				SignModeHandler: txConfig.SignModeHandler(),
 				FeegrantKeeper:  app.AppKeepers.FeeGrantKeeper,
+				SignModeHandler: txConfig.SignModeHandler(),
 				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 			},
+			GovKeeper:         app.AppKeepers.GovKeeper,
+			IBCKeeper:         app.AppKeepers.IBCKeeper,
 			FeeShareKeeper:    app.AppKeepers.FeeShareKeeper,
 			BankKeeperFork:    app.AppKeepers.BankKeeper, // since we need extra methods
-			IBCKeeper:         app.AppKeepers.IBCKeeper,
-			WasmConfig:        &wasmConfig,
-			TXCounterStoreKey: app.AppKeepers.GetKey(wasmtypes.StoreKey),
+			TxCounterStoreKey: app.AppKeepers.GetKey(wasmtypes.StoreKey),
+			WasmConfig:        wasmConfig,
+			Cdc:               appCodec,
 
 			BypassMinFeeMsgTypes: GetDefaultBypassFeeMessages(),
 			GlobalFeeKeeper:      app.AppKeepers.GlobalFeeKeeper,
+			StakingKeeper:        *app.AppKeepers.StakingKeeper,
+
+			TxEncoder: app.txConfig.TxEncoder(),
 		},
 	)
 	if err != nil {
@@ -395,10 +404,10 @@ func NewTerpApp(
 		app.AppKeepers.CapabilityKeeper.Seal()
 	}
 
-	overrideModules := map[string]module.AppModuleSimulation{
-		authtypes.ModuleName: auth.NewAppModule(app.appCodec, app.AppKeepers.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
-	}
-	app.sm = module.NewSimulationManagerFromAppModules(app.ModuleManager.Modules, overrideModules)
+	// overrideModules := map[string]module.AppModuleSimulation{
+	// 	authtypes.ModuleName: auth.NewAppModule(app.appCodec, app.AppKeepers.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
+	// }
+	app.sm = module.NewSimulationManager(simulationModules(app, encodingConfig, skipGenesisInvariants)...)
 
 	app.sm.RegisterStoreDecoders()
 
@@ -597,13 +606,14 @@ func (app *TerpApp) setupUpgradeStoreLoaders() {
 	}
 }
 
-func (app *TerpApp) setupUpgradeHandlers(cfg module.Configurator) {
+func (app *TerpApp) setupUpgradeHandlers() {
 	for _, upgrade := range Upgrades {
 		app.AppKeepers.UpgradeKeeper.SetUpgradeHandler(
 			upgrade.UpgradeName,
 			upgrade.CreateUpgradeHandler(
 				app.ModuleManager,
-				cfg,
+				app.configurator,
+				app.BaseApp,
 				&app.AppKeepers,
 			),
 		)

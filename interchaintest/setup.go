@@ -24,9 +24,7 @@ import (
 var (
 	VotingPeriod     = "15s"
 	MaxDepositPeriod = "10s"
-	Denom            = "uterpx"
-	BondDenom        = "uterpx"
-	FeeDenom         = "uthiolx"
+	Denom            = "uterp"
 
 	TerpE2ERepo  = "ghcr.io/terpnetwork/terp-core-e2e"
 	TerpMainRepo = "ghcr.io/terpnetwork/terp-core"
@@ -54,20 +52,20 @@ var (
 		},
 		{
 			Key:   "app_state.gov.params.min_deposit.0.denom",
-			Value: BondDenom,
+			Value: Denom,
 		},
 	}
 
 	terpConfig = ibc.ChainConfig{
 		Type:                   "cosmos",
 		Name:                   "terpnetwork",
-		ChainID:                "terp-2",
+		ChainID:                "120u-1",
 		Images:                 []ibc.DockerImage{TerpImage},
 		Bin:                    "terpd",
 		Bech32Prefix:           "terp",
-		Denom:                  BondDenom,
+		Denom:                  Denom,
 		CoinType:               "118",
-		GasPrices:              fmt.Sprintf("0%s", FeeDenom),
+		GasPrices:              fmt.Sprintf("0%s", Denom),
 		GasAdjustment:          2.0,
 		TrustingPeriod:         "112h",
 		NoHostMount:            false,
@@ -89,14 +87,13 @@ func terpEncoding() *testutil.TestEncodingConfig {
 	ibclocalhost.RegisterInterfaces(cfg.InterfaceRegistry)
 	wasmtypes.RegisterInterfaces(cfg.InterfaceRegistry)
 
-	//github.com/cosmos/cosmos-sdk/types/module/testutil
+	// github.com/cosmos/cosmos-sdk/types/module/testutil
 
 	return &cfg
 }
 
 // This allows for us to test
 func FundSpecificUsers() {
-
 }
 
 // Base chain, no relaying off this branch (or terpnetwork/terp-core:local if no branch is provided.)

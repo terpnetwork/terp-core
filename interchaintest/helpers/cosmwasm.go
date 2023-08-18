@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 func SetupContract(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, keyname string, fileLoc string, message string) (codeId, contract string) {
 	codeId, err := chain.StoreContract(ctx, keyname, fileLoc)
 	if err != nil {
@@ -30,7 +29,8 @@ func ExecuteMsgWithAmount(t *testing.T, ctx context.Context, chain *cosmos.Cosmo
 	// amount is #utoken
 
 	// There has to be a way to do this in ictest?
-	cmd := []string{"terpd", "tx", "wasm", "execute", contractAddr, message,
+	cmd := []string{
+		"terpd", "tx", "wasm", "execute", contractAddr, message,
 		"--node", chain.GetRPCAddress(),
 		"--home", chain.HomeDir(),
 		"--chain-id", chain.Config().ChainID,
@@ -55,7 +55,8 @@ func ExecuteMsgWithFee(t *testing.T, ctx context.Context, chain *cosmos.CosmosCh
 	// amount is #utoken
 
 	// There has to be a way to do this in ictest?
-	cmd := []string{"terpd", "tx", "wasm", "execute", contractAddr, message,
+	cmd := []string{
+		"terpd", "tx", "wasm", "execute", contractAddr, message,
 		"--node", chain.GetRPCAddress(),
 		"--home", chain.HomeDir(),
 		"--chain-id", chain.Config().ChainID,

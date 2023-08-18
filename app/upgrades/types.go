@@ -13,6 +13,8 @@ import (
 	"github.com/terpnetwork/terp-core/v2/app/keepers"
 )
 
+const bondDenom = "uterp"
+
 // BaseAppParamManager defines an interrace that BaseApp is expected to fullfil
 // that allows upgrade handlers to modify BaseApp parameters.
 type BaseAppParamManager interface {
@@ -29,11 +31,8 @@ type Upgrade struct {
 	UpgradeName string
 
 	// CreateUpgradeHandler defines the function that creates an upgrade handler
-	CreateUpgradeHandler func(
-		*module.Manager,
-		module.Configurator,
-		*keepers.AppKeepers,
-	) upgradetypes.UpgradeHandler
+	// CreateUpgradeHandler defines the function that creates an upgrade handler
+	CreateUpgradeHandler func(*module.Manager, module.Configurator, BaseAppParamManager, *keepers.AppKeepers) upgradetypes.UpgradeHandler
 
 	// Store upgrades, should be used for any new modules introduced, new modules deleted, or store names renamed.
 	StoreUpgrades store.StoreUpgrades
@@ -44,6 +43,9 @@ func GetChainsFeeDenomToken(chainID string) string {
 	if strings.HasPrefix(chainID, "90u-") {
 		return "uthiolx"
 	}
+	if strings.HasPrefix(chainID, "120u-1") {
+		return bondDenom
+	}
 	return "uthiol"
 }
 
@@ -51,5 +53,8 @@ func GetChainsBondDenomToken(chainID string) string {
 	if strings.HasPrefix(chainID, "90u-") {
 		return "uterpx"
 	}
-	return "uterp"
+	if strings.HasPrefix(chainID, "120u-1") {
+		return bondDenom
+	}
+	return bondDenom
 }

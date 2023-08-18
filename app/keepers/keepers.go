@@ -93,6 +93,11 @@ import (
 )
 
 type AppKeepers struct {
+	// keys to access the substores
+	keys    map[string]*storetypes.KVStoreKey
+	tkeys   map[string]*storetypes.TransientStoreKey
+	memKeys map[string]*storetypes.MemoryStoreKey
+
 	// "Special" keepers
 	ParamsKeeper     paramskeeper.Keeper
 	CapabilityKeeper *capabilitykeeper.Keeper
@@ -137,11 +142,6 @@ type AppKeepers struct {
 	ICQKeeper           icqkeeper.Keeper
 	ICAControllerKeeper icacontrollerkeeper.Keeper
 	ICAHostKeeper       icahostkeeper.Keeper
-
-	// keys to access the substores
-	keys    map[string]*storetypes.KVStoreKey
-	tkeys   map[string]*storetypes.TransientStoreKey
-	memKeys map[string]*storetypes.MemoryStoreKey
 
 	// Middleware wrapper
 	Ics20WasmHooks   *ibchooks.WasmHooks
