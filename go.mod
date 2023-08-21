@@ -26,7 +26,7 @@ require (
 	github.com/spf13/cast v1.5.1
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	google.golang.org/grpc v1.55.0
@@ -37,7 +37,7 @@ require (
 	cosmossdk.io/api v0.3.1
 	cosmossdk.io/core v0.6.1
 	cosmossdk.io/errors v1.0.0-beta.7
-	cosmossdk.io/math v1.0.1
+	cosmossdk.io/math v1.1.0
 	cosmossdk.io/tools/rosetta v0.2.1
 	github.com/spf13/viper v1.16.0
 )
