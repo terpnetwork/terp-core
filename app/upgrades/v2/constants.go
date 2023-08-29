@@ -16,7 +16,7 @@ const UpgradeName = "v2"
 
 var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
-	CreateUpgradeHandler: CreateUpgradeHandler,
+	CreateUpgradeHandler: CreateV2UpgradeHandler,
 	StoreUpgrades: store.StoreUpgrades{
 		Added: []string{
 			icqtypes.ModuleName,

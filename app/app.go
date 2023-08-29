@@ -302,7 +302,7 @@ func NewTerpApp(
 	app.MountMemoryStores(app.AppKeepers.GetMemoryStoreKey())
 
 	// register upgrade
-	app.setupUpgradeHandlers()
+	app.setupUpgradeHandlers(app.configurator)
 
 	autocliv1.RegisterQueryServer(app.GRPCQueryRouter(), runtimeservices.NewAutoCLIQueryService(app.ModuleManager.Modules))
 	reflectionSvc, err := runtimeservices.NewReflectionService()
@@ -606,14 +606,13 @@ func (app *TerpApp) setupUpgradeStoreLoaders() {
 	}
 }
 
-func (app *TerpApp) setupUpgradeHandlers() {
+func (app *TerpApp) setupUpgradeHandlers(cfg module.Configurator) {
 	for _, upgrade := range Upgrades {
 		app.AppKeepers.UpgradeKeeper.SetUpgradeHandler(
 			upgrade.UpgradeName,
 			upgrade.CreateUpgradeHandler(
 				app.ModuleManager,
-				app.configurator,
-				app.BaseApp,
+				cfg,
 				&app.AppKeepers,
 			),
 		)
