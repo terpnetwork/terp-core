@@ -1,9 +1,7 @@
 package bindings
 
 import (
-	"github.com/terpnetwork/terp-core/x/wasm"
-
-	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 
@@ -23,7 +21,7 @@ func RegisterCustomPlugins(
 		CustomMessageDecorator(bank, tokenFactory),
 	)
 
-	return []wasm.Option{
+	return []wasmkeeper.Option{
 		queryPluginOpt,
 		messengerDecoratorOpt,
 	}

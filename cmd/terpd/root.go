@@ -30,11 +30,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+
 	"github.com/terpnetwork/terp-core/app"
 	"github.com/terpnetwork/terp-core/app/params"
-	"github.com/terpnetwork/terp-core/x/wasm"
-	wasmkeeper "github.com/terpnetwork/terp-core/x/wasm/keeper"
-	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
 )
 
 // NewRootCmd creates a new root command for terpd. It is called once in the
@@ -241,7 +242,7 @@ func newApp(
 ) servertypes.Application {
 	baseappOptions := server.DefaultBaseappOptions(appOpts)
 
-	var wasmOpts []wasm.Option
+	var wasmOpts []wasmkeeper.Option
 	if cast.ToBool(appOpts.Get("telemetry.enabled")) {
 		wasmOpts = append(wasmOpts, wasmkeeper.WithVMCacheMetrics(prometheus.DefaultRegisterer))
 	}
@@ -281,7 +282,7 @@ func appExport(
 	viperAppOpts.Set(server.FlagInvCheckPeriod, 1)
 	appOpts = viperAppOpts
 
-	var emptyWasmOpts []wasm.Option
+	var emptyWasmOpts []wasmkeeper.Option
 	wasmApp = app.NewTerpApp(
 		logger,
 		db,

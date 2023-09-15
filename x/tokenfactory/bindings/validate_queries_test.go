@@ -41,10 +41,10 @@ func TestFullDenom(t *testing.T) {
 			subdenom:     "",
 			expFullDenom: fmt.Sprintf("factory/%s/", actor.String()),
 		},
-		"invalid sub-denom (contains @)": {
-			addr:     actor.String(),
-			subdenom: "sub@denom",
-			expErr:   true,
+		"valid sub-denom (contains underscore)": {
+			addr:         actor.String(),
+			subdenom:     "sub_denom",
+			expFullDenom: fmt.Sprintf("factory/%s/sub_denom", actor.String()),
 		},
 	}
 	for name, spec := range specs {
@@ -69,7 +69,9 @@ func TestDenomAdmin(t *testing.T) {
 	// set token creation fee to zero to make testing easier
 	tfParams := app.TokenFactoryKeeper.GetParams(ctx)
 	tfParams.DenomCreationFee = sdk.NewCoins()
-	app.TokenFactoryKeeper.SetParams(ctx, tfParams)
+	if err := app.TokenFactoryKeeper.SetParams(ctx, tfParams); err != nil {
+		t.Fatal(err)
+	}
 
 	// create a subdenom via the token factory
 	admin := sdk.AccAddress([]byte("addr1_______________"))

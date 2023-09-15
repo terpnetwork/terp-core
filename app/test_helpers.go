@@ -2,127 +2,81 @@ package app
 
 import (
 	"encoding/json"
-	"fmt"
-	"math/rand"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"cosmossdk.io/math"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/stretchr/testify/require"
 
 	dbm "github.com/cometbft/cometbft-db"
 	abci "github.com/cometbft/cometbft/abci/types"
-	tmjson "github.com/cometbft/cometbft/libs/json"
+	"github.com/cometbft/cometbft/crypto"
+	"github.com/cometbft/cometbft/crypto/ed25519"
 	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtypes "github.com/cometbft/cometbft/types"
+
+	"cosmossdk.io/math"
+
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/server"
-	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/snapshots"
 	snapshottypes "github.com/cosmos/cosmos-sdk/snapshots/types"
-	pruningtypes "github.com/cosmos/cosmos-sdk/store/pruning/types"
-	"github.com/cosmos/cosmos-sdk/testutil/mock"
-	"github.com/cosmos/cosmos-sdk/testutil/network"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/stretchr/testify/require"
 
-	"github.com/terpnetwork/terp-core/x/wasm"
-	wasmtypes "github.com/terpnetwork/terp-core/x/wasm/types"
+	apphelpers "github.com/terpnetwork/terp-core/app/helpers"
+	appparams "github.com/terpnetwork/terp-core/app/params"
 )
 
-// SetupOptions defines arguments that are passed into `TerpApp` constructor.
-type SetupOptions struct {
-	Logger   log.Logger
-	DB       *dbm.MemDB
-	AppOpts  servertypes.AppOptions
-	WasmOpts []wasm.Option
+// SimAppChainID hardcoded chainID for simulation
+const (
+	SimAppChainID = "testing"
+)
+
+// EmptyBaseAppOptions is a stub implementing AppOptions
+type EmptyBaseAppOptions struct{}
+
+// Get implements AppOptions
+func (ao EmptyBaseAppOptions) Get(_ string) interface{} {
+	return nil
 }
 
-func setup(tb testing.TB, chainID string, withGenesis bool, invCheckPeriod uint, opts ...wasm.Option) (*TerpApp, GenesisState) {
-	tb.Helper()
-	db := dbm.NewMemDB()
-	nodeHome := tb.TempDir()
-	snapshotDir := filepath.Join(nodeHome, "data", "snapshots")
-
-	snapshotDB, err := dbm.NewDB("metadata", dbm.GoLevelDBBackend, snapshotDir)
-	require.NoError(tb, err)
-	tb.Cleanup(func() { snapshotDB.Close() })
-	snapshotStore, err := snapshots.NewStore(snapshotDB, snapshotDir)
-	require.NoError(tb, err)
-
-	appOptions := make(simtestutil.AppOptionsMap, 0)
-	appOptions[flags.FlagHome] = nodeHome // ensure unique folder
-	appOptions[server.FlagInvCheckPeriod] = invCheckPeriod
-	app := NewTerpApp(log.NewNopLogger(), db, nil, true, wasmtypes.EnableAllProposals, appOptions, opts, bam.SetChainID(chainID), bam.SetSnapshot(snapshotStore, snapshottypes.SnapshotOptions{KeepRecent: 2}))
-	if withGenesis {
-		return app, NewDefaultGenesisState(app.AppCodec())
-	}
-	return app, GenesisState{}
+// DefaultConsensusParams defines the default Tendermint consensus params used
+// in junoApp testing.
+var DefaultConsensusParams = &tmproto.ConsensusParams{
+	Block: &tmproto.BlockParams{
+		MaxBytes: 200000,
+		MaxGas:   2000000,
+	},
+	Evidence: &tmproto.EvidenceParams{
+		MaxAgeNumBlocks: 302400,
+		MaxAgeDuration:  504 * time.Hour, // 3 weeks is the max duration
+		MaxBytes:        10000,
+	},
+	Validator: &tmproto.ValidatorParams{
+		PubKeyTypes: []string{
+			tmtypes.ABCIPubKeyTypeEd25519,
+		},
+	},
 }
 
-// NewTerpAppWithCustomOptions initializes a new TerpApp with custom options.
-func NewTerpAppWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOptions) *TerpApp {
+type EmptyAppOptions struct{}
+
+func (EmptyAppOptions) Get(_ string) interface{} { return nil }
+
+func Setup(t *testing.T) *TerpApp {
 	t.Helper()
 
-	privVal := mock.NewPV()
-	pubKey, err := privVal.GetPubKey()
-	require.NoError(t, err)
-	// create validator set with single validator
-	validator := tmtypes.NewValidator(pubKey, 1)
-	valSet := tmtypes.NewValidatorSet([]*tmtypes.Validator{validator})
-
-	// generate genesis account
-	senderPrivKey := secp256k1.GenPrivKey()
-	acc := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
-	balance := banktypes.Balance{
-		Address: acc.GetAddress().String(),
-		Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(100000000000000))),
-	}
-
-	app := NewTerpApp(options.Logger, options.DB, nil, true, wasmtypes.EnableAllProposals, options.AppOpts, options.WasmOpts)
-	genesisState := NewDefaultGenesisState(app.appCodec)
-	genesisState, err = GenesisStateWithValSet(app.AppCodec(), genesisState, valSet, []authtypes.GenesisAccount{acc}, balance)
-	require.NoError(t, err)
-
-	if !isCheckTx {
-		// init chain must be called to stop deliverState from being nil
-		stateBytes, err := tmjson.MarshalIndent(genesisState, "", " ")
-		require.NoError(t, err)
-
-		// Initialize the chain
-		app.InitChain(
-			abci.RequestInitChain{
-				Validators:      []abci.ValidatorUpdate{},
-				ConsensusParams: simtestutil.DefaultConsensusParams,
-				AppStateBytes:   stateBytes,
-			},
-		)
-	}
-
-	return app
-}
-
-// Setup initializes a new TerpApp. A Nop logger is set in TerpApp.
-func Setup(t *testing.T, opts ...wasm.Option) *TerpApp {
-	t.Helper()
-
-	privVal := mock.NewPV()
+	privVal := apphelpers.NewPV()
 	pubKey, err := privVal.GetPubKey()
 	require.NoError(t, err)
 
@@ -135,198 +89,93 @@ func Setup(t *testing.T, opts ...wasm.Option) *TerpApp {
 	acc := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
 	balance := banktypes.Balance{
 		Address: acc.GetAddress().String(),
-		Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(100000000000000))),
+		Coins:   sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, sdk.NewInt(100000000000000))),
 	}
-	chainID := "testing"
-	app := SetupWithGenesisValSet(t, valSet, []authtypes.GenesisAccount{acc}, chainID, opts, balance)
+
+	app := SetupWithGenesisValSet(t, valSet, []authtypes.GenesisAccount{acc}, balance)
 
 	return app
 }
 
-// SetupWithGenesisValSet initializes a new TerpApp with a validator set and genesis accounts
+// SetupWithGenesisValSet initializes a new junoApp with a validator set and genesis accounts
 // that also act as delegators. For simplicity, each validator is bonded with a delegation
-// of one consensus engine unit in the default token of the TerpApp from first genesis
-// account. A Nop logger is set in TerpApp.
-func SetupWithGenesisValSet(t *testing.T, valSet *tmtypes.ValidatorSet, genAccs []authtypes.GenesisAccount, chainID string, opts []wasm.Option, balances ...banktypes.Balance) *TerpApp {
+// of one consensus engine unit in the default token of the JunoApp from first genesis
+// account. A Nop logger is set in JunoApp.
+func SetupWithGenesisValSet(t *testing.T, valSet *tmtypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *TerpApp {
 	t.Helper()
 
-	app, genesisState := setup(t, chainID, true, 5, opts...)
-	genesisState, err := GenesisStateWithValSet(app.AppCodec(), genesisState, valSet, genAccs, balances...)
-	require.NoError(t, err)
+	junoApp, genesisState := setup(t, true)
+	genesisState = genesisStateWithValSet(t, junoApp, genesisState, valSet, genAccs, balances...)
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
 	require.NoError(t, err)
 
 	// init chain will set the validator set and initialize the genesis accounts
-	consensusParams := simtestutil.DefaultConsensusParams
-	consensusParams.Block.MaxGas = 100 * simtestutil.DefaultGenTxGas
-	app.InitChain(
+	junoApp.InitChain(
 		abci.RequestInitChain{
-			ChainId:         chainID,
 			Validators:      []abci.ValidatorUpdate{},
-			ConsensusParams: consensusParams,
+			ConsensusParams: DefaultConsensusParams,
 			AppStateBytes:   stateBytes,
+			ChainId:         "testing",
+			Time:            time.Now().UTC(),
+			InitialHeight:   1,
 		},
 	)
+
 	// commit genesis changes
-	app.Commit()
-	app.BeginBlock(abci.RequestBeginBlock{Header: tmproto.Header{
-		ChainID:            chainID,
-		Height:             app.LastBlockHeight() + 1,
-		AppHash:            app.LastCommitID().Hash,
-		Time:               time.Now().UTC(),
+	junoApp.Commit()
+	junoApp.BeginBlock(abci.RequestBeginBlock{Header: tmproto.Header{
+		ChainID:            "testing",
+		Height:             junoApp.LastBlockHeight() + 1,
+		AppHash:            junoApp.LastCommitID().Hash,
 		ValidatorsHash:     valSet.Hash(),
 		NextValidatorsHash: valSet.Hash(),
+		Time:               time.Now().UTC(),
 	}})
 
-	return app
+	return junoApp
 }
 
-// SetupWithEmptyStore set up a wasmd app instance with empty DB
-func SetupWithEmptyStore(tb testing.TB) *TerpApp {
-	tb.Helper()
-	app, _ := setup(tb, "testing", false, 0)
-	return app
-}
+func setup(t *testing.T, withGenesis bool, opts ...wasmkeeper.Option) (*TerpApp, GenesisState) {
+	db := dbm.NewMemDB()
+	nodeHome := t.TempDir()
+	snapshotDir := filepath.Join(nodeHome, "data", "snapshots")
 
-// GenesisStateWithSingleValidator initializes GenesisState with a single validator and genesis accounts
-// that also act as delegators.
-func GenesisStateWithSingleValidator(t *testing.T, app *TerpApp) GenesisState {
-	t.Helper()
-
-	privVal := mock.NewPV()
-	pubKey, err := privVal.GetPubKey()
+	snapshotDB, err := dbm.NewDB("metadata", dbm.GoLevelDBBackend, snapshotDir)
+	require.NoError(t, err)
+	t.Cleanup(func() { snapshotDB.Close() })
+	snapshotStore, err := snapshots.NewStore(snapshotDB, snapshotDir)
 	require.NoError(t, err)
 
-	// create validator set with single validator
-	validator := tmtypes.NewValidator(pubKey, 1)
-	valSet := tmtypes.NewValidatorSet([]*tmtypes.Validator{validator})
+	// var emptyWasmOpts []wasm.Option
+	appOptions := make(simtestutil.AppOptionsMap, 0)
+	appOptions[flags.FlagHome] = nodeHome // ensure unique folder
 
-	// generate genesis account
-	senderPrivKey := secp256k1.GenPrivKey()
-	acc := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
-	balances := []banktypes.Balance{
-		{
-			Address: acc.GetAddress().String(),
-			Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(100000000000000))),
-		},
-	}
-
-	genesisState := NewDefaultGenesisState(app.appCodec)
-	genesisState, err = GenesisStateWithValSet(app.AppCodec(), genesisState, valSet, []authtypes.GenesisAccount{acc}, balances...)
-	require.NoError(t, err)
-
-	return genesisState
-}
-
-// AddTestAddrsIncremental constructs and returns accNum amount of accounts with an
-// initial balance of accAmt in random order
-func AddTestAddrsIncremental(app *TerpApp, ctx sdk.Context, accNum int, accAmt math.Int) []sdk.AccAddress {
-	return addTestAddrs(app, ctx, accNum, accAmt, simtestutil.CreateIncrementalAccounts)
-}
-
-func addTestAddrs(app *TerpApp, ctx sdk.Context, accNum int, accAmt math.Int, strategy simtestutil.GenerateAccountStrategy) []sdk.AccAddress {
-	testAddrs := strategy(accNum)
-
-	initCoins := sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), accAmt))
-
-	for _, addr := range testAddrs {
-		initAccountWithCoins(app, ctx, addr, initCoins)
-	}
-
-	return testAddrs
-}
-
-func initAccountWithCoins(app *TerpApp, ctx sdk.Context, addr sdk.AccAddress, coins sdk.Coins) {
-	err := app.BankKeeper.MintCoins(ctx, minttypes.ModuleName, coins)
-	if err != nil {
-		panic(err)
-	}
-
-	err = app.BankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, coins)
-	if err != nil {
-		panic(err)
-	}
-}
-
-// ModuleAccountAddrs provides a list of blocked module accounts from configuration in AppConfig
-//
-// Ported from TerpApp
-func ModuleAccountAddrs() map[string]bool {
-	return BlockedAddresses()
-}
-
-var emptyWasmOptions []wasm.Option
-
-// NewTestNetworkFixture returns a new TerpApp AppConstructor for network simulation tests
-func NewTestNetworkFixture() network.TestFixture {
-	dir, err := os.MkdirTemp("", "simapp")
-	if err != nil {
-		panic(fmt.Sprintf("failed creating temporary directory: %v", err))
-	}
-	defer os.RemoveAll(dir)
-
-	app := NewTerpApp(log.NewNopLogger(), dbm.NewMemDB(), nil, true, wasmtypes.EnableAllProposals, simtestutil.NewAppOptionsWithFlagHome(dir), emptyWasmOptions)
-	appCtr := func(val network.ValidatorI) servertypes.Application {
-		return NewTerpApp(
-			val.GetCtx().Logger, dbm.NewMemDB(), nil, true, wasmtypes.EnableAllProposals,
-			simtestutil.NewAppOptionsWithFlagHome(val.GetCtx().Config.RootDir),
-			emptyWasmOptions,
-			bam.SetPruning(pruningtypes.NewPruningOptionsFromString(val.GetAppConfig().Pruning)),
-			bam.SetMinGasPrices(val.GetAppConfig().MinGasPrices),
-			bam.SetChainID(val.GetCtx().Viper.GetString(flags.FlagChainID)),
-		)
-	}
-
-	return network.TestFixture{
-		AppConstructor: appCtr,
-		GenesisState:   NewDefaultGenesisState(app.AppCodec()),
-		EncodingConfig: testutil.TestEncodingConfig{
-			InterfaceRegistry: app.InterfaceRegistry(),
-			Codec:             app.AppCodec(),
-			TxConfig:          app.TxConfig(),
-			Amino:             app.LegacyAmino(),
-		},
-	}
-}
-
-// SignAndDeliverWithoutCommit signs and delivers a transaction. No commit
-func SignAndDeliverWithoutCommit(
-	t *testing.T, txCfg client.TxConfig, app *bam.BaseApp, header tmproto.Header, msgs []sdk.Msg,
-	chainID string, accNums, accSeqs []uint64, priv ...cryptotypes.PrivKey,
-) (sdk.GasInfo, *sdk.Result, error) {
-	t.Helper()
-	tx, err := simtestutil.GenSignedMockTx(
-		rand.New(rand.NewSource(time.Now().UnixNano())),
-		txCfg,
-		msgs,
-		sdk.Coins{sdk.NewInt64Coin(sdk.DefaultBondDenom, 0)},
-		simtestutil.DefaultGenTxGas,
-		chainID,
-		accNums,
-		accSeqs,
-		priv...,
+	app := NewTerpApp(
+		log.NewNopLogger(),
+		db,
+		nil,
+		true,
+		wasmtypes.EnableAllProposals,
+		EmptyAppOptions{},
+		opts,
+		bam.SetChainID("testing"),
+		bam.SetSnapshot(snapshotStore, snapshottypes.SnapshotOptions{KeepRecent: 2}),
 	)
-	require.NoError(t, err)
+	if withGenesis {
+		return app, NewDefaultGenesisState(app.AppCodec())
+	}
 
-	// Simulate a sending a transaction and committing a block
-	// app.BeginBlock(abci.RequestBeginBlock{Header: header})
-	gInfo, res, err := app.SimDeliver(txCfg.TxEncoder(), tx)
-	// app.EndBlock(abci.RequestEndBlock{})
-	// app.Commit()
-
-	return gInfo, res, err
+	return app, GenesisState{}
 }
 
-// GenesisStateWithValSet returns a new genesis state with the validator set
-// copied from simtestutil with delegation not added to supply
-func GenesisStateWithValSet(
-	codec codec.Codec,
-	genesisState map[string]json.RawMessage,
-	valSet *tmtypes.ValidatorSet,
-	genAccs []authtypes.GenesisAccount,
+func genesisStateWithValSet(t *testing.T,
+	app *TerpApp, genesisState GenesisState,
+	valSet *tmtypes.ValidatorSet, genAccs []authtypes.GenesisAccount,
 	balances ...banktypes.Balance,
-) (map[string]json.RawMessage, error) {
+) GenesisState {
+	codec := app.AppCodec()
+
 	// set genesis accounts
 	authGenesis := authtypes.NewGenesisState(authtypes.DefaultParams(), genAccs)
 	genesisState[authtypes.ModuleName] = codec.MustMarshalJSON(authGenesis)
@@ -338,15 +187,9 @@ func GenesisStateWithValSet(
 
 	for _, val := range valSet.Validators {
 		pk, err := cryptocodec.FromTmPubKeyInterface(val.PubKey)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert pubkey: %w", err)
-		}
-
+		require.NoError(t, err)
 		pkAny, err := codectypes.NewAnyWithValue(pk)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create new any: %w", err)
-		}
-
+		require.NoError(t, err)
 		validator := stakingtypes.Validator{
 			OperatorAddress:   sdk.ValAddress(val.Address).String(),
 			ConsensusPubkey:   pkAny,
@@ -362,16 +205,27 @@ func GenesisStateWithValSet(
 		}
 		validators = append(validators, validator)
 		delegations = append(delegations, stakingtypes.NewDelegation(genAccs[0].GetAddress(), val.Address.Bytes(), math.LegacyOneDec()))
+
 	}
 
+	defaultStParams := stakingtypes.DefaultParams()
+	stParams := stakingtypes.NewParams(
+		defaultStParams.UnbondingTime,
+		defaultStParams.MaxValidators,
+		defaultStParams.MaxEntries,
+		defaultStParams.HistoricalEntries,
+		appparams.BondDenom,
+		defaultStParams.MinCommissionRate, // 5%
+	)
+
 	// set validators and delegations
-	stakingGenesis := stakingtypes.NewGenesisState(stakingtypes.DefaultParams(), validators, delegations)
+	stakingGenesis := stakingtypes.NewGenesisState(stParams, validators, delegations)
 	genesisState[stakingtypes.ModuleName] = codec.MustMarshalJSON(stakingGenesis)
 
 	// add bonded amount to bonded pool module account
 	balances = append(balances, banktypes.Balance{
 		Address: authtypes.NewModuleAddress(stakingtypes.BondedPoolName).String(),
-		Coins:   sdk.Coins{sdk.NewCoin(sdk.DefaultBondDenom, bondAmt.MulRaw(int64(len(valSet.Validators))))},
+		Coins:   sdk.Coins{sdk.NewCoin(appparams.BondDenom, bondAmt.MulRaw(int64(len(valSet.Validators))))},
 	})
 
 	totalSupply := sdk.NewCoins()
@@ -383,34 +237,34 @@ func GenesisStateWithValSet(
 	// update total supply
 	bankGenesis := banktypes.NewGenesisState(banktypes.DefaultGenesisState().Params, balances, totalSupply, []banktypes.Metadata{}, []banktypes.SendEnabled{})
 	genesisState[banktypes.ModuleName] = codec.MustMarshalJSON(bankGenesis)
-	println(string(genesisState[banktypes.ModuleName]))
-	return genesisState, nil
+	// println("genesisStateWithValSet bankState:", string(genesisState[banktypes.ModuleName]))
+
+	return genesisState
 }
 
-// FundAccount is a utility function that funds an account by minting and
-// sending the coins to the address. This should be used for testing purposes
-// only!
-//
-// Instead of using the mint module account, which has the
-// permission of minting, create a "faucet" account. (@fdymylja)
-func FundAccount(bankKeeper bankkeeper.Keeper, ctx sdk.Context, addr sdk.AccAddress, amounts sdk.Coins) error {
-	if err := bankKeeper.MintCoins(ctx, minttypes.ModuleName, amounts); err != nil {
-		return err
-	}
-
-	return bankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, amounts)
+func keyPubAddr() (crypto.PrivKey, crypto.PubKey, sdk.AccAddress) {
+	key := ed25519.GenPrivKey()
+	pub := key.PubKey()
+	addr := sdk.AccAddress(pub.Address())
+	return key, pub, addr
 }
 
-// FundModuleAccount is a utility function that funds a module account by
-// minting and sending the coins to the address. This should be used for testing
-// purposes only!
-//
-// Instead of using the mint module account, which has the
-// permission of minting, create a "faucet" account. (@fdymylja)
-func FundModuleAccount(bankKeeper bankkeeper.Keeper, ctx sdk.Context, recipientMod string, amounts sdk.Coins) error {
-	if err := bankKeeper.MintCoins(ctx, minttypes.ModuleName, amounts); err != nil {
-		return err
+func RandomAccountAddress() sdk.AccAddress {
+	_, _, addr := keyPubAddr()
+	return addr
+}
+
+func ExecuteRawCustom(t *testing.T, ctx sdk.Context, app *TerpApp, contract sdk.AccAddress, sender sdk.AccAddress, msg json.RawMessage, funds sdk.Coin) error {
+	t.Helper()
+	oracleBz, err := json.Marshal(msg)
+	require.NoError(t, err)
+	// no funds sent if amount is 0
+	var coins sdk.Coins
+	if !funds.Amount.IsNil() {
+		coins = sdk.Coins{funds}
 	}
 
-	return bankKeeper.SendCoinsFromModuleToModule(ctx, minttypes.ModuleName, recipientMod, amounts)
+	contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(app.WasmKeeper)
+	_, err = contractKeeper.Execute(ctx, contract, sender, oracleBz, coins)
+	return err
 }

@@ -3,16 +3,20 @@ package apptesting
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
-	"cosmossdk.io/math"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+
 	dbm "github.com/cometbft/cometbft-db"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/crypto/ed25519"
 	"github.com/cometbft/cometbft/libs/log"
 	tmtypes "github.com/cometbft/cometbft/proto/tendermint/types"
+
+	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -22,18 +26,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	"github.com/cosmos/cosmos-sdk/x/authz"
+	authzcodec "github.com/cosmos/cosmos-sdk/x/authz/codec"
+	banktestutil "github.com/cosmos/cosmos-sdk/x/bank/testutil"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
-
-	authzcodec "github.com/terpnetwork/terp-core/x/tokenfactory/types/authzcodec"
-
-	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	"github.com/terpnetwork/terp-core/app"
+	appparams "github.com/terpnetwork/terp-core/app/params"
 )
 
 type KeeperTestHelper struct {
@@ -46,14 +48,15 @@ type KeeperTestHelper struct {
 }
 
 var (
-	SecondaryDenom  = "uthiol"
+	SecondaryDenom  = "uterpx"
 	SecondaryAmount = sdk.NewInt(100000000)
 )
 
 // Setup sets up basic environment for suite (App, Ctx, and test accounts)
 func (s *KeeperTestHelper) Setup() {
-	s.App = app.Setup(s.T())
-	s.Ctx = s.App.BaseApp.NewContext(false, tmtypes.Header{Height: 1, ChainID: "osmosis-1", Time: time.Now().UTC()})
+	t := s.T()
+	s.App = app.Setup(t)
+	s.Ctx = s.App.BaseApp.NewContext(false, tmtypes.Header{Height: 1, ChainID: "testing", Time: time.Now().UTC()})
 	s.QueryHelper = &baseapp.QueryServiceTestHelper{
 		GRPCQueryRouter: s.App.GRPCQueryRouter(),
 		Ctx:             s.Ctx,
@@ -62,13 +65,12 @@ func (s *KeeperTestHelper) Setup() {
 }
 
 func (s *KeeperTestHelper) SetupTestForInitGenesis() {
-	db := dbm.NewMemDB()
-	s.App = app.NewTerpAppWithCustomOptions(s.T(), true, app.SetupOptions{
-		Logger:  log.NewTMLogger(log.NewSyncWriter(os.Stdout)),
-		DB:      db,
-		AppOpts: simtestutil.NewAppOptionsWithFlagHome(s.T().TempDir()),
+	t := s.T()
+	// Setting to True, leads to init genesis not running
+	s.App = app.Setup(t)
+	s.Ctx = s.App.BaseApp.NewContext(true, tmtypes.Header{
+		ChainID: "testing",
 	})
-	s.Ctx = s.App.BaseApp.NewContext(true, tmtypes.Header{})
 }
 
 // CreateTestContext creates a test context.
@@ -92,20 +94,20 @@ func (s *KeeperTestHelper) Commit() {
 	oldHeight := s.Ctx.BlockHeight()
 	oldHeader := s.Ctx.BlockHeader()
 	s.App.Commit()
-	newHeader := tmtypes.Header{Height: oldHeight + 1, ChainID: oldHeader.ChainID, Time: oldHeader.Time.Add(time.Second)}
+	newHeader := tmtypes.Header{Height: oldHeight + 1, ChainID: "testing", Time: oldHeader.Time.Add(time.Second)}
 	s.App.BeginBlock(abci.RequestBeginBlock{Header: newHeader})
 	s.Ctx = s.App.NewContext(false, newHeader)
 }
 
 // FundAcc funds target address with specified amount.
 func (s *KeeperTestHelper) FundAcc(acc sdk.AccAddress, amounts sdk.Coins) {
-	err := app.FundAccount(s.App.BankKeeper, s.Ctx, acc, amounts)
+	err := banktestutil.FundAccount(s.App.BankKeeper, s.Ctx, acc, amounts)
 	s.Require().NoError(err)
 }
 
 // FundModuleAcc funds target modules with specified amount.
 func (s *KeeperTestHelper) FundModuleAcc(moduleName string, amounts sdk.Coins) {
-	err := app.FundModuleAccount(s.App.BankKeeper, s.Ctx, moduleName, amounts)
+	err := banktestutil.FundModuleAccount(s.App.BankKeeper, s.Ctx, moduleName, amounts)
 	s.Require().NoError(err)
 }
 
@@ -119,14 +121,18 @@ func (s *KeeperTestHelper) SetupValidator(bondStatus stakingtypes.BondStatus) sd
 	valPub := secp256k1.GenPrivKey().PubKey()
 	valAddr := sdk.ValAddress(valPub.Address())
 	bondDenom := s.App.StakingKeeper.GetParams(s.Ctx).BondDenom
-	selfBond := sdk.NewCoins(sdk.Coin{Amount: sdk.DefaultPowerReduction, Denom: bondDenom})
+	selfBond := sdk.NewCoins(sdk.Coin{Amount: sdk.NewInt(100), Denom: bondDenom})
 
 	s.FundAcc(sdk.AccAddress(valAddr), selfBond)
 
-	stakingCoin := sdk.NewCoin(sdk.DefaultBondDenom, selfBond[0].Amount)
+	// stakingHandler := staking.NewHandler(s.App.StakingKeeper)
+	stakingCoin := sdk.NewCoin(appparams.BondDenom, selfBond[0].Amount)
 	ZeroCommission := stakingtypes.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec())
 	_, err := stakingtypes.NewMsgCreateValidator(valAddr, valPub, stakingCoin, stakingtypes.Description{}, ZeroCommission, sdk.OneInt())
 	s.Require().NoError(err)
+	// res, err := stakingHandler(s.Ctx, msg)
+	// s.Require().NoError(err)
+	// s.Require().NotNil(res)
 
 	val, found := s.App.StakingKeeper.GetValidator(s.Ctx, valAddr)
 	s.Require().True(found)
@@ -189,6 +195,7 @@ func (s *KeeperTestHelper) BeginNewBlockWithProposer(proposer sdk.ValAddress) {
 			Validator:       abci.Validator{Address: valAddr, Power: 1000},
 			SignedLastBlock: true,
 		}},
+		Round: 0,
 	}
 	reqBeginBlock := abci.RequestBeginBlock{Header: header, LastCommitInfo: lastCommitInfo}
 
@@ -208,13 +215,13 @@ func (s *KeeperTestHelper) AllocateRewardsToValidator(valAddr sdk.ValAddress, re
 	s.Require().True(found)
 
 	// allocate reward tokens to distribution module
-	coins := sdk.Coins{sdk.NewCoin(sdk.DefaultBondDenom, rewardAmt)}
-	err := app.FundModuleAccount(s.App.BankKeeper, s.Ctx, distrtypes.ModuleName, coins)
+	coins := sdk.Coins{sdk.NewCoin(appparams.BondDenom, rewardAmt)}
+	err := banktestutil.FundModuleAccount(s.App.BankKeeper, s.Ctx, distrtypes.ModuleName, coins)
 	s.Require().NoError(err)
 
 	// allocate rewards to validator
 	s.Ctx = s.Ctx.WithBlockHeight(s.Ctx.BlockHeight() + 1)
-	decTokens := sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDec(20000)}}
+	decTokens := sdk.DecCoins{{Denom: appparams.BondDenom, Amount: sdk.NewDec(20000)}}
 	s.App.DistrKeeper.AllocateTokensToValidator(s.Ctx, validator, decTokens)
 }
 
@@ -239,6 +246,21 @@ func (s *KeeperTestHelper) BuildTx(
 	return txBuilder.GetTx()
 }
 
+func (s *KeeperTestHelper) ConfirmUpgradeSucceeded(upgradeName string, upgradeHeight int64) {
+	s.Ctx = s.Ctx.WithBlockHeight(upgradeHeight - 1)
+	plan := upgradetypes.Plan{Name: upgradeName, Height: upgradeHeight}
+	err := s.App.UpgradeKeeper.ScheduleUpgrade(s.Ctx, plan)
+	s.Require().NoError(err)
+	_, exists := s.App.UpgradeKeeper.GetUpgradePlan(s.Ctx)
+	s.Require().True(exists)
+
+	s.Ctx = s.Ctx.WithBlockHeight(upgradeHeight)
+	s.Require().NotPanics(func() {
+		beginBlockRequest := abci.RequestBeginBlock{}
+		s.App.BeginBlocker(s.Ctx, beginBlockRequest)
+	})
+}
+
 // CreateRandomAccounts is a function return a list of randomly generated AccAddresses
 func CreateRandomAccounts(numAccts int) []sdk.AccAddress {
 	testAddrs := make([]sdk.AccAddress, numAccts)
@@ -252,8 +274,6 @@ func CreateRandomAccounts(numAccts int) []sdk.AccAddress {
 
 func TestMessageAuthzSerialization(t *testing.T, msg sdk.Msg) {
 	someDate := time.Date(1, 1, 1, 1, 1, 1, 1, time.UTC)
-	var expire *time.Time
-
 	const (
 		mockGranter string = "cosmos1abc"
 		mockGrantee string = "cosmos1xyz"
@@ -267,7 +287,8 @@ func TestMessageAuthzSerialization(t *testing.T, msg sdk.Msg) {
 
 	// Authz: Grant Msg
 	typeURL := sdk.MsgTypeURL(msg)
-	grant, err := authz.NewGrant(someDate, authz.NewGenericAuthorization(typeURL), expire)
+	later := someDate.Add(time.Hour)
+	grant, err := authz.NewGrant(someDate, authz.NewGenericAuthorization(typeURL), &later)
 	require.NoError(t, err)
 
 	msgGrant := authz.MsgGrant{Granter: mockGranter, Grantee: mockGrantee, Grant: grant}

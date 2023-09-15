@@ -23,6 +23,7 @@ const (
 	OpWeightMsgBurn             = "op_weight_msg_burn"
 	OpWeightMsgChangeAdmin      = "op_weight_msg_change_admin"
 	OpWeightMsgSetDenomMetadata = "op_weight_msg_set_denom_metadata"
+	OpWeightMsgForceTransfer    = "op_weight_msg_force_transfer"
 )
 
 type TokenfactoryKeeper interface {
@@ -50,6 +51,7 @@ func WeightedOperations(
 		weightMsgBurn             int
 		weightMsgChangeAdmin      int
 		weightMsgSetDenomMetadata int
+		weightMsgForceTransfer    int
 	)
 
 	simstate.AppParams.GetOrGenerate(simstate.Cdc, OpWeightMsgCreateDenom, &weightMsgCreateDenom, nil,
@@ -75,6 +77,11 @@ func WeightedOperations(
 	simstate.AppParams.GetOrGenerate(simstate.Cdc, OpWeightMsgSetDenomMetadata, &weightMsgSetDenomMetadata, nil,
 		func(_ *rand.Rand) {
 			weightMsgSetDenomMetadata = appparams.DefaultWeightMsgSetDenomMetadata
+		},
+	)
+	simstate.AppParams.GetOrGenerate(simstate.Cdc, OpWeightMsgForceTransfer, &weightMsgForceTransfer, nil,
+		func(_ *rand.Rand) {
+			weightMsgForceTransfer = appparams.DefaultWeightMsgForceTransfer
 		},
 	)
 
@@ -357,7 +364,7 @@ func SimulateMsgCreateDenom(tfKeeper TokenfactoryKeeper, ak types.AccountKeeper,
 		// Check if sims account enough create fee
 		createFee := tfKeeper.GetParams(ctx).DenomCreationFee
 		balances := bk.GetAllBalances(ctx, simAccount.Address)
-		_, hasNeg := balances.SafeSub(createFee...)
+		_, hasNeg := balances.SafeSub(createFee[0])
 		if hasNeg {
 			return simtypes.NoOpMsg(types.ModuleName, types.MsgCreateDenom{}.Type(), "Creator not enough creation fee"), nil, nil
 		}

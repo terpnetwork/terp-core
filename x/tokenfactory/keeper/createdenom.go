@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
@@ -34,6 +32,10 @@ func (k Keeper) createDenomAfterValidation(ctx sdk.Context, creatorAddr string, 
 			Exponent: 0,
 		}},
 		Base: denom,
+		// The following is necessary for x/bank denom validation
+		Display: denom,
+		Name:    denom,
+		Symbol:  denom,
 	}
 
 	k.bankKeeper.SetDenomMetaData(ctx, denomMetaData)
@@ -51,11 +53,12 @@ func (k Keeper) createDenomAfterValidation(ctx sdk.Context, creatorAddr string, 
 }
 
 func (k Keeper) validateCreateDenom(ctx sdk.Context, creatorAddr string, subdenom string) (newTokenDenom string, err error) {
+	// TODO: This was a nil key on Store issue. Removed as we are upgrading IBC versions now
 	// Temporary check until IBC bug is sorted out
-	if k.bankKeeper.HasSupply(ctx, subdenom) {
-		return "", fmt.Errorf("temporary error until IBC bug is sorted out, " +
-			"can't create subdenoms that are the same as a native denom")
-	}
+	// if k.bankKeeper.HasSupply(ctx, subdenom) {
+	// 	return "", fmt.Errorf("temporary error until IBC bug is sorted out, " +
+	// 		"can't create subdenoms that are the same as a native denom")
+	// }
 
 	denom, err := types.GetTokenDenom(creatorAddr, subdenom)
 	if err != nil {
@@ -70,17 +73,26 @@ func (k Keeper) validateCreateDenom(ctx sdk.Context, creatorAddr string, subdeno
 	return denom, nil
 }
 
-func (k Keeper) chargeForCreateDenom(ctx sdk.Context, creatorAddr string, subdenom string) (err error) { //nolint:unparam
-	// Send creation fee to community pool
-	creationFee := k.GetParams(ctx).DenomCreationFee
-	accAddr, err := sdk.AccAddressFromBech32(creatorAddr)
-	if err != nil {
-		return err
-	}
-	if creationFee != nil {
-		if err := k.communityPoolKeeper.FundCommunityPool(ctx, creationFee, accAddr); err != nil {
+func (k Keeper) chargeForCreateDenom(ctx sdk.Context, creatorAddr string, _ string) (err error) {
+	params := k.GetParams(ctx)
+
+	// if DenomCreationFee is non-zero, transfer the tokens from the creator
+	// account to community pool
+	if params.DenomCreationFee != nil {
+		accAddr, err := sdk.AccAddressFromBech32(creatorAddr)
+		if err != nil {
+			return err
+		}
+
+		if err := k.communityPoolKeeper.FundCommunityPool(ctx, params.DenomCreationFee, accAddr); err != nil {
 			return err
 		}
 	}
+
+	// if DenomCreationGasConsume is non-zero, consume the gas
+	if params.DenomCreationGasConsume != 0 {
+		ctx.GasMeter().ConsumeGas(params.DenomCreationGasConsume, "consume denom creation gas")
+	}
+
 	return nil
 }

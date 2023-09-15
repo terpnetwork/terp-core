@@ -12,24 +12,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+
+	"github.com/gorilla/mux"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/spf13/cobra"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/gorilla/mux"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/spf13/cobra"
-
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	simulation "github.com/terpnetwork/terp-core/x/tokenfactory/simulation"
-
 	"github.com/terpnetwork/terp-core/x/tokenfactory/client/cli"
+	"github.com/terpnetwork/terp-core/x/tokenfactory/exported"
 	"github.com/terpnetwork/terp-core/x/tokenfactory/keeper"
+	simulation "github.com/terpnetwork/terp-core/x/tokenfactory/simulation"
 	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
 )
 
@@ -37,6 +37,9 @@ var (
 	_ module.AppModule      = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
+
+// ConsensusVersion defines the current x/tokenfactory module consensus version.
+const ConsensusVersion = 2
 
 // ----------------------------------------------------------------------------
 // AppModuleBasic
@@ -55,7 +58,7 @@ func (AppModuleBasic) Name() string {
 }
 
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	types.RegisterCodec(cdc)
+	types.RegisterLegacyAminoCodec(cdc)
 }
 
 // RegisterInterfaces registers the module's interface types
@@ -69,7 +72,7 @@ func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 }
 
 // ValidateGenesis performs genesis state validation for the x/tokenfactory module.
-func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, bz json.RawMessage) error {
+func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingConfig, bz json.RawMessage) error {
 	var genState types.GenesisState
 	if err := cdc.UnmarshalJSON(bz, &genState); err != nil {
 		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
@@ -79,7 +82,7 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncod
 }
 
 // RegisterRESTRoutes registers the capability module's REST service handlers.
-func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
+func (AppModuleBasic) RegisterRESTRoutes(_ client.Context, _ *mux.Router) {
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
@@ -108,18 +111,24 @@ type AppModule struct {
 	keeper        keeper.Keeper
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
+
+	legacySubspace exported.Subspace
 }
 
 func NewAppModule(
 	keeper keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
+
+	// legacySubspace is used solely for migration of x/params managed parameters
+	legacySubspace exported.Subspace,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(),
 		keeper:         keeper,
 		accountKeeper:  accountKeeper,
 		bankKeeper:     bankKeeper,
+		legacySubspace: legacySubspace,
 	}
 }
 
@@ -136,6 +145,11 @@ func (AppModule) QuerierRoute() string { return types.QuerierRoute }
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+
+	m := keeper.NewMigrator(am.keeper, am.legacySubspace)
+	if err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2); err != nil {
+		panic(fmt.Sprintf("failed to migrate x/%s from version 1 to 2: %v", types.ModuleName, err))
+	}
 }
 
 // RegisterInvariants registers the x/tokenfactory module's invariants.
@@ -160,7 +174,9 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 // ConsensusVersion implements ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 1 }
+func (AppModule) ConsensusVersion() uint64 {
+	return ConsensusVersion
+}
 
 // BeginBlock executes all ABCI BeginBlock logic respective to the tokenfactory module.
 func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
@@ -178,7 +194,7 @@ func (am AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.Valid
 // // GenerateGenesisState creates a randomized GenState of the tokenfactory module.
 // func (am AppModule) SimulatorGenesisState(simState *module.SimulationState, s *simtypes.SimCtx) {
 // 	tfDefaultGen := types.DefaultGenesis()
-// 	tfDefaultGen.Params.DenomCreationFee = sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(10000000)))
+// 	tfDefaultGen.Params.DenomCreationFee = sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, sdk.NewInt(10000000)))
 // 	tfDefaultGenJson := simState.Cdc.MustMarshalJSON(tfDefaultGen)
 // 	simState.GenState[types.ModuleName] = tfDefaultGenJson
 // }
@@ -201,17 +217,12 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 }
 
 // GenerateGenesisState creates a randomized GenState of the bank module.
-func (am AppModule) ProposalContents(simState module.SimulationState) []simtypes.WeightedProposalContent {
+func (am AppModule) ProposalContents(_ module.SimulationState) []simtypes.WeightedProposalMsg {
 	return nil
 }
 
-// RandomizedParams creates randomized bank param changes for the simulator.
-func (am AppModule) RandomizedParams(r *rand.Rand) []simtypes.LegacyParamChange {
-	return simulation.ParamChanges(r)
-}
-
 // RegisterStoreDecoder registers a decoder for supply module's types
-func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
+func (am AppModule) RegisterStoreDecoder(_ sdk.StoreDecoderRegistry) {
 }
 
 // WeightedOperations returns the all the gov module operations with their respective weights.

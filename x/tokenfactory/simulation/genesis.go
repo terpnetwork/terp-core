@@ -6,12 +6,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
+	appparams "github.com/terpnetwork/terp-core/app/params"
 	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
 )
 
 func RandDenomCreationFeeParam(r *rand.Rand) sdk.Coins {
 	amount := r.Int63n(10_000_000)
-	return sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(amount)))
+	return sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, sdk.NewInt(amount)))
 }
 
 func RandomizedGenState(simstate *module.SimulationState) {

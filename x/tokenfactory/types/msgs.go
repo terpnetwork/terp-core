@@ -2,6 +2,7 @@ package types
 
 import (
 	errorsmod "cosmossdk.io/errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -62,12 +63,27 @@ func NewMsgMint(sender string, amount sdk.Coin) *MsgMint {
 	}
 }
 
+func NewMsgMintTo(sender string, amount sdk.Coin, mintToAddress string) *MsgMint {
+	return &MsgMint{
+		Sender:        sender,
+		Amount:        amount,
+		MintToAddress: mintToAddress,
+	}
+}
+
 func (m MsgMint) Route() string { return RouterKey }
 func (m MsgMint) Type() string  { return TypeMsgMint }
 func (m MsgMint) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(m.Sender)
 	if err != nil {
 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid sender address (%s)", err)
+	}
+
+	if m.MintToAddress != "" {
+		_, err = sdk.AccAddressFromBech32(m.MintToAddress)
+		if err != nil {
+			return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid mint to address (%s)", err)
+		}
 	}
 
 	if !m.Amount.IsValid() || m.Amount.Amount.Equal(sdk.ZeroInt()) {
@@ -96,6 +112,15 @@ func NewMsgBurn(sender string, amount sdk.Coin) *MsgBurn {
 	}
 }
 
+// NewMsgBurn creates a message to burn tokens
+func NewMsgBurnFrom(sender string, amount sdk.Coin, burnFromAddress string) *MsgBurn {
+	return &MsgBurn{
+		Sender:          sender,
+		Amount:          amount,
+		BurnFromAddress: burnFromAddress,
+	}
+}
+
 func (m MsgBurn) Route() string { return RouterKey }
 func (m MsgBurn) Type() string  { return TypeMsgBurn }
 func (m MsgBurn) ValidateBasic() error {
@@ -106,6 +131,13 @@ func (m MsgBurn) ValidateBasic() error {
 
 	if !m.Amount.IsValid() || m.Amount.Amount.Equal(sdk.ZeroInt()) {
 		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, m.Amount.String())
+	}
+
+	if m.BurnFromAddress != "" {
+		_, err = sdk.AccAddressFromBech32(m.BurnFromAddress)
+		if err != nil {
+			return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid burn from address (%s)", err)
+		}
 	}
 
 	return nil
@@ -120,50 +152,50 @@ func (m MsgBurn) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{sender}
 }
 
-// var _ sdk.Msg = &MsgForceTransfer{}
+var _ sdk.Msg = &MsgForceTransfer{}
 
-// // NewMsgForceTransfer creates a transfer funds from one account to another
-// func NewMsgForceTransfer(sender string, amount sdk.Coin, fromAddr, toAddr string) *MsgForceTransfer {
-// 	return &MsgForceTransfer{
-// 		Sender:              sender,
-// 		Amount:              amount,
-// 		TransferFromAddress: fromAddr,
-// 		TransferToAddress:   toAddr,
-// 	}
-// }
+// NewMsgForceTransfer creates a transfer funds from one account to another
+func NewMsgForceTransfer(sender string, amount sdk.Coin, fromAddr, toAddr string) *MsgForceTransfer {
+	return &MsgForceTransfer{
+		Sender:              sender,
+		Amount:              amount,
+		TransferFromAddress: fromAddr,
+		TransferToAddress:   toAddr,
+	}
+}
 
-// func (m MsgForceTransfer) Route() string { return RouterKey }
-// func (m MsgForceTransfer) Type() string  { return TypeMsgForceTransfer }
-// func (m MsgForceTransfer) ValidateBasic() error {
-// 	_, err := sdk.AccAddressFromBech32(m.Sender)
-// 	if err != nil {
-// 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid sender address (%s)", err)
-// 	}
+func (m MsgForceTransfer) Route() string { return RouterKey }
+func (m MsgForceTransfer) Type() string  { return TypeMsgForceTransfer }
+func (m MsgForceTransfer) ValidateBasic() error {
+	_, err := sdk.AccAddressFromBech32(m.Sender)
+	if err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid sender address (%s)", err)
+	}
 
-// 	_, err = sdk.AccAddressFromBech32(m.TransferFromAddress)
-// 	if err != nil {
-// 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid address (%s)", err)
-// 	}
-// 	_, err = sdk.AccAddressFromBech32(m.TransferToAddress)
-// 	if err != nil {
-// 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid address (%s)", err)
-// 	}
+	_, err = sdk.AccAddressFromBech32(m.TransferFromAddress)
+	if err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid from address (%s)", err)
+	}
+	_, err = sdk.AccAddressFromBech32(m.TransferToAddress)
+	if err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid to address (%s)", err)
+	}
 
-// 	if !m.Amount.IsValid() {
-// 		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, m.Amount.String())
-// 	}
+	if !m.Amount.IsValid() {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, m.Amount.String())
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
-// func (m MsgForceTransfer) GetSignBytes() []byte {
-// 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
-// }
+func (m MsgForceTransfer) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
+}
 
-// func (m MsgForceTransfer) GetSigners() []sdk.AccAddress {
-// 	sender, _ := sdk.AccAddressFromBech32(m.Sender)
-// 	return []sdk.AccAddress{sender}
-// }
+func (m MsgForceTransfer) GetSigners() []sdk.AccAddress {
+	sender, _ := sdk.AccAddressFromBech32(m.Sender)
+	return []sdk.AccAddress{sender}
+}
 
 var _ sdk.Msg = &MsgChangeAdmin{}
 
@@ -244,4 +276,26 @@ func (m MsgSetDenomMetadata) GetSignBytes() []byte {
 func (m MsgSetDenomMetadata) GetSigners() []sdk.AccAddress {
 	sender, _ := sdk.AccAddressFromBech32(m.Sender)
 	return []sdk.AccAddress{sender}
+}
+
+var _ sdk.Msg = &MsgUpdateParams{}
+
+// GetSignBytes implements the LegacyMsg interface.
+func (m MsgUpdateParams) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
+}
+
+// GetSigners returns the expected signers for a MsgUpdateParams message.
+func (m *MsgUpdateParams) GetSigners() []sdk.AccAddress {
+	addr, _ := sdk.AccAddressFromBech32(m.Authority)
+	return []sdk.AccAddress{addr}
+}
+
+// ValidateBasic does a sanity check on the provided data.
+func (m *MsgUpdateParams) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(m.Authority); err != nil {
+		return errorsmod.Wrap(err, "invalid authority address")
+	}
+
+	return m.Params.Validate()
 }

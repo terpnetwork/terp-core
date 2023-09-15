@@ -36,7 +36,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/terpnetwork/terp-core/x/wasm"
+	"github.com/CosmWasm/wasmd/x/wasm"
 )
 
 // SimAppChainID hardcoded chainID for simulation

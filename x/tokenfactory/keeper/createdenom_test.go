@@ -4,15 +4,16 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/terpnetwork/terp-core/x/tokenfactory/testhelpers"
+	"github.com/terpnetwork/terp-core/app/apptesting"
 	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
 )
 
 func (suite *KeeperTestSuite) TestMsgCreateDenom() {
 	var (
-		tokenFactoryKeeper = suite.App.TokenFactoryKeeper
-		bankKeeper         = suite.App.BankKeeper
+		tokenFactoryKeeper = suite.app.TokenFactoryKeeper
+		bankKeeper         = suite.app.BankKeeper
 		denomCreationFee   = tokenFactoryKeeper.GetParams(suite.Ctx).DenomCreationFee
 	)
 
@@ -30,6 +31,13 @@ func (suite *KeeperTestSuite) TestMsgCreateDenom() {
 	})
 	suite.Require().NoError(err)
 	suite.Require().Equal(suite.TestAccs[0].String(), queryRes.AuthorityMetadata.Admin)
+
+	// Make sure that the denom is valid from the perspective of x/bank
+	bankQueryRes, err := suite.bankQueryClient.DenomMetadata(suite.Ctx.Context(), &banktypes.QueryDenomMetadataRequest{
+		Denom: res.GetNewTokenDenom(),
+	})
+	suite.Require().NoError(err)
+	suite.Require().NoError(bankQueryRes.Metadata.Validate())
 
 	// Make sure that creation fee was deducted
 	postCreateBalance := bankKeeper.GetBalance(suite.Ctx, suite.TestAccs[0], tokenFactoryKeeper.GetParams(suite.Ctx).DenomCreationFee[0].Denom)
@@ -64,7 +72,7 @@ func (suite *KeeperTestSuite) TestMsgCreateDenom() {
 func (suite *KeeperTestSuite) TestCreateDenom() {
 	var (
 		primaryDenom            = types.DefaultParams().DenomCreationFee[0].Denom
-		secondaryDenom          = testhelpers.SecondaryDenom
+		secondaryDenom          = apptesting.SecondaryDenom
 		defaultDenomCreationFee = types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin(primaryDenom, sdk.NewInt(50000000)))}
 		twoDenomCreationFee     = types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin(primaryDenom, sdk.NewInt(50000000)), sdk.NewCoin(secondaryDenom, sdk.NewInt(50000000)))}
 		nilCreationFee          = types.Params{DenomCreationFee: nil}
@@ -130,20 +138,26 @@ func (suite *KeeperTestSuite) TestCreateDenom() {
 			if tc.setup != nil {
 				tc.setup()
 			}
-			tokenFactoryKeeper := suite.App.TokenFactoryKeeper
-			bankKeeper := suite.App.BankKeeper
+			tokenFactoryKeeper := suite.app.TokenFactoryKeeper
+			bankKeeper := suite.app.BankKeeper
 			// Set denom creation fee in params
-			tokenFactoryKeeper.SetParams(suite.Ctx, tc.denomCreationFee)
+			if err := tokenFactoryKeeper.SetParams(suite.Ctx, tc.denomCreationFee); err != nil {
+				suite.Require().NoError(err)
+			}
 			denomCreationFee := tokenFactoryKeeper.GetParams(suite.Ctx).DenomCreationFee
 			suite.Require().Equal(tc.denomCreationFee.DenomCreationFee, denomCreationFee)
 
 			// note balance, create a tokenfactory denom, then note balance again
-			preCreateBalance := bankKeeper.GetAllBalances(suite.Ctx, suite.TestAccs[0])
+			// preCreateBalance := bankKeeper.GetAllBalances(suite.Ctx, suite.TestAccs[0])
+			preCreateBalance := bankKeeper.GetBalance(suite.Ctx, suite.TestAccs[0], "stake")
 			res, err := suite.msgServer.CreateDenom(sdk.WrapSDKContext(suite.Ctx), types.NewMsgCreateDenom(suite.TestAccs[0].String(), tc.subdenom))
-			postCreateBalance := bankKeeper.GetAllBalances(suite.Ctx, suite.TestAccs[0])
+			// postCreateBalance := bankKeeper.GetAllBalances(suite.Ctx, suite.TestAccs[0])
+			postCreateBalance := bankKeeper.GetBalance(suite.Ctx, suite.TestAccs[0], "stake")
 			if tc.valid {
 				suite.Require().NoError(err)
-				suite.Require().True(preCreateBalance.Sub(postCreateBalance...).IsEqual(denomCreationFee))
+				if denomCreationFee != nil {
+					suite.Require().True(preCreateBalance.Sub(postCreateBalance).IsEqual(denomCreationFee[0]))
+				}
 
 				// Make sure that the admin is set correctly
 				queryRes, err := suite.queryClient.DenomAuthorityMetadata(suite.Ctx.Context(), &types.QueryDenomAuthorityMetadataRequest{

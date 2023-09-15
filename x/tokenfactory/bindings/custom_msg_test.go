@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	"github.com/stretchr/testify/require"
 
-	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/terpnetwork/terp-core/x/wasm/keeper"
 
 	"github.com/terpnetwork/terp-core/app"
 	bindings "github.com/terpnetwork/terp-core/x/tokenfactory/bindings/types"
@@ -19,20 +18,20 @@ import (
 
 func TestCreateDenomMsg(t *testing.T) {
 	creator := RandomAccountAddress()
-	terp, ctx := SetupCustomApp(t, creator)
+	terpapp, ctx := SetupCustomApp(t, creator)
 
 	lucky := RandomAccountAddress()
-	reflect := instantiateReflectContract(t, ctx, terp, lucky)
+	reflect := instantiateReflectContract(t, ctx, terpapp, lucky)
 	require.NotEmpty(t, reflect)
 
 	// Fund reflect contract with 100 base denom creation fees
 	reflectAmount := sdk.NewCoins(sdk.NewCoin(types.DefaultParams().DenomCreationFee[0].Denom, types.DefaultParams().DenomCreationFee[0].Amount.MulRaw(100)))
-	fundAccount(t, ctx, terp, reflect, reflectAmount)
+	fundAccount(t, ctx, terpapp, reflect, reflectAmount)
 
 	msg := bindings.TokenMsg{CreateDenom: &bindings.CreateDenom{
 		Subdenom: "SUN",
 	}}
-	err := executeCustom(t, ctx, terp, reflect, lucky, msg, sdk.Coin{})
+	err := executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
 	require.NoError(t, err)
 
 	// query the denom and see if it matches
@@ -43,32 +42,32 @@ func TestCreateDenomMsg(t *testing.T) {
 		},
 	}
 	resp := bindings.FullDenomResponse{}
-	queryCustom(t, ctx, terp, reflect, query, &resp)
+	queryCustom(t, ctx, terpapp, reflect, query, &resp)
 
 	require.Equal(t, resp.Denom, fmt.Sprintf("factory/%s/SUN", reflect.String()))
 }
 
 func TestMintMsg(t *testing.T) {
 	creator := RandomAccountAddress()
-	terp, ctx := SetupCustomApp(t, creator)
+	terpapp, ctx := SetupCustomApp(t, creator)
 
 	lucky := RandomAccountAddress()
-	reflect := instantiateReflectContract(t, ctx, terp, lucky)
+	reflect := instantiateReflectContract(t, ctx, terpapp, lucky)
 	require.NotEmpty(t, reflect)
 
 	// Fund reflect contract with 100 base denom creation fees
 	reflectAmount := sdk.NewCoins(sdk.NewCoin(types.DefaultParams().DenomCreationFee[0].Denom, types.DefaultParams().DenomCreationFee[0].Amount.MulRaw(100)))
-	fundAccount(t, ctx, terp, reflect, reflectAmount)
+	fundAccount(t, ctx, terpapp, reflect, reflectAmount)
 
 	// lucky was broke
-	balances := terp.BankKeeper.GetAllBalances(ctx, lucky)
+	balances := terpapp.BankKeeper.GetAllBalances(ctx, lucky)
 	require.Empty(t, balances)
 
 	// Create denom for minting
 	msg := bindings.TokenMsg{CreateDenom: &bindings.CreateDenom{
 		Subdenom: "SUN",
 	}}
-	err := executeCustom(t, ctx, terp, reflect, lucky, msg, sdk.Coin{})
+	err := executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
 	require.NoError(t, err)
 	sunDenom := fmt.Sprintf("factory/%s/%s", reflect.String(), msg.CreateDenom.Subdenom)
 
@@ -79,10 +78,10 @@ func TestMintMsg(t *testing.T) {
 		Amount:        amount,
 		MintToAddress: lucky.String(),
 	}}
-	err = executeCustom(t, ctx, terp, reflect, lucky, msg, sdk.Coin{})
+	err = executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
 	require.NoError(t, err)
 
-	balances = terp.BankKeeper.GetAllBalances(ctx, lucky)
+	balances = terpapp.BankKeeper.GetAllBalances(ctx, lucky)
 	require.Len(t, balances, 1)
 	coin := balances[0]
 	require.Equal(t, amount, coin.Amount)
@@ -96,15 +95,15 @@ func TestMintMsg(t *testing.T) {
 		},
 	}
 	resp := bindings.FullDenomResponse{}
-	queryCustom(t, ctx, terp, reflect, query, &resp)
+	queryCustom(t, ctx, terpapp, reflect, query, &resp)
 
 	require.Equal(t, resp.Denom, coin.Denom)
 
 	// mint the same denom again
-	err = executeCustom(t, ctx, terp, reflect, lucky, msg, sdk.Coin{})
+	err = executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
 	require.NoError(t, err)
 
-	balances = terp.BankKeeper.GetAllBalances(ctx, lucky)
+	balances = terpapp.BankKeeper.GetAllBalances(ctx, lucky)
 	require.Len(t, balances, 1)
 	coin = balances[0]
 	require.Equal(t, amount.MulRaw(2), coin.Amount)
@@ -118,7 +117,7 @@ func TestMintMsg(t *testing.T) {
 		},
 	}
 	resp = bindings.FullDenomResponse{}
-	queryCustom(t, ctx, terp, reflect, query, &resp)
+	queryCustom(t, ctx, terpapp, reflect, query, &resp)
 
 	require.Equal(t, resp.Denom, coin.Denom)
 
@@ -127,7 +126,7 @@ func TestMintMsg(t *testing.T) {
 	msg = bindings.TokenMsg{CreateDenom: &bindings.CreateDenom{
 		Subdenom: "MOON",
 	}}
-	err = executeCustom(t, ctx, terp, reflect, lucky, msg, sdk.Coin{})
+	err = executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
 	require.NoError(t, err)
 	moonDenom := fmt.Sprintf("factory/%s/%s", reflect.String(), msg.CreateDenom.Subdenom)
 
@@ -137,10 +136,10 @@ func TestMintMsg(t *testing.T) {
 		Amount:        amount,
 		MintToAddress: lucky.String(),
 	}}
-	err = executeCustom(t, ctx, terp, reflect, lucky, msg, sdk.Coin{})
+	err = executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
 	require.NoError(t, err)
 
-	balances = terp.BankKeeper.GetAllBalances(ctx, lucky)
+	balances = terpapp.BankKeeper.GetAllBalances(ctx, lucky)
 	require.Len(t, balances, 2)
 	coin = balances[0]
 	require.Equal(t, amount, coin.Amount)
@@ -154,7 +153,7 @@ func TestMintMsg(t *testing.T) {
 		},
 	}
 	resp = bindings.FullDenomResponse{}
-	queryCustom(t, ctx, terp, reflect, query, &resp)
+	queryCustom(t, ctx, terpapp, reflect, query, &resp)
 
 	require.Equal(t, resp.Denom, coin.Denom)
 
@@ -171,36 +170,90 @@ func TestMintMsg(t *testing.T) {
 		},
 	}
 	resp = bindings.FullDenomResponse{}
-	queryCustom(t, ctx, terp, reflect, query, &resp)
+	queryCustom(t, ctx, terpapp, reflect, query, &resp)
 
 	require.Equal(t, resp.Denom, coin.Denom)
 }
 
-func TestBurnMsg(t *testing.T) {
+func TestForceTransfer(t *testing.T) {
 	creator := RandomAccountAddress()
-	terp, ctx := SetupCustomApp(t, creator)
+	terpapp, ctx := SetupCustomApp(t, creator)
 
 	lucky := RandomAccountAddress()
-	reflect := instantiateReflectContract(t, ctx, terp, lucky)
+	rcpt := RandomAccountAddress()
+	reflect := instantiateReflectContract(t, ctx, terpapp, lucky)
 	require.NotEmpty(t, reflect)
 
 	// Fund reflect contract with 100 base denom creation fees
 	reflectAmount := sdk.NewCoins(sdk.NewCoin(types.DefaultParams().DenomCreationFee[0].Denom, types.DefaultParams().DenomCreationFee[0].Amount.MulRaw(100)))
-	fundAccount(t, ctx, terp, reflect, reflectAmount)
+	fundAccount(t, ctx, terpapp, reflect, reflectAmount)
 
 	// lucky was broke
-	balances := terp.BankKeeper.GetAllBalances(ctx, lucky)
+	balances := terpapp.BankKeeper.GetAllBalances(ctx, lucky)
 	require.Empty(t, balances)
 
 	// Create denom for minting
 	msg := bindings.TokenMsg{CreateDenom: &bindings.CreateDenom{
 		Subdenom: "SUN",
 	}}
-	err := executeCustom(t, ctx, terp, reflect, lucky, msg, sdk.Coin{})
+	err := executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
 	require.NoError(t, err)
 	sunDenom := fmt.Sprintf("factory/%s/%s", reflect.String(), msg.CreateDenom.Subdenom)
 
 	amount, ok := sdk.NewIntFromString("808010808")
+	require.True(t, ok)
+
+	// Mint new tokens to lucky
+	msg = bindings.TokenMsg{MintTokens: &bindings.MintTokens{
+		Denom:         sunDenom,
+		Amount:        amount,
+		MintToAddress: lucky.String(),
+	}}
+	err = executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
+	require.NoError(t, err)
+
+	// Force move 100 tokens from lucky to rcpt
+	msg = bindings.TokenMsg{ForceTransfer: &bindings.ForceTransfer{
+		Denom:       sunDenom,
+		Amount:      sdk.NewInt(100),
+		FromAddress: lucky.String(),
+		ToAddress:   rcpt.String(),
+	}}
+	err = executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
+	require.NoError(t, err)
+
+	// check the balance of rcpt
+	balances = terpapp.BankKeeper.GetAllBalances(ctx, rcpt)
+	require.Len(t, balances, 1)
+	coin := balances[0]
+	require.Equal(t, sdk.NewInt(100), coin.Amount)
+}
+
+func TestBurnMsg(t *testing.T) {
+	creator := RandomAccountAddress()
+	terpapp, ctx := SetupCustomApp(t, creator)
+
+	lucky := RandomAccountAddress()
+	reflect := instantiateReflectContract(t, ctx, terpapp, lucky)
+	require.NotEmpty(t, reflect)
+
+	// Fund reflect contract with 100 base denom creation fees
+	reflectAmount := sdk.NewCoins(sdk.NewCoin(types.DefaultParams().DenomCreationFee[0].Denom, types.DefaultParams().DenomCreationFee[0].Amount.MulRaw(100)))
+	fundAccount(t, ctx, terpapp, reflect, reflectAmount)
+
+	// lucky was broke
+	balances := terpapp.BankKeeper.GetAllBalances(ctx, lucky)
+	require.Empty(t, balances)
+
+	// Create denom for minting
+	msg := bindings.TokenMsg{CreateDenom: &bindings.CreateDenom{
+		Subdenom: "SUN",
+	}}
+	err := executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
+	require.NoError(t, err)
+	sunDenom := fmt.Sprintf("factory/%s/%s", reflect.String(), msg.CreateDenom.Subdenom)
+
+	amount, ok := sdk.NewIntFromString("808010809")
 	require.True(t, ok)
 
 	msg = bindings.TokenMsg{MintTokens: &bindings.MintTokens{
@@ -208,29 +261,31 @@ func TestBurnMsg(t *testing.T) {
 		Amount:        amount,
 		MintToAddress: lucky.String(),
 	}}
-	err = executeCustom(t, ctx, terp, reflect, lucky, msg, sdk.Coin{})
+	err = executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
 	require.NoError(t, err)
 
-	// can't burn from different address
+	// can burn from different address with burnFrom
+	amt, ok := sdk.NewIntFromString("1")
+	require.True(t, ok)
 	msg = bindings.TokenMsg{BurnTokens: &bindings.BurnTokens{
 		Denom:           sunDenom,
-		Amount:          amount,
+		Amount:          amt,
 		BurnFromAddress: lucky.String(),
 	}}
-	err = executeCustom(t, ctx, terp, reflect, lucky, msg, sdk.Coin{})
-	require.Error(t, err)
+	err = executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
+	require.NoError(t, err)
 
 	// lucky needs to send balance to reflect contract to burn it
-	luckyBalance := terp.BankKeeper.GetAllBalances(ctx, lucky)
-	err = terp.BankKeeper.SendCoins(ctx, lucky, reflect, luckyBalance)
+	luckyBalance := terpapp.BankKeeper.GetAllBalances(ctx, lucky)
+	err = terpapp.BankKeeper.SendCoins(ctx, lucky, reflect, luckyBalance)
 	require.NoError(t, err)
 
 	msg = bindings.TokenMsg{BurnTokens: &bindings.BurnTokens{
 		Denom:           sunDenom,
-		Amount:          amount,
+		Amount:          amount.Abs().Sub(sdk.NewInt(1)),
 		BurnFromAddress: reflect.String(),
 	}}
-	err = executeCustom(t, ctx, terp, reflect, lucky, msg, sdk.Coin{})
+	err = executeCustom(t, ctx, terpapp, reflect, lucky, msg, sdk.Coin{})
 	require.NoError(t, err)
 }
 
@@ -247,8 +302,7 @@ type ReflectSubMsgs struct {
 	Msgs []wasmvmtypes.SubMsg `json:"msgs"`
 }
 
-func executeCustom(t *testing.T, ctx sdk.Context, terp *app.TerpApp, contract sdk.AccAddress, sender sdk.AccAddress, msg bindings.TokenMsg, funds sdk.Coin) error { //nolint:unparam // funds currently always receives nil, but it may receive something else in the future
-	t.Helper()
+func executeCustom(t *testing.T, ctx sdk.Context, terpapp *app.TerpApp, contract sdk.AccAddress, sender sdk.AccAddress, msg bindings.TokenMsg, funds sdk.Coin) error { //nolint:unparam // funds is always nil but could change in the future.
 	wrapped := bindings.TokenFactoryMsg{
 		Token: &msg,
 	}
@@ -271,7 +325,7 @@ func executeCustom(t *testing.T, ctx sdk.Context, terp *app.TerpApp, contract sd
 		coins = sdk.Coins{funds}
 	}
 
-	contractKeeper := keeper.NewDefaultPermissionKeeper(terp.WasmKeeper)
+	contractKeeper := keeper.NewDefaultPermissionKeeper(terpapp.WasmKeeper)
 	_, err = contractKeeper.Execute(ctx, contract, sender, reflectBz, coins)
 	return err
 }

@@ -3,10 +3,10 @@ package keeper_test
 import (
 	"fmt"
 
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
+	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
 )
 
 // TestMintDenomMsg tests TypeMsgMint message is emitted on a successful mint
@@ -91,7 +91,7 @@ func (suite *KeeperTestSuite) TestBurnDenomMsg() {
 
 // TestCreateDenomMsg tests TypeMsgCreateDenom message is emitted on a successful denom creation
 func (suite *KeeperTestSuite) TestCreateDenomMsg() {
-	defaultDenomCreationFee := types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(50000000)))}
+	defaultDenomCreationFee := types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(50000000)))}
 	for _, tc := range []struct {
 		desc                  string
 		denomCreationFee      types.Params
@@ -115,11 +115,13 @@ func (suite *KeeperTestSuite) TestCreateDenomMsg() {
 	} {
 		suite.SetupTest()
 		suite.Run(fmt.Sprintf("Case %s", tc.desc), func() {
-			tokenFactoryKeeper := suite.App.TokenFactoryKeeper
+			tokenFactoryKeeper := suite.app.TokenFactoryKeeper
 			ctx := suite.Ctx.WithEventManager(sdk.NewEventManager())
 			suite.Require().Equal(0, len(ctx.EventManager().Events()))
 			// Set denom creation fee in params
-			tokenFactoryKeeper.SetParams(suite.Ctx, tc.denomCreationFee)
+			if err := tokenFactoryKeeper.SetParams(suite.Ctx, tc.denomCreationFee); err != nil {
+				suite.Require().NoError(err)
+			}
 			// Test create denom message
 			suite.msgServer.CreateDenom(sdk.WrapSDKContext(ctx), types.NewMsgCreateDenom(suite.TestAccs[0].String(), tc.subdenom)) //nolint:errcheck
 			// Ensure current number and type of event is emitted
