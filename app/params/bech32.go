@@ -4,7 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// AccountAddressPrefix defines the Paloma network's Bech32 address prefix.
+// AccountAddressPrefix defines the Terp network's Bech32 address prefix.
 const AccountAddressPrefix = "terp"
 
 // Account specific Bech32 prefixes.
@@ -16,7 +16,7 @@ var (
 	ConsNodePubKeyPrefix   = AccountAddressPrefix + "valconspub"
 )
 
-// SetAddressConfig sets Paloma's address configuration.
+// SetAddressConfig sets Terp's address configuration.
 func SetAddressConfig() {
 	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount(AccountAddressPrefix, AccountPubKeyPrefix)

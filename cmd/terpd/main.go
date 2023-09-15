@@ -3,22 +3,21 @@ package main
 import (
 	"os"
 
-	"github.com/cosmos/cosmos-sdk/server"
+	"cosmossdk.io/log"
+
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
 	"github.com/terpnetwork/terp-core/app"
+	"github.com/terpnetwork/terp-core/cmd/terpd/cmd"
 )
 
+
 func main() {
-	rootCmd, _ := NewRootCmd()
+	app.SetAddressPrefixes()
+	rootCmd, _ := cmd.NewRootCmd()
 
-	if err := svrcmd.Execute(rootCmd, "", app.DefaultNodeHome); err != nil {
-		switch e := err.(type) {
-		case server.ErrorCode:
-			os.Exit(e.Code)
-
-		default:
-			os.Exit(1)
-		}
+	if err := svrcmd.Execute(rootCmd, "TERPD", app.DefaultNodeHome); err != nil {
+		log.NewLogger(rootCmd.OutOrStderr()).Error("failure when running app", "err", err)
+		os.Exit(1)
 	}
 }
