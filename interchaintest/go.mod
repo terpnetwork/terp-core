@@ -23,7 +23,7 @@ require (
 	github.com/docker/docker v24.0.4+incompatible
 	github.com/strangelove-ventures/interchaintest/v7 v7.0.0-20230721183422-fb937bb0e165
 	github.com/stretchr/testify v1.8.4
-	github.com/terpnetwork/terp-core v2.0.0-00010101000000-000000000000
+	github.com/terpnetwork/terp-core v1.0.0
 	go.uber.org/zap v1.24.0
 )
 
@@ -198,7 +198,6 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/tendermint/go-amino v0.16.0 // indirect
-	github.com/terpnetwork/terp-core v1.0.0 // indirect
 	github.com/tidwall/btree v1.6.0 // indirect
 	github.com/tyler-smith/go-bip32 v1.0.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
