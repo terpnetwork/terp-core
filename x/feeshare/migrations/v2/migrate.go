@@ -4,8 +4,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/x/feeshare/exported"
-	"github.com/terpnetwork/terp-core/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v2/x/feeshare/exported"
+	"github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 )
 
 const (

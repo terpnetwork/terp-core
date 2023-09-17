@@ -8,7 +8,7 @@ import "osmosis/tokenfactory/v1beta1/params.proto";
 import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 
-option go_package = "github.com/terpnetwork/terp-core/x/tokenfactory/types";
+option go_package = "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types";
 
 // Msg defines the tokefactory module's gRPC message service.
 service Msg {

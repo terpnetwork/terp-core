@@ -6,10 +6,6 @@ package types
 import (
 	context "context"
 	fmt "fmt"
-	io "io"
-	math "math"
-	math_bits "math/bits"
-
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
@@ -19,14 +15,15 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var (
-	_ = proto.Marshal
-	_ = fmt.Errorf
-	_ = math.Inf
-)
+var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -36,7 +33,8 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // QueryMinimumGasPricesRequest is the request type for the
 // Query/MinimumGasPrices RPC method.
-type QueryMinimumGasPricesRequest struct{}
+type QueryMinimumGasPricesRequest struct {
+}
 
 func (m *QueryMinimumGasPricesRequest) Reset()         { *m = QueryMinimumGasPricesRequest{} }
 func (m *QueryMinimumGasPricesRequest) String() string { return proto.CompactTextString(m) }
@@ -44,11 +42,9 @@ func (*QueryMinimumGasPricesRequest) ProtoMessage()    {}
 func (*QueryMinimumGasPricesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_12a736cede25d10a, []int{0}
 }
-
 func (m *QueryMinimumGasPricesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *QueryMinimumGasPricesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QueryMinimumGasPricesRequest.Marshal(b, m, deterministic)
@@ -61,15 +57,12 @@ func (m *QueryMinimumGasPricesRequest) XXX_Marshal(b []byte, deterministic bool)
 		return b[:n], nil
 	}
 }
-
 func (m *QueryMinimumGasPricesRequest) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_QueryMinimumGasPricesRequest.Merge(m, src)
 }
-
 func (m *QueryMinimumGasPricesRequest) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *QueryMinimumGasPricesRequest) XXX_DiscardUnknown() {
 	xxx_messageInfo_QueryMinimumGasPricesRequest.DiscardUnknown(m)
 }
@@ -88,11 +81,9 @@ func (*QueryMinimumGasPricesResponse) ProtoMessage()    {}
 func (*QueryMinimumGasPricesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_12a736cede25d10a, []int{1}
 }
-
 func (m *QueryMinimumGasPricesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *QueryMinimumGasPricesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QueryMinimumGasPricesResponse.Marshal(b, m, deterministic)
@@ -105,15 +96,12 @@ func (m *QueryMinimumGasPricesResponse) XXX_Marshal(b []byte, deterministic bool
 		return b[:n], nil
 	}
 }
-
 func (m *QueryMinimumGasPricesResponse) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_QueryMinimumGasPricesResponse.Merge(m, src)
 }
-
 func (m *QueryMinimumGasPricesResponse) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *QueryMinimumGasPricesResponse) XXX_DiscardUnknown() {
 	xxx_messageInfo_QueryMinimumGasPricesResponse.DiscardUnknown(m)
 }
@@ -165,10 +153,8 @@ var fileDescriptor_12a736cede25d10a = []byte{
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
-var (
-	_ context.Context
-	_ grpc.ClientConn
-)
+var _ context.Context
+var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
@@ -178,6 +164,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type QueryClient interface {
+	// MinimumGasPrices returns the minimum gas prices.
 	MinimumGasPrices(ctx context.Context, in *QueryMinimumGasPricesRequest, opts ...grpc.CallOption) (*QueryMinimumGasPricesResponse, error)
 }
 
@@ -200,11 +187,13 @@ func (c *queryClient) MinimumGasPrices(ctx context.Context, in *QueryMinimumGasP
 
 // QueryServer is the server API for Query service.
 type QueryServer interface {
+	// MinimumGasPrices returns the minimum gas prices.
 	MinimumGasPrices(context.Context, *QueryMinimumGasPricesRequest) (*QueryMinimumGasPricesResponse, error)
 }
 
 // UnimplementedQueryServer can be embedded to have forward compatible implementations.
-type UnimplementedQueryServer struct{}
+type UnimplementedQueryServer struct {
+}
 
 func (*UnimplementedQueryServer) MinimumGasPrices(ctx context.Context, req *QueryMinimumGasPricesRequest) (*QueryMinimumGasPricesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MinimumGasPrices not implemented")
@@ -316,7 +305,6 @@ func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-
 func (m *QueryMinimumGasPricesRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -344,11 +332,9 @@ func (m *QueryMinimumGasPricesResponse) Size() (n int) {
 func sovQuery(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
-
 func sozQuery(x uint64) (n int) {
 	return sovQuery(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-
 func (m *QueryMinimumGasPricesRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -399,7 +385,6 @@ func (m *QueryMinimumGasPricesRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *QueryMinimumGasPricesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -484,7 +469,6 @@ func (m *QueryMinimumGasPricesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func skipQuery(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0

@@ -10,9 +10,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/app"
-	"github.com/terpnetwork/terp-core/x/feeshare"
-	"github.com/terpnetwork/terp-core/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v2/app"
+	"github.com/terpnetwork/terp-core/v2/x/feeshare"
+	"github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 )
 
 type GenesisTestSuite struct {

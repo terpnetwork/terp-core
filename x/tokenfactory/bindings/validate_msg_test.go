@@ -8,9 +8,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	wasmbinding "github.com/terpnetwork/terp-core/x/tokenfactory/bindings"
-	bindings "github.com/terpnetwork/terp-core/x/tokenfactory/bindings/types"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
+	wasmbinding "github.com/terpnetwork/terp-core/v2/x/tokenfactory/bindings"
+	bindings "github.com/terpnetwork/terp-core/v2/x/tokenfactory/bindings/types"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 )
 
 func TestCreateDenom(t *testing.T) {

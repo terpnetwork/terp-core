@@ -6,14 +6,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/terpnetwork/terp-core/app/apptesting"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v2/app/apptesting"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 )
 
 func (suite *KeeperTestSuite) TestMsgCreateDenom() {
 	var (
-		tokenFactoryKeeper = suite.app.TokenFactoryKeeper
-		bankKeeper         = suite.app.BankKeeper
+		tokenFactoryKeeper = suite.App.TokenFactoryKeeper
+		bankKeeper         = suite.App.BankKeeper
 		denomCreationFee   = tokenFactoryKeeper.GetParams(suite.Ctx).DenomCreationFee
 	)
 
@@ -138,8 +138,8 @@ func (suite *KeeperTestSuite) TestCreateDenom() {
 			if tc.setup != nil {
 				tc.setup()
 			}
-			tokenFactoryKeeper := suite.app.TokenFactoryKeeper
-			bankKeeper := suite.app.BankKeeper
+			tokenFactoryKeeper := suite.App.TokenFactoryKeeper
+			bankKeeper := suite.App.BankKeeper
 			// Set denom creation fee in params
 			if err := tokenFactoryKeeper.SetParams(suite.Ctx, tc.denomCreationFee); err != nil {
 				suite.Require().NoError(err)

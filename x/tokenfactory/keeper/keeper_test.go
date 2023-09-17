@@ -10,9 +10,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/terpnetwork/terp-core/app/apptesting"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/keeper"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v2/app/apptesting"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/keeper"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 )
 
 type KeeperTestSuite struct {
@@ -40,7 +40,7 @@ func (suite *KeeperTestSuite) SetupTest() {
 
 	suite.queryClient = types.NewQueryClient(suite.QueryHelper)
 	suite.bankQueryClient = banktypes.NewQueryClient(suite.QueryHelper)
-	suite.msgServer = keeper.NewMsgServerImpl(suite.app.TokenFactoryKeeper)
+	suite.msgServer = keeper.NewMsgServerImpl(suite.App.TokenFactoryKeeper)
 }
 
 func (suite *KeeperTestSuite) CreateDefaultDenom() {

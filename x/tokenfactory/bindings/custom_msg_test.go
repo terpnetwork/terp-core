@@ -11,9 +11,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/app"
-	bindings "github.com/terpnetwork/terp-core/x/tokenfactory/bindings/types"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v2/app"
+	bindings "github.com/terpnetwork/terp-core/v2/x/tokenfactory/bindings/types"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 )
 
 func TestCreateDenomMsg(t *testing.T) {

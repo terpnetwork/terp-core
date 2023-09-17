@@ -9,10 +9,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 
-	"github.com/terpnetwork/terp-core/x/feeshare"
-	"github.com/terpnetwork/terp-core/x/feeshare/exported"
-	v2 "github.com/terpnetwork/terp-core/x/feeshare/migrations/v2"
-	"github.com/terpnetwork/terp-core/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v2/x/feeshare"
+	"github.com/terpnetwork/terp-core/v2/x/feeshare/exported"
+	v2 "github.com/terpnetwork/terp-core/v2/x/feeshare/migrations/v2"
+	"github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 )
 
 type mockSubspace struct {
