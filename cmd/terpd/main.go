@@ -11,7 +11,6 @@ import (
 	"github.com/terpnetwork/terp-core/v2/cmd/terpd/cmd"
 )
 
-
 func main() {
 	app.SetAddressPrefixes()
 	rootCmd, _ := cmd.NewRootCmd()
