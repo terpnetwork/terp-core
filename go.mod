@@ -1,4 +1,4 @@
-module github.com/terpnetwork/terp-core
+module github.com/terpnetwork/terp-core/v2
 
 go 1.19
 

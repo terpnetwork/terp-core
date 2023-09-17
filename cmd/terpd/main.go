@@ -7,10 +7,9 @@ import (
 
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
-	"github.com/terpnetwork/terp-core/app"
-	"github.com/terpnetwork/terp-core/cmd/terpd/cmd"
+	"github.com/terpnetwork/terp-core/v2/app"
+	"github.com/terpnetwork/terp-core/v2/cmd/terpd/cmd"
 )
-
 
 func main() {
 	app.SetAddressPrefixes()

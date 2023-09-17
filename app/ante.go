@@ -13,10 +13,10 @@ import (
 	ibcante "github.com/cosmos/ibc-go/v7/modules/core/ante"
 	"github.com/cosmos/ibc-go/v7/modules/core/keeper"
 
-	feeshareante "github.com/terpnetwork/terp-core/x/feeshare/ante"
-	feesharekeeper "github.com/terpnetwork/terp-core/x/feeshare/keeper"
-	globalfeeante "github.com/terpnetwork/terp-core/x/globalfee/ante"
-	globalfeekeeper "github.com/terpnetwork/terp-core/x/globalfee/keeper"
+	feeshareante "github.com/terpnetwork/terp-core/v2/x/feeshare/ante"
+	feesharekeeper "github.com/terpnetwork/terp-core/v2/x/feeshare/keeper"
+	globalfeeante "github.com/terpnetwork/terp-core/v2/x/globalfee/ante"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v2/x/globalfee/keeper"
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmTypes "github.com/CosmWasm/wasmd/x/wasm/types"

@@ -6,14 +6,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 )
 
 func (suite *KeeperTestSuite) TestAdminMsgs() {
 	addr0bal := int64(0)
 	addr1bal := int64(0)
 
-	bankKeeper := suite.app.BankKeeper
+	bankKeeper := suite.App.BankKeeper
 
 	suite.CreateDefaultDenom()
 	// Make sure that the admin is set correctly
@@ -33,15 +33,15 @@ func (suite *KeeperTestSuite) TestAdminMsgs() {
 	_, err = suite.msgServer.Mint(sdk.WrapSDKContext(suite.Ctx), types.NewMsgMintTo(suite.TestAccs[0].String(), sdk.NewInt64Coin(suite.defaultDenom, 10), suite.TestAccs[1].String()))
 	addr1bal += 10
 	suite.Require().NoError(err)
-	suite.Require().True(suite.app.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[1], suite.defaultDenom).Amount.Int64() == addr1bal, suite.app.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[1], suite.defaultDenom))
+	suite.Require().True(suite.App.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[1], suite.defaultDenom).Amount.Int64() == addr1bal, suite.App.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[1], suite.defaultDenom))
 
 	// Test force transferring
 	_, err = suite.msgServer.ForceTransfer(sdk.WrapSDKContext(suite.Ctx), types.NewMsgForceTransfer(suite.TestAccs[0].String(), sdk.NewInt64Coin(suite.defaultDenom, 5), suite.TestAccs[1].String(), suite.TestAccs[0].String()))
 	addr1bal -= 5
 	addr0bal += 5
 	suite.Require().NoError(err)
-	suite.Require().True(suite.app.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[0], suite.defaultDenom).Amount.Int64() == addr0bal, suite.app.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[0], suite.defaultDenom))
-	suite.Require().True(suite.app.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[1], suite.defaultDenom).Amount.Int64() == addr1bal, suite.app.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[1], suite.defaultDenom))
+	suite.Require().True(suite.App.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[0], suite.defaultDenom).Amount.Int64() == addr0bal, suite.App.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[0], suite.defaultDenom))
+	suite.Require().True(suite.App.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[1], suite.defaultDenom).Amount.Int64() == addr1bal, suite.App.BankKeeper.GetBalance(suite.Ctx, suite.TestAccs[1], suite.defaultDenom))
 
 	// Test burning from own account
 	_, err = suite.msgServer.Burn(sdk.WrapSDKContext(suite.Ctx), types.NewMsgBurn(suite.TestAccs[0].String(), sdk.NewInt64Coin(suite.defaultDenom, 5)))
@@ -131,6 +131,7 @@ func (suite *KeeperTestSuite) TestMintDenom() {
 		},
 	} {
 		suite.Run(fmt.Sprintf("Case %s", tc.desc), func() {
+			tc := tc
 			_, err := suite.msgServer.Mint(sdk.WrapSDKContext(suite.Ctx), &tc.mintMsg)
 			if tc.expectPass {
 				suite.Require().NoError(err)
@@ -140,7 +141,7 @@ func (suite *KeeperTestSuite) TestMintDenom() {
 			}
 
 			mintToAddr, _ := sdk.AccAddressFromBech32(tc.mintMsg.MintToAddress)
-			bal := suite.app.BankKeeper.GetBalance(suite.Ctx, mintToAddr, suite.defaultDenom).Amount
+			bal := suite.App.BankKeeper.GetBalance(suite.Ctx, mintToAddr, suite.defaultDenom).Amount
 			suite.Require().Equal(bal.Int64(), balances[tc.mintMsg.MintToAddress])
 		})
 	}
@@ -207,6 +208,7 @@ func (suite *KeeperTestSuite) TestBurnDenom() {
 		},
 	} {
 		suite.Run(fmt.Sprintf("Case %s", tc.desc), func() {
+			tc := tc
 			_, err := suite.msgServer.Burn(sdk.WrapSDKContext(suite.Ctx), &tc.burnMsg)
 			if tc.expectPass {
 				suite.Require().NoError(err)
@@ -216,7 +218,7 @@ func (suite *KeeperTestSuite) TestBurnDenom() {
 			}
 
 			burnFromAddr, _ := sdk.AccAddressFromBech32(tc.burnMsg.BurnFromAddress)
-			bal := suite.app.BankKeeper.GetBalance(suite.Ctx, burnFromAddr, suite.defaultDenom).Amount
+			bal := suite.App.BankKeeper.GetBalance(suite.Ctx, burnFromAddr, suite.defaultDenom).Amount
 			suite.Require().Equal(bal.Int64(), balances[tc.burnMsg.BurnFromAddress])
 		})
 	}
@@ -281,6 +283,7 @@ func (suite *KeeperTestSuite) TestForceTransferDenom() {
 		},
 	} {
 		suite.Run(fmt.Sprintf("Case %s", tc.desc), func() {
+			tc := tc
 			_, err := suite.msgServer.ForceTransfer(sdk.WrapSDKContext(suite.Ctx), &tc.forceTransferMsg)
 			if tc.expectPass {
 				suite.Require().NoError(err)
@@ -293,12 +296,12 @@ func (suite *KeeperTestSuite) TestForceTransferDenom() {
 
 			fromAddr, err := sdk.AccAddressFromBech32(tc.forceTransferMsg.TransferFromAddress)
 			suite.Require().NoError(err)
-			fromBal := suite.app.BankKeeper.GetBalance(suite.Ctx, fromAddr, suite.defaultDenom).Amount
+			fromBal := suite.App.BankKeeper.GetBalance(suite.Ctx, fromAddr, suite.defaultDenom).Amount
 			suite.Require().True(fromBal.Int64() == balances[tc.forceTransferMsg.TransferFromAddress])
 
 			toAddr, err := sdk.AccAddressFromBech32(tc.forceTransferMsg.TransferToAddress)
 			suite.Require().NoError(err)
-			toBal := suite.app.BankKeeper.GetBalance(suite.Ctx, toAddr, suite.defaultDenom).Amount
+			toBal := suite.App.BankKeeper.GetBalance(suite.Ctx, toAddr, suite.defaultDenom).Amount
 			suite.Require().True(toBal.Int64() == balances[tc.forceTransferMsg.TransferToAddress])
 		})
 	}
@@ -505,7 +508,8 @@ func (suite *KeeperTestSuite) TestSetDenomMetaData() {
 		},
 	} {
 		suite.Run(fmt.Sprintf("Case %s", tc.desc), func() {
-			bankKeeper := suite.app.BankKeeper
+			tc := tc
+			bankKeeper := suite.App.BankKeeper
 			res, err := suite.msgServer.SetDenomMetadata(sdk.WrapSDKContext(suite.Ctx), &tc.msgSetDenomMetadata)
 			if tc.expectedPass {
 				suite.Require().NoError(err)

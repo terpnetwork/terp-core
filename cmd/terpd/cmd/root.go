@@ -39,8 +39,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
-	"github.com/terpnetwork/terp-core/app"
-	"github.com/terpnetwork/terp-core/app/params"
+	"github.com/terpnetwork/terp-core/v2/app"
+	"github.com/terpnetwork/terp-core/v2/app/params"
 )
 
 // NewRootCmd creates a new root command for terpd. It is called once in the

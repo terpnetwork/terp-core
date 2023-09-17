@@ -7,14 +7,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	feesharekeeper "github.com/terpnetwork/terp-core/x/feeshare/keeper"
-	feesharetypes "github.com/terpnetwork/terp-core/x/feeshare/types"
+	feesharekeeper "github.com/terpnetwork/terp-core/v2/x/feeshare/keeper"
+	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 
-	globalfeekeeper "github.com/terpnetwork/terp-core/x/globalfee/keeper"
-	globalfeetypes "github.com/terpnetwork/terp-core/x/globalfee/types"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v2/x/globalfee/keeper"
+	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 
-	tokenfactorykeeper "github.com/terpnetwork/terp-core/x/tokenfactory/keeper"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/x/tokenfactory/types"
+	tokenfactorykeeper "github.com/terpnetwork/terp-core/v2/x/tokenfactory/keeper"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 
 	icqkeeper "github.com/cosmos/ibc-apps/modules/async-icq/v7/keeper"
 	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v7/types"
@@ -22,7 +22,7 @@ import (
 	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/router/keeper"
 	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/router/types"
 
-	"github.com/terpnetwork/terp-core/app/upgrades"
+	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 )
 
 // We now charge 2 million gas * gas price to create a denom.

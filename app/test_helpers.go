@@ -33,13 +33,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	apphelpers "github.com/terpnetwork/terp-core/app/helpers"
-	appparams "github.com/terpnetwork/terp-core/app/params"
-)
-
-// SimAppChainID hardcoded chainID for simulation
-const (
-	SimAppChainID = "testing"
+	apphelpers "github.com/terpnetwork/terp-core/v2/app/helpers"
+	appparams "github.com/terpnetwork/terp-core/v2/app/params"
 )
 
 // EmptyBaseAppOptions is a stub implementing AppOptions

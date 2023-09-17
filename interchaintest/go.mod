@@ -10,7 +10,7 @@ replace (
 	github.com/btcsuite/btcd => github.com/btcsuite/btcd v0.22.2 //indirect
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	// For this nested module, you always want to replace the parent reference with the current worktree.
-	github.com/terpnetwork/terp-core => ../
+	github.com/terpnetwork/terp-core/v2 => ../
 
 	github.com/vedhavyas/go-subkey => github.com/strangelove-ventures/go-subkey v1.0.7
 )
@@ -23,7 +23,7 @@ require (
 	github.com/docker/docker v24.0.4+incompatible
 	github.com/strangelove-ventures/interchaintest/v7 v7.0.0-20230721183422-fb937bb0e165
 	github.com/stretchr/testify v1.8.4
-	github.com/terpnetwork/terp-core v1.0.0
+	github.com/terpnetwork/terp-core/v2 v2.0.0-00010101000000-000000000000
 	go.uber.org/zap v1.24.0
 )
 

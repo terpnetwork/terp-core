@@ -126,12 +126,12 @@ import (
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
 	ibcmock "github.com/cosmos/ibc-go/v7/testing/mock"
 
-	"github.com/terpnetwork/terp-core/x/feeshare"
-	feesharekeeper "github.com/terpnetwork/terp-core/x/feeshare/keeper"
-	feesharetypes "github.com/terpnetwork/terp-core/x/feeshare/types"
-	"github.com/terpnetwork/terp-core/x/globalfee"
-	globalfeekeeper "github.com/terpnetwork/terp-core/x/globalfee/keeper"
-	globalfeetypes "github.com/terpnetwork/terp-core/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v2/x/feeshare"
+	feesharekeeper "github.com/terpnetwork/terp-core/v2/x/feeshare/keeper"
+	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v2/x/globalfee"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v2/x/globalfee/keeper"
+	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7"
 	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/keeper"
@@ -145,22 +145,22 @@ import (
 	icqkeeper "github.com/cosmos/ibc-apps/modules/async-icq/v7/keeper"
 	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v7/types"
 
-	"github.com/terpnetwork/terp-core/x/tokenfactory/bindings"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/bindings"
 
 	"github.com/spf13/cast"
 
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 
-	v2 "github.com/terpnetwork/terp-core/app/upgrades/v2"
+	v2 "github.com/terpnetwork/terp-core/v2/app/upgrades/v2"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	// token factory
-	"github.com/terpnetwork/terp-core/x/tokenfactory"
-	tokenfactorykeeper "github.com/terpnetwork/terp-core/x/tokenfactory/keeper"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory"
+	tokenfactorykeeper "github.com/terpnetwork/terp-core/v2/x/tokenfactory/keeper"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik" // statik for swagger UI support
@@ -1370,6 +1370,16 @@ func (app *TerpApp) GetChainBondDenom() string {
 		d = "uterpx"
 	}
 	return d
+}
+
+// ModuleAccountAddrs returns all the app's module account addresses.
+func (app *TerpApp) ModuleAccountAddrs() map[string]bool {
+	modAccAddrs := make(map[string]bool)
+	for acc := range GetMaccPerms() {
+		modAccAddrs[authtypes.NewModuleAddress(acc).String()] = true
+	}
+
+	return modAccAddrs
 }
 
 // initParamsKeeper init params keeper and its subspaces

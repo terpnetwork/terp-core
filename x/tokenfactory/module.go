@@ -26,11 +26,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"github.com/terpnetwork/terp-core/x/tokenfactory/client/cli"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/exported"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/keeper"
-	simulation "github.com/terpnetwork/terp-core/x/tokenfactory/simulation"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/client/cli"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/exported"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/keeper"
+	simulation "github.com/terpnetwork/terp-core/v2/x/tokenfactory/simulation"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 )
 
 var (

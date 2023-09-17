@@ -4,7 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 )
 
 // GetFeeShares returns all registered FeeShares.

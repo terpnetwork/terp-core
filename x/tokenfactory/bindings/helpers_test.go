@@ -15,7 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktestutil "github.com/cosmos/cosmos-sdk/x/bank/testutil"
 
-	"github.com/terpnetwork/terp-core/app"
+	"github.com/terpnetwork/terp-core/v2/app"
 )
 
 func CreateTestInput(t *testing.T) (*app.TerpApp, sdk.Context) {

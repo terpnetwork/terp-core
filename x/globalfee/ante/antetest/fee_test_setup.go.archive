@@ -17,9 +17,9 @@ import (
 
 	"github.com/terpnetwork/terp-core/app"
 	appparams "github.com/terpnetwork/terp-core/app/params"
-	"github.com/terpnetwork/terp-core/x/globalfee"
-	gaiafeeante "github.com/terpnetwork/terp-core/x/globalfee/ante"
-	globfeetypes "github.com/terpnetwork/terp-core/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v2/x/globalfee"
+	gaiafeeante "github.com/terpnetwork/terp-core/v2/x/globalfee/ante"
+	globfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 )
 
 type IntegrationTestSuite struct {

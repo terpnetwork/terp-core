@@ -5,8 +5,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	"github.com/terpnetwork/terp-core/testutil/nullify"
-	"github.com/terpnetwork/terp-core/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v2/testutil/nullify"
+	"github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 )
 
 func (s *IntegrationTestSuite) TestFeeShares() {
