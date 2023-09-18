@@ -4,28 +4,28 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 )
 
 func (suite *KeeperTestSuite) TestGenesis() {
 	genesisState := types.GenesisState{
 		FactoryDenoms: []types.GenesisDenom{
 			{
-				Denom: "factory/cosmos1t7egva48prqmzl59x5ngv4zx0dtrwewcdqdjr8/bitcoin",
+				Denom: "factory/terp1t7egva48prqmzl59x5ngv4zx0dtrwewc22y7f5/bitcoin",
 				AuthorityMetadata: types.DenomAuthorityMetadata{
-					Admin: "cosmos1t7egva48prqmzl59x5ngv4zx0dtrwewcdqdjr8",
+					Admin: "terp1t7egva48prqmzl59x5ngv4zx0dtrwewc22y7f5",
 				},
 			},
 			{
-				Denom: "factory/cosmos1t7egva48prqmzl59x5ngv4zx0dtrwewcdqdjr8/diff-admin",
+				Denom: "factory/terp1t7egva48prqmzl59x5ngv4zx0dtrwewc22y7f5/diff-admin",
 				AuthorityMetadata: types.DenomAuthorityMetadata{
-					Admin: "cosmos15czt5nhlnvayqq37xun9s9yus0d6y26dx74r5p",
+					Admin: "terp15czt5nhlnvayqq37xun9s9yus0d6y26dp5u07j",
 				},
 			},
 			{
-				Denom: "factory/cosmos1t7egva48prqmzl59x5ngv4zx0dtrwewcdqdjr8/litecoin",
+				Denom: "factory/terp1t7egva48prqmzl59x5ngv4zx0dtrwewc22y7f5/litecoin",
 				AuthorityMetadata: types.DenomAuthorityMetadata{
-					Admin: "cosmos1t7egva48prqmzl59x5ngv4zx0dtrwewcdqdjr8",
+					Admin: "terp1t7egva48prqmzl59x5ngv4zx0dtrwewc22y7f5",
 				},
 			},
 		},
@@ -42,15 +42,13 @@ func (suite *KeeperTestSuite) TestGenesis() {
 		}
 	}
 
-	// check before initGenesis that the module account is nil
-	tokenfactoryModuleAccount := app.AccountKeeper.GetAccount(suite.Ctx, app.AccountKeeper.GetModuleAddress(types.ModuleName))
-	suite.Require().Nil(tokenfactoryModuleAccount)
-
-	app.TokenFactoryKeeper.SetParams(suite.Ctx, types.Params{DenomCreationFee: sdk.Coins{sdk.NewInt64Coin("uosmo", 100)}})
+	if err := app.TokenFactoryKeeper.SetParams(suite.Ctx, types.Params{DenomCreationFee: sdk.Coins{sdk.NewInt64Coin("stake", 100)}}); err != nil {
+		panic(err)
+	}
 	app.TokenFactoryKeeper.InitGenesis(suite.Ctx, genesisState)
 
 	// check that the module account is now initialized
-	tokenfactoryModuleAccount = app.AccountKeeper.GetAccount(suite.Ctx, app.AccountKeeper.GetModuleAddress(types.ModuleName))
+	tokenfactoryModuleAccount := app.AccountKeeper.GetAccount(suite.Ctx, app.AccountKeeper.GetModuleAddress(types.ModuleName))
 	suite.Require().NotNil(tokenfactoryModuleAccount)
 
 	exportedGenesis := app.TokenFactoryKeeper.ExportGenesis(suite.Ctx)

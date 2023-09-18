@@ -4,17 +4,18 @@ import (
 	fmt "fmt"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/terpnetwork/terp-core/x/tokenfactory/testhelpers"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
-
 	"github.com/cometbft/cometbft/crypto/ed25519"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/testhelpers"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 )
 
-// // Test authz serialize and de-serializes for tokenfactory msg.
+// Test authz serialize and de-serializes for tokenfactory msg.
 func TestAuthzMsg(t *testing.T) {
 	t.Skip("TODO: figure out how to register authz interfaces for tests")
 	pk1 := ed25519.GenPrivKey().PubKey()

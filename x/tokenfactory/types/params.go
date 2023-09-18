@@ -4,18 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
-
-// Parameter store keys.
-var (
-	KeyDenomCreationFee = []byte("DenomCreationFee")
-)
-
-// ParamTable for gamm module.
-func ParamKeyTable() paramtypes.KeyTable {
-	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
-}
 
 func NewParams(denomCreationFee sdk.Coins) Params {
 	return Params{
@@ -23,29 +12,19 @@ func NewParams(denomCreationFee sdk.Coins) Params {
 	}
 }
 
-// default gamm module parameters.
+// default tokenfactory module parameters.
 func DefaultParams() Params {
 	return Params{
-		// this was from osmosis
-		// DenomCreationFee: sdk.NewCoins(sdk.NewInt64Coin(appparams.BaseCoinUnit, 10_000_000)), // 10 OSMO
-		DenomCreationFee: sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 10_000_000)), // 10 OSMO
+		DenomCreationFee:        sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 10_000_000)),
+		DenomCreationGasConsume: 2_000_000,
 	}
 }
 
 // validate params.
 func (p Params) Validate() error {
-	if err := validateDenomCreationFee(p.DenomCreationFee); err != nil {
-		return err
-	}
+	err := validateDenomCreationFee(p.DenomCreationFee)
 
-	return nil
-}
-
-// Implements params.ParamSet.
-func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
-	return paramtypes.ParamSetPairs{
-		paramtypes.NewParamSetPair(KeyDenomCreationFee, &p.DenomCreationFee, validateDenomCreationFee),
-	}
+	return err
 }
 
 func validateDenomCreationFee(i interface{}) error {
@@ -56,6 +35,15 @@ func validateDenomCreationFee(i interface{}) error {
 
 	if v.Validate() != nil {
 		return fmt.Errorf("invalid denom creation fee: %+v", i)
+	}
+
+	return nil
+}
+
+func validateDenomCreationFeeGasConsume(i interface{}) error {
+	_, ok := i.(uint64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
 	return nil

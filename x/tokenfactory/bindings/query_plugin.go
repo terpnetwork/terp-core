@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	errorsmod "cosmossdk.io/errors"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
+
+	errorsmod "cosmossdk.io/errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	bindingstypes "github.com/terpnetwork/terp-core/x/tokenfactory/bindings/types"
+	bindingstypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/bindings/types"
 )
 
 // CustomQuerier dispatches custom CosmWasm bindings queries.
@@ -17,7 +19,7 @@ func CustomQuerier(qp *QueryPlugin) func(ctx sdk.Context, request json.RawMessag
 	return func(ctx sdk.Context, request json.RawMessage) ([]byte, error) {
 		var contractQuery bindingstypes.TokenFactoryQuery
 		if err := json.Unmarshal(request, &contractQuery); err != nil {
-			return nil, errorsmod.Wrap(err, "terp query")
+			return nil, errorsmod.Wrap(err, "osmosis query")
 		}
 		if contractQuery.Token == nil {
 			return nil, errorsmod.Wrap(sdkerrors.ErrUnknownRequest, "nil token field")
@@ -31,7 +33,7 @@ func CustomQuerier(qp *QueryPlugin) func(ctx sdk.Context, request json.RawMessag
 
 			fullDenom, err := GetFullDenom(creator, subdenom)
 			if err != nil {
-				return nil, errorsmod.Wrap(err, "terp full denom query")
+				return nil, errorsmod.Wrap(err, "osmo full denom query")
 			}
 
 			res := bindingstypes.FullDenomResponse{
@@ -117,7 +119,7 @@ func ConvertSdkCoinsToWasmCoins(coins []sdk.Coin) wasmvmtypes.Coins {
 func ConvertSdkCoinToWasmCoin(coin sdk.Coin) wasmvmtypes.Coin {
 	return wasmvmtypes.Coin{
 		Denom: coin.Denom,
-		// Note: gamm tokens have 18 decimal places, so 10^22 is common, no longer in u64 range
+		// Note: tokenfactory tokens have 18 decimal places, so 10^22 is common, no longer in u64 range
 		Amount: coin.Amount.String(),
 	}
 }

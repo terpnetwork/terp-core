@@ -1,12 +1,32 @@
 #!/usr/bin/make -f
 
-PACKAGES_SIMTEST=$(shell go list ./... | grep '/simulation')
-VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT := $(shell git log -1 --format='%H')
+VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+BINDIR ?= $(GOPATH)/bin
+APP = ./app
+
+# don't override user values
+ifeq (,$(VERSION))
+  VERSION := $(shell git describe --tags)
+  # if VERSION is empty, then populate it with branch's name and raw commit hash
+  ifeq (,$(VERSION))
+    VERSION := $(BRANCH)-$(COMMIT)
+  endif
+endif
+
+PACKAGES_SIMTEST=$(shell go list ./... | grep '/simulation')
 LEDGER_ENABLED ?= true
 SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
-BINDIR ?= $(GOPATH)/bin
-SIMAPP = ./app
+
+# don't override user values
+ifeq (,$(VERSION))
+  VERSION := $(shell git describe --tags)
+  # if VERSION is empty, then populate it with branch's name and raw commit hash
+  ifeq (,$(VERSION))
+    VERSION := $(BRANCH)-$(COMMIT)
+  endif
+endif
 
 # for dockerized protobuf tools
 DOCKER := $(shell which docker)
@@ -76,7 +96,14 @@ BUILD_FLAGS := -tags "$(build_tags_comma_sep)" -ldflags '$(ldflags)' -trimpath
 # The below include contains the tools and runsim targets.
 include contrib/devtools/Makefile
 
-all: install lint test
+all: install
+	@echo "--> project root: go mod tidy"	
+	@go mod tidy	
+	@echo "--> project root: linting --fix"	
+	@GOGC=1 golangci-lint run --fix --timeout=8m
+
+install: go.sum
+	go install -mod=readonly $(BUILD_FLAGS) ./cmd/terpd
 
 build: go.sum
 ifeq ($(OS),Windows_NT)
@@ -96,11 +123,33 @@ else
 	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
 endif
 
-install: go.sum
-	go install -mod=readonly $(BUILD_FLAGS) ./cmd/terpd
+test-node:
+	CHAIN_ID="local-1" HOME_DIR="~/.terp1" TIMEOUT_COMMIT="500ms" CLEAN=true sh scripts/test_node.sh
 
-########################################
-### Tools & dependencies
+###############################################################################
+###                                Testing                                  ###
+###############################################################################
+
+test: test-unit
+test-all: check test-race test-cover
+
+test-unit:
+	@VERSION=$(VERSION) go test -mod=readonly -tags='ledger test_ledger_mock' ./...
+
+benchmark:
+	@go test -mod=readonly -bench=. ./...
+
+test-sim-multi-seed-short: runsim
+	@echo "Running short multi-seed application simulation. This may take awhile!"
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(APP) -ExitOnFail 50 5 TestFullAppSimulation
+
+test-sim-deterministic: runsim
+	@echo "Running short multi-seed application simulation. This may take awhile!"
+	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(APP) -ExitOnFail 1 1 TestAppStateDeterminism
+
+###############################################################################
+###                                Tools & dependencies                     ###
+###############################################################################
 
 go-mod-cache: go.sum
 	@echo "--> Download go modules to local cache"
@@ -121,38 +170,6 @@ clean:
 distclean: clean
 	rm -rf vendor/
 
-########################################
-### Testing
-
-
-test: test-unit
-test-all: check test-race test-cover
-
-test-unit:
-	@VERSION=$(VERSION) go test -mod=readonly -tags='ledger test_ledger_mock' ./...
-
-test-race:
-	@VERSION=$(VERSION) go test -mod=readonly -race -tags='ledger test_ledger_mock' ./...
-
-test-cover:
-	@go test -mod=readonly -timeout 30m -race -coverprofile=coverage.txt -covermode=atomic -tags='ledger test_ledger_mock' ./...
-
-benchmark:
-	@go test -mod=readonly -bench=. ./...
-
-test-sim-import-export: runsim
-	@echo "Running application import/export simulation. This may take several minutes..."
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 5 TestAppImportExport
-
-test-sim-multi-seed-short: runsim
-	@echo "Running short multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 5 TestFullAppSimulation
-
-test-sim-deterministic: runsim
-	@echo "Running short multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 1 1 TestAppStateDeterminism
-
-
 ###############################################################################
 ###                                Linting                                  ###
 ###############################################################################
@@ -170,11 +187,62 @@ format: format-tools
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs gofumpt -w
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs goimports -w -local github.com/terpnetwork/terp-core
 
+###############################################################################
+###                             e2e interchain test                         ###
+###############################################################################
 
+ # Executes basic chain tests via interchaintest
+ictest-basic: rm-testcache
+	cd interchaintest && go test -race -v -run TestBasicTerpStart .
+
+ictest-ibchooks: rm-testcache
+	cd interchaintest && go test -race -v -run TestTerpIBCHooks .
+
+ictest-pfm: rm-testcache
+	cd interchaintest && go test -race -v -run TestPacketForwardMiddlewareRouter .
+
+ictest-tokenfactory: rm-testcache
+	cd interchaintest && go test -race -v -run TestTerpTokenFactory .
+
+ictest-feeshare: rm-testcache
+	cd interchaintest && go test -race -v -run TestTerpFeeShare . 
+
+# Executes a basic chain upgrade test via interchaintest
+ictest-upgrade: rm-testcache
+	cd interchaintest && go test -race -v -run TestBasicTerpUpgrade .
+
+# Executes a basic chain upgrade locally via interchaintest after compiling a local image as terpnetwork:local
+ictest-upgrade-local: local-image ictest-upgrade
+
+# Executes IBC tests via interchaintest
+ictest-ibc: rm-testcache
+	cd interchaintest && go test -race -v -run TestTerpGaiaIBCTransfer .
+
+rm-testcache:
+	go clean -testcache
+
+.PHONY: test-mutation ictest-basic ictest-upgrade ictest-ibc 
+
+###############################################################################
+###                                  heighliner                             ###
+###############################################################################
+
+get-heighliner:
+	git clone https://github.com/strangelove-ventures/heighliner.git
+	cd heighliner && go install
+
+local-image:
+ifeq (,$(shell which heighliner))
+	echo 'heighliner' binary not found. Consider running `make get-heighliner`
+else 
+	heighliner build -c terpnetwork --local -f ./chains.yaml
+endif
+
+.PHONY: get-heighliner local-image
 ###############################################################################
 ###                                Protobuf                                 ###
 ###############################################################################
-protoVer=0.11.6
+protoVer=0.13.1
 protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
 protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
 
@@ -184,11 +252,14 @@ proto-gen:
 	@echo "Generating Protobuf files"
 	@$(protoImage) sh ./scripts/protocgen.sh
 
+proto-swagger-gen:
+	@echo "Generating Protobuf Swagger"
+	@$(protoImage) sh ./scripts/protoc_swagger_openapi_gen.sh
+	$(MAKE) update-swagger-docs
+
 proto-format:
 	@echo "Formatting Protobuf files"
 	@$(protoImage) find ./ -name "*.proto" -exec clang-format -i {} \;
-proto-swagger-gen:
-	@./scripts/protoc-swagger-gen.sh
 
 proto-lint:
 	@$(DOCKER_BUF) lint --error-format=json

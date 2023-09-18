@@ -1,6 +1,11 @@
 ---
-on: [push, pull_request]
-name: Build
+name: build
+
+on:
+  push:
+    paths:
+      - '**.go'      
+      - 'go.sum'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,8 +20,21 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20"
+          go-version: 1.20.0
       - run: go build ./...
+  
+  test:
+    runs-on: ubuntu-latest
+    name: test
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.0
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Test
+        run: go test ./...
 
   tidy:
     runs-on: ubuntu-latest
@@ -26,7 +44,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20"
+          go-version: 1.20.0
       - run: |
           go mod tidy
           CHANGES_IN_REPO=$(git status --porcelain)

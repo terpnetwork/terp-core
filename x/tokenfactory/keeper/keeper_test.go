@@ -3,21 +3,24 @@ package keeper_test
 import (
 	"testing"
 
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/terpnetwork/terp-core/app/apptesting"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/keeper"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/testhelpers"
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
+	"github.com/terpnetwork/terp-core/v2/app/apptesting"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/keeper"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 )
 
 type KeeperTestSuite struct {
 	apptesting.KeeperTestHelper
 
-	queryClient types.QueryClient
-	msgServer   types.MsgServer
+	queryClient     types.QueryClient
+	bankQueryClient banktypes.QueryClient
+	msgServer       types.MsgServer
 	// defaultDenom is on the suite, as it depends on the creator test address.
 	defaultDenom string
 }
@@ -28,13 +31,15 @@ func TestKeeperTestSuite(t *testing.T) {
 
 func (suite *KeeperTestSuite) SetupTest() {
 	suite.Setup()
+
 	// Fund every TestAcc with two denoms, one of which is the denom creation fee
-	fundAccsAmount := sdk.NewCoins(sdk.NewCoin(types.DefaultParams().DenomCreationFee[0].Denom, types.DefaultParams().DenomCreationFee[0].Amount.MulRaw(100)), sdk.NewCoin(testhelpers.SecondaryDenom, testhelpers.SecondaryAmount))
+	fundAccsAmount := sdk.NewCoins(sdk.NewCoin(types.DefaultParams().DenomCreationFee[0].Denom, types.DefaultParams().DenomCreationFee[0].Amount.MulRaw(100)), sdk.NewCoin(apptesting.SecondaryDenom, apptesting.SecondaryAmount))
 	for _, acc := range suite.TestAccs {
 		suite.FundAcc(acc, fundAccsAmount)
 	}
 
 	suite.queryClient = types.NewQueryClient(suite.QueryHelper)
+	suite.bankQueryClient = banktypes.NewQueryClient(suite.QueryHelper)
 	suite.msgServer = keeper.NewMsgServerImpl(suite.App.TokenFactoryKeeper)
 }
 
@@ -51,7 +56,7 @@ func (suite *KeeperTestSuite) TestCreateModuleAccount() {
 	app.AccountKeeper.RemoveAccount(suite.Ctx, tokenfactoryModuleAccount)
 
 	// ensure module account was removed
-	suite.Ctx = app.BaseApp.NewContext(false, tmproto.Header{})
+	suite.Ctx = app.BaseApp.NewContext(false, tmproto.Header{ChainID: "testing"})
 	tokenfactoryModuleAccount = app.AccountKeeper.GetAccount(suite.Ctx, app.AccountKeeper.GetModuleAddress(types.ModuleName))
 	suite.Require().Nil(tokenfactoryModuleAccount)
 

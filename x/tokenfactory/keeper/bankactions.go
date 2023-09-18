@@ -1,9 +1,11 @@
 package keeper
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 )
 
 func (k Keeper) mintTo(ctx sdk.Context, amount sdk.Coin, mintTo string) error {
@@ -23,6 +25,10 @@ func (k Keeper) mintTo(ctx sdk.Context, amount sdk.Coin, mintTo string) error {
 		return err
 	}
 
+	if k.bankKeeper.BlockedAddr(addr) {
+		return fmt.Errorf("failed to mint to blocked address: %s", addr)
+	}
+
 	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName,
 		addr,
 		sdk.NewCoins(amount))
@@ -40,6 +46,10 @@ func (k Keeper) burnFrom(ctx sdk.Context, amount sdk.Coin, burnFrom string) erro
 		return err
 	}
 
+	if k.bankKeeper.BlockedAddr(addr) {
+		return fmt.Errorf("failed to burn from blocked address: %s", addr)
+	}
+
 	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx,
 		addr,
 		types.ModuleName,
@@ -51,8 +61,7 @@ func (k Keeper) burnFrom(ctx sdk.Context, amount sdk.Coin, burnFrom string) erro
 	return k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(amount))
 }
 
-// forceTransfer is a helper function to transfer coins from one account to another
-func (k Keeper) forceTransfer(ctx sdk.Context, amount sdk.Coin, fromAddr string, toAddr string) error { //nolint:unused
+func (k Keeper) forceTransfer(ctx sdk.Context, amount sdk.Coin, fromAddr string, toAddr string) error {
 	// verify that denom is an x/tokenfactory denom
 	_, _, err := types.DeconstructDenom(amount.Denom)
 	if err != nil {
@@ -67,6 +76,10 @@ func (k Keeper) forceTransfer(ctx sdk.Context, amount sdk.Coin, fromAddr string,
 	toSdkAddr, err := sdk.AccAddressFromBech32(toAddr)
 	if err != nil {
 		return err
+	}
+
+	if k.bankKeeper.BlockedAddr(toSdkAddr) {
+		return fmt.Errorf("failed to force transfer to blocked address: %s", toSdkAddr)
 	}
 
 	return k.bankKeeper.SendCoins(ctx, fromSdkAddr, toSdkAddr, sdk.NewCoins(amount))
