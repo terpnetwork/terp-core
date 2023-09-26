@@ -50,7 +50,7 @@ func TestCreateDenom(t *testing.T) {
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			// when
-			_, gotErr := wasmbinding.PerformCreateDenom(&terpapp.TokenFactoryKeeper, &terpapp.BankKeeper, ctx, actor, spec.createDenom)
+			_, gotErr := wasmbinding.PerformCreateDenom(&terpapp.AppKeepers.TokenFactoryKeeper, &terpapp.AppKeepers.BankKeeper, ctx, actor, spec.createDenom)
 			// then
 			if spec.expErr {
 				t.Logf("validate_msg_test got error: %v", gotErr)
@@ -149,12 +149,12 @@ func TestChangeAdmin(t *testing.T) {
 			actorAmount := sdk.NewCoins(sdk.NewCoin(types.DefaultParams().DenomCreationFee[0].Denom, types.DefaultParams().DenomCreationFee[0].Amount.MulRaw(100)))
 			fundAccount(t, ctx, terpapp, tokenCreator, actorAmount)
 
-			_, err := wasmbinding.PerformCreateDenom(&terpapp.TokenFactoryKeeper, &terpapp.BankKeeper, ctx, tokenCreator, &bindings.CreateDenom{
+			_, err := wasmbinding.PerformCreateDenom(&terpapp.AppKeepers.TokenFactoryKeeper, &terpapp.AppKeepers.BankKeeper, ctx, tokenCreator, &bindings.CreateDenom{
 				Subdenom: validDenom,
 			})
 			require.NoError(t, err)
 
-			err = wasmbinding.ChangeAdmin(&terpapp.TokenFactoryKeeper, ctx, spec.actor, spec.changeAdmin)
+			err = wasmbinding.ChangeAdmin(&terpapp.AppKeepers.TokenFactoryKeeper, ctx, spec.actor, spec.changeAdmin)
 			if len(spec.expErrMsg) > 0 {
 				require.Error(t, err)
 				actualErrMsg := err.Error()
@@ -178,13 +178,13 @@ func TestMint(t *testing.T) {
 	validDenom := bindings.CreateDenom{
 		Subdenom: "MOON",
 	}
-	_, err := wasmbinding.PerformCreateDenom(&terpapp.TokenFactoryKeeper, &terpapp.BankKeeper, ctx, creator, &validDenom)
+	_, err := wasmbinding.PerformCreateDenom(&terpapp.AppKeepers.TokenFactoryKeeper, &terpapp.AppKeepers.BankKeeper, ctx, creator, &validDenom)
 	require.NoError(t, err)
 
 	emptyDenom := bindings.CreateDenom{
 		Subdenom: "",
 	}
-	_, err = wasmbinding.PerformCreateDenom(&terpapp.TokenFactoryKeeper, &terpapp.BankKeeper, ctx, creator, &emptyDenom)
+	_, err = wasmbinding.PerformCreateDenom(&terpapp.AppKeepers.TokenFactoryKeeper, &terpapp.AppKeepers.BankKeeper, ctx, creator, &emptyDenom)
 	require.NoError(t, err)
 
 	validDenomStr := fmt.Sprintf("factory/%s/%s", creator.String(), validDenom.Subdenom)
@@ -193,7 +193,7 @@ func TestMint(t *testing.T) {
 	lucky := RandomAccountAddress()
 
 	// lucky was broke
-	balances := terpapp.BankKeeper.GetAllBalances(ctx, lucky)
+	balances := terpapp.AppKeepers.BankKeeper.GetAllBalances(ctx, lucky)
 	require.Empty(t, balances)
 
 	amount, ok := sdk.NewIntFromString("8080")
@@ -274,7 +274,7 @@ func TestMint(t *testing.T) {
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			// when
-			gotErr := wasmbinding.PerformMint(&terpapp.TokenFactoryKeeper, &terpapp.BankKeeper, ctx, creator, spec.mint)
+			gotErr := wasmbinding.PerformMint(&terpapp.AppKeepers.TokenFactoryKeeper, &terpapp.AppKeepers.BankKeeper, ctx, creator, spec.mint)
 			// then
 			if spec.expErr {
 				require.Error(t, gotErr)
@@ -297,19 +297,19 @@ func TestBurn(t *testing.T) {
 	validDenom := bindings.CreateDenom{
 		Subdenom: "MOON",
 	}
-	_, err := wasmbinding.PerformCreateDenom(&terpapp.TokenFactoryKeeper, &terpapp.BankKeeper, ctx, creator, &validDenom)
+	_, err := wasmbinding.PerformCreateDenom(&terpapp.AppKeepers.TokenFactoryKeeper, &terpapp.AppKeepers.BankKeeper, ctx, creator, &validDenom)
 	require.NoError(t, err)
 
 	emptyDenom := bindings.CreateDenom{
 		Subdenom: "",
 	}
-	_, err = wasmbinding.PerformCreateDenom(&terpapp.TokenFactoryKeeper, &terpapp.BankKeeper, ctx, creator, &emptyDenom)
+	_, err = wasmbinding.PerformCreateDenom(&terpapp.AppKeepers.TokenFactoryKeeper, &terpapp.AppKeepers.BankKeeper, ctx, creator, &emptyDenom)
 	require.NoError(t, err)
 
 	lucky := RandomAccountAddress()
 
 	// lucky was broke
-	balances := terpapp.BankKeeper.GetAllBalances(ctx, lucky)
+	balances := terpapp.AppKeepers.BankKeeper.GetAllBalances(ctx, lucky)
 	require.Empty(t, balances)
 
 	validDenomStr := fmt.Sprintf("factory/%s/%s", creator.String(), validDenom.Subdenom)
@@ -391,7 +391,7 @@ func TestBurn(t *testing.T) {
 				Amount:        mintAmount,
 				MintToAddress: creator.String(),
 			}
-			err := wasmbinding.PerformMint(&terpapp.TokenFactoryKeeper, &terpapp.BankKeeper, ctx, creator, mintBinding)
+			err := wasmbinding.PerformMint(&terpapp.AppKeepers.TokenFactoryKeeper, &terpapp.AppKeepers.BankKeeper, ctx, creator, mintBinding)
 			require.NoError(t, err)
 
 			emptyDenomMintBinding := &bindings.MintTokens{
@@ -399,11 +399,11 @@ func TestBurn(t *testing.T) {
 				Amount:        mintAmount,
 				MintToAddress: creator.String(),
 			}
-			err = wasmbinding.PerformMint(&terpapp.TokenFactoryKeeper, &terpapp.BankKeeper, ctx, creator, emptyDenomMintBinding)
+			err = wasmbinding.PerformMint(&terpapp.AppKeepers.TokenFactoryKeeper, &terpapp.AppKeepers.BankKeeper, ctx, creator, emptyDenomMintBinding)
 			require.NoError(t, err)
 
 			// when
-			gotErr := wasmbinding.PerformBurn(&terpapp.TokenFactoryKeeper, ctx, creator, spec.burn)
+			gotErr := wasmbinding.PerformBurn(&terpapp.AppKeepers.TokenFactoryKeeper, ctx, creator, spec.burn)
 			// then
 			if spec.expErr {
 				require.Error(t, gotErr)
