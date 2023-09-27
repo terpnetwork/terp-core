@@ -249,9 +249,9 @@ func (s *KeeperTestHelper) BuildTx(
 func (s *KeeperTestHelper) ConfirmUpgradeSucceeded(upgradeName string, upgradeHeight int64) {
 	s.Ctx = s.Ctx.WithBlockHeight(upgradeHeight - 1)
 	plan := upgradetypes.Plan{Name: upgradeName, Height: upgradeHeight}
-	err := s.App.UpgradeKeeper.ScheduleUpgrade(s.Ctx, plan)
+	err := s.App.AppKeepers.UpgradeKeeper.ScheduleUpgrade(s.Ctx, plan)
 	s.Require().NoError(err)
-	_, exists := s.App.UpgradeKeeper.GetUpgradePlan(s.Ctx)
+	_, exists := s.App.AppKeepers.UpgradeKeeper.GetUpgradePlan(s.Ctx)
 	s.Require().True(exists)
 
 	s.Ctx = s.Ctx.WithBlockHeight(upgradeHeight)

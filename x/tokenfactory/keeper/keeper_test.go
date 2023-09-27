@@ -40,7 +40,7 @@ func (suite *KeeperTestSuite) SetupTest() {
 
 	suite.queryClient = types.NewQueryClient(suite.QueryHelper)
 	suite.bankQueryClient = banktypes.NewQueryClient(suite.QueryHelper)
-	suite.msgServer = keeper.NewMsgServerImpl(suite.App.TokenFactoryKeeper)
+	suite.msgServer = keeper.NewMsgServerImpl(suite.App.AppKeepers.TokenFactoryKeeper)
 }
 
 func (suite *KeeperTestSuite) CreateDefaultDenom() {
@@ -61,7 +61,7 @@ func (suite *KeeperTestSuite) TestCreateModuleAccount() {
 	suite.Require().Nil(tokenfactoryModuleAccount)
 
 	// create module account
-	app.TokenFactoryKeeper.CreateModuleAccount(suite.Ctx)
+	app.AppKeepers.TokenFactoryKeeper.CreateModuleAccount(suite.Ctx)
 
 	// check that the module account is now initialized
 	tokenfactoryModuleAccount = app.AccountKeeper.GetAccount(suite.Ctx, app.AccountKeeper.GetModuleAddress(types.ModuleName))

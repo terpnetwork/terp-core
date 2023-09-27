@@ -31,10 +31,10 @@ func CreateTestApp(t *testing.T, isCheckTx bool) (*terpapp.TerpApp, sdk.Context)
 	ctx := app.BaseApp.NewContext(isCheckTx, tmproto.Header{
 		ChainID: "testing",
 	})
-	if err := app.MintKeeper.SetParams(ctx, types.DefaultParams()); err != nil {
+	if err := app.AppKeepers.MintKeeper.SetParams(ctx, types.DefaultParams()); err != nil {
 		panic(err)
 	}
-	app.MintKeeper.SetMinter(ctx, types.DefaultInitialMinter())
+	app.AppKeepers.MintKeeper.SetMinter(ctx, types.DefaultInitialMinter())
 
 	return app, ctx
 }
