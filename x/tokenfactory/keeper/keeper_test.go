@@ -52,18 +52,18 @@ func (suite *KeeperTestSuite) TestCreateModuleAccount() {
 	app := suite.App
 
 	// remove module account
-	tokenfactoryModuleAccount := app.AccountKeeper.GetAccount(suite.Ctx, app.AccountKeeper.GetModuleAddress(types.ModuleName))
-	app.AccountKeeper.RemoveAccount(suite.Ctx, tokenfactoryModuleAccount)
+	tokenfactoryModuleAccount := app.AppKeepers.AccountKeeper.GetAccount(suite.Ctx, app.AppKeepers.AccountKeeper.GetModuleAddress(types.ModuleName))
+	app.AppKeepers.AccountKeeper.RemoveAccount(suite.Ctx, tokenfactoryModuleAccount)
 
 	// ensure module account was removed
 	suite.Ctx = app.BaseApp.NewContext(false, tmproto.Header{ChainID: "testing"})
-	tokenfactoryModuleAccount = app.AccountKeeper.GetAccount(suite.Ctx, app.AccountKeeper.GetModuleAddress(types.ModuleName))
+	tokenfactoryModuleAccount = app.AppKeepers.AccountKeeper.GetAccount(suite.Ctx, app.AppKeepers.AccountKeeper.GetModuleAddress(types.ModuleName))
 	suite.Require().Nil(tokenfactoryModuleAccount)
 
 	// create module account
 	app.AppKeepers.TokenFactoryKeeper.CreateModuleAccount(suite.Ctx)
 
 	// check that the module account is now initialized
-	tokenfactoryModuleAccount = app.AccountKeeper.GetAccount(suite.Ctx, app.AccountKeeper.GetModuleAddress(types.ModuleName))
+	tokenfactoryModuleAccount = app.AppKeepers.AccountKeeper.GetAccount(suite.Ctx, app.AppKeepers.AccountKeeper.GetModuleAddress(types.ModuleName))
 	suite.Require().NotNil(tokenfactoryModuleAccount)
 }
