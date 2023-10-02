@@ -66,6 +66,7 @@ import (
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 
 	v2 "github.com/terpnetwork/terp-core/v2/app/upgrades/v2"
+	v3 "github.com/terpnetwork/terp-core/v2/app/upgrades/v3"
 	"github.com/terpnetwork/terp-core/v2/docs"
 	"github.com/terpnetwork/terp-core/v2/app/openapiconsole"
 
@@ -101,6 +102,7 @@ var (
 
 	Upgrades = []upgrades.Upgrade{
 		v2.Upgrade,
+		v3.Upgrade,
 	}
 )
 
