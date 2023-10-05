@@ -24,6 +24,8 @@ docs/node_modules
 baseapp/data/*
 client/lcd/keys/*
 mytestnet
+draft_metadata.json
+draft_proposal.json
 
 # Testing
 coverage.txt

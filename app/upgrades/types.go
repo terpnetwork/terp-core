@@ -46,3 +46,10 @@ func GetChainsDenomToken(chainID string) string {
 	}
 	return "uterp"
 }
+
+func GetChainsFeeDenomToken(chainID string) string {
+	if strings.HasPrefix(chainID, "90u-") {
+		return "uthiolx"
+	}
+	return "uthiol"
+}

@@ -3,6 +3,7 @@ package v3
 import (
 	"strconv"
 	"strings"
+    "fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -20,6 +21,12 @@ func HeadStash(
     headstashes := GetHeadstashPayments()
     total := int64(0)
 
+    nativeDenom := upgrades.GetChainsDenomToken(ctx.ChainID())
+    nativeFeeDenom := upgrades.GetChainsFeeDenomToken(ctx.ChainID())
+
+    logger.Info(fmt.Sprintf("With native denom %s", nativeDenom))
+    logger.Info(fmt.Sprintf("With native fee denom %s", nativeFeeDenom))
+
 
     for _, headstash := range headstashes {
         addr, err := sdk.AccAddressFromBech32(headstash[0])
@@ -31,10 +38,16 @@ func HeadStash(
         if err != nil {
             panic(err)
         }
-        coins := sdk.NewCoins(
-            sdk.NewInt64Coin("uterp", amount),
+        terpcoins := sdk.NewCoins(
+            sdk.NewInt64Coin(nativeDenom, amount),
         )
-        if err := dsk.DistributeFromFeePool(ctx, coins, addr); err != nil {
+        thiolcoins := sdk.NewCoins(
+            sdk.NewInt64Coin(nativeFeeDenom, amount),
+        )
+        if err := dsk.DistributeFromFeePool(ctx, terpcoins, addr); err != nil {
+            panic(err)
+        } 
+        if err := dsk.DistributeFromFeePool(ctx, thiolcoins, addr); err != nil {
             panic(err)
         } 
         total += amount 
