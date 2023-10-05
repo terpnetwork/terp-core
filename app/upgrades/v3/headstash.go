@@ -9,7 +9,7 @@ import (
 
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
-
+	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 )
 
 func HeadStash(
@@ -18,6 +18,7 @@ func HeadStash(
 	dsk distrkeeper.Keeper,
 	) {
     // Get array of addresses & amounts
+    logger := ctx.Logger().With("upgrade", UpgradeName)
     headstashes := GetHeadstashPayments()
     total := int64(0)
 
