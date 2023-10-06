@@ -94,8 +94,8 @@ func Setup(t *testing.T) *TerpApp {
 
 // SetupWithGenesisValSet initializes a new junoApp with a validator set and genesis accounts
 // that also act as delegators. For simplicity, each validator is bonded with a delegation
-// of one consensus engine unit in the default token of the JunoApp from first genesis
-// account. A Nop logger is set in JunoApp.
+// of one consensus engine unit in the default token of the TerpApp from first genesis
+// account. A Nop logger is set in TerpApp.
 func SetupWithGenesisValSet(t *testing.T, valSet *tmtypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *TerpApp {
 	t.Helper()
 
@@ -259,7 +259,7 @@ func ExecuteRawCustom(t *testing.T, ctx sdk.Context, app *TerpApp, contract sdk.
 		coins = sdk.Coins{funds}
 	}
 
-	contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(app.WasmKeeper)
+	contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(app.AppKeepers.WasmKeeper)
 	_, err = contractKeeper.Execute(ctx, contract, sender, oracleBz, coins)
 	return err
 }

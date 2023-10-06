@@ -64,7 +64,7 @@ func queryCustom(t *testing.T, ctx sdk.Context, terpapp *app.TerpApp, contract s
 	require.NoError(t, err)
 	fmt.Println("queryCustom2", string(queryBz))
 
-	resBz, err := terpapp.WasmKeeper.QuerySmart(ctx, contract, queryBz)
+	resBz, err := terpapp.AppKeepers.WasmKeeper.QuerySmart(ctx, contract, queryBz)
 	require.NoError(t, err)
 	var resp ChainResponse
 	err = json.Unmarshal(resBz, &resp)

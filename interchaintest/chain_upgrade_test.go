@@ -24,8 +24,8 @@ const (
 
 func TestBasicTerpUpgrade(t *testing.T) {
 	repo, version := GetDockerImageInfo()
-	startVersion := "barberry"
-	upgradeName := "v2"
+	startVersion := "v2.0.0"
+	upgradeName := "v3"
 	CosmosChainUpgradeTest(t, "terp", startVersion, version, repo, upgradeName)
 }
 

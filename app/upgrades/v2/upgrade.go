@@ -7,21 +7,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	feesharekeeper "github.com/terpnetwork/terp-core/v2/x/feeshare/keeper"
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 
-	globalfeekeeper "github.com/terpnetwork/terp-core/v2/x/globalfee/keeper"
 	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 
-	tokenfactorykeeper "github.com/terpnetwork/terp-core/v2/x/tokenfactory/keeper"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 
-	icqkeeper "github.com/cosmos/ibc-apps/modules/async-icq/v7/keeper"
 	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v7/types"
 
-	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/router/keeper"
 	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/router/types"
 
+	"github.com/terpnetwork/terp-core/v2/app/keepers"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 )
 
@@ -29,17 +25,21 @@ import (
 const NewDenomCreationGasConsume uint64 = 2_000_000
 
 // CreateUpgradeHandler creates an SDK upgrade handler for v2
-func CreateUpgradeHandler(
+func CreateV2UpgradeHandler(
 	mm *module.Manager,
-	configurator module.Configurator,
-	fsk feesharekeeper.Keeper,
-	gfk globalfeekeeper.Keeper,
-	tfk tokenfactorykeeper.Keeper,
-	icqk icqkeeper.Keeper,
-	pfk packetforwardkeeper.Keeper,
+	cfg module.Configurator,
+	keepers *keepers.AppKeepers,
 ) upgradetypes.UpgradeHandler {
 	return func(ctx sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		logger := ctx.Logger().With("upgrade", UpgradeName)
+
+		// Run migrations
+		logger.Info(fmt.Sprintf("pre migrate version map: %v", vm))
+		versionMap, err := mm.RunMigrations(ctx, cfg, vm)
+		if err != nil {
+			return nil, err
+		}
+		logger.Info(fmt.Sprintf("post migrate version map: %v", versionMap))
 
 		nativeDenom := upgrades.GetChainsDenomToken(ctx.ChainID())
 		logger.Info(fmt.Sprintf("With native denom %s", nativeDenom))
@@ -50,7 +50,7 @@ func CreateUpgradeHandler(
 			DeveloperShares: sdk.NewDecWithPrec(50, 2), // = 50%
 			AllowedDenoms:   []string{nativeDenom},
 		}
-		if err := fsk.SetParams(ctx, newFeeShareParams); err != nil {
+		if err := keepers.FeeShareKeeper.SetParams(ctx, newFeeShareParams); err != nil {
 			return nil, err
 		}
 		logger.Info("set feeshare params")
@@ -63,7 +63,7 @@ func CreateUpgradeHandler(
 		newGlobalFeeParams := globalfeetypes.Params{
 			MinimumGasPrices: minGasPrices,
 		}
-		if err := gfk.SetParams(ctx, newGlobalFeeParams); err != nil {
+		if err := keepers.GlobalFeeKeeper.SetParams(ctx, newGlobalFeeParams); err != nil {
 			return nil, err
 		}
 		logger.Info(fmt.Sprintf("upgraded global fee params to %s", minGasPrices))
@@ -75,20 +75,20 @@ func CreateUpgradeHandler(
 			DenomCreationGasConsume: NewDenomCreationGasConsume,
 		}
 
-		if err := tfk.SetParams(ctx, updatedTf); err != nil {
+		if err := keepers.TokenFactoryKeeper.SetParams(ctx, updatedTf); err != nil {
 			return nil, err
 		}
 		logger.Info(fmt.Sprintf("updated tokenfactory params to %v", updatedTf))
 
 		// // Interchain Queries
 		icqParams := icqtypes.NewParams(true, nil)
-		icqk.SetParams(ctx, icqParams)
+		keepers.ICQKeeper.SetParams(ctx, icqParams)
 
 		// Packet Forward middleware initial params
-		pfk.SetParams(ctx, packetforwardtypes.DefaultParams())
+		keepers.PacketForwardKeeper.SetParams(ctx, packetforwardtypes.DefaultParams())
 
 		// Leave modules are as-is to avoid running InitGenesis.
 		logger.Debug("running module migrations ...")
-		return mm.RunMigrations(ctx, configurator, vm)
+		return versionMap, err
 	}
 }
