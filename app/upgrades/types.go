@@ -2,7 +2,7 @@ package upgrades
 
 import (
 	"strings"
-	
+
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	store "github.com/cosmos/cosmos-sdk/store/types"
@@ -11,7 +11,6 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	"github.com/terpnetwork/terp-core/v2/app/keepers"
-
 )
 
 // BaseAppParamManager defines an interrace that BaseApp is expected to fullfil

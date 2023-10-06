@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 
 	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
@@ -33,7 +32,7 @@ func CreateV2UpgradeHandler(
 ) upgradetypes.UpgradeHandler {
 	return func(ctx sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		logger := ctx.Logger().With("upgrade", UpgradeName)
-		
+
 		// Run migrations
 		logger.Info(fmt.Sprintf("pre migrate version map: %v", vm))
 		versionMap, err := mm.RunMigrations(ctx, cfg, vm)
@@ -41,7 +40,6 @@ func CreateV2UpgradeHandler(
 			return nil, err
 		}
 		logger.Info(fmt.Sprintf("post migrate version map: %v", versionMap))
-
 
 		nativeDenom := upgrades.GetChainsDenomToken(ctx.ChainID())
 		logger.Info(fmt.Sprintf("With native denom %s", nativeDenom))
