@@ -1,4 +1,5 @@
 package app
+
 import (
 	wasm "github.com/CosmWasm/wasmd/x/wasm"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
@@ -19,7 +20,6 @@ import (
 
 	mint "github.com/cosmos/cosmos-sdk/x/mint"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -63,12 +63,13 @@ import (
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 	"github.com/terpnetwork/terp-core/v2/x/globalfee"
 	"github.com/terpnetwork/terp-core/v2/x/tokenfactory"
-	
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+
+	"github.com/cosmos/cosmos-sdk/x/group"
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7"
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/types"
-	"github.com/cosmos/cosmos-sdk/x/group"
-	
+
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+
 	groupmodule "github.com/cosmos/cosmos-sdk/x/group/module"
 )
 
@@ -162,7 +163,7 @@ func simulationModules(
 	app *TerpApp,
 	encodingConfig encparams.EncodingConfig,
 	_ bool,
-)  []module.AppModuleSimulation {
+) []module.AppModuleSimulation {
 	appCodec := encodingConfig.Marshaler
 
 	// bondDenom := app.GetChainBondDenom()
@@ -223,7 +224,6 @@ func orderBeginBlockers() []string {
 		wasmtypes.ModuleName,
 	}
 }
-
 
 func orderEndBlockers() []string {
 	return []string{

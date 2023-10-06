@@ -1,8 +1,9 @@
-package keepers 
+package keepers
 
 import (
 	"fmt"
 	"path/filepath"
+
 	"github.com/spf13/cast"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -40,7 +41,6 @@ import (
 	ibcclient "github.com/cosmos/ibc-go/v7/modules/core/02-client"
 	ibcclienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	ibcconnectiontypes "github.com/cosmos/ibc-go/v7/modules/core/03-connection/types"
-
 
 	porttypes "github.com/cosmos/ibc-go/v7/modules/core/05-port/types"
 	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
@@ -100,14 +100,13 @@ import (
 	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 
 	// token factory
-	
+
+	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/bindings"
 	tokenfactorykeeper "github.com/terpnetwork/terp-core/v2/x/tokenfactory/keeper"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
-	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/bindings"
 )
 
 var (
-
 	wasmCapabilities = "iterator,staking,stargate,token_factory,cosmwasm_1_1,cosmwasm_1_2,tokenfactory"
 
 	tokenFactoryCapabilities = []string{
@@ -140,7 +139,7 @@ type AppKeepers struct {
 	keys    map[string]*storetypes.KVStoreKey
 	tkeys   map[string]*storetypes.TransientStoreKey
 	memKeys map[string]*storetypes.MemoryStoreKey
-	
+
 	// keepers
 	AccountKeeper authkeeper.AccountKeeper
 	AuthzKeeper   authzkeeper.Keeper
@@ -181,7 +180,7 @@ type AppKeepers struct {
 	ScopedTransferKeeper      capabilitykeeper.ScopedKeeper
 	ScopedIBCFeeKeeper        capabilitykeeper.ScopedKeeper
 	ScopedWasmKeeper          capabilitykeeper.ScopedKeeper
-	ScopedICQKeeper 	 	  capabilitykeeper.ScopedKeeper
+	ScopedICQKeeper           capabilitykeeper.ScopedKeeper
 
 	// Middleware wrapper
 	Ics20WasmHooks   *ibchooks.WasmHooks
@@ -198,12 +197,11 @@ func NewAppKeepers(
 	wasmOpts []wasmkeeper.Option,
 ) AppKeepers {
 	appKeepers := AppKeepers{}
-	
+
 	// Set keys KVStoreKey, TransientStoreKey, MemoryStoreKey
 	appKeepers.GenerateKeys()
 	keys := appKeepers.GetKVStoreKey()
 	tkeys := appKeepers.GetTransientStoreKey()
-
 
 	appKeepers.ParamsKeeper = initParamsKeeper(
 		appCodec,
@@ -211,7 +209,6 @@ func NewAppKeepers(
 		keys[paramstypes.StoreKey],
 		tkeys[paramstypes.TStoreKey],
 	)
-	
 
 	govModAddress := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
@@ -336,7 +333,6 @@ func NewAppKeepers(
 		scopedIBCKeeper,
 	)
 
-
 	appKeepers.AuthzKeeper = authzkeeper.NewKeeper(
 		keys[authzkeeper.StoreKey],
 		appCodec,
@@ -347,11 +343,10 @@ func NewAppKeepers(
 	// Register the proposal types
 	govRouter := govv1beta1.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler).
-	AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(appKeepers.ParamsKeeper)). // This should be removed. It is still in place to avoid failures of modules that have not yet been upgraded.
-	AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(appKeepers.UpgradeKeeper)).
-	AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(appKeepers.IBCKeeper.ClientKeeper))
+		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(appKeepers.ParamsKeeper)). // This should be removed. It is still in place to avoid failures of modules that have not yet been upgraded.
+		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(appKeepers.UpgradeKeeper)).
+		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(appKeepers.IBCKeeper.ClientKeeper))
 
-	
 	govConfig := govtypes.DefaultConfig()
 	govKeeper := govkeeper.NewKeeper(
 		appCodec,
@@ -388,7 +383,7 @@ func NewAppKeepers(
 		keys[ibchookstypes.StoreKey],
 	)
 	appKeepers.IBCHooksKeeper = &hooksKeeper
-	
+
 	terpPrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
 	wasmHooks := ibchooks.NewWasmHooks(appKeepers.IBCHooksKeeper, &appKeepers.WasmKeeper, terpPrefix) // The contract keeper needs to be set later // The contract keeper needs to be set later
 	appKeepers.Ics20WasmHooks = &wasmHooks
@@ -419,7 +414,7 @@ func NewAppKeepers(
 		appKeepers.BankKeeper,
 		appKeepers.IBCKeeper.ChannelKeeper,
 	)
-	
+
 	// Create Transfer Keepers
 	appKeepers.TransferKeeper = ibctransferkeeper.NewKeeper(
 		appCodec,
@@ -479,7 +474,7 @@ func NewAppKeepers(
 	)
 	// If evidence needs to be handled for the app, set routes in router here and seal
 	appKeepers.EvidenceKeeper = *evidenceKeeper
-	
+
 	appKeepers.TokenFactoryKeeper = tokenfactorykeeper.NewKeeper(
 		appCodec,
 		appKeepers.keys[tokenfactorytypes.StoreKey],
@@ -531,7 +526,6 @@ func NewAppKeepers(
 		})
 	wasmOpts = append(wasmOpts, querierOpts)
 
-
 	appKeepers.WasmKeeper = wasmkeeper.NewKeeper(
 		appCodec,
 		appKeepers.keys[wasmtypes.StoreKey],
@@ -557,7 +551,6 @@ func NewAppKeepers(
 	appKeepers.ContractKeeper = wasmkeeper.NewDefaultPermissionKeeper(appKeepers.WasmKeeper)
 	appKeepers.Ics20WasmHooks.ContractKeeper = &appKeepers.WasmKeeper
 
-
 	appKeepers.FeeShareKeeper = feesharekeeper.NewKeeper(
 		appKeepers.keys[feesharetypes.StoreKey],
 		appCodec,
@@ -568,7 +561,6 @@ func NewAppKeepers(
 		govModAddress,
 	)
 
-	
 	appKeepers.GlobalFeeKeeper = globalfeekeeper.NewKeeper(
 		appCodec,
 		appKeepers.keys[globalfeetypes.StoreKey],
@@ -625,9 +617,8 @@ func NewAppKeepers(
 		AddRoute(icacontrollertypes.SubModuleName, icaControllerStack).
 		AddRoute(icahosttypes.SubModuleName, icaHostStack).
 		AddRoute(icqtypes.ModuleName, icqModule)
-		appKeepers.IBCKeeper.SetRouter(ibcRouter)
+	appKeepers.IBCKeeper.SetRouter(ibcRouter)
 
-	
 	appKeepers.ScopedIBCKeeper = scopedIBCKeeper
 	appKeepers.ScopedTransferKeeper = scopedTransferKeeper
 	appKeepers.ScopedWasmKeeper = scopedWasmKeeper
@@ -704,7 +695,6 @@ func BlockedAddresses() map[string]bool {
 
 	return modAccAddrs
 }
-
 
 // GetMaccPerms returns a copy of the module account permissions
 //

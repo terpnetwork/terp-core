@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"reflect"
-	"strings"
 	"strconv"
-	"net/http"
+	"strings"
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
@@ -22,7 +22,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
@@ -46,29 +45,27 @@ import (
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
+	"github.com/prometheus/client_golang/prometheus"
 
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"	
+	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	ibcclientclient "github.com/cosmos/ibc-go/v7/modules/core/02-client/client"
 	ibcclienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	ibcchanneltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	ibcmock "github.com/cosmos/ibc-go/v7/testing/mock"
 
-
-	
-
 	"github.com/spf13/cast"
 
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 
+	"github.com/terpnetwork/terp-core/v2/app/openapiconsole"
 	v2 "github.com/terpnetwork/terp-core/v2/app/upgrades/v2"
 	v3 "github.com/terpnetwork/terp-core/v2/app/upgrades/v3"
 	"github.com/terpnetwork/terp-core/v2/docs"
-	"github.com/terpnetwork/terp-core/v2/app/openapiconsole"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
@@ -76,7 +73,6 @@ import (
 
 	"github.com/terpnetwork/terp-core/v2/app/keepers"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
-
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik" // statik for swagger UI support
@@ -272,7 +268,7 @@ func NewTerpApp(
 	app.keys = app.AppKeepers.GetKVStoreKey()
 
 	// load state streaming if enabled
-	if _, _, err := streaming.LoadStreamingServices(bApp, appOpts, appCodec, logger,  app.keys); err != nil {
+	if _, _, err := streaming.LoadStreamingServices(bApp, appOpts, appCodec, logger, app.keys); err != nil {
 		logger.Error("failed to load state streaming", "err", err)
 		os.Exit(1)
 	}
@@ -286,7 +282,6 @@ func NewTerpApp(
 	// upgrade handlers
 	app.configurator = module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
 
-	
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
 	skipGenesisInvariants := cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
@@ -301,7 +296,7 @@ func NewTerpApp(
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.ModuleManager.SetOrderBeginBlockers(orderBeginBlockers()...)
-	
+
 	app.ModuleManager.SetOrderEndBlockers(orderEndBlockers()...)
 
 	app.ModuleManager.SetOrderInitGenesis(orderInitBlockers()...)
@@ -327,7 +322,6 @@ func NewTerpApp(
 		panic("error while reading wasm config: " + err.Error())
 	}
 
-
 	anteHandler, err := NewAnteHandler(
 		HandlerOptions{
 			HandlerOptions: ante.HandlerOptions{
@@ -337,15 +331,15 @@ func NewTerpApp(
 				SignModeHandler: txConfig.SignModeHandler(),
 				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 			},
-			
-			GovKeeper:      app.AppKeepers.GovKeeper,
-			IBCKeeper:      app.AppKeepers.IBCKeeper,
-			FeeShareKeeper: app.AppKeepers.FeeShareKeeper,
-			BankKeeperFork: app.AppKeepers.BankKeeper, // since we need extra methods
+
+			GovKeeper:         app.AppKeepers.GovKeeper,
+			IBCKeeper:         app.AppKeepers.IBCKeeper,
+			FeeShareKeeper:    app.AppKeepers.FeeShareKeeper,
+			BankKeeperFork:    app.AppKeepers.BankKeeper, // since we need extra methods
 			TXCounterStoreKey: app.AppKeepers.GetKey(wasmtypes.StoreKey),
 			WasmConfig:        &wasmConfig,
 			Cdc:               appCodec,
-			
+
 			BypassMinFeeMsgTypes: GetDefaultBypassFeeMessages(),
 			GlobalFeeKeeper:      app.AppKeepers.GlobalFeeKeeper,
 			StakingKeeper:        *app.AppKeepers.StakingKeeper,
@@ -357,7 +351,6 @@ func NewTerpApp(
 		panic(err)
 	}
 
-	
 	// initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
@@ -421,7 +414,7 @@ func NewTerpApp(
 	app.sm = module.NewSimulationManager(simulationModules(app, encodingConfig, skipGenesisInvariants)...)
 
 	app.sm.RegisterStoreDecoders()
-	
+
 	return app
 }
 
@@ -464,7 +457,6 @@ func (app *TerpApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.R
 	return app.ModuleManager.EndBlock(ctx, req)
 }
 
-
 // InitChainer application update at chain initialization
 func (app *TerpApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
@@ -489,7 +481,6 @@ func (app *TerpApp) ModuleAccountAddrs() map[string]bool {
 
 	return modAccAddrs
 }
-
 
 // LegacyAmino returns legacy amino codec.
 //
@@ -561,7 +552,6 @@ func (app *TerpApp) RegisterTendermintService(clientCtx client.Context) {
 	)
 }
 
-
 func (app *TerpApp) RegisterNodeService(clientCtx client.Context) {
 	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter())
 }
@@ -603,8 +593,6 @@ func (app *TerpApp) setupUpgradeHandlers(cfg module.Configurator) {
 		)
 	}
 }
-
-
 
 // SimulationManager implements the SimulationApp interface
 func (app *TerpApp) SimulationManager() *module.SimulationManager {

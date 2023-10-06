@@ -14,4 +14,3 @@ var Upgrade = upgrades.Upgrade{
 	CreateUpgradeHandler: CreateV3UpgradeHandler,
 	StoreUpgrades:        store.StoreUpgrades{},
 }
-
