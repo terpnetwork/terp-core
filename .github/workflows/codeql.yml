@@ -1,15 +1,24 @@
-name: "Code Scanning - Action"
+---
+# THIS GITHUB ACTION LIFTED WITH LOVE FROM THE COSMOS-SDK
+name: "CodeQL"
 
 on:
   pull_request:
     paths:
       - "**.go"
   push:
-    branches: 
+    branches:
       - main
       - release/**
     paths:
       - "**.go"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: 1.21.0
 
 jobs:
   analyze:
@@ -22,10 +31,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         with:
-          go-version: 1.20.0
+          go-version: ${{ env.GO_VERSION }}
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2

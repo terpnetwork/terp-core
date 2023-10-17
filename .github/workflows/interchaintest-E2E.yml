@@ -1,186 +1,98 @@
 name: ictest E2E
 
 on:
+  pull_request:
   push:
     tags:
-      - '**'
+      - "**"
     branches:
-      - '**'
-    paths:
-      - '**.yml'
-      - '**.go'
-      - '**.mod'
-      - '**.sum'
+      - "main"
+      - "master"
+
+permissions:
+  contents: read
+  packages: write
 
 env:
-  REGISTRY: ghcr.io  
-  IMAGE_NAME: ${{ github.repository }}-e2e
-  GO_VERSION: 1.20.0
+  GO_VERSION: 1.21.0
+  TAR_PATH: /tmp/terp-docker-image.tar
+  IMAGE_NAME: terp-docker-image
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-push-image:
+  build-docker:
     runs-on: ubuntu-latest
-    outputs:
-      branchTag: ${{ steps.meta.outputs.version }}
-    permissions:
-      contents: read
-      packages: write
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4   
 
-      # We setup go & cache dependencies here. This way each child job
-      # does not have to reinstall all dependencies individually.
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v4
+      - name: Setup Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
-        id: go
-      
-      - name: Download dependencies
-        run: |
-          go mod download
-          cd interchaintest && go mod download
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+          cache-dependency-path: interchaintest/go.sum
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-      - name: Build and push Docker image
-        id: push
-        uses: docker/build-push-action@v4
+      - name: Build and export
+        uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max        
+          tags: terp:local
+          outputs: type=docker,dest=${{ env.TAR_PATH }}
 
-      # make terp-core:branchname here for all needs.build-and-push-image.outputs.branchTag
-      # then upload to github. Then download for each as a cache. This way its only built once    
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.IMAGE_NAME }}
+          path: ${{ env.TAR_PATH }}
 
-  # TODO: Add reusable job template here, just changing the `make` command for each
-
-  test-terp-basic:
+  e2e-tests:
+    needs: build-docker
     runs-on: ubuntu-latest
-    needs: build-and-push-image
-    steps:
-      - name: checkout chain
-        uses: actions/checkout@v2
+    strategy:
+      matrix:
+        # names of `make` commands to run tests
+        test:
+          - "ictest-basic"
+          - "ictest-statesync"
+          - "ictest-ibchooks"
+          - "ictest-tokenfactory"
+          - "ictest-feeshare"
+          - "ictest-pfm"
+          - "ictest-upgrade"
+          - "ictest-ibc"
+          # - "ictest-pob"
+          # - "ictest-drip"
+          - "ictest-burn"
+          # - "ictest-cwhooks"
+          # - "ictest-clock"
+      fail-fast: false
 
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v4
+    steps:
+      - name: Set up Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
-        id: go
-
-      - run: make ictest-basic
-        env:
-          BRANCH_CI: ${{needs.build-and-push-image.outputs.branchTag}}
-
-  test-terp-ibc:
-    runs-on: ubuntu-latest
-    needs: build-and-push-image
-    steps:
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-        id: go
+          cache-dependency-path: interchaintest/go.sum
 
       - name: checkout chain
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - run: make ictest-ibc
-        env:
-          BRANCH_CI: ${{needs.build-and-push-image.outputs.branchTag}}
-
-  test-terp-upgrade:
-    runs-on: ubuntu-latest
-    needs: build-and-push-image
-    steps:
-      - name: checkout chain
-        uses: actions/checkout@v2
-
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v4
+      - name: Download Tarball Artifact
+        uses: actions/download-artifact@v3
         with:
-          go-version: ${{ env.GO_VERSION }}
-        id: go
+          name: ${{ env.IMAGE_NAME }}
+          path: /tmp
 
-      - run: make ictest-upgrade
-        env:
-          BRANCH_CI: ${{needs.build-and-push-image.outputs.branchTag}}
+      - name: Load Docker Image
+        run: |
+          docker image load -i ${{ env.TAR_PATH }}
+          docker image ls -a
 
-  test-terp-ibchooks:
-    runs-on: ubuntu-latest
-    needs: build-and-push-image
-    steps:
-      - name: checkout chain
-        uses: actions/checkout@v2
-
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-        id: go
-
-      - run: make ictest-ibchooks
-        env:
-          BRANCH_CI: ${{needs.build-and-push-image.outputs.branchTag}}
-
-  test-terp-pfm:
-    runs-on: ubuntu-latest
-    needs: build-and-push-image
-    steps:
-      - name: checkout chain
-        uses: actions/checkout@v2
-
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-        id: go
-
-      - run: make ictest-pfm
-        env:
-          BRANCH_CI: ${{needs.build-and-push-image.outputs.branchTag}}
-
-  test-terp-tokenfactory:
-    runs-on: ubuntu-latest
-    needs: build-and-push-image
-    steps:
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-        id: go
-
-      - name: checkout chain
-        uses: actions/checkout@v2
-
-      - run: make ictest-tokenfactory
-        env:
-          BRANCH_CI: ${{needs.build-and-push-image.outputs.branchTag}}
+      - name: Run Test
+        run: make ${{ matrix.test }}

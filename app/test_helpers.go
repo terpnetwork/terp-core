@@ -46,7 +46,7 @@ func (ao EmptyBaseAppOptions) Get(_ string) interface{} {
 }
 
 // DefaultConsensusParams defines the default Tendermint consensus params used
-// in junoApp testing.
+// in terpApp testing.
 var DefaultConsensusParams = &tmproto.ConsensusParams{
 	Block: &tmproto.BlockParams{
 		MaxBytes: 200000,
@@ -92,21 +92,21 @@ func Setup(t *testing.T) *TerpApp {
 	return app
 }
 
-// SetupWithGenesisValSet initializes a new junoApp with a validator set and genesis accounts
+// SetupWithGenesisValSet initializes a new terpApp with a validator set and genesis accounts
 // that also act as delegators. For simplicity, each validator is bonded with a delegation
 // of one consensus engine unit in the default token of the TerpApp from first genesis
 // account. A Nop logger is set in TerpApp.
 func SetupWithGenesisValSet(t *testing.T, valSet *tmtypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *TerpApp {
 	t.Helper()
 
-	junoApp, genesisState := setup(t, true)
-	genesisState = genesisStateWithValSet(t, junoApp, genesisState, valSet, genAccs, balances...)
+	terpApp, genesisState := setup(t, true)
+	genesisState = genesisStateWithValSet(t, terpApp, genesisState, valSet, genAccs, balances...)
 
 	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
 	require.NoError(t, err)
 
 	// init chain will set the validator set and initialize the genesis accounts
-	junoApp.InitChain(
+	terpApp.InitChain(
 		abci.RequestInitChain{
 			Validators:      []abci.ValidatorUpdate{},
 			ConsensusParams: DefaultConsensusParams,
@@ -118,17 +118,17 @@ func SetupWithGenesisValSet(t *testing.T, valSet *tmtypes.ValidatorSet, genAccs 
 	)
 
 	// commit genesis changes
-	junoApp.Commit()
-	junoApp.BeginBlock(abci.RequestBeginBlock{Header: tmproto.Header{
+	terpApp.Commit()
+	terpApp.BeginBlock(abci.RequestBeginBlock{Header: tmproto.Header{
 		ChainID:            "testing",
-		Height:             junoApp.LastBlockHeight() + 1,
-		AppHash:            junoApp.LastCommitID().Hash,
+		Height:             terpApp.LastBlockHeight() + 1,
+		AppHash:            terpApp.LastCommitID().Hash,
 		ValidatorsHash:     valSet.Hash(),
 		NextValidatorsHash: valSet.Hash(),
 		Time:               time.Now().UTC(),
 	}})
 
-	return junoApp
+	return terpApp
 }
 
 func setup(t *testing.T, withGenesis bool, opts ...wasmkeeper.Option) (*TerpApp, GenesisState) {
