@@ -93,6 +93,8 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	denomburn "github.com/terpnetwork/terp-core/v2/x/burn"
+	clockkeeper "github.com/terpnetwork/terp-core/v2/x/clock/keeper"
+	clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
 	feesharekeeper "github.com/terpnetwork/terp-core/v2/x/feeshare/keeper"
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 
@@ -173,6 +175,7 @@ type AppKeepers struct {
 	PacketForwardKeeper *packetforwardkeeper.Keeper
 	ICQKeeper           icqkeeper.Keeper
 	ICAHostKeeper       icahostkeeper.Keeper
+	ClockKeeper         clockkeeper.Keeper
 	TransferKeeper      ibctransferkeeper.Keeper
 	WasmKeeper          wasmkeeper.Keeper
 
@@ -570,6 +573,12 @@ func NewAppKeepers(
 	appKeepers.GlobalFeeKeeper = globalfeekeeper.NewKeeper(
 		appCodec,
 		appKeepers.keys[globalfeetypes.StoreKey],
+		govModAddress,
+	)
+	appKeepers.ClockKeeper = clockkeeper.NewKeeper(
+		appKeepers.keys[clocktypes.StoreKey],
+		appCodec,
+		*appKeepers.ContractKeeper,
 		govModAddress,
 	)
 

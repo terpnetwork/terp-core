@@ -7,17 +7,19 @@ import (
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	ibclocalhost "github.com/cosmos/ibc-go/v7/modules/light-clients/09-localhost"
-
 	"github.com/docker/docker/client"
-
 	interchaintest "github.com/strangelove-ventures/interchaintest/v7"
 	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
 	"github.com/strangelove-ventures/interchaintest/v7/ibc"
 	"github.com/strangelove-ventures/interchaintest/v7/testreporter"
-
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
+	clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
+	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	testutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 )
 
@@ -78,6 +80,10 @@ var (
 	genesisWalletAmount = int64(10_000_000)
 )
 
+func init() {
+	sdk.GetConfig().SetBech32PrefixForAccount("terp", "terp")
+}
+
 // terpEncoding registers the Terp specific module codecs so that the associated types and msgs
 // will be supported when writing to the blocksdb sqlite database.
 func terpEncoding() *testutil.TestEncodingConfig {
@@ -86,6 +92,9 @@ func terpEncoding() *testutil.TestEncodingConfig {
 	// register custom types
 	ibclocalhost.RegisterInterfaces(cfg.InterfaceRegistry)
 	wasmtypes.RegisterInterfaces(cfg.InterfaceRegistry)
+	feesharetypes.RegisterInterfaces(cfg.InterfaceRegistry)
+	tokenfactorytypes.RegisterInterfaces(cfg.InterfaceRegistry)
+	clocktypes.RegisterInterfaces(cfg.InterfaceRegistry)
 
 	// github.com/cosmos/cosmos-sdk/types/module/testutil
 
@@ -106,6 +115,26 @@ func CreateThisBranchChain(t *testing.T, numVals, numFull int) []ibc.Chain {
 			ChainName:     "terpnetwork",
 			Version:       terpVersion,
 			ChainConfig:   terpConfig,
+			NumValidators: &numVals,
+			NumFullNodes:  &numFull,
+		},
+	})
+
+	// Get chains from the chain factory
+	chains, err := cf.Chains(t.Name())
+	require.NoError(t, err)
+
+	// chain := chains[0].(*cosmos.CosmosChain)
+	return chains
+}
+
+func CreateChainWithCustomConfig(t *testing.T, numVals, numFull int, config ibc.ChainConfig) []ibc.Chain {
+	cf := interchaintest.NewBuiltinChainFactory(zaptest.NewLogger(t), []*interchaintest.ChainSpec{
+		{
+			Name:          "terp",
+			ChainName:     "terpnetwork",
+			Version:       config.Images[0].Version,
+			ChainConfig:   config,
 			NumValidators: &numVals,
 			NumFullNodes:  &numFull,
 		},
