@@ -49,3 +49,7 @@ dependency-graph.png
 *.out
 *.synctex.gz
 contract_tests/*
+
+# Protobuf 
+gogoproto
+github.com
