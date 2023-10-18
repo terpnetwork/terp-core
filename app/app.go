@@ -65,6 +65,7 @@ import (
 	"github.com/terpnetwork/terp-core/v2/app/openapiconsole"
 	v2 "github.com/terpnetwork/terp-core/v2/app/upgrades/v2"
 	v3 "github.com/terpnetwork/terp-core/v2/app/upgrades/v3"
+	v4 "github.com/terpnetwork/terp-core/v2/app/upgrades/v4"
 	"github.com/terpnetwork/terp-core/v2/docs"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -99,6 +100,7 @@ var (
 	Upgrades = []upgrades.Upgrade{
 		v2.Upgrade,
 		v3.Upgrade,
+		v4.Upgrade,
 	}
 )
 
