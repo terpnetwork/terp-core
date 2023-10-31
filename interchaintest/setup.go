@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
-	clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
+	// clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
 	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
 
@@ -94,7 +94,7 @@ func terpEncoding() *testutil.TestEncodingConfig {
 	wasmtypes.RegisterInterfaces(cfg.InterfaceRegistry)
 	feesharetypes.RegisterInterfaces(cfg.InterfaceRegistry)
 	tokenfactorytypes.RegisterInterfaces(cfg.InterfaceRegistry)
-	clocktypes.RegisterInterfaces(cfg.InterfaceRegistry)
+	// clocktypes.RegisterInterfaces(cfg.InterfaceRegistry)
 
 	// github.com/cosmos/cosmos-sdk/types/module/testutil
 

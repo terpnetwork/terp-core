@@ -34,7 +34,7 @@ import (
 	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v7/types"
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/types"
 	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
-	clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
+	// clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
 )
 
 func (appKeepers *AppKeepers) GenerateKeys() {
@@ -68,7 +68,7 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		ibchookstypes.StoreKey,
 		feesharetypes.StoreKey,
 		globalfeetypes.StoreKey,
-		clocktypes.StoreKey,
+		// clocktypes.StoreKey,
 		tokenfactorytypes.StoreKey,
 	)
 

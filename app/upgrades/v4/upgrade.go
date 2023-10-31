@@ -9,7 +9,6 @@ import (
 
 	"github.com/terpnetwork/terp-core/v2/app/keepers"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
-	clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
 	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 )
 
@@ -21,10 +20,7 @@ func CreateV4UpgradeHandler(
 ) upgradetypes.UpgradeHandler {
 	return func(ctx sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		logger := ctx.Logger().With("upgrade", UpgradeName)
-		// x/clock
-		if err := keepers.ClockKeeper.SetParams(ctx, clocktypes.DefaultParams()); err != nil {
-			return nil, err
-		}
+
 		// GlobalFee
 		nativeDenom := upgrades.GetChainsDenomToken(ctx.ChainID())
 		nativeFeeDenom := upgrades.GetChainsFeeDenomToken(ctx.ChainID())

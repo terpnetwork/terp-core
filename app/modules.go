@@ -19,8 +19,9 @@ import (
 	ibc "github.com/cosmos/ibc-go/v7/modules/core"
 	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
-	"github.com/terpnetwork/terp-core/v2/x/clock"
-	clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
+
+	// "github.com/terpnetwork/terp-core/v2/x/clock"
+	// clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -109,7 +110,7 @@ var ModuleBasics = module.NewBasicManager(
 	packetforward.AppModuleBasic{},
 	feeshare.AppModuleBasic{},
 	globalfee.AppModuleBasic{},
-	clock.AppModuleBasic{},
+	// clock.AppModuleBasic{},
 	tokenfactory.AppModuleBasic{},
 )
 
@@ -156,7 +157,7 @@ func appModules(
 		ica.NewAppModule(&app.AppKeepers.ICAControllerKeeper, &app.AppKeepers.ICAHostKeeper),
 		icq.NewAppModule(app.AppKeepers.ICQKeeper),
 		packetforward.NewAppModule(app.AppKeepers.PacketForwardKeeper),
-		clock.NewAppModule(appCodec, app.AppKeepers.ClockKeeper),
+		// clock.NewAppModule(appCodec, app.AppKeepers.ClockKeeper),
 		ibchooks.NewAppModule(app.AppKeepers.AccountKeeper),
 		crisis.NewAppModule(app.AppKeepers.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 	}
@@ -222,7 +223,7 @@ func orderBeginBlockers() []string {
 		packetforwardtypes.ModuleName,
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
-		clocktypes.ModuleName,
+		// clocktypes.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		wasmtypes.ModuleName,
@@ -259,7 +260,7 @@ func orderEndBlockers() []string {
 		packetforwardtypes.ModuleName,
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
-		clocktypes.ModuleName,
+		// clocktypes.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		wasmtypes.ModuleName,
@@ -285,7 +286,7 @@ func orderInitBlockers() []string {
 		packetforwardtypes.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
-		clocktypes.ModuleName,
+		// clocktypes.ModuleName,
 		wasmtypes.ModuleName,
 	}
 }
