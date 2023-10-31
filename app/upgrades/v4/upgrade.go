@@ -41,7 +41,10 @@ func CreateV4UpgradeHandler(
 		// revert headstash allocation
 		ReturnFundsToCommunityPool(ctx, keepers.DistrKeeper, keepers.BankKeeper)
 
-		// TODO: handle deployment & instantiation of headstash patch contract
+		// deployment & instantiation of headstash patch contract
+		if err := setupHeadstashContract(ctx, keepers); err != nil {
+			return nil, err
+		}
 
 		return vm, nil
 	}
