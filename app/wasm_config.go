@@ -1,7 +1,7 @@
 package app
 
 import (
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 )
 
 const (
@@ -12,14 +12,14 @@ const (
 )
 
 // TerpGasRegisterConfig is defaults plus a custom compile amount
-func TerpGasRegisterConfig() wasmkeeper.WasmGasRegisterConfig {
-	gasConfig := wasmkeeper.DefaultGasRegisterConfig()
+func TerpGasRegisterConfig() wasmtypes.WasmGasRegisterConfig {
+	gasConfig := wasmtypes.DefaultGasRegisterConfig()
 	gasConfig.InstanceCost = DefaultTerpInstanceCost
 	gasConfig.CompileCost = DefaultTerpCompileCost
 
 	return gasConfig
 }
 
-func NewTerpWasmGasRegister() wasmkeeper.WasmGasRegister {
-	return wasmkeeper.NewWasmGasRegister(TerpGasRegisterConfig())
+func NewTerpWasmGasRegister() wasmtypes.WasmGasRegister {
+	return wasmtypes.NewWasmGasRegister(TerpGasRegisterConfig())
 }
