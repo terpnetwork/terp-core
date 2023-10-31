@@ -1,12 +1,16 @@
 package v4
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	"github.com/terpnetwork/terp-core/v2/app/keepers"
+	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 	clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
+	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 )
 
 // CreateUpgradeHandler creates an SDK upgrade handler for v4
@@ -16,7 +20,7 @@ func CreateV4UpgradeHandler(
 	keepers *keepers.AppKeepers,
 ) upgradetypes.UpgradeHandler {
 	return func(ctx sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-
+		logger := ctx.Logger().With("upgrade", UpgradeName)
 		// x/clock
 		if err := keepers.ClockKeeper.SetParams(ctx, clocktypes.DefaultParams()); err != nil {
 			return nil, err
@@ -38,8 +42,8 @@ func CreateV4UpgradeHandler(
 		}
 		logger.Info(fmt.Sprintf("upgraded global fee params to %s", minGasPrices))
 
-		// revert headstash allocation 
-		ReturnFundsToCommunityPool(ctx, keepers.BankKeeper, keepers.DistrKeeper)
+		// revert headstash allocation
+		ReturnFundsToCommunityPool(ctx, keepers.DistrKeeper, keepers.BankKeeper)
 
 		// TODO: handle deployment & instantiation of headstash patch contract
 
