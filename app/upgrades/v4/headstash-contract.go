@@ -26,7 +26,7 @@ func setupHeadstashContract(ctx sdk.Context, keepers *keepers.AppKeepers) error 
 		return err
 	}
 	// define instantiate permissions
-	instantiateConfig := wasmtypes.AccessConfig{Permission: wasmtypes.AccessTypeNobody}
+	instantiateConfig := wasmtypes.AccessConfig{Permission: wasmtypes.AccessTypeEverybody}
 	contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(keepers.WasmKeeper)
 	// store wasm contract
 	codeID, _, err := contractKeeper.Create(ctx, govModule, code, &instantiateConfig)
@@ -40,7 +40,7 @@ func setupHeadstashContract(ctx sdk.Context, keepers *keepers.AppKeepers) error 
 	// define instantiate msg
 	initMsgBz := []byte(fmt.Sprintf(`{
 		"owner":	"%s",
-		"claim_msg_plaintext":	"%s"
+		"claim_msg_plaintext":	"%s",
 		"merkle_root": 	"%s"
 	}`,
 		govModule, claimMsg, merkleRoot))
