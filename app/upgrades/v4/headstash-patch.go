@@ -14,11 +14,11 @@ import (
 )
 
 // revert headstash allocation by depositing funds back into community pool
-func ReturnFundsToCommunityPool(
+func returnFundsToCommunityPool(
 	ctx sdk.Context,
 	dk distrkeeper.Keeper,
 	bk bankkeeper.Keeper,
-) {
+) error {
 
 	headstashes := v3.GetHeadstashPayments()
 	total := int64(0)
@@ -50,7 +50,7 @@ func ReturnFundsToCommunityPool(
 		}
 		total += amount
 	}
-
+	return nil
 }
 
 // TODO: handle headstash-patch contract upload & instantiation

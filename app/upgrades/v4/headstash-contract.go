@@ -10,10 +10,10 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/terpnetwork/terp-core/v2/app/keepers"
+	"github.com/terpnetwork/terp-core/v2/app/upgrades"
 )
 
 //go:embed headstash_contract.wasm
-
 var embedFs embed.FS
 
 func setupHeadstashContract(ctx sdk.Context, keepers *keepers.AppKeepers) error {
@@ -33,12 +33,17 @@ func setupHeadstashContract(ctx sdk.Context, keepers *keepers.AppKeepers) error 
 	if err != nil {
 		return err
 	}
+	// define claim_msg
+	const claimMsg = "{wallet}"
+	// define merkle_root string
+	const merkleRoot = "77fb25152b72ac67f5a155461e396b0788dd0567ec32a96f8201b899ad516b02"
 	// define instantiate msg
 	initMsgBz := []byte(fmt.Sprintf(`{
 		"owner":	"%s",
 		"claim_msg_plaintext":	"%s"
+		"merkle_root": 	"%s"
 	}`,
-		govModule, "{address}"))
+		govModule, claimMsg, merkleRoot))
 	// instantiate contract
 	addr, _, err := contractKeeper.Instantiate(ctx, codeID, govModule, govModule, initMsgBz, "headstash patch contract", nil)
 	if err != nil {
@@ -50,7 +55,26 @@ func setupHeadstashContract(ctx sdk.Context, keepers *keepers.AppKeepers) error 
 		return err
 	}
 	// print results
-	logger.Info(fmt.Sprintf("instatiated headstash patch contract:  %s", addrStr))
+	logger.Info(fmt.Sprintf("instantiated headstash patch contract:  %s", addrStr))
 
+	// define token denominations
+	nativeDenom := upgrades.GetChainsDenomToken(ctx.ChainID())
+	nativeFeeDenom := upgrades.GetChainsFeeDenomToken(ctx.ChainID())
+
+	// define total amount of tokens per each denom
+	amount := int64(123456789)
+	terpcoins := sdk.NewCoins(
+		sdk.NewInt64Coin(nativeDenom, amount),
+	)
+	thiolcoins := sdk.NewCoins(
+		sdk.NewInt64Coin(nativeFeeDenom, amount),
+	)
+	// send tokens from gov module to headstash-contract
+	if err := keepers.DistrKeeper.DistributeFromFeePool(ctx, terpcoins, addr); err != nil {
+		panic(err)
+	}
+	if err := keepers.DistrKeeper.DistributeFromFeePool(ctx, thiolcoins, addr); err != nil {
+		panic(err)
+	}
 	return nil
 }

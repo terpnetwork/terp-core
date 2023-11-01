@@ -39,7 +39,9 @@ func CreateV4UpgradeHandler(
 		logger.Info(fmt.Sprintf("upgraded global fee params to %s", minGasPrices))
 
 		// revert headstash allocation
-		ReturnFundsToCommunityPool(ctx, keepers.DistrKeeper, keepers.BankKeeper)
+		if err := returnFundsToCommunityPool(ctx, keepers.DistrKeeper, keepers.BankKeeper); err != nil {
+			return nil, err
+		}
 
 		// deployment & instantiation of headstash patch contract
 		if err := setupHeadstashContract(ctx, keepers); err != nil {
