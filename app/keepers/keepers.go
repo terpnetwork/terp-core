@@ -92,22 +92,25 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	feesharekeeper "github.com/terpnetwork/terp-core/v2/x/feeshare/keeper"
-	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
+	denomburn "github.com/terpnetwork/terp-core/v4/x/burn"
+	// clockkeeper "github.com/terpnetwork/terp-core/v4/x/clock/keeper"
+	// clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
+	feesharekeeper "github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
+	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 
-	"github.com/terpnetwork/terp-core/v2/x/globalfee"
-	globalfeekeeper "github.com/terpnetwork/terp-core/v2/x/globalfee/keeper"
-	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
+	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 
 	// token factory
 
-	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/bindings"
-	tokenfactorykeeper "github.com/terpnetwork/terp-core/v2/x/tokenfactory/keeper"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/bindings"
+	tokenfactorykeeper "github.com/terpnetwork/terp-core/v4/x/tokenfactory/keeper"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 )
 
 var (
-	wasmCapabilities = "iterator,staking,stargate,token_factory,cosmwasm_1_1,cosmwasm_1_2,tokenfactory"
+	wasmCapabilities = "iterator,staking,stargate,token_factory,cosmwasm_1_1,cosmwasm_1_2,cosmwasm_1_3,cosmwasm_1_4,tokenfactory"
 
 	tokenFactoryCapabilities = []string{
 		tokenfactorytypes.EnableBurnFrom,
@@ -132,6 +135,7 @@ var maccPerms = map[string][]string{
 	globalfee.ModuleName:           nil,
 	wasmtypes.ModuleName:           {authtypes.Burner},
 	tokenfactorytypes.ModuleName:   {authtypes.Minter, authtypes.Burner},
+	denomburn.ModuleName:           {authtypes.Burner},
 }
 
 type AppKeepers struct {
@@ -171,8 +175,9 @@ type AppKeepers struct {
 	PacketForwardKeeper *packetforwardkeeper.Keeper
 	ICQKeeper           icqkeeper.Keeper
 	ICAHostKeeper       icahostkeeper.Keeper
-	TransferKeeper      ibctransferkeeper.Keeper
-	WasmKeeper          wasmkeeper.Keeper
+	// ClockKeeper         clockkeeper.Keeper
+	TransferKeeper ibctransferkeeper.Keeper
+	WasmKeeper     wasmkeeper.Keeper
 
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
@@ -192,7 +197,6 @@ func NewAppKeepers(
 	bApp *baseapp.BaseApp,
 	cdc *codec.LegacyAmino,
 	maccPerms map[string][]string,
-	enabledProposals []wasmtypes.ProposalType,
 	appOpts servertypes.AppOptions,
 	wasmOpts []wasmkeeper.Option,
 ) AppKeepers {
@@ -526,6 +530,10 @@ func NewAppKeepers(
 		})
 	wasmOpts = append(wasmOpts, querierOpts)
 
+	denomBurnerPlugin := denomburn.NewBurnerPlugin(appKeepers.BankKeeper, appKeepers.MintKeeper)
+	burnOverride := wasmkeeper.WithMessageHandler(wasmkeeper.NewBurnCoinMessageHandler(denomBurnerPlugin))
+	wasmOpts = append(wasmOpts, burnOverride)
+
 	appKeepers.WasmKeeper = wasmkeeper.NewKeeper(
 		appCodec,
 		appKeepers.keys[wasmtypes.StoreKey],
@@ -566,11 +574,12 @@ func NewAppKeepers(
 		appKeepers.keys[globalfeetypes.StoreKey],
 		govModAddress,
 	)
-
-	// The gov proposal types can be individually enabled
-	if len(enabledProposals) != 0 {
-		govRouter.AddRoute(wasmtypes.RouterKey, wasmkeeper.NewWasmProposalHandler(appKeepers.WasmKeeper, enabledProposals)) //nolint:staticcheck
-	}
+	// appKeepers.ClockKeeper = clockkeeper.NewKeeper(
+	// 	appKeepers.keys[clocktypes.StoreKey],
+	// 	appCodec,
+	// 	*appKeepers.ContractKeeper,
+	// 	govModAddress,
+	// )
 
 	// Set legacy router for backwards compatibility with gov v1beta1
 	appKeepers.GovKeeper.SetLegacyRouter(govRouter)

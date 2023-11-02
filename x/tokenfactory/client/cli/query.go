@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 
-	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module

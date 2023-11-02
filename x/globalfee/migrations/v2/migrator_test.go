@@ -9,10 +9,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 
-	"github.com/terpnetwork/terp-core/v2/x/globalfee"
-	"github.com/terpnetwork/terp-core/v2/x/globalfee/keeper/exported"
-	v2 "github.com/terpnetwork/terp-core/v2/x/globalfee/migrations/v2"
-	"github.com/terpnetwork/terp-core/v2/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee/keeper/exported"
+	v2 "github.com/terpnetwork/terp-core/v4/x/globalfee/migrations/v2"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
 //lint:ignore U1000 disregard lint check

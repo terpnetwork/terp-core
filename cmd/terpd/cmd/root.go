@@ -39,8 +39,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
-	"github.com/terpnetwork/terp-core/v2/app"
-	"github.com/terpnetwork/terp-core/v2/app/params"
+	"github.com/terpnetwork/terp-core/v4/app"
+	"github.com/terpnetwork/terp-core/v4/app/params"
 )
 
 // NewRootCmd creates a new root command for terpd. It is called once in the
@@ -324,7 +324,6 @@ func (ac appCreator) newApp(
 		db,
 		traceStore,
 		loadLatest,
-		app.GetEnabledProposals(),
 		appOpts,
 		wasmOpts,
 		baseappOptions...,
@@ -363,7 +362,6 @@ func (ac appCreator) appExport(
 		db,
 		traceStore,
 		height == -1,
-		app.GetEnabledProposals(),
 		appOpts,
 		emptyWasmOpts,
 	)

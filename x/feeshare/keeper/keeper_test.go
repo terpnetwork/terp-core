@@ -14,9 +14,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 
-	"github.com/terpnetwork/terp-core/v2/app"
-	"github.com/terpnetwork/terp-core/v2/x/feeshare/keeper"
-	"github.com/terpnetwork/terp-core/v2/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v4/app"
+	"github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
+	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 )
 
 // BankKeeper defines the expected interface needed to retrieve account balances.

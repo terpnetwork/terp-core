@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v2/app/keepers"
+	"github.com/terpnetwork/terp-core/v4/app/keepers"
 )
 
 // CreateUpgradeHandler creates an SDK upgrade handler for v2

@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"github.com/terpnetwork/terp-core/v2/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
 var _ types.MsgServer = msgServer{}

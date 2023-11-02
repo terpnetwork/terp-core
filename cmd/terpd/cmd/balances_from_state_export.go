@@ -23,7 +23,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	appparams "github.com/terpnetwork/terp-core/v2/app/params"
+	appparams "github.com/terpnetwork/terp-core/v4/app/params"
 )
 
 const (

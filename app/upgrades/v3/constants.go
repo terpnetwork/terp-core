@@ -1,7 +1,7 @@
 package v3
 
 import (
-	"github.com/terpnetwork/terp-core/v2/app/upgrades"
+	"github.com/terpnetwork/terp-core/v4/app/upgrades"
 
 	store "github.com/cosmos/cosmos-sdk/store/types"
 )

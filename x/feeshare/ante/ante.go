@@ -9,7 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	feeshare "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
+	feeshare "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 )
 
 // FeeSharePayoutDecorator Run his after we already deduct the fee from the account with

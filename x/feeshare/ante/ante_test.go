@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ante "github.com/terpnetwork/terp-core/v2/x/feeshare/ante"
+	ante "github.com/terpnetwork/terp-core/v4/x/feeshare/ante"
 )
 
 type AnteTestSuite struct {

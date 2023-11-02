@@ -26,14 +26,15 @@ import (
 	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 
-	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
-	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v7/types"
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/types"
 	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
+	// clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 )
 
 func (appKeepers *AppKeepers) GenerateKeys() {
@@ -67,6 +68,7 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		ibchookstypes.StoreKey,
 		feesharetypes.StoreKey,
 		globalfeetypes.StoreKey,
+		// clocktypes.StoreKey,
 		tokenfactorytypes.StoreKey,
 	)
 

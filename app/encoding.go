@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/cosmos/cosmos-sdk/std"
 
-	"github.com/terpnetwork/terp-core/v2/app/params"
+	"github.com/terpnetwork/terp-core/v4/app/params"
 )
 
 // MakeEncodingConfig creates a new EncodingConfig with all modules registered

@@ -195,6 +195,9 @@ format: format-tools
 ictest-basic: rm-testcache
 	cd interchaintest && go test -race -v -run TestBasicTerpStart .
 
+ictest-statesync: rm-testcache
+	cd interchaintest && go test -race -v -run TestTerpStateSync .
+
 ictest-ibchooks: rm-testcache
 	cd interchaintest && go test -race -v -run TestTerpIBCHooks .
 
@@ -203,6 +206,12 @@ ictest-pfm: rm-testcache
 
 ictest-tokenfactory: rm-testcache
 	cd interchaintest && go test -race -v -run TestTerpTokenFactory .
+
+ictest-burn: rm-testcache
+	cd interchaintest &&  go test -race -v -run TestTerpBurnModule .
+
+# ictest-clock: rm-testcache
+# 	cd interchaintest &&  go test -race -v -run TestTerpClock .
 
 ictest-feeshare: rm-testcache
 	cd interchaintest && go test -race -v -run TestTerpFeeShare . 

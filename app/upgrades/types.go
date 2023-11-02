@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v2/app/keepers"
+	"github.com/terpnetwork/terp-core/v4/app/keepers"
 )
 
 // BaseAppParamManager defines an interrace that BaseApp is expected to fullfil

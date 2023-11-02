@@ -15,9 +15,9 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	appparams "github.com/terpnetwork/terp-core/v2/app/params"
-	globalfeekeeper "github.com/terpnetwork/terp-core/v2/x/globalfee/keeper"
-	"github.com/terpnetwork/terp-core/v2/x/globalfee/types"
+	appparams "github.com/terpnetwork/terp-core/v4/app/params"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
 func TestDefaultGenesis(t *testing.T) {
