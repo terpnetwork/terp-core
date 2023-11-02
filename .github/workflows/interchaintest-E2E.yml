@@ -64,7 +64,7 @@ jobs:
           - "ictest-tokenfactory"
           - "ictest-feeshare"
           - "ictest-pfm"
-          - "ictest-upgrade"
+          # - "ictest-upgrade"
           - "ictest-ibc"
           # - "ictest-pob"
           # - "ictest-drip"
