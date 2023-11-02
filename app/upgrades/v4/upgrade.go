@@ -9,6 +9,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/v2/app/keepers"
 	"github.com/terpnetwork/terp-core/v2/app/upgrades"
+	"github.com/terpnetwork/terp-core/v2/x/burn"
 	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
 )
 
@@ -42,6 +43,10 @@ func CreateV4UpgradeHandler(
 		if err := returnFundsToCommunityPool(ctx, keepers.DistrKeeper, keepers.BankKeeper); err != nil {
 			return nil, err
 		}
+
+		// print the burn module address
+		burnModule := keepers.AccountKeeper.GetModuleAddress(burn.ModuleName)
+		logger.Info(fmt.Sprintf("burn module address %s", burnModule))
 
 		// deployment & instantiation of headstash patch contract
 		if err := setupHeadstashContract(ctx, keepers); err != nil {
