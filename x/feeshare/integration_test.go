@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/stretchr/testify/require"
 
 	dbm "github.com/cometbft/cometbft-db"
@@ -21,7 +20,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/mint/types"
 
-	terpapp "github.com/terpnetwork/terp-core/v2/app"
+	terpapp "github.com/terpnetwork/terp-core/v4/app"
 )
 
 // returns context and an app with updated mint keeper
@@ -79,7 +78,6 @@ func GenApp(t *testing.T, withGenesis bool, opts ...wasmkeeper.Option) (*terpapp
 		db,
 		nil,
 		true,
-		wasmtypes.EnableAllProposals,
 		simtestutil.EmptyAppOptions{},
 		opts,
 		bam.SetChainID("testing"),

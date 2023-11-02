@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	appparams "github.com/terpnetwork/terp-core/v2/app/params"
-	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+	appparams "github.com/terpnetwork/terp-core/v4/app/params"
+	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 )
 
 func RandDenomCreationFeeParam(r *rand.Rand) sdk.Coins {

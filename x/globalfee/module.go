@@ -19,9 +19,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/terpnetwork/terp-core/v2/x/globalfee/client/cli"
-	"github.com/terpnetwork/terp-core/v2/x/globalfee/keeper"
-	"github.com/terpnetwork/terp-core/v2/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee/client/cli"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
 var (

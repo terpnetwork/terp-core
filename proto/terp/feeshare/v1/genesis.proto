@@ -3,7 +3,7 @@ package terp.feeshare.v1;
 
 import "terp/feeshare/v1/feeshare.proto";
 import "gogoproto/gogo.proto";
-option go_package = "github.com/terpnetwork/terp-core/v2/x/feeshare/types";
+option go_package = "github.com/terpnetwork/terp-core/v4/x/feeshare/types";
 
 // GenesisState defines the module's genesis state.
 message GenesisState {

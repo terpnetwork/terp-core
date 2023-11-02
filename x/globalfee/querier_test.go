@@ -8,8 +8,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	globalfeekeeper "github.com/terpnetwork/terp-core/v2/x/globalfee/keeper"
-	"github.com/terpnetwork/terp-core/v2/x/globalfee/types"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
 func TestQueryMinimumGasPrices(t *testing.T) {

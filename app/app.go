@@ -62,17 +62,18 @@ import (
 
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 
-	"github.com/terpnetwork/terp-core/v2/app/openapiconsole"
-	v2 "github.com/terpnetwork/terp-core/v2/app/upgrades/v2"
-	v3 "github.com/terpnetwork/terp-core/v2/app/upgrades/v3"
-	"github.com/terpnetwork/terp-core/v2/docs"
+	"github.com/terpnetwork/terp-core/v4/app/openapiconsole"
+	v2 "github.com/terpnetwork/terp-core/v4/app/upgrades/v2"
+	v3 "github.com/terpnetwork/terp-core/v4/app/upgrades/v3"
+	v4 "github.com/terpnetwork/terp-core/v4/app/upgrades/v4"
+	"github.com/terpnetwork/terp-core/v4/docs"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
-	"github.com/terpnetwork/terp-core/v2/app/keepers"
-	"github.com/terpnetwork/terp-core/v2/app/upgrades"
+	"github.com/terpnetwork/terp-core/v4/app/keepers"
+	"github.com/terpnetwork/terp-core/v4/app/upgrades"
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik" // statik for swagger UI support
@@ -99,6 +100,7 @@ var (
 	Upgrades = []upgrades.Upgrade{
 		v2.Upgrade,
 		v3.Upgrade,
+		v4.Upgrade,
 	}
 )
 
@@ -152,23 +154,6 @@ func SetAddressPrefixes() {
 
 		return nil
 	})
-}
-
-// GetEnabledProposals parses the ProposalsEnabled / EnableSpecificProposals values to
-// produce a list of enabled proposals to pass into wasmd app.
-func GetEnabledProposals() []wasmtypes.ProposalType {
-	if EnableSpecificProposals == "" {
-		if ProposalsEnabled == "true" {
-			return wasmtypes.EnableAllProposals
-		}
-		return wasmtypes.DisableAllProposals
-	}
-	chunks := strings.Split(EnableSpecificProposals, ",")
-	proposals, err := wasmtypes.ConvertToProposals(chunks)
-	if err != nil {
-		panic(err)
-	}
-	return proposals
 }
 
 func GetWasmOpts(appOpts servertypes.AppOptions) []wasmkeeper.Option {
@@ -228,7 +213,6 @@ func NewTerpApp(
 	db dbm.DB,
 	traceStore io.Writer,
 	loadLatest bool,
-	enabledProposals []wasmtypes.ProposalType,
 	appOpts servertypes.AppOptions,
 	wasmOpts []wasmkeeper.Option,
 	baseAppOptions ...func(*baseapp.BaseApp),
@@ -261,7 +245,6 @@ func NewTerpApp(
 		bApp,
 		legacyAmino,
 		keepers.GetMaccPerms(),
-		enabledProposals,
 		appOpts,
 		wasmOpts,
 	)

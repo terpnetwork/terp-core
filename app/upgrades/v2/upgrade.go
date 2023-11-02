@@ -7,18 +7,18 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
+	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 
-	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
+	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 
 	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v7/types"
 
 	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/router/types"
 
-	"github.com/terpnetwork/terp-core/v2/app/keepers"
-	"github.com/terpnetwork/terp-core/v2/app/upgrades"
+	"github.com/terpnetwork/terp-core/v4/app/keepers"
+	"github.com/terpnetwork/terp-core/v4/app/upgrades"
 )
 
 // We now charge 2 million gas * gas price to create a denom.

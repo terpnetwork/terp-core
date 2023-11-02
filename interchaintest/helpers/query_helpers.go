@@ -15,10 +15,9 @@ func GetUserTokenFactoryBalances(t *testing.T, ctx context.Context, chain *cosmo
 	return res
 }
 
-func GetUnityContractWithdrawalReadyTime(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, contract string) WithdrawalTimestampResponse {
-	// terpd query wasm contract-state smart <contract> '{"get_withdrawal_ready_time":{}}' --output json
-	var res WithdrawalTimestampResponse
-	err := chain.QueryContract(ctx, contract, QueryMsg{GetWithdrawalReadyTime: &struct{}{}}, &res)
+func GetClockContractValue(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, contract string) ClockContractResponse {
+	var res ClockContractResponse
+	err := chain.QueryContract(ctx, contract, QueryMsg{GetConfig: &struct{}{}}, &res)
 	require.NoError(t, err)
 	return res
 }

@@ -3,7 +3,7 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 )
 
 // GetParams returns the total set params.
