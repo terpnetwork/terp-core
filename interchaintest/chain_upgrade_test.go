@@ -1,5 +1,7 @@
 package interchaintest
 
+// notice: upgrade v4 will return error, as headstash accounts in v3 upgrade do not have balance during ictests.
+
 import (
 	"context"
 	"fmt"
@@ -24,8 +26,8 @@ const (
 
 func TestBasicTerpUpgrade(t *testing.T) {
 	repo, version := GetDockerImageInfo()
-	startVersion := "v2.0.0"
-	upgradeName := "v3"
+	startVersion := "v3.0.0"
+	upgradeName := "v4.0.0"
 	CosmosChainUpgradeTest(t, "terp", startVersion, version, repo, upgradeName)
 }
 

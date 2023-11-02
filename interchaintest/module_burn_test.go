@@ -13,7 +13,6 @@ import (
 )
 
 // TestTerpBurnModule ensures the terpburn module register and execute sharing functions work properly on smart contracts.
-// This is required due to how x/mint handles minting tokens for the target supply.
 // It is purely for developers ::BurnTokens to function as expected.
 func TestTerpBurnModule(t *testing.T) {
 	t.Parallel()
