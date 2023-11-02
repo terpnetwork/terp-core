@@ -93,8 +93,8 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	denomburn "github.com/terpnetwork/terp-core/v4/x/burn"
-	// clockkeeper "github.com/terpnetwork/terp-core/v2/x/clock/keeper"
-	// clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
+	// clockkeeper "github.com/terpnetwork/terp-core/v4/x/clock/keeper"
+	// clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 	feesharekeeper "github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
 	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 

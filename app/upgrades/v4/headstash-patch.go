@@ -6,7 +6,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	"github.com/terpnetwork/terp-core/v4/app/upgrades"
 
@@ -17,9 +16,7 @@ import (
 func returnFundsToCommunityPool(
 	ctx sdk.Context,
 	dk distrkeeper.Keeper,
-	bk bankkeeper.Keeper,
-) error {
-
+) {
 	headstashes := v3.GetHeadstashPayments()
 	total := int64(0)
 
@@ -50,7 +47,6 @@ func returnFundsToCommunityPool(
 		}
 		total += amount
 	}
-	return nil
 }
 
 // TODO: handle headstash-patch contract upload & instantiation

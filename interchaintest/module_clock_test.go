@@ -11,7 +11,7 @@ package interchaintest
 // 	"github.com/strangelove-ventures/interchaintest/v7/ibc"
 // 	"github.com/strangelove-ventures/interchaintest/v7/testutil"
 // 	"github.com/stretchr/testify/require"
-// 	clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
+// 	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 
 // 	helpers "github.com/terpnetwork/terp-core/tests/interchaintest/helpers"
 // )

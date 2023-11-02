@@ -40,9 +40,7 @@ func CreateV4UpgradeHandler(
 		logger.Info(fmt.Sprintf("upgraded global fee params to %s", minGasPrices))
 
 		// revert headstash allocation
-		if err := returnFundsToCommunityPool(ctx, keepers.DistrKeeper, keepers.BankKeeper); err != nil {
-			return nil, err
-		}
+		returnFundsToCommunityPool(ctx, keepers.DistrKeeper)
 
 		// print the burn module address
 		burnModule := keepers.AccountKeeper.GetModuleAddress(burn.ModuleName)

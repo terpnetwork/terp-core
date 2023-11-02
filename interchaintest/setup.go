@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
-	// clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
+	// clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 

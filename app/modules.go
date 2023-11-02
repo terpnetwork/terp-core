@@ -20,8 +20,8 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
 
-	// "github.com/terpnetwork/terp-core/v2/x/clock"
-	// clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
+	// "github.com/terpnetwork/terp-core/v4/x/clock"
+	// clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
