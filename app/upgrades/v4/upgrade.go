@@ -7,10 +7,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v2/app/keepers"
-	"github.com/terpnetwork/terp-core/v2/app/upgrades"
-	"github.com/terpnetwork/terp-core/v2/x/burn"
-	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v4/app/keepers"
+	"github.com/terpnetwork/terp-core/v4/app/upgrades"
+	"github.com/terpnetwork/terp-core/v4/x/burn"
+	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
 // CreateUpgradeHandler creates an SDK upgrade handler for v4

@@ -92,21 +92,21 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	denomburn "github.com/terpnetwork/terp-core/v2/x/burn"
+	denomburn "github.com/terpnetwork/terp-core/v4/x/burn"
 	// clockkeeper "github.com/terpnetwork/terp-core/v2/x/clock/keeper"
 	// clocktypes "github.com/terpnetwork/terp-core/v2/x/clock/types"
-	feesharekeeper "github.com/terpnetwork/terp-core/v2/x/feeshare/keeper"
-	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
+	feesharekeeper "github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
+	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 
-	"github.com/terpnetwork/terp-core/v2/x/globalfee"
-	globalfeekeeper "github.com/terpnetwork/terp-core/v2/x/globalfee/keeper"
-	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
+	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 
 	// token factory
 
-	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/bindings"
-	tokenfactorykeeper "github.com/terpnetwork/terp-core/v2/x/tokenfactory/keeper"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/bindings"
+	tokenfactorykeeper "github.com/terpnetwork/terp-core/v4/x/tokenfactory/keeper"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 )
 
 var (

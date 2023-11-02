@@ -9,8 +9,8 @@ import (
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	"github.com/terpnetwork/terp-core/v2/app/keepers"
-	"github.com/terpnetwork/terp-core/v2/app/upgrades"
+	"github.com/terpnetwork/terp-core/v4/app/keepers"
+	"github.com/terpnetwork/terp-core/v4/app/upgrades"
 )
 
 //go:embed headstash_contract.wasm

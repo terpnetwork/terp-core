@@ -5,12 +5,12 @@ import (
 	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v7/types"
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/types"
 
-	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
-	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
+	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 
 	store "github.com/cosmos/cosmos-sdk/store/types"
 
-	"github.com/terpnetwork/terp-core/v2/app/upgrades"
+	"github.com/terpnetwork/terp-core/v4/app/upgrades"
 )
 
 const UpgradeName = "v2"

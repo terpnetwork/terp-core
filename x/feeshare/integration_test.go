@@ -20,7 +20,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/mint/types"
 
-	terpapp "github.com/terpnetwork/terp-core/v2/app"
+	terpapp "github.com/terpnetwork/terp-core/v4/app"
 )
 
 // returns context and an app with updated mint keeper

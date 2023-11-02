@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/terpnetwork/terp-core/v2/app/apptesting"
-	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v4/app/apptesting"
+	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 )
 
 func (suite *KeeperTestSuite) TestMsgCreateDenom() {

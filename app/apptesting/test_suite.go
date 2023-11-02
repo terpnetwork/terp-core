@@ -34,8 +34,8 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v2/app"
-	appparams "github.com/terpnetwork/terp-core/v2/app/params"
+	"github.com/terpnetwork/terp-core/v4/app"
+	appparams "github.com/terpnetwork/terp-core/v4/app/params"
 )
 
 type KeeperTestHelper struct {

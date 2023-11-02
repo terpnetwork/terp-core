@@ -10,8 +10,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
-	appparams "github.com/terpnetwork/terp-core/v2/app/params"
-	"github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+	appparams "github.com/terpnetwork/terp-core/v4/app/params"
+	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 )
 
 // Simulation operation weights constants

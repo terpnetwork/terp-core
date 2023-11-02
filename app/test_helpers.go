@@ -32,8 +32,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	apphelpers "github.com/terpnetwork/terp-core/v2/app/helpers"
-	appparams "github.com/terpnetwork/terp-core/v2/app/params"
+	apphelpers "github.com/terpnetwork/terp-core/v4/app/helpers"
+	appparams "github.com/terpnetwork/terp-core/v4/app/params"
 )
 
 // EmptyBaseAppOptions is a stub implementing AppOptions

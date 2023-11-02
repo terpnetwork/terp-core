@@ -62,18 +62,18 @@ import (
 
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 
-	"github.com/terpnetwork/terp-core/v2/app/openapiconsole"
-	v2 "github.com/terpnetwork/terp-core/v2/app/upgrades/v2"
-	v3 "github.com/terpnetwork/terp-core/v2/app/upgrades/v3"
-	v4 "github.com/terpnetwork/terp-core/v2/app/upgrades/v4"
-	"github.com/terpnetwork/terp-core/v2/docs"
+	"github.com/terpnetwork/terp-core/v4/app/openapiconsole"
+	v2 "github.com/terpnetwork/terp-core/v4/app/upgrades/v2"
+	v3 "github.com/terpnetwork/terp-core/v4/app/upgrades/v3"
+	v4 "github.com/terpnetwork/terp-core/v4/app/upgrades/v4"
+	"github.com/terpnetwork/terp-core/v4/docs"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
-	"github.com/terpnetwork/terp-core/v2/app/keepers"
-	"github.com/terpnetwork/terp-core/v2/app/upgrades"
+	"github.com/terpnetwork/terp-core/v4/app/keepers"
+	"github.com/terpnetwork/terp-core/v4/app/upgrades"
 
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik" // statik for swagger UI support

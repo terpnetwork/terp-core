@@ -60,17 +60,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	encparams "github.com/terpnetwork/terp-core/v2/app/params"
-	"github.com/terpnetwork/terp-core/v2/x/feeshare"
-	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
-	"github.com/terpnetwork/terp-core/v2/x/globalfee"
-	"github.com/terpnetwork/terp-core/v2/x/tokenfactory"
+	encparams "github.com/terpnetwork/terp-core/v4/app/params"
+	"github.com/terpnetwork/terp-core/v4/x/feeshare"
+	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee"
+	"github.com/terpnetwork/terp-core/v4/x/tokenfactory"
 
 	"github.com/cosmos/cosmos-sdk/x/group"
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7"
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/types"
 
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 
 	groupmodule "github.com/cosmos/cosmos-sdk/x/group/module"
 )

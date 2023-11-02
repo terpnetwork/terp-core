@@ -26,9 +26,9 @@ import (
 	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 
-	feesharetypes "github.com/terpnetwork/terp-core/v2/x/feeshare/types"
-	globalfeetypes "github.com/terpnetwork/terp-core/v2/x/globalfee/types"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v2/x/tokenfactory/types"
+	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v7/types"

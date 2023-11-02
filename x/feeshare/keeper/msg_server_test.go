@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v2/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 )
 
 //go:embed testdata/reflect.wasm
