@@ -20,8 +20,8 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
 
-	// "github.com/terpnetwork/terp-core/v4/x/clock"
-	// clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
+	"github.com/terpnetwork/terp-core/v4/x/clock"
+	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -66,9 +66,14 @@ import (
 	"github.com/terpnetwork/terp-core/v4/x/globalfee"
 	"github.com/terpnetwork/terp-core/v4/x/tokenfactory"
 
+	"github.com/terpnetwork/terp-core/v4/x/drip"
+	driptypes "github.com/terpnetwork/terp-core/v4/x/drip/types"
+
 	"github.com/cosmos/cosmos-sdk/x/group"
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7"
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/types"
+
+	// cwhooks "github.com/terpnetwork/terp-core/v4/x/cw-hooks"
 
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 
@@ -110,8 +115,10 @@ var ModuleBasics = module.NewBasicManager(
 	packetforward.AppModuleBasic{},
 	feeshare.AppModuleBasic{},
 	globalfee.AppModuleBasic{},
-	// clock.AppModuleBasic{},
+	clock.AppModuleBasic{},
+	drip.AppModuleBasic{},
 	tokenfactory.AppModuleBasic{},
+	// cwhooks.AppModuleBasic{},
 )
 
 func appModules(
@@ -157,7 +164,8 @@ func appModules(
 		ica.NewAppModule(&app.AppKeepers.ICAControllerKeeper, &app.AppKeepers.ICAHostKeeper),
 		icq.NewAppModule(app.AppKeepers.ICQKeeper),
 		packetforward.NewAppModule(app.AppKeepers.PacketForwardKeeper),
-		// clock.NewAppModule(appCodec, app.AppKeepers.ClockKeeper),
+		clock.NewAppModule(appCodec, app.AppKeepers.ClockKeeper),
+		// cwhooks.NewAppModule(appCodec, app.AppKeepers.CWHooksKeeper),
 		ibchooks.NewAppModule(app.AppKeepers.AccountKeeper),
 		crisis.NewAppModule(app.AppKeepers.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 	}
@@ -189,6 +197,7 @@ func simulationModules(
 		ibc.NewAppModule(app.AppKeepers.IBCKeeper),
 		transfer.NewAppModule(app.AppKeepers.TransferKeeper),
 		feeshare.NewAppModule(app.AppKeepers.FeeShareKeeper, app.AppKeepers.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
+		drip.NewAppModule(app.AppKeepers.DripKeeper, app.AppKeepers.AccountKeeper),
 		ibcfee.NewAppModule(app.AppKeepers.IBCFeeKeeper),
 	}
 }
@@ -221,11 +230,13 @@ func orderBeginBlockers() []string {
 		ibcfeetypes.ModuleName,
 		icqtypes.ModuleName,
 		packetforwardtypes.ModuleName,
+		driptypes.ModuleName,
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
-		// clocktypes.ModuleName,
+		clocktypes.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
+		// cwhooks.ModuleName,
 		wasmtypes.ModuleName,
 	}
 }
@@ -258,11 +269,13 @@ func orderEndBlockers() []string {
 		ibcfeetypes.ModuleName,
 		icqtypes.ModuleName,
 		packetforwardtypes.ModuleName,
+		driptypes.ModuleName,
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
-		// clocktypes.ModuleName,
+		clocktypes.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
+		// cwhooks.ModuleName,
 		wasmtypes.ModuleName,
 	}
 }
@@ -280,13 +293,15 @@ func orderInitBlockers() []string {
 		icatypes.ModuleName,
 		ibcfeetypes.ModuleName,
 		// wasm after ibc transfer
+		driptypes.ModuleName,
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
 		icqtypes.ModuleName,
 		packetforwardtypes.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
-		// clocktypes.ModuleName,
+		clocktypes.ModuleName,
+		// cwhooks.ModuleName,
 		wasmtypes.ModuleName,
 	}
 }

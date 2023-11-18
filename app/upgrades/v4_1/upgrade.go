@@ -1,4 +1,4 @@
-package v4
+package v4_1
 
 import (
 	"fmt"
@@ -9,12 +9,12 @@ import (
 
 	"github.com/terpnetwork/terp-core/v4/app/keepers"
 	"github.com/terpnetwork/terp-core/v4/app/upgrades"
-	"github.com/terpnetwork/terp-core/v4/x/burn"
+	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
 // CreateUpgradeHandler creates an SDK upgrade handler for v4
-func CreateV4UpgradeHandler(
+func CreateV4_1UpgradeHandler(
 	mm *module.Manager,
 	cfg module.Configurator,
 	keepers *keepers.AppKeepers,
@@ -23,11 +23,8 @@ func CreateV4UpgradeHandler(
 		logger := ctx.Logger().With("upgrade", UpgradeName)
 
 		// GlobalFee
-		nativeDenom := upgrades.GetChainsDenomToken(ctx.ChainID())
 		nativeFeeDenom := upgrades.GetChainsFeeDenomToken(ctx.ChainID())
 		minGasPrices := sdk.DecCoins{
-			// 0.0025uterp
-			sdk.NewDecCoinFromDec(nativeDenom, sdk.NewDecWithPrec(25, 4)),
 			// 0.05uthiol
 			sdk.NewDecCoinFromDec(nativeFeeDenom, sdk.NewDecWithPrec(5, 2)),
 		}
@@ -42,14 +39,10 @@ func CreateV4UpgradeHandler(
 		// revert headstash allocation
 		returnFundsToCommunityPool(ctx, keepers.DistrKeeper)
 
-		// print the burn module address
-		burnModule := keepers.AccountKeeper.GetModuleAddress(burn.ModuleName)
-		logger.Info(fmt.Sprintf("burn module address %s", burnModule))
-
-		// deployment & instantiation of headstash patch contract
-		// if err := setupHeadstashContract(ctx, keepers); err != nil {
-		// 	return nil, err
-		// }
+		// x/clock
+		if err := keepers.ClockKeeper.SetParams(ctx, clocktypes.DefaultParams()); err != nil {
+			return nil, err
+		}
 
 		return vm, nil
 	}

@@ -93,8 +93,10 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	denomburn "github.com/terpnetwork/terp-core/v4/x/burn"
-	// clockkeeper "github.com/terpnetwork/terp-core/v4/x/clock/keeper"
-	// clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
+	clockkeeper "github.com/terpnetwork/terp-core/v4/x/clock/keeper"
+	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
+	dripkeeper "github.com/terpnetwork/terp-core/v4/x/drip/keeper"
+	driptypes "github.com/terpnetwork/terp-core/v4/x/drip/types"
 	feesharekeeper "github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
 	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 
@@ -102,7 +104,8 @@ import (
 	globalfeekeeper "github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
 	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 
-	// token factory
+	// cwhookskeeper "github.com/terpnetwork/terp-core/v4/x/cw-hooks/keeper"
+	// cwhookstypes "github.com/terpnetwork/terp-core/v4/x/cw-hooks/types"
 
 	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/bindings"
 	tokenfactorykeeper "github.com/terpnetwork/terp-core/v4/x/tokenfactory/keeper"
@@ -175,9 +178,10 @@ type AppKeepers struct {
 	PacketForwardKeeper *packetforwardkeeper.Keeper
 	ICQKeeper           icqkeeper.Keeper
 	ICAHostKeeper       icahostkeeper.Keeper
-	// ClockKeeper         clockkeeper.Keeper
-	TransferKeeper ibctransferkeeper.Keeper
-	WasmKeeper     wasmkeeper.Keeper
+	ClockKeeper         clockkeeper.Keeper
+	TransferKeeper      ibctransferkeeper.Keeper
+	// CWHooksKeeper       cwhookskeeper.Keeper
+	WasmKeeper wasmkeeper.Keeper
 
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
@@ -186,6 +190,8 @@ type AppKeepers struct {
 	ScopedIBCFeeKeeper        capabilitykeeper.ScopedKeeper
 	ScopedWasmKeeper          capabilitykeeper.ScopedKeeper
 	ScopedICQKeeper           capabilitykeeper.ScopedKeeper
+
+	DripKeeper dripkeeper.Keeper
 
 	// Middleware wrapper
 	Ics20WasmHooks   *ibchooks.WasmHooks
@@ -324,7 +330,10 @@ func NewAppKeepers(
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
 	stakingKeeper.SetHooks(
-		stakingtypes.NewMultiStakingHooks(appKeepers.DistrKeeper.Hooks(), appKeepers.SlashingKeeper.Hooks()),
+		stakingtypes.NewMultiStakingHooks(appKeepers.DistrKeeper.Hooks(),
+			appKeepers.SlashingKeeper.Hooks(),
+			// appKeepers.CWHooksKeeper.StakingHooks(),
+		),
 	)
 	appKeepers.StakingKeeper = stakingKeeper
 
@@ -364,7 +373,7 @@ func NewAppKeepers(
 	)
 	appKeepers.GovKeeper = *govKeeper.SetHooks(
 		govtypes.NewMultiGovHooks(
-		// register the governance hooks
+		// appKeepers.CWHooksKeeper.GovHooks(),
 		),
 	)
 
@@ -574,9 +583,28 @@ func NewAppKeepers(
 		appKeepers.keys[globalfeetypes.StoreKey],
 		govModAddress,
 	)
-	// appKeepers.ClockKeeper = clockkeeper.NewKeeper(
-	// 	appKeepers.keys[clocktypes.StoreKey],
+
+	appKeepers.DripKeeper = dripkeeper.NewKeeper(
+		appKeepers.keys[driptypes.StoreKey],
+		appCodec,
+		appKeepers.BankKeeper,
+		authtypes.FeeCollectorName,
+		govModAddress,
+	)
+
+	appKeepers.ClockKeeper = clockkeeper.NewKeeper(
+		appKeepers.keys[clocktypes.StoreKey],
+		appCodec,
+		*appKeepers.ContractKeeper,
+		govModAddress,
+	)
+
+	// appKeepers.CWHooksKeeper = cwhookskeeper.NewKeeper(
+	// 	appKeepers.keys[cwhookstypes.StoreKey],
 	// 	appCodec,
+	// 	stakingKeeper,
+	// 	*govKeeper,
+	// 	appKeepers.WasmKeeper,
 	// 	*appKeepers.ContractKeeper,
 	// 	govModAddress,
 	// )
