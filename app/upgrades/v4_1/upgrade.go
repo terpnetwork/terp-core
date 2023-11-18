@@ -10,6 +10,7 @@ import (
 	"github.com/terpnetwork/terp-core/v4/app/keepers"
 	"github.com/terpnetwork/terp-core/v4/app/upgrades"
 	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
+	driptypes "github.com/terpnetwork/terp-core/v4/x/drip/types"
 	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
@@ -22,6 +23,15 @@ func CreateV4_1UpgradeHandler(
 	return func(ctx sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		logger := ctx.Logger().With("upgrade", UpgradeName)
 
+		ctx.Logger().Info(`
+		:::     :::    :::           :::         ::::::::::   :::     :::::::::  ::::    ::: :::::::::: ::::::::  :::::::::: ::::    ::: :::::::::: 
+		:+:     :+:   :+:          :+:+:         :+:        :+: :+:   :+:    :+: :+:+:   :+: :+:       :+:    :+: :+:        :+:+:   :+: :+:        
+		+:+     +:+  +:+ +:+         +:+         +:+       +:+   +:+  +:+    +:+ :+:+:+  +:+ +:+       +:+        +:+        :+:+:+  +:+ +:+        
+		+#+     +:+ +#+  +:+         +#+         :#::+::# +#++:++#++: +#++:++#:  +#+ +:+ +#+ +#++:++#  +#++:++#++ +#++:++#   +#+ +:+ +#+ +#++:++#   
+		 +#+   +#+ +#+#+#+#+#+       +#+         +#+      +#+     +#+ +#+    +#+ +#+  +#+#+# +#+              +#+ +#+        +#+  +#+#+# +#+        
+		  #+#+#+#        #+#   #+#   #+#         #+#      #+#     #+# #+#    #+# #+#   #+#+# #+#       #+#    #+# #+#        #+#   #+#+# #+#        
+			###          ###   ### #######       ###      ###     ### ###    ### ###    #### ########## ########  ########## ###    #### ########## 
+		`)
 		// GlobalFee
 		nativeFeeDenom := upgrades.GetChainsFeeDenomToken(ctx.ChainID())
 		minGasPrices := sdk.DecCoins{
@@ -41,6 +51,10 @@ func CreateV4_1UpgradeHandler(
 
 		// x/clock
 		if err := keepers.ClockKeeper.SetParams(ctx, clocktypes.DefaultParams()); err != nil {
+			return nil, err
+		}
+		// x/drip
+		if err := keepers.DripKeeper.SetParams(ctx, driptypes.DefaultParams()); err != nil {
 			return nil, err
 		}
 
