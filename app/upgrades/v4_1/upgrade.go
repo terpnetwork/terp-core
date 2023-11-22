@@ -14,7 +14,7 @@ import (
 	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
-// CreateUpgradeHandler creates an SDK upgrade handler for v4
+// CreateUpgradeHandler creates an SDK upgrade handler for v4.1
 func CreateV4_1UpgradeHandler(
 	mm *module.Manager,
 	cfg module.Configurator,

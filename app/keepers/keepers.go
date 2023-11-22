@@ -92,7 +92,6 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	denomburn "github.com/terpnetwork/terp-core/v4/x/burn"
 	clockkeeper "github.com/terpnetwork/terp-core/v4/x/clock/keeper"
 	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 	dripkeeper "github.com/terpnetwork/terp-core/v4/x/drip/keeper"
@@ -138,7 +137,6 @@ var maccPerms = map[string][]string{
 	globalfee.ModuleName:           nil,
 	wasmtypes.ModuleName:           {authtypes.Burner},
 	tokenfactorytypes.ModuleName:   {authtypes.Minter, authtypes.Burner},
-	denomburn.ModuleName:           {authtypes.Burner},
 }
 
 type AppKeepers struct {
@@ -538,10 +536,6 @@ func NewAppKeepers(
 			Stargate: wasmkeeper.AcceptListStargateQuerier(accepted, bApp.GRPCQueryRouter(), appCodec),
 		})
 	wasmOpts = append(wasmOpts, querierOpts)
-
-	denomBurnerPlugin := denomburn.NewBurnerPlugin(appKeepers.BankKeeper, appKeepers.MintKeeper)
-	burnOverride := wasmkeeper.WithMessageHandler(wasmkeeper.NewBurnCoinMessageHandler(denomBurnerPlugin))
-	wasmOpts = append(wasmOpts, burnOverride)
 
 	appKeepers.WasmKeeper = wasmkeeper.NewKeeper(
 		appCodec,
