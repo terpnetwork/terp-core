@@ -25,7 +25,7 @@ func (suite *CodecTestSuite) TestRegisterInterfaces() {
 	impls := registry.ListImplementations(sdk.MsgInterfaceProtoName)
 	suite.Require().Equal(2, len(impls))
 	suite.Require().ElementsMatch([]string{
-		"/juno.drip.v1.MsgDistributeTokens",
-		"/juno.drip.v1.MsgUpdateParams",
+		"/terp.drip.v1.MsgDistributeTokens",
+		"/terp.drip.v1.MsgUpdateParams",
 	}, impls)
 }
