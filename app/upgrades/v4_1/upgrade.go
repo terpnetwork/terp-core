@@ -46,8 +46,8 @@ func CreateV4_1UpgradeHandler(
 		}
 		logger.Info(fmt.Sprintf("upgraded global fee params to %s", minGasPrices))
 
-		// revert headstash allocation
-		returnFundsToCommunityPool(ctx, keepers.DistrKeeper)
+		// // revert headstash allocation
+		// returnFundsToCommunityPool(ctx, keepers.DistrKeeper) // Comment out for testnet only. Will uncomment out during mainnet upgrade.
 
 		// x/clock
 		if err := keepers.ClockKeeper.SetParams(ctx, clocktypes.DefaultParams()); err != nil {

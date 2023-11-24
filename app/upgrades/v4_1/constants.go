@@ -8,7 +8,7 @@ import (
 )
 
 // UpgradeName defines the on-chain upgrade name for the Terp v4 upgrade.
-const UpgradeName = "v4.1"
+const UpgradeName = "v4.1.testnet"
 
 var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
