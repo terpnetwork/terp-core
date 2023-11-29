@@ -3,7 +3,7 @@ module github.com/terpnetwork/terp-core/v4
 go 1.19
 
 require (
-	github.com/CosmWasm/wasmd v0.43.0
+	github.com/CosmWasm/wasmd v0.45.0
 	github.com/CosmWasm/wasmvm v1.5.0
 	github.com/cometbft/cometbft v0.37.2
 	github.com/cometbft/cometbft-db v0.8.0

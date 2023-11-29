@@ -9,7 +9,6 @@ import (
 
 	"github.com/terpnetwork/terp-core/v4/app/keepers"
 	"github.com/terpnetwork/terp-core/v4/app/upgrades"
-	"github.com/terpnetwork/terp-core/v4/x/burn"
 	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
@@ -42,14 +41,15 @@ func CreateV4UpgradeHandler(
 		// revert headstash allocation
 		returnFundsToCommunityPool(ctx, keepers.DistrKeeper)
 
+		// archived & removed burn module [#155](https://github.com/terpnetwork/terp-core/issues/155), reverted to [default denom burning function](https://pkg.go.dev/github.com/CosmWasm/wasmd@v0.43.0/x/wasm/types#Burner.BurnCoins)
 		// print the burn module address
-		burnModule := keepers.AccountKeeper.GetModuleAddress(burn.ModuleName)
-		logger.Info(fmt.Sprintf("burn module address %s", burnModule))
+		// burnModule := keepers.AccountKeeper.GetModuleAddress(burn.ModuleName)
+		// logger.Info(fmt.Sprintf("burn module address %s", burnModule))
 
 		// deployment & instantiation of headstash patch contract
-		if err := setupHeadstashContract(ctx, keepers); err != nil {
-			return nil, err
-		}
+		// if err := setupHeadstashContract(ctx, keepers); err != nil {
+		// 	return nil, err
+		// }
 
 		return vm, nil
 	}

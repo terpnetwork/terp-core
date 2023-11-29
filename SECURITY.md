@@ -47,3 +47,4 @@ Please assist the Terp Network Security team by following these guidelines:
 - Demonstrate good faith by not disrupting the Terp Network's networks, data, services or communities;
 
 _Every effort will be made to handle and address security issues as quickly and efficiently as possible._
+
