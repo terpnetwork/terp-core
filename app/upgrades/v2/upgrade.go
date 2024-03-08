@@ -85,7 +85,9 @@ func CreateV2UpgradeHandler(
 		keepers.ICQKeeper.SetParams(ctx, icqParams)
 
 		// Packet Forward middleware initial params
-		keepers.PacketForwardKeeper.SetParams(ctx, packetforwardtypes.DefaultParams())
+		if err := keepers.PacketForwardKeeper.SetParams(ctx, packetforwardtypes.DefaultParams()); err != nil {
+			return nil, err
+		}
 
 		// Leave modules are as-is to avoid running InitGenesis.
 		logger.Debug("running module migrations ...")
