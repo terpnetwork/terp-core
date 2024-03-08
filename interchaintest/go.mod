@@ -1,6 +1,8 @@
 module github.com/terpnetwork/terp-core/tests/interchaintest
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 replace (
 	// interchaintest supports ICS features so we need this for now
@@ -19,7 +21,7 @@ require (
 	github.com/CosmWasm/wasmd v0.45.0
 	github.com/cosmos/cosmos-sdk v0.47.5
 	github.com/cosmos/gogoproto v1.4.10
-	github.com/cosmos/ibc-go/v7 v7.3.0
+	github.com/cosmos/ibc-go/v7 v7.3.1
 	github.com/docker/docker v24.0.4+incompatible
 	github.com/strangelove-ventures/interchaintest/v7 v7.0.0-20230721183422-fb937bb0e165
 	github.com/stretchr/testify v1.8.4

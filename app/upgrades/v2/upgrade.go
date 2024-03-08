@@ -15,7 +15,7 @@ import (
 
 	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v7/types"
 
-	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/router/types"
+	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/packetforward/types"
 
 	"github.com/terpnetwork/terp-core/v4/app/keepers"
 	"github.com/terpnetwork/terp-core/v4/app/upgrades"
@@ -85,7 +85,9 @@ func CreateV2UpgradeHandler(
 		keepers.ICQKeeper.SetParams(ctx, icqParams)
 
 		// Packet Forward middleware initial params
-		keepers.PacketForwardKeeper.SetParams(ctx, packetforwardtypes.DefaultParams())
+		if err := keepers.PacketForwardKeeper.SetParams(ctx, packetforwardtypes.DefaultParams()); err != nil {
+			return nil, err
+		}
 
 		// Leave modules are as-is to avoid running InitGenesis.
 		logger.Debug("running module migrations ...")
