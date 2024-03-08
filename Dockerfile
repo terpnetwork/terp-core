@@ -1,9 +1,6 @@
 # docker build . -t terpnetwork/terpd:latest
 # docker run --rm -it terpnetwork/terpd:latest /bin/sh
-ARG GO_VERSION="1.21"
-ARG RUNNER_IMAGE="gcr.io/distroless/static"
-
-FROM golang:${GO_VERSION}-alpine as builder
+FROM golang:1.21-alpine AS go-builder 
 ARG arch=x86_64
 
 # this comes from standard alpine nightly file
@@ -37,7 +34,7 @@ RUN echo "Ensuring binary is statically linked ..." \
 
 # --------------------------------------------------------
 
-FROM ${RUNNER_IMAGE}
+FROM alpine:3.16
 
 COPY --from=go-builder /code/build/terpd /usr/bin/terpd
 
