@@ -6,8 +6,8 @@ import (
 
 	mint "github.com/cosmos/cosmos-sdk/x/mint"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	packetforward "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/router"
-	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/router/types"
+	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/packetforward"
+	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/packetforward/types"
 	icq "github.com/cosmos/ibc-apps/modules/async-icq/v7"
 	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v7/types"
 	ica "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts"
@@ -163,7 +163,7 @@ func appModules(
 		ibcfee.NewAppModule(app.AppKeepers.IBCFeeKeeper),
 		ica.NewAppModule(&app.AppKeepers.ICAControllerKeeper, &app.AppKeepers.ICAHostKeeper),
 		icq.NewAppModule(app.AppKeepers.ICQKeeper),
-		packetforward.NewAppModule(app.AppKeepers.PacketForwardKeeper),
+		packetforward.NewAppModule(app.AppKeepers.PacketForwardKeeper, app.GetSubspace(packetforwardtypes.ModuleName)),
 		clock.NewAppModule(appCodec, app.AppKeepers.ClockKeeper),
 		// cwhooks.NewAppModule(appCodec, app.AppKeepers.CWHooksKeeper),
 		ibchooks.NewAppModule(app.AppKeepers.AccountKeeper),
