@@ -1,6 +1,9 @@
 # docker build . -t terpnetwork/terpd:latest
 # docker run --rm -it terpnetwork/terpd:latest /bin/sh
-FROM golang:1.19-alpine3.15 AS go-builder
+ARG GO_VERSION="1.21"
+ARG RUNNER_IMAGE="gcr.io/distroless/static"
+
+FROM golang:${GO_VERSION}-alpine as builder
 ARG arch=x86_64
 
 # this comes from standard alpine nightly file
@@ -16,10 +19,13 @@ WORKDIR /code
 COPY . /code/
 # See https://github.com/CosmWasm/wasmvm/releases
 
-ADD https://github.com/CosmWasm/wasmvm/releases/download/v1.5.0/libwasmvm_muslc.aarch64.a /lib/libwasmvm_muslc.aarch64.a
-ADD https://github.com/CosmWasm/wasmvm/releases/download/v1.5.0/libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.x86_64.a
-RUN sha256sum /lib/libwasmvm_muslc.aarch64.a | grep 2687afbdae1bc6c7c8b05ae20dfb8ffc7ddc5b4e056697d0f37853dfe294e913
-RUN sha256sum /lib/libwasmvm_muslc.x86_64.a | grep 465e3a088e96fd009a11bfd234c69fb8a0556967677e54511c084f815cf9ce63
+# Cosmwasm - Download correct libwasmvm version
+RUN WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm | cut -d ' ' -f 2) && \
+  wget https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/libwasmvm_muslc.$(uname -m).a \
+  -O /lib/libwasmvm_muslc.a && \
+  # verify checksum
+  wget https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/checksums.txt -O /tmp/checksums.txt && \
+  sha256sum /lib/libwasmvm_muslc.a | grep $(cat /tmp/checksums.txt | grep libwasmvm_muslc.$(uname -m) | cut -d ' ' -f 1)
 
 # Copy the library you want to the final location that will be found by the linker flag `-lwasmvm_muslc`
 RUN cp /lib/libwasmvm_muslc.${arch}.a /lib/libwasmvm_muslc.a
@@ -30,7 +36,8 @@ RUN echo "Ensuring binary is statically linked ..." \
   && (file /code/build/terpd | grep "statically linked")
 
 # --------------------------------------------------------
-FROM alpine:3.15
+
+FROM ${RUNNER_IMAGE}
 
 COPY --from=go-builder /code/build/terpd /usr/bin/terpd
 
