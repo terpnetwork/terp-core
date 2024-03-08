@@ -1,6 +1,6 @@
 module github.com/terpnetwork/terp-core/v4
 
-go 1.19
+go 1.21
 
 require (
 	github.com/CosmWasm/wasmd v0.45.0
