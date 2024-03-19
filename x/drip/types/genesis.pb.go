@@ -73,7 +73,8 @@ func (m *GenesisState) GetParams() Params {
 type Params struct {
 	// enable_drip defines a parameter to enable the drip module
 	EnableDrip bool `protobuf:"varint,1,opt,name=enable_drip,json=enableDrip,proto3" json:"enable_drip,omitempty"`
-	// allowed_addresses defines the list of addresses authorized to use the module
+	// allowed_addresses defines the list of addresses authorized to use the
+	// module
 	AllowedAddresses []string `protobuf:"bytes,3,rep,name=allowed_addresses,json=allowedAddresses,proto3" json:"allowed_addresses,omitempty" yaml:"addresses"`
 }
 

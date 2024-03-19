@@ -72,7 +72,8 @@ func (m *GenesisState) GetParams() Params {
 
 // Params defines the set of module parameters.
 type Params struct {
-	// contract_addresses stores the list of executable contracts to be ticked on every block.
+	// contract_addresses stores the list of executable contracts to be ticked on
+	// every block.
 	ContractAddresses []string `protobuf:"bytes,1,rep,name=contract_addresses,json=contractAddresses,proto3" json:"contract_addresses,omitempty" yaml:"contract_addresses"`
 	ContractGasLimit  uint64   `protobuf:"varint,2,opt,name=contract_gas_limit,json=contractGasLimit,proto3" json:"contract_gas_limit,omitempty" yaml:"contract_gas_limit"`
 }

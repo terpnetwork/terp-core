@@ -13,8 +13,7 @@ service Query {
   // ClockContracts
   rpc ClockContracts(QueryClockContracts)
       returns (QueryClockContractsResponse) {
-    option (google.api.http).get =
-        "/terp/clock/v1/contracts";
+    option (google.api.http).get = "/terp/clock/v1/contracts";
   }
   // Params
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
@@ -25,9 +24,10 @@ service Query {
 // QueryClockContracts is the request type to get all contracts.
 message QueryClockContracts {}
 
-// QueryClockContractsResponse is the response type for the Query/ClockContracts RPC method.
+// QueryClockContractsResponse is the response type for the Query/ClockContracts
+// RPC method.
 message QueryClockContractsResponse {
-  repeated string contract_addresses = 1 [    
+  repeated string contract_addresses = 1 [
     (gogoproto.jsontag) = "contract_addresses,omitempty",
     (gogoproto.moretags) = "yaml:\"contract_addresses\""
   ];
@@ -36,7 +36,11 @@ message QueryClockContractsResponse {
 // QueryParams is the request type to get all module params.
 message QueryParamsRequest {}
 
-// QueryClockContractsResponse is the response type for the Query/ClockContracts RPC method.
+// QueryClockContractsResponse is the response type for the Query/ClockContracts
+// RPC method.
 message QueryParamsResponse {
-  Params params = 1 [(gogoproto.jsontag) = "params", (gogoproto.moretags) = "yaml:\"params\""];
+  Params params = 1 [
+    (gogoproto.jsontag) = "params",
+    (gogoproto.moretags) = "yaml:\"params\""
+  ];
 }
