@@ -8,7 +8,6 @@ Make sure you run below scripts under `terpd/contrib/relayer-tests` directory.
 - `./test_ibc_transfer.sh` will setup a path between chains and send tokens between chains.
 
 ## Thank you
+
 The setup scripts here are taken from [cosmos/relayer](https://github.com/cosmos/relayer)
 Thank your relayer team for these scripts.
-
-

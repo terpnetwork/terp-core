@@ -15,7 +15,6 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/terp/drip/v1/params";
   }
-
 }
 // QueryParamsRequest is the request type for the Query/Params RPC method.
 message QueryParamsRequest {}

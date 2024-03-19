@@ -34,7 +34,8 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// MsgDistributeTokens defines a message that registers a Distribution of tokens.
+// MsgDistributeTokens defines a message that registers a Distribution of
+// tokens.
 type MsgDistributeTokens struct {
 	// sender_address is the bech32 address of message sender.
 	SenderAddress string `protobuf:"bytes,1,opt,name=sender_address,json=senderAddress,proto3" json:"sender_address,omitempty"`
@@ -130,7 +131,8 @@ var xxx_messageInfo_MsgDistributeTokensResponse proto.InternalMessageInfo
 //
 // Since: cosmos-sdk 0.47
 type MsgUpdateParams struct {
-	// authority is the address that controls the module (defaults to x/gov unless overwritten).
+	// authority is the address that controls the module (defaults to x/gov unless
+	// overwritten).
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	// params defines the x/auth parameters to update.
 	//
@@ -281,7 +283,8 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
-	// DistributeTokens distribute the sent tokens to all stakers in the next block
+	// DistributeTokens distribute the sent tokens to all stakers in the next
+	// block
 	DistributeTokens(ctx context.Context, in *MsgDistributeTokens, opts ...grpc.CallOption) (*MsgDistributeTokensResponse, error)
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 }
@@ -314,7 +317,8 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
-	// DistributeTokens distribute the sent tokens to all stakers in the next block
+	// DistributeTokens distribute the sent tokens to all stakers in the next
+	// block
 	DistributeTokens(context.Context, *MsgDistributeTokens) (*MsgDistributeTokensResponse, error)
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 }
