@@ -25,13 +25,23 @@ proto-all: proto-format proto-gen
 
 proto-gen:
 	@echo "Generating Protobuf files"
-	@$(DOCKER) run --rm -u 0 -v $(CURDIR):/workspace --workdir /workspace $(PROTO_BUILDER_IMAGE) sh ./scripts/protocgen.sh
+	@$(protoImage) sh ./scripts/protocgen.sh
+# generate the stubs for the proto files from the proto directory
+	spawn stub-gen
+
+proto-swagger-gen:
+	@$(protoImage) sh ./scripts/protoc_swagger_openapi_gen.sh
+
+proto-lint:
+	@$(protoImage) buf lint --error-format=json
 
 proto-format:
 	@echo "Formatting Protobuf files"
 	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace tendermintdev/docker-build-proto \
 		find ./proto -name "*.proto" -exec clang-format -i {} \;
 
+proto-check-breaking:
+	@$(CURDIR) $(protoImage) buf breaking --against $(HTTPS_GIT)#branch=main
 
 SWAGGER_DIR=./swagger-proto
 THIRD_PARTY_DIR=$(SWAGGER_DIR)/third_party

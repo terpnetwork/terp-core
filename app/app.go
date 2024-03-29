@@ -66,7 +66,7 @@ import (
 	v2 "github.com/terpnetwork/terp-core/v4/app/upgrades/v2"
 	v3 "github.com/terpnetwork/terp-core/v4/app/upgrades/v3"
 	"github.com/terpnetwork/terp-core/v4/app/upgrades/v4_1"
-	"github.com/terpnetwork/terp-core/v4/docs"
+	"github.com/terpnetwork/terp-core/v4/client/docs"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"

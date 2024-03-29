@@ -5,20 +5,17 @@ package types
 
 import (
 	fmt "fmt"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
-
-	_ "github.com/cosmos/gogoproto/gogoproto"
-	proto "github.com/cosmos/gogoproto/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var (
-	_ = proto.Marshal
-	_ = fmt.Errorf
-	_ = math.Inf
-)
+var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -39,11 +36,9 @@ func (*GenesisState) ProtoMessage()    {}
 func (*GenesisState) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5749c3f71850298b, []int{0}
 }
-
 func (m *GenesisState) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *GenesisState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GenesisState.Marshal(b, m, deterministic)
@@ -56,15 +51,12 @@ func (m *GenesisState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return b[:n], nil
 	}
 }
-
 func (m *GenesisState) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_GenesisState.Merge(m, src)
 }
-
 func (m *GenesisState) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *GenesisState) XXX_DiscardUnknown() {
 	xxx_messageInfo_GenesisState.DiscardUnknown(m)
 }
@@ -99,11 +91,9 @@ func (*GenesisDenom) ProtoMessage()    {}
 func (*GenesisDenom) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5749c3f71850298b, []int{1}
 }
-
 func (m *GenesisDenom) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-
 func (m *GenesisDenom) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GenesisDenom.Marshal(b, m, deterministic)
@@ -116,15 +106,12 @@ func (m *GenesisDenom) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return b[:n], nil
 	}
 }
-
 func (m *GenesisDenom) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_GenesisDenom.Merge(m, src)
 }
-
 func (m *GenesisDenom) XXX_Size() int {
 	return m.Size()
 }
-
 func (m *GenesisDenom) XXX_DiscardUnknown() {
 	xxx_messageInfo_GenesisDenom.DiscardUnknown(m)
 }
@@ -155,7 +142,7 @@ func init() {
 }
 
 var fileDescriptor_5749c3f71850298b = []byte{
-	// 370 bytes of a gzipped FileDescriptorProto
+	// 373 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0xca, 0x2f, 0xce, 0xcd,
 	0x2f, 0xce, 0x2c, 0xd6, 0x2f, 0xc9, 0xcf, 0x4e, 0xcd, 0x4b, 0x4b, 0x4c, 0x2e, 0xc9, 0x2f, 0xaa,
 	0xd4, 0x2f, 0x33, 0x4c, 0x4a, 0x2d, 0x49, 0x34, 0xd4, 0x4f, 0x4f, 0xcd, 0x4b, 0x2d, 0xce, 0x2c,
@@ -173,13 +160,13 @@ var fileDescriptor_5749c3f71850298b = []byte{
 	0xe0, 0xd3, 0x3d, 0x79, 0x1e, 0x88, 0x49, 0x60, 0x61, 0xa5, 0x20, 0x88, 0xb4, 0x50, 0x1b, 0x23,
 	0x97, 0x10, 0x3c, 0x18, 0xe3, 0x73, 0xa1, 0xe1, 0x28, 0xc1, 0x04, 0xf6, 0xbb, 0x09, 0x7e, 0xf7,
 	0x82, 0x6d, 0x72, 0x44, 0x8f, 0x03, 0x27, 0x45, 0xa8, 0xcb, 0x25, 0x21, 0xf6, 0x61, 0x9a, 0xae,
-	0x14, 0x24, 0x88, 0x11, 0x73, 0x56, 0x2c, 0x2f, 0x16, 0xc8, 0x33, 0x3a, 0xf9, 0x9f, 0x78, 0x24,
+	0x14, 0x24, 0x88, 0x11, 0x73, 0x56, 0x2c, 0x2f, 0x16, 0xc8, 0x33, 0x3a, 0x05, 0x9d, 0x78, 0x24,
 	0xc7, 0x78, 0xe1, 0x91, 0x1c, 0xe3, 0x83, 0x47, 0x72, 0x8c, 0x13, 0x1e, 0xcb, 0x31, 0x5c, 0x78,
-	0x2c, 0xc7, 0x70, 0xe3, 0xb1, 0x1c, 0x43, 0x94, 0x69, 0x7a, 0x66, 0x49, 0x46, 0x69, 0x92, 0x5e,
+	0x2c, 0xc7, 0x70, 0xe3, 0xb1, 0x1c, 0x43, 0x94, 0x45, 0x7a, 0x66, 0x49, 0x46, 0x69, 0x92, 0x5e,
 	0x72, 0x7e, 0xae, 0x7e, 0x49, 0x6a, 0x51, 0x41, 0x5e, 0x6a, 0x49, 0x79, 0x7e, 0x51, 0x36, 0x98,
-	0xad, 0x9b, 0x9c, 0x5f, 0x94, 0xaa, 0x5f, 0x81, 0x1a, 0xdd, 0x25, 0x95, 0x05, 0xa9, 0xc5, 0x49,
-	0x6c, 0xe0, 0x68, 0x36, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x20, 0x30, 0xa0, 0x86, 0xa9, 0x02,
-	0x00, 0x00,
+	0xad, 0x9b, 0x9c, 0x5f, 0x94, 0xaa, 0x5f, 0x66, 0xa2, 0x5f, 0x81, 0x1a, 0xe3, 0x25, 0x95, 0x05,
+	0xa9, 0xc5, 0x49, 0x6c, 0xe0, 0x98, 0x36, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x42, 0xff, 0x3c,
+	0xb0, 0xac, 0x02, 0x00, 0x00,
 }
 
 func (this *GenesisDenom) Equal(that interface{}) bool {
@@ -209,7 +196,6 @@ func (this *GenesisDenom) Equal(that interface{}) bool {
 	}
 	return true
 }
-
 func (m *GenesisState) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -308,7 +294,6 @@ func encodeVarintGenesis(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-
 func (m *GenesisState) Size() (n int) {
 	if m == nil {
 		return 0
@@ -344,11 +329,9 @@ func (m *GenesisDenom) Size() (n int) {
 func sovGenesis(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
-
 func sozGenesis(x uint64) (n int) {
 	return sovGenesis(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-
 func (m *GenesisState) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -466,7 +449,6 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *GenesisDenom) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -582,7 +564,6 @@ func (m *GenesisDenom) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func skipGenesis(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
