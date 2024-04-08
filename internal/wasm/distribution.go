@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	sdkerrors "cosmossdk.io/errors"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
 
@@ -38,7 +39,7 @@ func CustomDistributionEncoder(contract sdk.AccAddress, data json.RawMessage, _ 
 	msg := &DistributionMsg{}
 	err := json.Unmarshal(data, msg)
 	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONUnmarshal, err.Error())
+		return nil, sdkerrors.Wrap(errors.ErrJSONUnmarshal, err.Error())
 	}
 	if msg.FundCommunityPool != nil {
 		return msg.FundCommunityPool.Encode(contract)

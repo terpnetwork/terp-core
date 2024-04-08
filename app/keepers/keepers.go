@@ -121,7 +121,7 @@ var (
 		tokenfactorytypes.EnableSetMetadata,
 	}
 
-	EmptyWasmOpts []wasm.Option
+	EmptyWasmOpts []wasmkeeper.Option
 )
 
 // module account permissions
