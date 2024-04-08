@@ -5,7 +5,7 @@ include scripts/makefiles/release.mk
 include scripts/makefiles/lint.mk
 include scripts/makefiles/tests.mk
 include scripts/makefiles/e2e.mk
-include scripts/makefiles/heighliner.mk
+include scripts/makefiles/hl.mk
 include scripts/makefiles/build.mk
 include scripts/makefiles/deps.mk
 
