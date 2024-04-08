@@ -58,18 +58,18 @@ jobs:
       matrix:
         # names of `make` commands to run tests
         test:
-          - "ictest-basic"
-          - "ictest-statesync"
-          - "ictest-ibchooks"
-          - "ictest-tokenfactory"
-          - "ictest-feeshare"
-          - "ictest-pfm"
-          # - "ictest-upgrade"
-          - "ictest-ibc"
-          # - "ictest-pob"
-          # - "ictest-drip"
-          # - "ictest-cwhooks"
-          - "ictest-clock"
+          - "e2e-basic"
+          - "e2e-statesync"
+          - "e2e-ibchooks"
+          - "e2e-tokenfactory"
+          - "e2e-feeshare"
+          - "e2e-pfm"
+          # - "e2e-upgrade"
+          - "e2e-ibc"
+          # - "e2e-pob"
+          # - "e2e-drip"
+          # - "e2e-cwhooks"
+          - "e2e-clock"
       fail-fast: false
 
     steps:
