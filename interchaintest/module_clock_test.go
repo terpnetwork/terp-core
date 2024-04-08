@@ -34,7 +34,7 @@ func TestTerpClock(t *testing.T) {
 	user := users[0]
 
 	// Upload & init contract payment to another address
-	_, contractAddr := helpers.SetupContract(t, ctx, terp, user.KeyName(), "contracts/clock_example.wasm", `{}`)
+	_, contractAddr := helpers.SetupContract(t, ctx, terp, user.KeyName(), "contracts/clock_example.wasm", false, `{}`)
 
 	// Ensure config is 0
 	res := helpers.GetClockContractValue(t, ctx, terp, contractAddr)

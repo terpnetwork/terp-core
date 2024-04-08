@@ -52,7 +52,7 @@ func TestTerpTokenFactory(t *testing.T) {
 
 	// This allows the uaddr here to mint tokens on behalf of the contract. Typically you only allow a contract here, but this is testing.
 	coreInitMsg := fmt.Sprintf(`{"allowed_mint_addresses":["%s"],"denoms":["%s"]}`, uaddr, tfDenom)
-	_, coreTFContract := helpers.SetupContract(t, ctx, terp, user.KeyName(), "contracts/tokenfactory_core.wasm", coreInitMsg)
+	_, coreTFContract := helpers.SetupContract(t, ctx, terp, user.KeyName(), "contracts/tokenfactory_core.wasm", false, coreInitMsg)
 	t.Log("coreContract", coreTFContract)
 
 	// change admin to the contract

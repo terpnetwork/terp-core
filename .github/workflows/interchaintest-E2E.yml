@@ -69,7 +69,7 @@ jobs:
           # - "ictest-pob"
           # - "ictest-drip"
           # - "ictest-cwhooks"
-          # - "ictest-clock"
+          - "ictest-clock"
       fail-fast: false
 
     steps:

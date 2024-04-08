@@ -108,6 +108,8 @@ import (
 	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/bindings"
 	tokenfactorykeeper "github.com/terpnetwork/terp-core/v4/x/tokenfactory/keeper"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
+
+	terpwasm "github.com/terpnetwork/terp-core/v4/internal/wasm"
 )
 
 var (
@@ -118,6 +120,8 @@ var (
 		tokenfactorytypes.EnableForceTransfer,
 		tokenfactorytypes.EnableSetMetadata,
 	}
+
+	EmptyWasmOpts []wasm.Option
 )
 
 // module account permissions
@@ -501,8 +505,9 @@ func NewAppKeepers(
 		panic(fmt.Sprintf("error while reading wasm config: %s", err))
 	}
 
-	tfOpts := bindings.RegisterCustomPlugins(&appKeepers.BankKeeper, &appKeepers.TokenFactoryKeeper)
-	wasmOpts = append(wasmOpts, tfOpts...)
+	// custom messages for cosmwasm go here
+	registry := terpwasm.NewEncoderRegistry()
+	registry.RegisterEncoder(terpwasm.DistributionRoute, terpwasm.CustomDistributionEncoder)
 
 	// Stargate Queries
 	accepted := wasmkeeper.AcceptedStargateQueries{
@@ -530,11 +535,17 @@ func NewAppKeepers(
 		"/osmosis.tokenfactory.v1beta1.Query/DenomAuthorityMetadata": &tokenfactorytypes.QueryDenomAuthorityMetadataResponse{},
 		"/osmosis.tokenfactory.v1beta1.Query/DenomsFromCreator":      &tokenfactorytypes.QueryDenomsFromCreatorResponse{},
 	}
-	querierOpts := wasmkeeper.WithQueryPlugins(
-		&wasmkeeper.QueryPlugins{
-			Stargate: wasmkeeper.AcceptListStargateQuerier(accepted, bApp.GRPCQueryRouter(), appCodec),
-		})
-	wasmOpts = append(wasmOpts, querierOpts)
+
+	wasmOpts = append(wasmOpts,
+		wasmkeeper.WithMessageEncoders(terpwasm.MessageEncoders(registry)),
+		wasmkeeper.WithQueryPlugins(
+			&wasmkeeper.QueryPlugins{
+				Stargate: wasmkeeper.AcceptListStargateQuerier(accepted, bApp.GRPCQueryRouter(), appCodec),
+			}),
+	)
+
+	tfOpts := bindings.RegisterCustomPlugins(&appKeepers.BankKeeper, &appKeepers.TokenFactoryKeeper)
+	wasmOpts = append(wasmOpts, tfOpts...)
 
 	appKeepers.WasmKeeper = wasmkeeper.NewKeeper(
 		appCodec,

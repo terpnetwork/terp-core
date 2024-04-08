@@ -11,21 +11,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetupContract(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, keyname string, fileLoc string, message string) (codeId, contract string) {
+func SetupContract(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, keyname string, fileLoc string, storeOnly bool, message string) (codeId, contract string) {
 	codeId, err := chain.StoreContract(ctx, keyname, fileLoc)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	contractAddr, err := chain.InstantiateContract(ctx, keyname, codeId, message, true)
-	if err != nil {
-		t.Fatal(err)
+	if !storeOnly {
+		contractAddr, err := chain.InstantiateContract(ctx, keyname, codeId, message, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return codeId, contractAddr
 	}
-
-	return codeId, contractAddr
+	return codeId, ""
 }
 
-func ExecuteMsgWithAmount(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, user ibc.Wallet, contractAddr, amount, message string) {
+func ExecuteMsgWithAmount(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, user ibc.Wallet, contractAddr, amount, message string) string {
 	// amount is #utoken
 
 	// There has to be a way to do this in ictest?
@@ -49,9 +51,10 @@ func ExecuteMsgWithAmount(t *testing.T, ctx context.Context, chain *cosmos.Cosmo
 	if err := testutil.WaitForBlocks(ctx, 2, chain); err != nil {
 		t.Fatal(err)
 	}
+	return string(stdout)
 }
 
-func ExecuteMsgWithFee(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, user ibc.Wallet, contractAddr, amount, feeCoin, message string) {
+func ExecuteMsgWithFee(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, user ibc.Wallet, contractAddr, amount, feeCoin, message string) string {
 	// amount is #utoken
 
 	// There has to be a way to do this in ictest?
@@ -80,4 +83,5 @@ func ExecuteMsgWithFee(t *testing.T, ctx context.Context, chain *cosmos.CosmosCh
 	if err := testutil.WaitForBlocks(ctx, 2, chain); err != nil {
 		t.Fatal(err)
 	}
+	return string(stdout)
 }

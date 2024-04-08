@@ -29,7 +29,7 @@ func TestTerpFeeShare(t *testing.T) {
 	feeRcvAddr := "terp1v75wlkccpv7le3560zw32v2zjes5n0e7fgfzdc"
 
 	// Upload & init contract payment to another address
-	_, contractAddr := helpers.SetupContract(t, ctx, terp, user.KeyName(), "contracts/cw_template.wasm", `{"count":0}`)
+	_, contractAddr := helpers.SetupContract(t, ctx, terp, user.KeyName(), "contracts/cw_template.wasm", false, `{"count":0}`)
 
 	// register contract to a random address (since we are the creator, though not the admin)
 	helpers.RegisterFeeShare(t, ctx, terp, user, contractAddr, feeRcvAddr)
