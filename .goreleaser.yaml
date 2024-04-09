@@ -1,0 +1,228 @@
+project_name: terpd
+
+env:
+  - CGO_ENABLED=1
+
+builds:
+  - id: terpd-darwin-amd64
+    main: ./cmd/terpd/main.go
+    binary: terpd
+    hooks:
+      pre:
+        - wget https://github.com/CosmWasm/wasmvm/releases/download/{{ .Env.COSMWASM_VERSION }}/libwasmvmstatic_darwin.a -O /lib/libwasmvmstatic_darwin.a
+    env:
+      - CC=o64-clang
+      - CGO_LDFLAGS=-L/lib
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    flags:
+      - -mod=readonly
+      - -trimpath
+    ldflags:
+      - -X github.com/cosmos/cosmos-sdk/version.Name=terpnetwork
+      - -X github.com/cosmos/cosmos-sdk/version.AppName=terpd
+      - -X github.com/cosmos/cosmos-sdk/version.Version={{ .Version }}
+      - -X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}
+      - -X github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger,static_wasm
+      - -w -s
+      - -linkmode=external
+    tags:
+      - netgo
+      - ledger
+      - static_wasm
+
+  - id: terpd-darwin-arm64
+    main: ./cmd/terpd/main.go
+    binary: terpd
+    hooks:
+      pre:
+        - wget https://github.com/CosmWasm/wasmvm/releases/download/{{ .Env.COSMWASM_VERSION }}/libwasmvmstatic_darwin.a -O /lib/libwasmvmstatic_darwin.a
+    env:
+      - CC=oa64-clang
+      - CGO_LDFLAGS=-L/lib
+    goos:
+      - darwin
+    goarch:
+      - arm64
+    flags:
+      - -mod=readonly
+      - -trimpath
+    ldflags:
+      - -X github.com/cosmos/cosmos-sdk/version.Name=terpnetwork
+      - -X github.com/cosmos/cosmos-sdk/version.AppName=terpd
+      - -X github.com/cosmos/cosmos-sdk/version.Version={{ .Version }}
+      - -X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}
+      - -X github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger,static_wasm
+      - -w -s
+      - -linkmode=external
+    tags:
+      - netgo
+      - ledger
+      - static_wasm
+
+  - id: terpd-linux-amd64
+    main: ./cmd/terpd
+    binary: terpd
+    hooks:
+      pre:
+        - wget https://github.com/CosmWasm/wasmvm/releases/download/{{ .Env.COSMWASM_VERSION }}/libwasmvm_muslc.x86_64.a -O /usr/lib/x86_64-linux-gnu/libwasmvm_muslc.a
+    goos:
+      - linux
+    goarch:
+      - amd64
+    env:
+      - CC=x86_64-linux-gnu-gcc
+    flags:
+      - -mod=readonly
+      - -trimpath
+    ldflags:
+      - -X github.com/cosmos/cosmos-sdk/version.Name=terpnetwork
+      - -X github.com/cosmos/cosmos-sdk/version.AppName=terpd
+      - -X github.com/cosmos/cosmos-sdk/version.Version={{ .Version }}
+      - -X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}
+      - -X github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger,muslc,osusergo
+      - -w -s
+      - -linkmode=external
+      - -extldflags '-Wl,-z,muldefs -static -lm'
+    tags:
+      - netgo
+      - ledger
+      - muslc
+      - osusergo
+
+  - id: terpd-linux-arm64
+    main: ./cmd/terpd
+    binary: terpd
+    hooks:
+      pre:
+        - wget https://github.com/CosmWasm/wasmvm/releases/download/{{ .Env.COSMWASM_VERSION }}/libwasmvm_muslc.aarch64.a -O /usr/lib/aarch64-linux-gnu/libwasmvm_muslc.a
+    goos:
+      - linux
+    goarch:
+      - arm64
+    env:
+      - CC=aarch64-linux-gnu-gcc
+    flags:
+      - -mod=readonly
+      - -trimpath
+    ldflags:
+      - -X github.com/cosmos/cosmos-sdk/version.Name=terpnetwork 
+      - -X github.com/cosmos/cosmos-sdk/version.AppName=terpd 
+      - -X github.com/cosmos/cosmos-sdk/version.Version={{ .Version }} 
+      - -X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}
+      - -X github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger,muslc,osusergo
+      - -w -s
+      - -linkmode=external
+      - -extldflags '-Wl,-z,muldefs -static -lm'
+    tags:
+      - netgo
+      - ledger
+      - muslc
+      - osusergo
+
+universal_binaries:
+  - id: terpd-darwin-universal
+    ids:
+      - terpd-darwin-amd64
+      - terpd-darwin-arm64
+    replace: false
+
+archives:
+  - id: zipped
+    builds:
+      # - terpd-darwin-universal
+      - terpd-linux-amd64
+      - terpd-linux-arm64
+      # - terpd-darwin-amd64
+      # - terpd-darwin-arm64
+    name_template: "{{.ProjectName}}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    format: tar.gz
+    files:
+      - none*
+  - id: binaries
+    builds:
+      # - terpd-darwin-universal
+      - terpd-linux-amd64
+      - terpd-linux-arm64
+      # - terpd-darwin-amd64
+      # - terpd-darwin-arm64
+    name_template: "{{.ProjectName}}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    format: binary
+    files:
+      - none*
+
+checksum:
+  name_template: "sha256sum.txt"
+  algorithm: sha256
+
+# Docs: https://goreleaser.com/customization/changelog/
+changelog:
+  skip: true
+
+# Docs: https://goreleaser.com/customization/release/
+release:
+  github:
+    owner: terpnetwork
+    name: terp-core
+  replace_existing_draft: true
+  header: |
+    < DESCRIPTION OF RELEASE >
+
+    ## Changelog
+
+    See the full changelog [here](https://github.com/terpnetwork/terp-core/blob/v{{ .Version }}/CHANGELOG.md)
+
+    ## ⚡️ Binaries
+
+    Binaries for Linux (amd64 and arm64) are available below.
+
+    #### 🔨 Build from source
+
+    If you prefer to build from source, you can use the following commands:
+
+    ````bash
+    git clone https://github.com/terpnetwork/terp-core
+    cd osmosis && git checkout v{{ .Version }}
+    make install
+    ````
+
+    ## 🐳 Run with Docker
+
+    As an alternative to installing and running terpd on your system, you may run terpd in a Docker container.
+    The following Docker images are available in our registry:
+
+    | Image Name                                   | Base                                 | Description                       |
+    |----------------------------------------------|--------------------------------------|-----------------------------------|
+    | `terpnetwork/terp-core:{{ .Version }}`            | `distroless/static-debian11`         | Default image based on Distroless |
+    | `terpnetwork/terp-core:{{ .Version }}-distroless` | `distroless/static-debian11`         | Distroless image (same as above)  |
+    | `terpnetwork/terp-core:{{ .Version }}-nonroot`    | `distroless/static-debian11:nonroot` | Distroless non-root image         |
+    | `terpnetwork/terp-core:{{ .Version }}-alpine`     | `alpine`                             | Alpine image                      |
+
+    Example run:
+
+    ```bash
+    docker run terpnetwork/terp-core:{{ .Version }} version
+    # v{{ .Version }}
+    ````
+
+    All the images support `arm64` and `amd64` architectures.
+
+  name_template: "Terp-Core v{{.Version}} "
+  mode: replace
+  draft: true
+
+# Docs: https://goreleaser.com/customization/announce/
+# We could automatically announce the release in
+# - discord
+# - slack
+# - twitter
+# - webhooks
+# - telegram
+# - reddit
+#
+# announce:
+  # discord:
+  #   enabled: true
+  #   message_template: 'New {{.Tag}} is out!'

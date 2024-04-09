@@ -1,23 +1,67 @@
 #!/usr/bin/make -f
 
+include scripts/makefiles/proto.mk
+include scripts/makefiles/release.mk
+include scripts/makefiles/lint.mk
+include scripts/makefiles/tests.mk
+include scripts/makefiles/e2e.mk
+include scripts/makefiles/hl.mk
+include scripts/makefiles/build.mk
+include scripts/makefiles/deps.mk
+
+
+.DEFAULT_GOAL := help
+help:
+	@echo "Available top-level commands:"
+	@echo ""
+	@echo "Usage:"
+	@echo "    make [command]"
+	@echo ""
+	@echo "  make build                 Build terpd binary"
+	@echo "  make build-help            Show available build commands"
+	@echo "  make deps                  Show available deps commands"
+	@echo "  make heighliner            Show available docker commands"
+	@echo "  make e2e                   Show available e2e commands"
+	@echo "  make install               Install terpd binary"
+	@echo "  make lint                  Show available lint commands"
+	@echo "  make proto                 Show available proto commands"
+	@echo "  make release               Show available release commands"
+	@echo "  make release-help          Show available release commands"
+	@echo "  make test                  Show available test commands"
+	@echo ""
+	@echo "Run 'make [subcommand]' to see the available commands for each subcommand."
+
+# git info
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
-COMMIT := $(shell git log -1 --format='%H')
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
-BINDIR ?= $(GOPATH)/bin
-APP = ./app
+COMMIT := $(shell git log -1 --format='%H')
 
-# don't override user values
-ifeq (,$(VERSION))
-  VERSION := $(shell git describe --tags)
-  # if VERSION is empty, then populate it with branch's name and raw commit hash
-  ifeq (,$(VERSION))
-    VERSION := $(BRANCH)-$(COMMIT)
-  endif
-endif
-
-PACKAGES_SIMTEST=$(shell go list ./... | grep '/simulation')
 LEDGER_ENABLED ?= true
 SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
+BUILDDIR ?= $(CURDIR)/build
+DOCKER := $(shell which docker)
+E2E_UPGRADE_VERSION := "v4"
+
+
+
+DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(BUF_IMAGE)
+PACKAGES_SIMTEST=$(shell go list ./... | grep '/simulation')
+BUF_IMAGE=bufbuild/buf@sha256:3cb1f8a4b48bd5ad8f09168f10f607ddc318af202f5c057d52a45216793d85e5 #v1.4.0
+SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
+HTTPS_GIT := https://github.com/terpnetwork/terp-core.git
+
+
+GO_MODULE := $(shell cat go.mod | grep "module " | cut -d ' ' -f 2)
+GO_VERSION := $(shell cat go.mod | grep -E 'go [0-9].[0-9]+' | cut -d ' ' -f 2)
+GO_MAJOR_VERSION = $(shell go version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f1)
+GO_MINOR_VERSION = $(shell go version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f2)
+GO_MINIMUM_MAJOR_VERSION = $(shell cat go.mod | grep -E 'go [0-9].[0-9]+' | cut -d ' ' -f2 | cut -d'.' -f1)
+GO_MINIMUM_MINOR_VERSION = $(shell cat go.mod | grep -E 'go [0-9].[0-9]+' | cut -d ' ' -f2 | cut -d'.' -f2)
+# message to be printed if Go does not meet the minimum required version
+GO_VERSION_ERR_MSG = "ERROR: Go version $(GO_MINIMUM_MAJOR_VERSION).$(GO_MINIMUM_MINOR_VERSION)+ is required"
+
+
+export GO111MODULE = on
 
 # don't override user values
 ifeq (,$(VERSION))
@@ -28,11 +72,14 @@ ifeq (,$(VERSION))
   endif
 endif
 
-# for dockerized protobuf tools
-DOCKER := $(shell which docker)
-BUF_IMAGE=bufbuild/buf@sha256:3cb1f8a4b48bd5ad8f09168f10f607ddc318af202f5c057d52a45216793d85e5 #v1.4.0
-DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(BUF_IMAGE)
-HTTPS_GIT := https://github.com/terpnetwork/terp-core.git
+# don't override user values
+ifeq (,$(VERSION))
+  VERSION := $(shell git describe --tags)
+  # if VERSION is empty, then populate it with branch's name and raw commit hash
+  ifeq (,$(VERSION))
+    VERSION := $(BRANCH)-$(COMMIT)
+  endif
+endif
 
 export GO111MODULE = on
 
@@ -69,9 +116,9 @@ build_tags += $(BUILD_TAGS)
 build_tags := $(strip $(build_tags))
 
 whitespace :=
-empty = $(whitespace) $(whitespace)
+whitespace := $(whitespace) $(whitespace)
 comma := ,
-build_tags_comma_sep := $(subst $(empty),$(comma),$(build_tags))
+build_tags_comma_sep := $(subst $(whitespace),$(comma),$(build_tags))
 
 # process linker flags
 
@@ -93,187 +140,36 @@ ldflags := $(strip $(ldflags))
 
 BUILD_FLAGS := -tags "$(build_tags_comma_sep)" -ldflags '$(ldflags)' -trimpath
 
-# The below include contains the tools and runsim targets.
-include contrib/devtools/Makefile
+###############################################################################
+###                            Build & Install                              ###
+###############################################################################
 
-all: install
-	@echo "--> project root: go mod tidy"	
-	@go mod tidy	
-	@echo "--> project root: linting --fix"	
-	@GOGC=1 golangci-lint run --fix --timeout=8m
+build: build-check-version go.sum
+	mkdir -p $(BUILDDIR)/
+	GOWORK=off go build -mod=readonly  $(BUILD_FLAGS) -o $(BUILDDIR)/ $(GO_MODULE)/cmd/terpd
 
-install: go.sum
-	go install -mod=readonly $(BUILD_FLAGS) ./cmd/terpd
+install: build-check-version go.sum
+	GOWORK=off go install -mod=readonly $(BUILD_FLAGS) $(GO_MODULE)/cmd/terpd
 
-build: go.sum
-ifeq ($(OS),Windows_NT)
-	$(error terpd server not supported. Use "make build-windows-client" for client)
-	exit 1
+###############################################################################
+###                                Release                                  ###
+###############################################################################
+GORELEASER_IMAGE := ghcr.io/goreleaser/goreleaser-cross:v$(GO_VERSION)
+COSMWASM_VERSION := $(shell go list -m github.com/CosmWasm/wasmvm | sed 's/.* //')
+
+ifdef GITHUB_TOKEN
+release:
+	docker run \
+		--rm \
+		-e GITHUB_TOKEN=$(GITHUB_TOKEN) \
+		-e COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v `pwd`:/go/src/terpd \
+		-w /go/src/terpd \
+		$(GORELEASER_IMAGE) \
+		release \
+		--clean
 else
-	go build -mod=readonly $(BUILD_FLAGS) -o build/terpd ./cmd/terpd
+release:
+	@echo "Error: GITHUB_TOKEN is not defined. Please define it before running 'make release'."
 endif
-
-build-windows-client: go.sum
-	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/terpd.exe ./cmd/terpd
-
-build-contract-tests-hooks:
-ifeq ($(OS),Windows_NT)
-	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests.exe ./cmd/contract_tests
-else
-	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
-endif
-
-test-node:
-	CHAIN_ID="local-1" HOME_DIR="~/.terp1" TIMEOUT_COMMIT="500ms" CLEAN=true sh scripts/test_node.sh
-
-###############################################################################
-###                                Testing                                  ###
-###############################################################################
-
-test: test-unit
-test-all: check test-race test-cover
-
-test-unit:
-	@VERSION=$(VERSION) go test -mod=readonly -tags='ledger test_ledger_mock' ./...
-
-benchmark:
-	@go test -mod=readonly -bench=. ./...
-
-test-sim-multi-seed-short: runsim
-	@echo "Running short multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(APP) -ExitOnFail 50 5 TestFullAppSimulation
-
-test-sim-deterministic: runsim
-	@echo "Running short multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(APP) -ExitOnFail 1 1 TestAppStateDeterminism
-
-###############################################################################
-###                                Tools & dependencies                     ###
-###############################################################################
-
-go-mod-cache: go.sum
-	@echo "--> Download go modules to local cache"
-	@go mod download
-
-go.sum: go.mod
-	@echo "--> Ensure dependencies have not been modified"
-	@go mod verify
-
-draw-deps:
-	@# requires brew install graphviz or apt-get install graphviz
-	go install github.com/RobotsAndPencils/goviz@latest
-	@goviz -i ./cmd/terpd -d 2 | dot -Tpng -o dependency-graph.png
-
-clean:
-	rm -rf snapcraft-local.yaml build/
-
-distclean: clean
-	rm -rf vendor/
-
-###############################################################################
-###                                Linting                                  ###
-###############################################################################
-
-format-tools:
-	go install mvdan.cc/gofumpt@v0.4.0
-	go install github.com/client9/misspell/cmd/misspell@v0.3.4
-	go install golang.org/x/tools/cmd/goimports@latest
-
-lint: format-tools
-	golangci-lint run --tests=false
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "*_test.go" | xargs gofumpt -d
-format: format-tools
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs gofumpt -w -s
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs gofumpt -w
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs goimports -w -local github.com/terpnetwork/terp-core
-
-###############################################################################
-###                             e2e interchain test                         ###
-###############################################################################
-
- # Executes basic chain tests via interchaintest
-ictest-basic: rm-testcache
-	cd interchaintest && go test -race -v -run TestBasicTerpStart .
-
-ictest-statesync: rm-testcache
-	cd interchaintest && go test -race -v -run TestTerpStateSync .
-
-ictest-ibchooks: rm-testcache
-	cd interchaintest && go test -race -v -run TestTerpIBCHooks .
-
-ictest-pfm: rm-testcache
-	cd interchaintest && go test -race -v -run TestPacketForwardMiddlewareRouter .
-
-ictest-tokenfactory: rm-testcache
-	cd interchaintest && go test -race -v -run TestTerpTokenFactory .
-
-# ictest-clock: rm-testcache
-# 	cd interchaintest &&  go test -race -v -run TestTerpClock .
-
-ictest-feeshare: rm-testcache
-	cd interchaintest && go test -race -v -run TestTerpFeeShare . 
-
-# Executes a basic chain upgrade test via interchaintest
-ictest-upgrade: rm-testcache
-	cd interchaintest && go test -race -v -run TestBasicTerpUpgrade .
-
-# Executes a basic chain upgrade locally via interchaintest after compiling a local image as terpnetwork:local
-ictest-upgrade-local: local-image ictest-upgrade
-
-# Executes IBC tests via interchaintest
-ictest-ibc: rm-testcache
-	cd interchaintest && go test -race -v -run TestTerpGaiaIBCTransfer .
-
-rm-testcache:
-	go clean -testcache
-
-.PHONY: test-mutation ictest-basic ictest-upgrade ictest-ibc 
-
-###############################################################################
-###                                  heighliner                             ###
-###############################################################################
-
-get-heighliner:
-	git clone https://github.com/strangelove-ventures/heighliner.git
-	cd heighliner && go install
-
-local-image:
-ifeq (,$(shell which heighliner))
-	echo 'heighliner' binary not found. Consider running `make get-heighliner`
-else 
-	heighliner build -c terpnetwork --local -f ./chains.yaml
-endif
-
-.PHONY: get-heighliner local-image
-###############################################################################
-###                                Protobuf                                 ###
-###############################################################################
-protoVer=0.13.1
-protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
-protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
-
-proto-all: proto-format proto-lint proto-gen format
-
-proto-gen:
-	@echo "Generating Protobuf files"
-	@$(protoImage) sh ./scripts/protocgen.sh
-
-proto-swagger-gen:
-	@echo "Generating Protobuf Swagger"
-	@$(protoImage) sh ./scripts/protoc_swagger_openapi_gen.sh
-	$(MAKE) update-swagger-docs
-
-proto-format:
-	@echo "Formatting Protobuf files"
-	@$(protoImage) find ./ -name "*.proto" -exec clang-format -i {} \;
-
-proto-lint:
-	@$(DOCKER_BUF) lint --error-format=json
-
-proto-check-breaking:
-	@$(DOCKER_BUF) breaking --against $(HTTPS_GIT)#branch=main
-
-.PHONY: all install install-debug \
-	go-mod-cache draw-deps clean build format \
-	test test-all test-build test-cover test-unit test-race \
-	test-sim-import-export build-windows-client \
