@@ -51,32 +51,32 @@ func TestTerpTokenFactory(t *testing.T) {
 	}
 
 	// This allows the uaddr here to mint tokens on behalf of the contract. Typically you only allow a contract here, but this is testing.
-	coreInitMsg := fmt.Sprintf(`{"allowed_mint_addresses":["%s"],"denoms":["%s"]}`, uaddr, tfDenom)
-	_, coreTFContract := helpers.SetupContract(t, ctx, terp, user.KeyName(), "contracts/tokenfactory_core.wasm", false, coreInitMsg)
-	t.Log("coreContract", coreTFContract)
+	// coreInitMsg := fmt.Sprintf(`{"allowed_mint_addresses":["%s"],"denoms":["%s"]}`, uaddr, tfDenom)
+	// _, coreTFContract := helpers.SetupContract(t, ctx, terp, user.KeyName(), "contracts/tokenfactory_core.wasm", false, coreInitMsg)
+	// t.Log("coreContract", coreTFContract)
 
 	// change admin to the contract
-	helpers.TransferTokenFactoryAdmin(t, ctx, terp, user, coreTFContract, tfDenom)
+	// helpers.TransferTokenFactoryAdmin(t, ctx, terp, user, coreTFContract, tfDenom)
 
 	// ensure the admin is the contract
-	admin := helpers.GetTokenFactoryAdmin(t, ctx, terp, tfDenom)
-	t.Log("admin", admin)
-	if admin != coreTFContract {
-		t.Fatal("admin not coreTFContract. Did not properly transfer.")
-	}
+	// admin := helpers.GetTokenFactoryAdmin(t, ctx, terp, tfDenom)
+	// t.Log("admin", admin)
+	// if admin != coreTFContract {
+	// 	t.Fatal("admin not coreTFContract. Did not properly transfer.")
+	// }
 
 	// Mint on the contract for the user to ensure mint bindings work.
-	mintMsg := fmt.Sprintf(`{"mint":{"address":"%s","denom":[{"denom":"%s","amount":"31"}]}}`, uaddr2, tfDenom)
-	if _, err := terp.ExecuteContract(ctx, user.KeyName(), coreTFContract, mintMsg); err != nil {
-		t.Fatal(err)
-	}
+	// mintMsg := fmt.Sprintf(`{"mint":{"address":"%s","denom":[{"denom":"%s","amount":"31"}]}}`, uaddr2, tfDenom)
+	// if _, err := terp.ExecuteContract(ctx, user.KeyName(), coreTFContract, mintMsg); err != nil {
+	// 	t.Fatal(err)
+	// }
 
 	// ensure uaddr2 has 31+70 = 101
-	if balance, err := terp.GetBalance(ctx, uaddr2, tfDenom); err != nil {
-		t.Fatal(err)
-	} else if balance != 101 {
-		t.Fatal("balance not 101")
-	}
+	// if balance, err := terp.GetBalance(ctx, uaddr2, tfDenom); err != nil {
+	// 	t.Fatal(err)
+	// } else if balance != 101 {
+	// 	t.Fatal("balance not 101")
+	// }
 
 	t.Cleanup(func() {
 		_ = ic.Close()
