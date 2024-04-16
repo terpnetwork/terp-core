@@ -105,7 +105,6 @@ import (
 	// cwhookskeeper "github.com/terpnetwork/terp-core/v4/x/cw-hooks/keeper"
 	// cwhookstypes "github.com/terpnetwork/terp-core/v4/x/cw-hooks/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/bindings"
 	tokenfactorykeeper "github.com/terpnetwork/terp-core/v4/x/tokenfactory/keeper"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 
@@ -543,9 +542,6 @@ func NewAppKeepers(
 				Stargate: wasmkeeper.AcceptListStargateQuerier(accepted, bApp.GRPCQueryRouter(), appCodec),
 			}),
 	)
-
-	tfOpts := bindings.RegisterCustomPlugins(&appKeepers.BankKeeper, &appKeepers.TokenFactoryKeeper)
-	wasmOpts = append(wasmOpts, tfOpts...)
 
 	appKeepers.WasmKeeper = wasmkeeper.NewKeeper(
 		appCodec,
