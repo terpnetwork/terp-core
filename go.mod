@@ -10,7 +10,7 @@ require (
 	github.com/cosmos/cosmos-proto v1.0.0-beta.3
 	github.com/cosmos/cosmos-sdk v0.47.8
 	github.com/cosmos/gogogateway v1.2.0 // indirect
-	github.com/cosmos/gogoproto v1.4.10
+	github.com/cosmos/gogoproto v1.4.11
 	github.com/cosmos/iavl v0.20.1 // indirect
 	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7 v7.1.3-0.20240228213828-cce7f56d000b
 	github.com/cosmos/ibc-go/v7 v7.4.0
@@ -36,7 +36,7 @@ require (
 )
 
 require (
-	cosmossdk.io/api v0.3.1
+	cosmossdk.io/api v0.7.4
 	cosmossdk.io/errors v1.0.1
 	cosmossdk.io/log v1.3.0
 	cosmossdk.io/math v1.2.0
@@ -173,7 +173,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.19.0 // indirect
 	go.opentelemetry.io/otel/trace v1.19.0 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
-	golang.org/x/exp v0.0.0-20230711153332-06a737ee72cb // indirect
+	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/oauth2 v0.13.0 // indirect
 	golang.org/x/sync v0.4.0 // indirect
