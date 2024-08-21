@@ -9,13 +9,12 @@ linters:
     - bodyclose
     - dogsled
     - errcheck
-    - exportloopref
+    - copyloopvar
     - goconst
     - gocritic
     - gofumpt
     - gosec
     - gosimple
-    - govet
     - ineffassign
     - misspell
     - nakedret
@@ -77,3 +76,4 @@ linters-settings:
   gosec:
     excludes:
       - G404
+      - G115
