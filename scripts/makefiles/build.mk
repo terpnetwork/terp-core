@@ -38,16 +38,8 @@ all: install
 	@echo "--> project root: linting --fix"	
 	@GOGC=1 golangci-lint run --fix --timeout=8m
 
-install: go.sum
-	go install -mod=readonly $(BUILD_FLAGS) ./cmd/terpd
-
-build: go.sum
-ifeq ($(OS),Windows_NT)
-	$(error terpd server not supported. Use "make build-windows" for client)
-	exit 1
-else
-	go build -mod=readonly $(BUILD_FLAGS) -o build/terpd ./cmd/terpd
-endif
+build-linux: go.sum
+	LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
 
 build-windows: go.sum
 	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/terpd.exe ./cmd/terpd
@@ -79,8 +71,8 @@ build-reproducible-amd64: go.sum
 		--load \
 		-f Dockerfile .
 	$(DOCKER) rm -f terpbinary || true
-	$(DOCKER) create -ti --name terpbinary terpn-core:local-amd64
-	$(DOCKER) cp terpbinary:/bin/terpd $(BUILDDIR)/terpd-linux-amd64
+	$(DOCKER) create -ti --name terpbinary terp-core:local-amd64
+	$(DOCKER) cp terpbinary:/usr/bin/terpd $(BUILDDIR)/terpd-linux-amd64
 	$(DOCKER) rm -f terpbinary
 
 build-reproducible-arm64: go.sum
@@ -98,47 +90,6 @@ build-reproducible-arm64: go.sum
 		-f Dockerfile .
 	$(DOCKER) rm -f terpbinary || true
 	$(DOCKER) create -ti --name terpbinary terp-core:local-arm64
-	$(DOCKER) cp osmobinary:/bin/terpd $(BUILDDIR)/terpd-linux-arm64
+	$(DOCKER) cp terpbinary:/usr/bin/terpd $(BUILDDIR)/terpd-linux-arm64
 	$(DOCKER) rm -f terpbinary
 
-build-linux: go.sum
-	LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
-
-
-# build-install-with-autocomplete: build-check-version go.sum
-# 	GOWORK=off go install -mod=readonly $(BUILD_FLAGS) $(GO_MODULE)/cmd/terpd
-# 	@PARENT_SHELL=$$(ps -o ppid= -p $$PPID | xargs ps -o comm= -p); \
-# 	if echo "$$PARENT_SHELL" | grep -q "zsh"; then \
-# 		if ! grep -q ". <(terpd enable-cli-autocomplete zsh)" ~/.zshrc; then \
-# 			echo ". <(terpd enable-cli-autocomplete zsh)" >> ~/.zshrc; \
-# 			echo; \
-# 			echo "Autocomplete enabled. Run 'source ~/.zshrc' to complete installation."; \
-# 		else \
-# 			echo; \
-# 			echo "Autocomplete already enabled in ~/.zshrc"; \
-# 		fi \
-# 	elif echo "$$PARENT_SHELL" | grep -q "bash" && [ "$$(uname)" = "Darwin" ]; then \
-# 		if ! grep -q -e "\. <(terpd enable-cli-autocomplete bash)" -e '\[\[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" \]\] && \. "/opt/homebrew/etc/profile.d/bash_completion.sh"' ~/.bash_profile; then \
-# 			brew install bash-completion; \
-# 			echo '[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ] && . "/opt/homebrew/etc/profile.d/bash_completion.sh"' >> ~/.bash_profile; \
-# 			echo ". <(terpd enable-cli-autocomplete bash)" >> ~/.bash_profile; \
-# 			echo; \
-# 			echo; \
-# 			echo "Autocomplete enabled. Run 'source ~/.bash_profile' to complete installation."; \
-# 		else \
-# 			echo "Autocomplete already enabled in ~/.bash_profile"; \
-# 		fi \
-# 	elif echo "$$PARENT_SHELL" | grep -q "bash" && [ "$$(uname)" = "Linux" ]; then \
-# 		if ! grep -q ". <(terpd enable-cli-autocomplete bash)" ~/.bash_profile; then \
-# 			sudo apt-get install -y bash-completion; \
-# 			echo '[ -r "/etc/bash_completion" ] && . "/etc/bash_completion"' >> ~/.bash_profile; \
-# 			echo ". <(terpd enable-cli-autocomplete bash)" >> ~/.bash_profile; \
-# 			echo; \
-# 			echo "Autocomplete enabled. Run 'source ~/.bash_profile' to complete installation."; \
-# 		else \
-# 			echo; \
-# 			echo "Autocomplete already enabled in ~/.bash_profile"; \
-# 		fi \
-# 	else \
-# 		echo "Shell or OS not recognized. Skipping autocomplete setup."; \
-# 	fi

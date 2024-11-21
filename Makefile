@@ -17,12 +17,12 @@ help:
 	@echo "Usage:"
 	@echo "    make [command]"
 	@echo ""
+	@echo "  make install               Install terpd binary"
 	@echo "  make build                 Build terpd binary"
-	@echo "  make build-help            Show available build commands"
+	@echo "  make build-help            Show advanced available build commands"
 	@echo "  make deps                  Show available deps commands"
 	@echo "  make heighliner            Show available docker commands"
 	@echo "  make e2e                   Show available e2e commands"
-	@echo "  make install               Install terpd binary"
 	@echo "  make lint                  Show available lint commands"
 	@echo "  make proto                 Show available proto commands"
 	@echo "  make release               Show available release commands"
@@ -150,26 +150,3 @@ build: build-check-version go.sum
 
 install: build-check-version go.sum
 	GOWORK=off go install -mod=readonly $(BUILD_FLAGS) $(GO_MODULE)/cmd/terpd
-
-###############################################################################
-###                                Release                                  ###
-###############################################################################
-GORELEASER_IMAGE := ghcr.io/goreleaser/goreleaser-cross:v$(GO_VERSION)
-COSMWASM_VERSION := $(shell go list -m github.com/CosmWasm/wasmvm | sed 's/.* //')
-
-ifdef GITHUB_TOKEN
-release:
-	docker run \
-		--rm \
-		-e GITHUB_TOKEN=$(GITHUB_TOKEN) \
-		-e COSMWASM_VERSION=$(COSMWASM_VERSION) \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v `pwd`:/go/src/terpd \
-		-w /go/src/terpd \
-		$(GORELEASER_IMAGE) \
-		release \
-		--clean
-else
-release:
-	@echo "Error: GITHUB_TOKEN is not defined. Please define it before running 'make release'."
-endif
