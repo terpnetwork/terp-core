@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
@@ -12,7 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 
-	"github.com/terpnetwork/terp-core/v4/app"
+	"github.com/terpnetwork/terp-core/v4/app/apptesting"
 	"github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
 	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 )
@@ -26,42 +27,35 @@ type BankKeeper interface {
 	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
 }
 
-type IntegrationTestSuite struct {
-	suite.Suite
+type KeeperTestSuite struct {
+	apptesting.KeeperTestHelper
 
-	ctx               sdk.Context
-	app               *app.TerpApp
-	bankKeeper        BankKeeper
-	accountKeeper     types.AccountKeeper
 	queryClient       types.QueryClient
 	feeShareMsgServer types.MsgServer
 	wasmMsgServer     wasmtypes.MsgServer
 }
 
-func (s *IntegrationTestSuite) SetupTest() {
-	isCheckTx := false
-	s.app = app.Setup(s.T())
+func (s *KeeperTestSuite) SetupTest() {
+	s.Setup()
+	s.Ctx = s.Ctx.WithBlockTime(s.Ctx.BlockTime().Add(time.Hour))
 
-	s.ctx = s.app.BaseApp.NewContext(isCheckTx)
-
-	queryHelper := baseapp.NewQueryServerTestHelper(s.ctx, s.app.InterfaceRegistry())
-	types.RegisterQueryServer(queryHelper, keeper.NewQuerier(s.app.FeeShareKeeper))
+	queryHelper := baseapp.NewQueryServerTestHelper(s.Ctx, s.App.InterfaceRegistry())
+	types.RegisterQueryServer(queryHelper, keeper.NewQuerier(s.App.FeeShareKeeper))
 
 	s.queryClient = types.NewQueryClient(queryHelper)
-	s.bankKeeper = s.app.BankKeeper
-	s.accountKeeper = s.app.AccountKeeper
-	s.feeShareMsgServer = s.app.FeeShareKeeper
-	s.wasmMsgServer = wasmkeeper.NewMsgServerImpl(&s.app.WasmKeeper)
+
+	s.feeShareMsgServer = s.App.FeeShareKeeper
+	s.wasmMsgServer = wasmkeeper.NewMsgServerImpl(&s.App.WasmKeeper)
 }
 
-func (s *IntegrationTestSuite) FundAccount(ctx sdk.Context, addr sdk.AccAddress, amounts sdk.Coins) error {
-	if err := s.bankKeeper.MintCoins(ctx, minttypes.ModuleName, amounts); err != nil {
+func (s *KeeperTestSuite) FundAccount(ctx sdk.Context, addr sdk.AccAddress, amounts sdk.Coins) error {
+	if err := s.App.BankKeeper.MintCoins(ctx, minttypes.ModuleName, amounts); err != nil {
 		return err
 	}
 
-	return s.bankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, amounts)
+	return s.App.BankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, amounts)
 }
 
 func TestKeeperTestSuite(t *testing.T) {
-	suite.Run(t, new(IntegrationTestSuite))
+	suite.Run(t, new(KeeperTestSuite))
 }

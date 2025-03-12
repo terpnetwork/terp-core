@@ -10,10 +10,10 @@ import (
 	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 )
 
-func (s *IntegrationTestSuite) TestFeeShares() {
+func (s *KeeperTestSuite) TestFeeShares() {
 	s.SetupTest()
 	_, _, sender := testdata.KeyTestPubAddr()
-	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
+	_ = s.FundAccount(s.Ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
 
 	_, _, withdrawer := testdata.KeyTestPubAddr()
 
@@ -28,7 +28,7 @@ func (s *IntegrationTestSuite) TestFeeShares() {
 	// RegsisFeeShare
 	var feeShares []types.FeeShare
 	for _, contractAddress := range contractAddressList {
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		msg := &types.MsgRegisterFeeShare{
 			ContractAddress:   contractAddress,
 			DeployerAddress:   sender.String(),
@@ -59,7 +59,7 @@ func (s *IntegrationTestSuite) TestFeeShares() {
 	}
 	s.Run("ByOffset", func() {
 		step := 2
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		for i := 0; i < len(contractAddressList); i += step {
 			resp, err := s.queryClient.FeeShares(goCtx, request(nil, uint64(i), uint64(step), false))
 			s.Require().NoError(err)
@@ -70,7 +70,7 @@ func (s *IntegrationTestSuite) TestFeeShares() {
 	s.Run("ByKey", func() {
 		step := 2
 		var next []byte
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		for i := 0; i < len(contractAddressList); i += step {
 			resp, err := s.queryClient.FeeShares(goCtx, request(next, 0, uint64(step), false))
 			s.Require().NoError(err)
@@ -80,7 +80,7 @@ func (s *IntegrationTestSuite) TestFeeShares() {
 		}
 	})
 	s.Run("Total", func() {
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		resp, err := s.queryClient.FeeShares(goCtx, request(nil, 0, 0, true))
 		s.Require().NoError(err)
 		s.Require().Equal(len(feeShares), int(resp.Pagination.Total))
@@ -88,15 +88,15 @@ func (s *IntegrationTestSuite) TestFeeShares() {
 	})
 }
 
-func (s *IntegrationTestSuite) TestFeeShare() {
+func (s *KeeperTestSuite) TestFeeShare() {
 	s.SetupTest()
 	_, _, sender := testdata.KeyTestPubAddr()
-	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
+	_ = s.FundAccount(s.Ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
 
 	_, _, withdrawer := testdata.KeyTestPubAddr()
 
 	contractAddress := s.InstantiateContract(sender.String(), "")
-	goCtx := sdk.WrapSDKContext(s.ctx)
+	goCtx := sdk.WrapSDKContext(s.Ctx)
 	msg := &types.MsgRegisterFeeShare{
 		ContractAddress:   contractAddress,
 		DeployerAddress:   sender.String(),
@@ -114,16 +114,16 @@ func (s *IntegrationTestSuite) TestFeeShare() {
 	req := &types.QueryFeeShareRequest{
 		ContractAddress: contractAddress,
 	}
-	goCtx = sdk.WrapSDKContext(s.ctx)
+	goCtx = sdk.WrapSDKContext(s.Ctx)
 	resp, err := s.queryClient.FeeShare(goCtx, req)
 	s.Require().NoError(err)
 	s.Require().Equal(resp.Feeshare, feeShare)
 }
 
-func (s *IntegrationTestSuite) TestDeployerFeeShares() {
+func (s *KeeperTestSuite) TestDeployerFeeShares() {
 	s.SetupTest()
 	_, _, sender := testdata.KeyTestPubAddr()
-	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
+	_ = s.FundAccount(s.Ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
 
 	_, _, withdrawer := testdata.KeyTestPubAddr()
 
@@ -137,7 +137,7 @@ func (s *IntegrationTestSuite) TestDeployerFeeShares() {
 
 	// RegsisFeeShare
 	for _, contractAddress := range contractAddressList {
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		msg := &types.MsgRegisterFeeShare{
 			ContractAddress:   contractAddress,
 			DeployerAddress:   sender.String(),
@@ -161,7 +161,7 @@ func (s *IntegrationTestSuite) TestDeployerFeeShares() {
 	}
 	s.Run("ByOffset", func() {
 		step := 2
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		for i := 0; i < len(contractAddressList); i += step {
 			resp, err := s.queryClient.DeployerFeeShares(goCtx, request(nil, uint64(i), uint64(step), false))
 			s.Require().NoError(err)
@@ -172,7 +172,7 @@ func (s *IntegrationTestSuite) TestDeployerFeeShares() {
 	s.Run("ByKey", func() {
 		step := 2
 		var next []byte
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		for i := 0; i < len(contractAddressList); i += step {
 			resp, err := s.queryClient.DeployerFeeShares(goCtx, request(next, 0, uint64(step), false))
 			s.Require().NoError(err)
@@ -182,7 +182,7 @@ func (s *IntegrationTestSuite) TestDeployerFeeShares() {
 		}
 	})
 	s.Run("Total", func() {
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		resp, err := s.queryClient.DeployerFeeShares(goCtx, request(nil, 0, 0, true))
 		s.Require().NoError(err)
 		s.Require().Equal(len(contractAddressList), int(resp.Pagination.Total))
@@ -190,10 +190,10 @@ func (s *IntegrationTestSuite) TestDeployerFeeShares() {
 	})
 }
 
-func (s *IntegrationTestSuite) TestWithdrawerFeeShares() {
+func (s *KeeperTestSuite) TestWithdrawerFeeShares() {
 	s.SetupTest()
 	_, _, sender := testdata.KeyTestPubAddr()
-	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
+	_ = s.FundAccount(s.Ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
 
 	_, _, withdrawer := testdata.KeyTestPubAddr()
 
@@ -207,7 +207,7 @@ func (s *IntegrationTestSuite) TestWithdrawerFeeShares() {
 
 	// RegsisFeeShare
 	for _, contractAddress := range contractAddressList {
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		msg := &types.MsgRegisterFeeShare{
 			ContractAddress:   contractAddress,
 			DeployerAddress:   sender.String(),
@@ -231,7 +231,7 @@ func (s *IntegrationTestSuite) TestWithdrawerFeeShares() {
 	}
 	s.Run("ByOffset", func() {
 		step := 2
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		for i := 0; i < len(contractAddressList); i += step {
 			resp, err := s.queryClient.WithdrawerFeeShares(goCtx, request(nil, uint64(i), uint64(step), false))
 			s.Require().NoError(err)
@@ -242,7 +242,7 @@ func (s *IntegrationTestSuite) TestWithdrawerFeeShares() {
 	s.Run("ByKey", func() {
 		step := 2
 		var next []byte
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		for i := 0; i < len(contractAddressList); i += step {
 			resp, err := s.queryClient.WithdrawerFeeShares(goCtx, request(next, 0, uint64(step), false))
 			s.Require().NoError(err)
@@ -252,7 +252,7 @@ func (s *IntegrationTestSuite) TestWithdrawerFeeShares() {
 		}
 	})
 	s.Run("Total", func() {
-		goCtx := sdk.WrapSDKContext(s.ctx)
+		goCtx := sdk.WrapSDKContext(s.Ctx)
 		resp, err := s.queryClient.WithdrawerFeeShares(goCtx, request(nil, 0, 0, true))
 		s.Require().NoError(err)
 		s.Require().Equal(len(contractAddressList), int(resp.Pagination.Total))
