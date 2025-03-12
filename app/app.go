@@ -47,11 +47,9 @@ import (
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	"github.com/prometheus/client_golang/prometheus"
 
+	upgradetypes "cosmossdk.io/x/upgrade/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	// upgradeclient "cosmossdk.io/x/upgrade/client"
-	upgradetypes "cosmossdk.io/x/upgrade/types"
-	// ibcclientclient "github.com/cosmos/ibc-go/v8/modules/core/02-client"
 	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
@@ -61,9 +59,8 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/terpnetwork/terp-core/v4/app/openapiconsole"
-	v2 "github.com/terpnetwork/terp-core/v4/app/upgrades/v2"
-	v3 "github.com/terpnetwork/terp-core/v4/app/upgrades/v3"
 	"github.com/terpnetwork/terp-core/v4/app/upgrades/v4_1"
+	v5 "github.com/terpnetwork/terp-core/v4/app/upgrades/v5"
 	"github.com/terpnetwork/terp-core/v4/docs"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -97,11 +94,8 @@ var (
 	// EmptyWasmOpts defines a type alias for a list of wasm options.
 	EmptyWasmOpts []wasmkeeper.Option
 
-	Upgrades = []upgrades.Upgrade{
-		v2.Upgrade,
-		v3.Upgrade,
-		// v4.Upgrade, patched for v4_1
-		v4_1.Upgrade,
+	Upgrades = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,
+		v4_1.Upgrade, v5.Upgrade,
 	}
 )
 
@@ -344,7 +338,7 @@ func NewTerpApp(
 
 	// initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
-	// app.SetPreBlocker(app.PreBlocker)
+	app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(anteHandler)
 	app.setPostHandler()

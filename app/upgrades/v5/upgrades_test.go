@@ -85,7 +85,7 @@ func (s *UpgradeTestSuite) ExecuteChangeBlockParamsTest() {
 	s.Require().NoError(err)
 	// s.Require().Equal(consParams.Block.MaxBytes, v5.BlockMaxBytes)
 	// s.Require().Equal(consParams.Block.MaxGas, v5.BlockMaxGas)
-	s.Require().Equal(consParams.Abci.VoteExtensionsEnableHeight, 1)
+	s.Require().Equal(consParams.Abci.VoteExtensionsEnableHeight, int64(10))
 }
 
 func (s *UpgradeTestSuite) PrepareCostPerByteTest() {
