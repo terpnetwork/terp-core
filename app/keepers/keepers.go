@@ -715,7 +715,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(icqtypes.ModuleName)
 	paramsKeeper.Subspace(packetforwardtypes.ModuleName)
 	paramsKeeper.Subspace(globalfee.ModuleName)
-	paramsKeeper.Subspace(feesharetypes.ModuleName)
+	paramsKeeper.Subspace(feesharetypes.ModuleName).WithKeyTable(feesharetypes.ParamKeyTable())
 	paramsKeeper.Subspace(wasmtypes.ModuleName)
 
 	return paramsKeeper

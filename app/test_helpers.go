@@ -42,26 +42,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// DefaultConsensusParams defines the default Tendermint consensus params used in
-// SimApp testing.
 const (
 	SimAppChainID = "testing"
 )
 
-// EmptyBaseAppOptions is a stub implementing AppOptions
-type EmptyBaseAppOptions struct{}
-
-// EmptyAppOptions is a stub implementing AppOptions
-type EmptyAppOptions struct{}
-
-// Get implements AppOptions
-func (ao EmptyBaseAppOptions) Get(_ string) interface{} {
-	return nil
-}
-
-// Get implements AppOptions
-func (ao EmptyAppOptions) Get(o string) interface{} { return nil }
-
+// DefaultConsensusParams defines the default Tendermint consensus params used in
+// SimApp testing.
 var DefaultConsensusParams = &tmproto.ConsensusParams{
 	Block: &tmproto.BlockParams{
 		MaxBytes: 200000,
@@ -79,7 +65,48 @@ var DefaultConsensusParams = &tmproto.ConsensusParams{
 	},
 }
 
+// SetupWithGenesisAccounts initializes a new SimApp with the provided genesis
+// accounts and possible balances.
+func SetupWithGenesisAccounts(t *testing.T, valSet *cmttypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *TerpApp {
+	t.Helper()
+
+	terpApp, genesisState := setup(t, true)
+
+	genesisState, err := GenesisStateWithValSet(t, terpApp, genesisState, valSet, genAccs, balances...)
+
+	if err != nil {
+		panic(err)
+	}
+
+	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
+	require.NoError(t, err)
+
+	terpApp.InitChain(&abci.RequestInitChain{
+		Validators:      []abci.ValidatorUpdate{},
+		ConsensusParams: simtestutil.DefaultConsensusParams,
+		AppStateBytes:   stateBytes,
+		// ChainId:         SimAppChainID,
+		// Time:            time.Now().UTC(),
+		// InitialHeight:   1,
+	},
+	)
+
+	// commit genesis changes
+	// if !startupConfig.AtGenesis {
+	_, err = terpApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+		Height:             terpApp.LastBlockHeight() + 1,
+		NextValidatorsHash: valSet.Hash(),
+	})
+	if err != nil {
+		panic(fmt.Errorf("failed to finalize block: %w", err))
+	}
+	// }
+
+	return terpApp
+}
+
 // Setup initializes a new TerpApp
+// ref: https://github.com/permissionlessweb/cosmos-sdk/blob/78559bd6528bf7cb222af07bbde7129279ff8678/simapp/test_helpers.go#L56
 func Setup(t *testing.T) *TerpApp {
 	t.Helper()
 
@@ -106,6 +133,7 @@ func Setup(t *testing.T) *TerpApp {
 // Setup node for testing simulation
 func setup(t *testing.T, withGenesis bool, opts ...wasmkeeper.Option) (*TerpApp, GenesisState) {
 	db := cosmosdb.NewMemDB()
+
 	nodeHome := t.TempDir()
 	snapshotDir := filepath.Join(nodeHome, "data", "snapshots")
 	snapshotDB, err := cosmosdb.NewGoLevelDB("metadata", snapshotDir, nil)
@@ -117,49 +145,137 @@ func setup(t *testing.T, withGenesis bool, opts ...wasmkeeper.Option) (*TerpApp,
 	// var emptyWasmOpts []wasm.Option
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[flags.FlagHome] = nodeHome // ensure unique folder
+	appOptions[flags.FlagChainID] = "testing"
 
-	app := NewTerpApp(log.NewNopLogger(), db, nil, true, appOptions, opts, bam.SetChainID("testing"), bam.SetSnapshot(snapshotStore, snapshottypes.SnapshotOptions{KeepRecent: 2}))
+	app := NewTerpApp(log.NewNopLogger(), db, nil, true, appOptions, opts, bam.SetSnapshot(snapshotStore, snapshottypes.SnapshotOptions{KeepRecent: 2}))
 	if withGenesis {
 		return app, NewDefaultGenesisState(app.appCodec)
 	}
 	return app, GenesisState{}
 }
 
-// SetupWithGenesisAccounts initializes a new SimApp with the provided genesis
-// accounts and possible balances.
-func SetupWithGenesisAccounts(t *testing.T, valSet *cmttypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *TerpApp {
-	t.Helper()
+func GenesisStateWithValSet(t *testing.T,
+	app *TerpApp, genesisState GenesisState,
+	valSet *cmttypes.ValidatorSet, genAccs []authtypes.GenesisAccount,
+	balances ...banktypes.Balance,
+) (GenesisState, error) {
 
-	terpApp, genesisState := setup(t, true)
+	// set genesis accounts
+	authGenesis := authtypes.NewGenesisState(authtypes.DefaultParams(), genAccs)
+	genesisState[authtypes.ModuleName] = app.AppCodec().MustMarshalJSON(authGenesis)
 
-	genesisState = GenesisStateWithValSet(t, terpApp, genesisState, valSet, genAccs, balances...)
+	validators := make([]stakingtypes.Validator, 0, len(valSet.Validators))
+	delegations := make([]stakingtypes.Delegation, 0, len(valSet.Validators))
 
-	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
-	require.NoError(t, err)
+	bondAmt := sdk.DefaultPowerReduction
+	// initValPowers := []abci.ValidatorUpdate{}
 
-	terpApp.InitChain(
-		&abci.RequestInitChain{
-			Validators:      []abci.ValidatorUpdate{},
-			ConsensusParams: simtestutil.DefaultConsensusParams,
-			AppStateBytes:   stateBytes,
-			ChainId:         SimAppChainID,
-			Time:            time.Now().UTC(),
-			InitialHeight:   1,
-		},
+	for _, val := range valSet.Validators {
+		pk, err := cryptocodec.FromCmtPubKeyInterface(val.PubKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert pubkey: %w", err)
+		}
+		pkAny, err := codectypes.NewAnyWithValue(pk)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create new any: %w", err)
+		}
+		validator := stakingtypes.Validator{
+			OperatorAddress:   sdk.ValAddress(val.Address).String(),
+			ConsensusPubkey:   pkAny,
+			Jailed:            false,
+			Status:            stakingtypes.Bonded,
+			Tokens:            bondAmt,
+			DelegatorShares:   math.LegacyOneDec(),
+			Description:       stakingtypes.Description{},
+			UnbondingHeight:   int64(0),
+			UnbondingTime:     time.Unix(0, 0).UTC(),
+			Commission:        stakingtypes.NewCommission(math.LegacyZeroDec(), math.LegacyZeroDec(), math.LegacyZeroDec()),
+			MinSelfDelegation: math.ZeroInt(),
+		}
+		validators = append(validators, validator)
+		delegations = append(delegations, stakingtypes.NewDelegation(genAccs[0].GetAddress().String(), sdk.ValAddress(val.Address).String(), math.LegacyOneDec()))
+
+		// add initial validator powers so consumer InitGenesis runs correctly
+		// pub, _ := val.ToProto()
+		// initValPowers = append(initValPowers, abci.ValidatorUpdate{
+		// 	Power:  val.VotingPower,
+		// 	PubKey: pub.PubKey,
+		// })
+
+	}
+
+	defaultStParams := stakingtypes.DefaultParams()
+	stParams := stakingtypes.NewParams(
+		defaultStParams.UnbondingTime,
+		defaultStParams.MaxValidators,
+		defaultStParams.MaxEntries,
+		defaultStParams.HistoricalEntries,
+		appparams.DefaultBondDenom,
+		defaultStParams.MinCommissionRate, // 5%
 	)
 
-	// commit genesis changes
-	terpApp.Commit()
-	// terpApp.BeginBlock(abci.RequestBeginBlock{Header: tmproto.Header{
-	// 	ChainID:            SimAppChainID,
-	// 	Height:             terpApp.LastBlockHeight() + 1,
-	// 	AppHash:            terpApp.LastCommitID().Hash,
-	// 	ValidatorsHash:     valSet.Hash(),
-	// 	NextValidatorsHash: valSet.Hash(),
-	// 	Time:               time.Now().UTC(),
-	// }})
+	// set validators and delegations
+	stakingGenesis := stakingtypes.NewGenesisState(stParams, validators, delegations)
+	genesisState[stakingtypes.ModuleName] = app.AppCodec().MustMarshalJSON(stakingGenesis)
 
-	return terpApp
+	totalSupply := sdk.NewCoins()
+	for _, b := range balances {
+		// add genesis acc tokens to total supply
+		totalSupply = totalSupply.Add(b.Coins...)
+	}
+
+	for range delegations {
+		// add delegated tokens to total supply
+		totalSupply = totalSupply.Add(sdk.NewCoin(appparams.DefaultBondDenom, bondAmt))
+	}
+
+	// add bonded amount to bonded pool module account
+	balances = append(balances, banktypes.Balance{
+		Address: authtypes.NewModuleAddress(stakingtypes.BondedPoolName).String(),
+		Coins:   sdk.Coins{sdk.NewCoin(appparams.DefaultBondDenom, bondAmt.MulRaw(int64(len(valSet.Validators))))},
+	})
+
+	// update total supply
+	bankGenesis := banktypes.NewGenesisState(banktypes.DefaultGenesisState().Params, balances, totalSupply, []banktypes.Metadata{}, []banktypes.SendEnabled{})
+	genesisState[banktypes.ModuleName] = app.AppCodec().MustMarshalJSON(bankGenesis)
+
+	// println("genesisStateWithValSet bankState:", string(genesisState[banktypes.ModuleName]))
+
+	return genesisState, nil
+}
+
+var emptyWasmOptions []wasmkeeper.Option
+
+// NewTestNetworkFixture returns a new WasmApp AppConstructor for network simulation tests
+func NewTestNetworkFixture() network.TestFixture {
+	dir, err := os.MkdirTemp("", "simapp")
+	if err != nil {
+		panic(fmt.Sprintf("failed creating temporary directory: %v", err))
+	}
+	defer os.RemoveAll(dir)
+
+	app := NewTerpApp(log.NewNopLogger(), cosmosdb.NewMemDB(), nil, true, simtestutil.NewAppOptionsWithFlagHome(dir), emptyWasmOptions)
+	appCtr := func(val network.ValidatorI) servertypes.Application {
+		return NewTerpApp(
+			val.GetCtx().Logger, cosmosdb.NewMemDB(), nil, true,
+			simtestutil.NewAppOptionsWithFlagHome(val.GetCtx().Config.RootDir),
+			emptyWasmOptions,
+			bam.SetPruning(pruningtypes.NewPruningOptionsFromString(val.GetAppConfig().Pruning)),
+			bam.SetMinGasPrices(val.GetAppConfig().MinGasPrices),
+			bam.SetChainID(val.GetCtx().Viper.GetString(flags.FlagChainID)),
+		)
+	}
+
+	return network.TestFixture{
+		AppConstructor: appCtr,
+		GenesisState:   app.mb.DefaultGenesis(app.appCodec),
+		EncodingConfig: testutil.TestEncodingConfig{
+			InterfaceRegistry: app.InterfaceRegistry(),
+			Codec:             app.AppCodec(),
+			TxConfig:          app.txConfig,
+			Amino:             app.LegacyAmino(),
+		},
+	}
 }
 
 // SignCheckDeliver checks a generated signed transaction and simulates a
@@ -223,122 +339,12 @@ func CheckBalance(t *testing.T, app *TerpApp, addr sdk.AccAddress, balances sdk.
 	require.True(t, balances.Equal(app.BankKeeper.GetAllBalances(ctxCheck, addr)))
 }
 
-func GenesisStateWithValSet(t *testing.T,
-	app *TerpApp, genesisState GenesisState,
-	valSet *cmttypes.ValidatorSet, genAccs []authtypes.GenesisAccount,
-	balances ...banktypes.Balance,
-) GenesisState {
-	codec := app.AppCodec()
+// EmptyBaseAppOptions is a stub implementing AppOptions
+type EmptyBaseAppOptions struct{}
+type EmptyAppOptions struct{}
 
-	// set genesis accounts
-	authGenesis := authtypes.NewGenesisState(authtypes.DefaultParams(), genAccs)
-	genesisState[authtypes.ModuleName] = codec.MustMarshalJSON(authGenesis)
+// Get implements AppOptions
+func (ao EmptyBaseAppOptions) Get(_ string) interface{} { return nil }
 
-	validators := make([]stakingtypes.Validator, 0, len(valSet.Validators))
-	delegations := make([]stakingtypes.Delegation, 0, len(valSet.Validators))
-
-	bondAmt := sdk.DefaultPowerReduction
-	initValPowers := []abci.ValidatorUpdate{}
-
-	for _, val := range valSet.Validators {
-		pk, _ := cryptocodec.FromTmPubKeyInterface(val.PubKey)
-		pkAny, _ := codectypes.NewAnyWithValue(pk)
-		validator := stakingtypes.Validator{
-			OperatorAddress: sdk.ValAddress(val.Address).String(),
-			ConsensusPubkey: pkAny,
-			Jailed:          false,
-			Status:          stakingtypes.Bonded,
-			Tokens:          bondAmt,
-			DelegatorShares: math.LegacyOneDec(),
-			// DelegatorShares:   math.LegacyOneDec().MulTruncate(math.LegacyOneDec().Sub(math.LegacyNewDecWithPrec(1, 3))), // 1 % slash
-			Description:       stakingtypes.Description{},
-			UnbondingHeight:   int64(0),
-			UnbondingTime:     time.Unix(0, 0).UTC(),
-			Commission:        stakingtypes.NewCommission(math.LegacyZeroDec(), math.LegacyZeroDec(), math.LegacyZeroDec()),
-			MinSelfDelegation: math.ZeroInt(),
-		}
-		validators = append(validators, validator)
-		delegations = append(delegations, stakingtypes.NewDelegation(genAccs[0].GetAddress().String(), val.Address.String(), math.LegacyOneDec()))
-
-		// add initial validator powers so consumer InitGenesis runs correctly
-		pub, _ := val.ToProto()
-		initValPowers = append(initValPowers, abci.ValidatorUpdate{
-			Power:  val.VotingPower,
-			PubKey: pub.PubKey,
-		})
-
-	}
-
-	defaultStParams := stakingtypes.DefaultParams()
-	stParams := stakingtypes.NewParams(
-		defaultStParams.UnbondingTime,
-		defaultStParams.MaxValidators,
-		defaultStParams.MaxEntries,
-		defaultStParams.HistoricalEntries,
-		appparams.DefaultBondDenom,
-		defaultStParams.MinCommissionRate, // 5%
-	)
-
-	// set validators and delegations
-	stakingGenesis := stakingtypes.NewGenesisState(stParams, validators, delegations)
-	genesisState[stakingtypes.ModuleName] = codec.MustMarshalJSON(stakingGenesis)
-
-	totalSupply := sdk.NewCoins()
-	for _, b := range balances {
-		// add genesis acc tokens to total supply
-		totalSupply = totalSupply.Add(b.Coins...)
-	}
-
-	for range delegations {
-		// add delegated tokens to total supply
-		totalSupply = totalSupply.Add(sdk.NewCoin(appparams.DefaultBondDenom, bondAmt))
-	}
-
-	// add bonded amount to bonded pool module account
-	balances = append(balances, banktypes.Balance{
-		Address: authtypes.NewModuleAddress(stakingtypes.BondedPoolName).String(),
-		Coins:   sdk.Coins{sdk.NewCoin(appparams.DefaultBondDenom, bondAmt.MulRaw(int64(len(valSet.Validators))))},
-	})
-
-	// update total supply
-	bankGenesis := banktypes.NewGenesisState(banktypes.DefaultGenesisState().Params, balances, totalSupply, []banktypes.Metadata{}, []banktypes.SendEnabled{})
-	genesisState[banktypes.ModuleName] = codec.MustMarshalJSON(bankGenesis)
-
-	// println("genesisStateWithValSet bankState:", string(genesisState[banktypes.ModuleName]))
-
-	return genesisState
-}
-
-var emptyWasmOptions []wasmkeeper.Option
-
-// NewTestNetworkFixture returns a new WasmApp AppConstructor for network simulation tests
-func NewTestNetworkFixture() network.TestFixture {
-	dir, err := os.MkdirTemp("", "simapp")
-	if err != nil {
-		panic(fmt.Sprintf("failed creating temporary directory: %v", err))
-	}
-	defer os.RemoveAll(dir)
-
-	app := NewTerpApp(log.NewNopLogger(), cosmosdb.NewMemDB(), nil, true, simtestutil.NewAppOptionsWithFlagHome(dir), emptyWasmOptions)
-	appCtr := func(val network.ValidatorI) servertypes.Application {
-		return NewTerpApp(
-			val.GetCtx().Logger, cosmosdb.NewMemDB(), nil, true,
-			simtestutil.NewAppOptionsWithFlagHome(val.GetCtx().Config.RootDir),
-			emptyWasmOptions,
-			bam.SetPruning(pruningtypes.NewPruningOptionsFromString(val.GetAppConfig().Pruning)),
-			bam.SetMinGasPrices(val.GetAppConfig().MinGasPrices),
-			bam.SetChainID(val.GetCtx().Viper.GetString(flags.FlagChainID)),
-		)
-	}
-
-	return network.TestFixture{
-		AppConstructor: appCtr,
-		GenesisState:   app.mb.DefaultGenesis(app.appCodec),
-		EncodingConfig: testutil.TestEncodingConfig{
-			InterfaceRegistry: app.InterfaceRegistry(),
-			Codec:             app.AppCodec(),
-			TxConfig:          app.txConfig,
-			Amino:             app.LegacyAmino(),
-		},
-	}
-}
+// Get implements AppOptions
+func (ao EmptyAppOptions) Get(o string) interface{} { return nil }
