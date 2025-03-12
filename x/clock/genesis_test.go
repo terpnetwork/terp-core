@@ -88,14 +88,14 @@ func (s *GenesisTestSuite) TestClockInitGenesis() {
 
 			if tc.expPanic {
 				s.Require().Panics(func() {
-					clock.InitGenesis(s.ctx, s.app.AppKeepers.ClockKeeper, tc.genesis)
+					clock.InitGenesis(s.ctx, s.app.ClockKeeper, tc.genesis)
 				})
 			} else {
 				s.Require().NotPanics(func() {
-					clock.InitGenesis(s.ctx, s.app.AppKeepers.ClockKeeper, tc.genesis)
+					clock.InitGenesis(s.ctx, s.app.ClockKeeper, tc.genesis)
 				})
 
-				params := s.app.AppKeepers.ClockKeeper.GetParams(s.ctx)
+				params := s.app.ClockKeeper.GetParams(s.ctx)
 				s.Require().Equal(tc.genesis.Params, params)
 			}
 		})

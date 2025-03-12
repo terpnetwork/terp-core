@@ -95,14 +95,14 @@ func (s *GenesisTestSuite) TestDripInitGenesis() {
 
 			if tc.expPanic {
 				s.Require().Panics(func() {
-					drip.InitGenesis(s.ctx, s.app.AppKeepers.DripKeeper, tc.genesis)
+					drip.InitGenesis(s.ctx, s.app.DripKeeper, tc.genesis)
 				})
 			} else {
 				s.Require().NotPanics(func() {
-					drip.InitGenesis(s.ctx, s.app.AppKeepers.DripKeeper, tc.genesis)
+					drip.InitGenesis(s.ctx, s.app.DripKeeper, tc.genesis)
 				})
 
-				params := s.app.AppKeepers.DripKeeper.GetParams(s.ctx)
+				params := s.app.DripKeeper.GetParams(s.ctx)
 				s.Require().Equal(tc.genesis.Params, params)
 			}
 		})

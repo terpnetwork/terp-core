@@ -31,11 +31,11 @@ func (s *IntegrationTestSuite) SetupTest() {
 	s.ctx = s.app.BaseApp.NewContext(isCheckTx)
 
 	queryHelper := baseapp.NewQueryServerTestHelper(s.ctx, s.app.InterfaceRegistry())
-	types.RegisterQueryServer(queryHelper, keeper.NewQuerier(s.app.AppKeepers.DripKeeper))
+	types.RegisterQueryServer(queryHelper, keeper.NewQuerier(s.app.DripKeeper))
 
 	s.queryClient = types.NewQueryClient(queryHelper)
-	s.bankKeeper = s.app.AppKeepers.BankKeeper
-	s.dripMsgServer = s.app.AppKeepers.DripKeeper
+	s.bankKeeper = s.app.BankKeeper
+	s.dripMsgServer = s.app.DripKeeper
 }
 
 func (s *IntegrationTestSuite) FundAccount(ctx sdk.Context, addr sdk.AccAddress, amounts sdk.Coins) error {

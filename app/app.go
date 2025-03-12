@@ -177,6 +177,8 @@ var (
 // TerpApp extended ABCI application
 type TerpApp struct {
 	*baseapp.BaseApp
+	keepers.AppKeepers
+
 	legacyAmino       *codec.LegacyAmino
 	appCodec          codec.Codec
 	txConfig          client.TxConfig
@@ -186,8 +188,6 @@ type TerpApp struct {
 	keys    map[string]*storetypes.KVStoreKey
 	tkeys   map[string]*storetypes.TransientStoreKey
 	memKeys map[string]*storetypes.MemoryStoreKey
-
-	AppKeepers keepers.AppKeepers
 
 	// the module manager
 	mm *module.Manager
@@ -221,6 +221,7 @@ func NewTerpApp(
 	bApp.SetTxEncoder(txConfig.TxEncoder())
 
 	app := &TerpApp{
+		AppKeepers:        keepers.AppKeepers{},
 		BaseApp:           bApp,
 		legacyAmino:       legacyAmino,
 		appCodec:          appCodec,
@@ -239,12 +240,12 @@ func NewTerpApp(
 		appOpts,
 		wasmOpts,
 	)
-	app.keys = app.AppKeepers.GetKVStoreKey()
+	app.keys = app.GetKVStoreKey()
 
 	enabledSignModes := append(tx.DefaultSignModes, sigtypes.SignMode_SIGN_MODE_TEXTUAL)
 	txConfigOpts := tx.ConfigOptions{
 		EnabledSignModes:           enabledSignModes,
-		TextualCoinMetadataQueryFn: txmodule.NewBankKeeperCoinMetadataQueryFn(app.AppKeepers.BankKeeper),
+		TextualCoinMetadataQueryFn: txmodule.NewBankKeeperCoinMetadataQueryFn(app.BankKeeper),
 	}
 	txConfig, err := tx.NewTxConfigWithOptions(
 		appCodec,
@@ -266,9 +267,6 @@ func NewTerpApp(
 		wasmtypes.MaxWasmSize = int(val)
 	}
 
-	// upgrade handlers
-	app.configurator = module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
-
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
 	skipGenesisInvariants := cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
@@ -276,7 +274,6 @@ func NewTerpApp(
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.mm = module.NewManager(appModules(app, encodingConfig, skipGenesisInvariants)...)
-	app.mm.RegisterServices(app.configurator)
 
 	// Upgrades from v0.50.x onwards happen in pre block
 	app.mm.SetOrderPreBlockers(upgradetypes.ModuleName)
@@ -291,11 +288,15 @@ func NewTerpApp(
 
 	app.mm.SetOrderInitGenesis(orderInitBlockers()...)
 
-	app.mm.RegisterInvariants(app.AppKeepers.CrisisKeeper)
+	app.mm.RegisterInvariants(app.CrisisKeeper)
+
+	// upgrade handlers
+	app.configurator = module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
+	app.mm.RegisterServices(app.configurator)
 	// initialize stores
 	app.MountKVStores(app.keys)
-	app.MountTransientStores(app.AppKeepers.GetTransientStoreKey())
-	app.MountMemoryStores(app.AppKeepers.GetMemoryStoreKey())
+	app.MountTransientStores(app.GetTransientStoreKey())
+	app.MountMemoryStores(app.GetMemoryStoreKey())
 
 	// register upgrade
 	app.setupUpgradeHandlers(app.configurator)
@@ -315,24 +316,24 @@ func NewTerpApp(
 	anteHandler, err := NewAnteHandler(
 		HandlerOptions{
 			HandlerOptions: ante.HandlerOptions{
-				AccountKeeper:   app.AppKeepers.AccountKeeper,
-				BankKeeper:      app.AppKeepers.BankKeeper,
-				FeegrantKeeper:  app.AppKeepers.FeeGrantKeeper,
+				AccountKeeper:   app.AccountKeeper,
+				BankKeeper:      app.BankKeeper,
+				FeegrantKeeper:  app.FeeGrantKeeper,
 				SignModeHandler: txConfig.SignModeHandler(),
 				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 			},
 
-			GovKeeper:         app.AppKeepers.GovKeeper,
-			IBCKeeper:         app.AppKeepers.IBCKeeper,
-			FeeShareKeeper:    app.AppKeepers.FeeShareKeeper,
-			BankKeeperFork:    app.AppKeepers.BankKeeper, // since we need extra methods
-			TXCounterStoreKey: runtime.NewKVStoreService(app.AppKeepers.GetKey(wasmtypes.StoreKey)),
+			GovKeeper:         app.GovKeeper,
+			IBCKeeper:         app.IBCKeeper,
+			FeeShareKeeper:    app.FeeShareKeeper,
+			BankKeeperFork:    app.BankKeeper, // since we need extra methods
+			TXCounterStoreKey: runtime.NewKVStoreService(app.GetKey(wasmtypes.StoreKey)),
 			WasmConfig:        &wasmConfig,
 			Cdc:               appCodec,
 
 			BypassMinFeeMsgTypes: GetDefaultBypassFeeMessages(),
-			GlobalFeeKeeper:      app.AppKeepers.GlobalFeeKeeper,
-			StakingKeeper:        *app.AppKeepers.StakingKeeper,
+			GlobalFeeKeeper:      app.GlobalFeeKeeper,
+			StakingKeeper:        *app.StakingKeeper,
 
 			TxEncoder: app.txConfig.TxEncoder(),
 		},
@@ -343,16 +344,20 @@ func NewTerpApp(
 
 	// initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
+	// app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(anteHandler)
+	// app.SetPostHandler(NewPostHandler(appCodec, app.SmartAccountKeeper, app.AccountKeeper, encodingConfig.TxConfig.SignModeHandler())
 	app.SetEndBlocker(app.EndBlocker)
+	// app.SetPrecommiter(app.Precommitter)
+	// app.SetPrepareCheckStater(app.PrepareCheckStater)
 
 	// must be before Loading version
 	// requires the snapshot store to be created and registered as a BaseAppOption
 	// see cmd/wasmd/root.go: 206 - 214 approx
 	if manager := app.SnapshotManager(); manager != nil {
 		err := manager.RegisterExtensions(
-			wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), &app.AppKeepers.WasmKeeper),
+			wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), &app.WasmKeeper),
 		)
 		if err != nil {
 			panic(fmt.Errorf("failed to register snapshot extension: %s", err))
@@ -368,7 +373,7 @@ func NewTerpApp(
 		}
 		ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
 		// Initialize pinned codes in wasmvm as they are not persisted there
-		if err := app.AppKeepers.WasmKeeper.InitializePinnedCodes(ctx); err != nil {
+		if err := app.WasmKeeper.InitializePinnedCodes(ctx); err != nil {
 			tmos.Exit(fmt.Sprintf("failed initialize pinned codes %s", err))
 		}
 
@@ -379,7 +384,7 @@ func NewTerpApp(
 		// that in-memory capabilities get regenerated on app restart.
 		// Note that since this reads from the store, we can only perform it when
 		// `loadLatest` is set to true.
-		app.AppKeepers.CapabilityKeeper.Seal()
+		app.CapabilityKeeper.Seal()
 	}
 
 	app.sm = module.NewSimulationManager(simulationModules(app, encodingConfig, skipGenesisInvariants)...)
@@ -434,7 +439,7 @@ func (app *TerpApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*a
 	if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
-	app.AppKeepers.UpgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
+	app.UpgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
@@ -482,7 +487,7 @@ func (app *TerpApp) ModuleManager() module.Manager {
 //
 // NOTE: This is solely to be used for testing purposes.
 func (app *TerpApp) GetSubspace(moduleName string) paramstypes.Subspace {
-	subspace, _ := app.AppKeepers.ParamsKeeper.GetSubspace(moduleName)
+	subspace, _ := app.ParamsKeeper.GetSubspace(moduleName)
 	return subspace
 }
 
@@ -537,12 +542,12 @@ func (app *TerpApp) Configurator() module.Configurator {
 
 // configure store loader that checks if version == upgradeHeight and applies store upgrades
 func (app *TerpApp) setupUpgradeStoreLoaders() {
-	upgradeInfo, err := app.AppKeepers.UpgradeKeeper.ReadUpgradeInfoFromDisk()
+	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {
 		panic("failed to read upgrade info from disk" + err.Error())
 	}
 
-	if app.AppKeepers.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+	if app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		return
 	}
 
@@ -558,7 +563,7 @@ func (app *TerpApp) setupUpgradeStoreLoaders() {
 
 func (app *TerpApp) setupUpgradeHandlers(cfg module.Configurator) {
 	for _, upgrade := range Upgrades {
-		app.AppKeepers.UpgradeKeeper.SetUpgradeHandler(
+		app.UpgradeKeeper.SetUpgradeHandler(
 			upgrade.UpgradeName,
 			upgrade.CreateUpgradeHandler(
 				app.mm,

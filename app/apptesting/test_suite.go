@@ -44,7 +44,7 @@ func (s *KeeperTestHelper) Setup() {
 	}
 
 	s.TestAccs = CreateRandomAccounts(3)
-	s.StakingHelper = stakinghelper.NewHelper(s.Suite.T(), s.Ctx, s.App.AppKeepers.StakingKeeper)
+	s.StakingHelper = stakinghelper.NewHelper(s.Suite.T(), s.Ctx, s.App.StakingKeeper)
 	s.StakingHelper.Denom = "ubtsg"
 }
 
@@ -105,7 +105,7 @@ func ConvertAddrsToValAddrs(addrs []sdk.AccAddress) []sdk.ValAddress {
 
 // FundAcc funds target address with specified amount.
 func (s *KeeperTestHelper) FundAcc(acc sdk.AccAddress, amounts sdk.Coins) {
-	err := testutil.FundAccount(s.Ctx, s.App.AppKeepers.BankKeeper, acc, amounts)
+	err := testutil.FundAccount(s.Ctx, s.App.BankKeeper, acc, amounts)
 	s.Require().NoError(err)
 }
 

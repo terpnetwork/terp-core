@@ -26,10 +26,10 @@ func CreateTestApp(t *testing.T, isCheckTx bool) (*terpapp.TerpApp, sdk.Context)
 	app := Setup(t, isCheckTx)
 
 	ctx := app.BaseApp.NewContext(isCheckTx)
-	if err := app.AppKeepers.MintKeeper.Params.Set(ctx, types.DefaultParams()); err != nil {
+	if err := app.MintKeeper.Params.Set(ctx, types.DefaultParams()); err != nil {
 		panic(err)
 	}
-	app.AppKeepers.MintKeeper.Minter.Set(ctx, types.DefaultInitialMinter())
+	app.MintKeeper.Minter.Set(ctx, types.DefaultInitialMinter())
 
 	return app, ctx
 }
