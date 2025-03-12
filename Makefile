@@ -130,7 +130,20 @@ ldflags := $(strip $(ldflags))
  
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
-
+build: build-check-version go.sum
+	@if [ -n "$(SDK_HASH)" ] || [ -n "$(COMET_HASH)" ]; then \
+		cp go.mod go.mod.backup; \
+		cp go.sum go.sum.backup; \
+		$(MAKE) update-deps; \
+	fi
+	mkdir -p $(BUILDDIR)/
+	GOWORK=off go build -mod=readonly $(BUILD_FLAGS) -o $(BUILDDIR)/ $(GO_MODULE)/cmd/terpd
+	@if [ -n "$(SDK_HASH)" ] || [ -n "$(COMET_HASH)" ]; then \
+		mv go.mod.backup go.mod; \
+		mv go.sum.backup go.sum; \
+		rm -f go.mod.bak; \
+		go mod tidy; \
+	fi
 ########################################
 ### Tools & dependencies
 
