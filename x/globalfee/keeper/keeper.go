@@ -59,3 +59,12 @@ func (k Keeper) GetParams(ctx sdk.Context) (p types.Params) {
 	k.cdc.MustUnmarshal(bz, &p)
 	return p
 }
+
+// ExportGenesis returns the txfees module's exported genesis.
+func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
+	genesis := types.DefaultGenesisState()
+	// genesis.Basedenom, _ = k.GetBaseDenom(ctx)
+	// genesis.Feetokens = k.GetFeeTokens(ctx)
+	genesis.Params = k.GetParams(ctx)
+	return genesis
+}

@@ -1,34 +1,27 @@
-package globalfee
+package keeper_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"cosmossdk.io/log"
 	"cosmossdk.io/math"
-	"cosmossdk.io/store"
 
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	dbm "github.com/cosmos/cosmos-db"
-
-	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	appparams "github.com/terpnetwork/terp-core/v4/app/params"
-	globalfeekeeper "github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee"
 	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
-func TestDefaultGenesis(t *testing.T) {
+func (s *KeeperTestSuite) TestDefaultGenesis() {
 	encCfg := appparams.MakeEncodingConfig()
-	gotJSON := AppModuleBasic{}.DefaultGenesis(encCfg.Marshaler)
-	assert.JSONEq(t, `{"params":{"minimum_gas_prices":[]}}`, string(gotJSON), string(gotJSON))
+	gotJSON := globalfee.AppModuleBasic{}.DefaultGenesis(encCfg.Marshaler)
+	assert.JSONEq(s.T(), `{"params":{"minimum_gas_prices":[]}}`, string(gotJSON), string(gotJSON))
 }
 
-func TestValidateGenesis(t *testing.T) {
+func (s *KeeperTestSuite) TestValidateGenesis() {
 	encCfg := appparams.MakeEncodingConfig()
 	specs := map[string]struct {
 		src    string
@@ -65,8 +58,8 @@ func TestValidateGenesis(t *testing.T) {
 		},
 	}
 	for name, spec := range specs {
-		t.Run(name, func(t *testing.T) {
-			gotErr := AppModuleBasic{}.ValidateGenesis(encCfg.Marshaler, nil, []byte(spec.src))
+		s.T().Run(name, func(t *testing.T) {
+			gotErr := globalfee.AppModuleBasic{}.ValidateGenesis(encCfg.Marshaler, nil, []byte(spec.src))
 			if spec.expErr {
 				require.Error(t, gotErr)
 				return
@@ -76,7 +69,8 @@ func TestValidateGenesis(t *testing.T) {
 	}
 }
 
-func TestInitExportGenesis(t *testing.T) {
+func (s *KeeperTestSuite) TestInitExportGenesis() {
+
 	specs := map[string]struct {
 		src string
 		exp types.GenesisState
@@ -96,38 +90,24 @@ func TestInitExportGenesis(t *testing.T) {
 		},
 	}
 	for name, spec := range specs {
-		t.Run(name, func(t *testing.T) {
-			ctx, encCfg, keeper := setupTestStore(t)
-			m := NewAppModule(encCfg.Marshaler, keeper, "stake")
-			m.InitGenesis(ctx, encCfg.Marshaler, []byte(spec.src))
-			gotJSON := m.ExportGenesis(ctx, encCfg.Marshaler)
-			var got types.GenesisState
-			t.Log(got)
-			require.NoError(t, encCfg.Marshaler.UnmarshalJSON(gotJSON, &got))
-			assert.Equal(t, spec.exp, got, string(gotJSON))
+		s.T().Run(name, func(t *testing.T) {
+			s.SetupTestStore()
+
+			defaultParams := types.DefaultParams()
+			defaultParams = spec.exp.Params
+			s.App.GlobalFeeKeeper.SetParams(s.Ctx, defaultParams)
+
+			params := s.App.GlobalFeeKeeper.GetParams(s.Ctx)
+			s.Require().Equal(params.String(), spec.exp.Params.String())
+
+			genState := s.App.GlobalFeeKeeper.ExportGenesis(s.Ctx)
+			s.Require().Equal(genState.Params.String(), spec.exp.Params.String())
+
 		})
 	}
 }
 
-func setupTestStore(t *testing.T) (sdk.Context, appparams.EncodingConfig, globalfeekeeper.Keeper) {
-	t.Helper()
-	db := dbm.NewMemDB()
-	ms := store.NewCommitMultiStore(db, log.NewNopLogger(), nil)
-	encCfg := appparams.MakeEncodingConfig()
-	keyParams := storetypes.NewKVStoreKey(types.StoreKey)
-	// globalfeeParams := sdk.NewKVStoreKey(types.StoreKey)
-	// tkeyParams := sdk.NewTransientStoreKey(paramstypes.TStoreKey)
-	ms.MountStoreWithDB(keyParams, storetypes.StoreTypeIAVL, db)
-	// ms.MountStoreWithDB(tkeyParams, storetypes.StoreTypeTransient, db)
-	require.NoError(t, ms.LoadLatestVersion())
-
-	globalfeeKeeper := globalfeekeeper.NewKeeper(encCfg.Marshaler, keyParams, "terp1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8q4dsrv")
-
-	ctx := sdk.NewContext(ms, tmproto.Header{
-		Height:  1234567,
-		Time:    time.Date(2020, time.April, 22, 12, 0, 0, 0, time.UTC),
-		ChainID: "testing",
-	}, false, log.NewNopLogger())
-
-	return ctx, encCfg, globalfeeKeeper
+func (s *KeeperTestSuite) SetupTestStore() {
+	s.SetupTest(false)
+	return
 }

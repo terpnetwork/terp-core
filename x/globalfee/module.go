@@ -23,6 +23,12 @@ import (
 	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
+type AppModule struct {
+	AppModuleBasic
+	keeper    keeper.Keeper
+	bondDenom string
+}
+
 var (
 	_ module.AppModule           = AppModule{}
 	_ module.AppModuleBasic      = AppModuleBasic{}
@@ -38,14 +44,19 @@ var (
 // ConsensusVersion defines the current x/globalfee module consensus version.
 const ConsensusVersion = 2
 
-// AppModuleBasic defines the basic application module used by the wasm module.
-type AppModuleBasic struct {
-	cdc codec.Codec
-}
+type AppModuleBasic struct{ cdc codec.Codec }        // AppModuleBasic defines the basic application module used by the wasm module.
+func (a AppModuleBasic) Name() string                { return types.ModuleName }
+func (a AppModuleBasic) GetTxCmd() *cobra.Command    { return nil }
+func (a AppModuleBasic) GetQueryCmd() *cobra.Command { return cli.GetQueryCmd() }
 
-func (a AppModuleBasic) Name() string {
-	return types.ModuleName
-}
+func (a AppModule) IsAppModule()                                         {} // IsAppModule implements the appmodule.AppModule interface.
+func (a AppModule) IsOnePerModuleType()                                  {} // IsOnePerModuleType is a marker function just indicates that this is a one-per-module type.
+func (a AppModule) BeginBlock(_ context.Context) error                   { return nil }
+func (a AppModule) EndBlock(_ context.Context) error                     { return nil }
+func (a AppModule) RegisterInvariants(_ sdk.InvariantRegistry)           {}
+func (a AppModule) QuerierRoute() string                                 { return types.QuerierRoute }
+func (a AppModule) GenerateGenesisState(_ *module.SimulationState)       {} // GenerateGenesisState creates a randomized GenState of the fees module.
+func (a AppModule) RegisterStoreDecoder(_ simtypes.StoreDecoderRegistry) {} // RegisterStoreDecoder registers a decoder for fees module's types.
 
 func (a AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 	return cdc.MustMarshalJSON(&types.GenesisState{
@@ -65,23 +76,12 @@ func (a AppModuleBasic) ValidateGenesis(marshaler codec.JSONCodec, _ client.TxEn
 	return nil
 }
 
-func (a AppModuleBasic) RegisterRESTRoutes(_ client.Context, _ *mux.Router) {
-}
-
+func (a AppModuleBasic) RegisterRESTRoutes(_ client.Context, _ *mux.Router) {}
 func (a AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
 	err := types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))
 	if err != nil {
-		// same behavior as in cosmos-sdk
 		panic(err)
 	}
-}
-
-func (a AppModuleBasic) GetTxCmd() *cobra.Command {
-	return nil
-}
-
-func (a AppModuleBasic) GetQueryCmd() *cobra.Command {
-	return cli.GetQueryCmd()
 }
 
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
@@ -90,15 +90,6 @@ func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 
 func (a AppModuleBasic) RegisterInterfaces(r codectypes.InterfaceRegistry) {
 	types.RegisterInterfaces(r)
-}
-
-type AppModule struct {
-	AppModuleBasic
-
-	keeper keeper.Keeper
-
-	// bondDenom is used solely for migration off of x/params
-	bondDenom string
 }
 
 // NewAppModule constructor
@@ -114,31 +105,20 @@ func NewAppModule(
 	}
 }
 
-// IsAppModule implements the appmodule.AppModule interface.
-func (am AppModule) IsAppModule() {}
-
-// IsOnePerModuleType is a marker function just indicates that this is a one-per-module type.
-func (am AppModule) IsOnePerModuleType() {}
-
 func (a AppModule) InitGenesis(ctx sdk.Context, marshaler codec.JSONCodec, message json.RawMessage) {
 	var genesisState types.GenesisState
 	marshaler.MustUnmarshalJSON(message, &genesisState)
-	// a.paramSpace.SetParamSet(ctx, &genesisState.Params)
-	_ = a.keeper.SetParams(ctx, genesisState.Params) // note: we may want to have this function return an error in the future.
+	err := a.keeper.SetParams(ctx, genesisState.Params)
+	if err != nil {
+		panic(err)
+	}
+
 	return
 }
 
 func (a AppModule) ExportGenesis(ctx sdk.Context, marshaler codec.JSONCodec) json.RawMessage {
-	params := a.keeper.GetParams(ctx)
-	genState := types.NewGenesisState(params)
+	genState := a.keeper.ExportGenesis(ctx)
 	return marshaler.MustMarshalJSON(genState)
-}
-
-func (a AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {
-}
-
-func (a AppModule) QuerierRoute() string {
-	return types.QuerierRoute
 }
 
 func (a AppModule) RegisterServices(cfg module.Configurator) {
@@ -150,35 +130,17 @@ func (a AppModule) RegisterServices(cfg module.Configurator) {
 	}
 }
 
-func (a AppModule) BeginBlock(_ context.Context) error {
-	return nil
-}
-
-func (a AppModule) EndBlock(_ context.Context) error {
-	return nil
-}
-
 // ConsensusVersion is a sequence number for state-breaking change of the
 // module. It should be incremented on each consensus-breaking change
 // introduced by the module. To avoid wrong/empty versions, the initial version
 // should be set to 1.
-func (a AppModule) ConsensusVersion() uint64 {
-	return ConsensusVersion
-}
+func (AppModule) ConsensusVersion() uint64 { return ConsensusVersion }
 
 // GenerateGenesisState creates a randomized GenState of the valset module.
-func (am AppModule) SimulatorGenesisState(simState *module.SimulationState) {
-	ftDefaultGen := types.DefaultGenesisState()
-	ftDefaultGenJson := simState.Cdc.MustMarshalJSON(ftDefaultGen)
-	simState.GenState[types.ModuleName] = ftDefaultGenJson
-}
-
-// GenerateGenesisState creates a randomized GenState of the fees module.
-func (am AppModule) GenerateGenesisState(_ *module.SimulationState) {
-}
-
-// RegisterStoreDecoder registers a decoder for fees module's types.
-func (am AppModule) RegisterStoreDecoder(_ simtypes.StoreDecoderRegistry) {
+func (AppModule) SimulatorGenesisState(simState *module.SimulationState) {
+	gfGenState := types.DefaultGenesisState()
+	gfGenJson := simState.Cdc.MustMarshalJSON(gfGenState)
+	simState.GenState[types.ModuleName] = gfGenJson
 }
 
 // WeightedOperations doesn't return any mint module operation.
