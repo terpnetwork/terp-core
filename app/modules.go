@@ -184,7 +184,7 @@ func simulationModules(
 ) []module.AppModuleSimulation {
 	appCodec := encodingConfig.Marshaler
 
-	// bondDenom := app.GetChainBondDenom()
+	bondDenom := app.GetChainBondDenom()
 
 	return []module.AppModuleSimulation{
 		auth.NewAppModule(appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
@@ -204,6 +204,7 @@ func simulationModules(
 		transfer.NewAppModule(app.TransferKeeper),
 		feeshare.NewAppModule(app.FeeShareKeeper, app.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
 		drip.NewAppModule(app.DripKeeper, app.AccountKeeper),
+		globalfee.NewAppModule(appCodec, app.GlobalFeeKeeper, bondDenom),
 		ibcfee.NewAppModule(app.IBCFeeKeeper),
 	}
 }
