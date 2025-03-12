@@ -6,9 +6,9 @@ include scripts/makefiles/docker.mk
 include scripts/makefiles/e2e.mk
 # include scripts/makefiles/format.mk
 # include scripts/makefiles/localnet.mk
-# include scripts/makefiles/hl.mk
-# include scripts/makefiles/proto.mk
-# include scripts/makefiles/tests.mk
+include scripts/makefiles/hl.mk
+include scripts/makefiles/proto.mk
+include scripts/makefiles/tests.mk
 
 .DEFAULT_GOAL := help
 help:

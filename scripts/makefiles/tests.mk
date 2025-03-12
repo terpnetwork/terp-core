@@ -5,9 +5,7 @@
 APP = ./app
 BINDIR ?= $(GOPATH)/bin
 
-# The below include contains the tools and runsim targets.
-include contrib/devtools/Makefile
-
+ 
 test: test-unit
 test-all: check test-race test-cover
 
