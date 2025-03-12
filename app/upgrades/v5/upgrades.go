@@ -4,7 +4,6 @@ import (
 	"context"
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	cmttypes "github.com/cometbft/cometbft/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/terpnetwork/terp-core/v4/app/keepers"
@@ -28,11 +27,14 @@ func CreateV5UpgradeHandler(
 		}
 
 		// Update consensus params in order to safely enable comet pruning
-		defaultConsensusParams := cmttypes.DefaultConsensusParams().ToProto()
+		consensusParams, err := keepers.ConsensusParamsKeeper.ParamsStore.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
 
 		// enable vote extensions
-		defaultConsensusParams.Abci.VoteExtensionsEnableHeight = ctx.BlockHeight()
-		err = keepers.ConsensusParamsKeeper.ParamsStore.Set(ctx, defaultConsensusParams)
+		consensusParams.Abci.VoteExtensionsEnableHeight = ctx.BlockHeight()
+		err = keepers.ConsensusParamsKeeper.ParamsStore.Set(ctx, consensusParams)
 		if err != nil {
 			return nil, err
 		}
@@ -71,8 +73,6 @@ func CreateV5UpgradeHandler(
             .~~!:^. .^.^7^    
 
 		`)
-
 		return migrations, nil
-
 	}
 }

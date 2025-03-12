@@ -45,8 +45,8 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 	s.Setup()
 	s.preModule = upgrade.NewAppModule(s.App.UpgradeKeeper, addresscodec.NewBech32Codec("terp"))
 
-	s.PrepareChangeBlockParamsTest()
-	s.PrepareCostPerByteTest()
+	// pre upgrade
+	s.PrepareVoteExtensionsEnableHeightTest()
 
 	// Run the upgrade
 	dummyUpgrade(s)
@@ -55,10 +55,9 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 		s.Require().NoError(err)
 	})
 
-	// s.ExecuteTradingPairTakerFeeTest()
-	// s.ExecuteIncreaseUnauthenticatedGasTest()
-	s.ExecuteChangeBlockParamsTest()
-	// s.ExecuteCostPerByteTest()
+	// post upgrade
+	s.ExecuteVoteExtensionsEnableHeightTest()
+
 }
 
 func dummyUpgrade(s *UpgradeTestSuite) {
@@ -72,27 +71,23 @@ func dummyUpgrade(s *UpgradeTestSuite) {
 	s.Ctx = s.Ctx.WithHeaderInfo(header.Info{Height: v5UpgradeHeight, Time: s.Ctx.BlockTime().Add(time.Second)}).WithBlockHeight(v5UpgradeHeight)
 }
 
-func (s *UpgradeTestSuite) PrepareChangeBlockParamsTest() {
+func (s *UpgradeTestSuite) PrepareVoteExtensionsEnableHeightTest() {
 	defaultConsensusParams := cmttypes.DefaultConsensusParams().ToProto()
-	defaultConsensusParams.Block.MaxBytes = 1
-	defaultConsensusParams.Block.MaxGas = 1
-	// defaultConsensusParams.Abci.VoteExtensionsEnableHeight = 1
+
 	s.App.ConsensusParamsKeeper.ParamsStore.Set(s.Ctx, defaultConsensusParams)
 }
 
-func (s *UpgradeTestSuite) ExecuteChangeBlockParamsTest() {
+func (s *UpgradeTestSuite) ExecuteVoteExtensionsEnableHeightTest() {
 	consParams, err := s.App.ConsensusParamsKeeper.ParamsStore.Get(s.Ctx)
 	s.Require().NoError(err)
-	// s.Require().Equal(consParams.Block.MaxBytes, v5.BlockMaxBytes)
-	// s.Require().Equal(consParams.Block.MaxGas, v5.BlockMaxGas)
 	s.Require().Equal(consParams.Abci.VoteExtensionsEnableHeight, int64(10))
 }
 
-func (s *UpgradeTestSuite) PrepareCostPerByteTest() {
-	accountParams := s.App.AccountKeeper.GetParams(s.Ctx)
-	accountParams.TxSizeCostPerByte = 0
-	s.App.AccountKeeper.Params.Set(s.Ctx, accountParams)
-}
+// func (s *UpgradeTestSuite) PrepareCostPerByteTest() {
+// 	accountParams := s.App.AccountKeeper.GetParams(s.Ctx)
+// 	accountParams.TxSizeCostPerByte = 0
+// 	s.App.AccountKeeper.Params.Set(s.Ctx, accountParams)
+// }
 
 // func (s *UpgradeTestSuite) ExecuteCostPerByteTest() {
 // 	accountParams := s.App.AccountKeeper.GetParams(s.Ctx)
