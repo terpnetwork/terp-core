@@ -71,10 +71,13 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 	/* Handle fee distribution state. */
 
 	// withdraw all validator commission
-	app.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
+	err := app.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
 		_, _ = app.DistrKeeper.WithdrawValidatorCommission(ctx, sdk.ValAddress(val.GetOperator()))
 		return false
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// withdraw all delegator rewards
 	dels, _ := app.StakingKeeper.GetAllDelegations(ctx)
@@ -184,7 +187,7 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 		return
 	}
 
-	_, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
+	_, err = app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

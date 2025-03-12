@@ -18,7 +18,6 @@ func CreateV3UpgradeHandler(
 	keepers *keepers.AppKeepers,
 ) upgradetypes.UpgradeHandler {
 	return func(ctx context.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
 		HeadStash(sdkCtx, keepers.BankKeeper, keepers.DistrKeeper)
 

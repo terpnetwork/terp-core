@@ -41,7 +41,6 @@ func (s *KeeperTestSuite) StoreCode() {
 }
 
 func (s *KeeperTestSuite) InstantiateContract(sender string, admin string) string {
-
 	msgStoreCode := wasmtypes.MsgStoreCodeFixture(func(m *wasmtypes.MsgStoreCode) {
 		m.WASMByteCode = wasmContract
 		m.Sender = sender
@@ -101,7 +100,6 @@ func (s *KeeperTestSuite) TestGetContractAdminOrCreatorAddress() {
 			shouldErr:       true,
 		},
 	} {
-		tc := tc
 		s.Run(tc.desc, func() {
 			if !tc.shouldErr {
 				_, err := s.App.FeeShareKeeper.GetContractAdminOrCreatorAddress(s.Ctx, sdk.MustAccAddressFromBech32(tc.contractAddress), tc.deployerAddress)
@@ -190,9 +188,8 @@ func (s *KeeperTestSuite) TestRegisterFeeShare() {
 			shouldErr: false,
 		},
 	} {
-		tc := tc
 		s.Run(tc.desc, func() {
-			goCtx := sdk.WrapSDKContext(s.Ctx)
+			goCtx := s.Ctx
 			if !tc.shouldErr {
 				resp, err := s.feeShareMsgServer.RegisterFeeShare(goCtx, tc.msg)
 				s.Require().NoError(err)
@@ -285,7 +282,6 @@ func (s *KeeperTestSuite) TestUpdateFeeShare() {
 			shouldErr: false,
 		},
 	} {
-		tc := tc
 		s.Run(tc.desc, func() {
 			goCtx := s.Ctx
 			if !tc.shouldErr {
@@ -301,7 +297,6 @@ func (s *KeeperTestSuite) TestUpdateFeeShare() {
 }
 
 func (s *KeeperTestSuite) TestCancelFeeShare() {
-
 	_, _, sender := testdata.KeyTestPubAddr()
 	_ = s.FundAccount(s.Ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
 
@@ -352,7 +347,6 @@ func (s *KeeperTestSuite) TestCancelFeeShare() {
 			shouldErr: false,
 		},
 	} {
-		tc := tc
 		s.Run(tc.desc, func() {
 			goCtx := s.Ctx.WithEventManager(sdk.NewEventManager())
 			if !tc.shouldErr {

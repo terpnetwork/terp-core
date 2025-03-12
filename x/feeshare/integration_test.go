@@ -44,7 +44,7 @@ func Setup(t *testing.T, isCheckTx bool) *terpapp.TerpApp {
 		}
 
 		// Initialize the chain
-		app.InitChain(
+		_, err = app.InitChain(
 			&abci.RequestInitChain{
 				Validators: []abci.ValidatorUpdate{},
 				// ConsensusParams: &tmproto.ConsensusParams{},
@@ -53,6 +53,10 @@ func Setup(t *testing.T, isCheckTx bool) *terpapp.TerpApp {
 				ChainId:         "testing",
 			},
 		)
+		if err != nil {
+			panic(err)
+		}
+
 	}
 
 	return app

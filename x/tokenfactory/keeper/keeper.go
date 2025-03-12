@@ -16,9 +16,8 @@ import (
 
 type (
 	Keeper struct {
-		storeKey    storetypes.StoreKey
-		permAddrs   map[string]authtypes.PermissionsForAddress
-		permAddrMap map[string]bool
+		storeKey  storetypes.StoreKey
+		permAddrs map[string]authtypes.PermissionsForAddress
 
 		paramSpace paramtypes.Subspace
 
@@ -100,5 +99,4 @@ func (k Keeper) GetCreatorsPrefixStore(ctx sdk.Context) storetypes.KVStore {
 // and sends to the relevant address.
 func (k Keeper) CreateModuleAccount(ctx context.Context) {
 	k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
-
 }

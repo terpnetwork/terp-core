@@ -112,8 +112,6 @@ func (a AppModule) InitGenesis(ctx sdk.Context, marshaler codec.JSONCodec, messa
 	if err != nil {
 		panic(err)
 	}
-
-	return
 }
 
 func (a AppModule) ExportGenesis(ctx sdk.Context, marshaler codec.JSONCodec) json.RawMessage {

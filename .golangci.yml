@@ -9,7 +9,7 @@ linters:
     - bodyclose
     - dogsled
     - errcheck
-    - exportloopref
+    - copyloopvar
     - goconst
     - gocritic
     - gofumpt
@@ -23,7 +23,7 @@ linters:
     - revive
     - staticcheck
     - stylecheck
-    - typecheck
+    # - typecheck
     - unconvert
     - unparam
     - unused

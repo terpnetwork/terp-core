@@ -70,7 +70,6 @@ func (s *KeeperTestSuite) TestValidateGenesis() {
 }
 
 func (s *KeeperTestSuite) TestInitExportGenesis() {
-
 	specs := map[string]struct {
 		src string
 		exp types.GenesisState
@@ -93,8 +92,7 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 		s.T().Run(name, func(t *testing.T) {
 			s.SetupTestStore()
 
-			defaultParams := types.DefaultParams()
-			defaultParams = spec.exp.Params
+			defaultParams := spec.exp.Params
 			s.App.GlobalFeeKeeper.SetParams(s.Ctx, defaultParams)
 
 			params := s.App.GlobalFeeKeeper.GetParams(s.Ctx)
@@ -102,12 +100,10 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 
 			genState := s.App.GlobalFeeKeeper.ExportGenesis(s.Ctx)
 			s.Require().Equal(genState.Params.String(), spec.exp.Params.String())
-
 		})
 	}
 }
 
 func (s *KeeperTestSuite) SetupTestStore() {
 	s.SetupTest(false)
-	return
 }

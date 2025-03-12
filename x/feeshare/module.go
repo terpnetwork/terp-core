@@ -183,7 +183,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.
 
 	cdc.MustUnmarshalJSON(data, &genesisState)
 	InitGenesis(ctx, am.keeper, genesisState)
-	return
 }
 
 // ExportGenesis returns the fees module's exported genesis state as raw JSON bytes.

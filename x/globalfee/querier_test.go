@@ -19,9 +19,6 @@ import (
 
 type QuerierTestSuite struct {
 	apptesting.KeeperTestHelper
-
-	queryClient types.QueryClient
-	msgServer   types.MsgServer
 }
 
 func (s *QuerierTestSuite) TestQueryMinimumGasPrices() {
@@ -78,5 +75,4 @@ func TestKeeperTestSuite(t *testing.T) {
 
 func (s *QuerierTestSuite) SetupTest() {
 	s.Setup()
-
 }

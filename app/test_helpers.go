@@ -73,7 +73,6 @@ func SetupWithGenesisAccounts(t *testing.T, valSet *cmttypes.ValidatorSet, genAc
 	terpApp, genesisState := setup(t, true)
 
 	genesisState, err := GenesisStateWithValSet(t, terpApp, genesisState, valSet, genAccs, balances...)
-
 	if err != nil {
 		panic(err)
 	}
@@ -159,7 +158,6 @@ func GenesisStateWithValSet(t *testing.T,
 	valSet *cmttypes.ValidatorSet, genAccs []authtypes.GenesisAccount,
 	balances ...banktypes.Balance,
 ) (GenesisState, error) {
-
 	// set genesis accounts
 	authGenesis := authtypes.NewGenesisState(authtypes.DefaultParams(), genAccs)
 	genesisState[authtypes.ModuleName] = app.AppCodec().MustMarshalJSON(authGenesis)
@@ -340,8 +338,10 @@ func CheckBalance(t *testing.T, app *TerpApp, addr sdk.AccAddress, balances sdk.
 }
 
 // EmptyBaseAppOptions is a stub implementing AppOptions
-type EmptyBaseAppOptions struct{}
-type EmptyAppOptions struct{}
+type (
+	EmptyBaseAppOptions struct{}
+	EmptyAppOptions     struct{}
+)
 
 // Get implements AppOptions
 func (ao EmptyBaseAppOptions) Get(_ string) interface{} { return nil }

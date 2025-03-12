@@ -1,8 +1,6 @@
 package apptesting
 
 import (
-	"time"
-
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/crypto/ed25519"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -17,10 +15,10 @@ import (
 )
 
 var (
-	SecondaryDenom       = "uion"
-	SecondaryAmount      = math.NewInt(100000000)
-	baseTestAccts        = []sdk.AccAddress{}
-	defaultTestStartTime = time.Now().UTC()
+	SecondaryDenom  = "uion"
+	SecondaryAmount = math.NewInt(100000000)
+	// baseTestAccts   = []sdk.AccAddress{}
+	// defaultTestStartTime = time.Now().UTC()
 	// testDescription      = stakingtypes.NewDescription("test_moniker", "test_identity", "test_website", "test_security_contact", "test_details")
 )
 
@@ -59,10 +57,12 @@ func CreateRandomAccounts(numAccts int) []sdk.AccAddress {
 	return testAddrs
 }
 
-type GenerateAccountStrategy func(int) []sdk.AccAddress
-type BondDenomProvider interface {
-	BondDenom(ctx sdk.Context) string
-}
+type (
+	GenerateAccountStrategy func(int) []sdk.AccAddress
+	BondDenomProvider       interface {
+		BondDenom(ctx sdk.Context) string
+	}
+)
 
 // AddTestAddrs constructs and returns accNum amount of accounts with an
 // initial balance of accAmt in random order

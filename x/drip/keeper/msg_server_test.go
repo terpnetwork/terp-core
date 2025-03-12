@@ -72,7 +72,6 @@ func (s *IntegrationTestSuite) TestDripDistributeTokensMsgs() {
 			success:    false,
 		},
 	} {
-		tc := tc
 		s.Run(tc.desc, func() {
 			msg := types.MsgDistributeTokens{
 				SenderAddress: tc.senderAddr,
@@ -136,7 +135,6 @@ func (s *IntegrationTestSuite) TestUpdateDripParams() {
 			success:          false,
 		},
 	} {
-		tc := tc
 		s.Run(tc.desc, func() {
 			params := types.Params{
 				EnableDrip:       tc.isEnabled,

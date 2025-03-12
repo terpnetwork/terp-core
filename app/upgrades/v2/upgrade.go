@@ -81,8 +81,10 @@ func CreateV2UpgradeHandler(
 
 		// // Interchain Queries
 		icqParams := icqtypes.NewParams(true, nil)
-		keepers.ICQKeeper.SetParams(sdkCtx, icqParams)
-
+		err = keepers.ICQKeeper.SetParams(sdkCtx, icqParams)
+		if err != nil {
+			return nil, err
+		}
 		// Packet Forward middleware initial params
 		// if err := keepers.PacketForwardKeeper(sdkCtx, packetforwardtypes.DefaultParams()); err != nil {
 		// 	return nil, err

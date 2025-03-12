@@ -24,7 +24,6 @@ func CreateV4_1UpgradeHandler(
 	keepers *keepers.AppKeepers,
 ) upgradetypes.UpgradeHandler {
 	return func(ctx context.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 		logger := sdkCtx.Logger().With("upgrade", UpgradeName)

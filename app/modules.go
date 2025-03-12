@@ -61,7 +61,6 @@ import (
 	"github.com/cosmos/ibc-go/modules/capability"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 
-	encparams "github.com/terpnetwork/terp-core/v4/app/params"
 	"github.com/terpnetwork/terp-core/v4/x/feeshare"
 	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 	"github.com/terpnetwork/terp-core/v4/x/globalfee"
@@ -128,7 +127,7 @@ var ModuleBasics = module.NewBasicManager(
 
 func appModules(
 	app *TerpApp,
-	encodingConfig encparams.EncodingConfig,
+	encodingConfig appparams.EncodingConfig,
 	skipGenesisInvariants bool,
 ) []module.AppModule {
 	appCodec := encodingConfig.Marshaler
@@ -179,7 +178,7 @@ func appModules(
 
 func simulationModules(
 	app *TerpApp,
-	encodingConfig encparams.EncodingConfig,
+	encodingConfig appparams.EncodingConfig,
 	_ bool,
 ) []module.AppModuleSimulation {
 	appCodec := encodingConfig.Marshaler

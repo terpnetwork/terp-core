@@ -128,11 +128,11 @@ var (
 		"terp",
 	}
 
-	tokenFactoryCapabilities = []string{
-		tokenfactorytypes.EnableBurnFrom,
-		tokenfactorytypes.EnableForceTransfer,
-		tokenfactorytypes.EnableSetMetadata,
-	}
+	// tokenFactoryCapabilities = []string{
+	// 	tokenfactorytypes.EnableBurnFrom,
+	// 	tokenfactorytypes.EnableForceTransfer,
+	// 	tokenfactorytypes.EnableSetMetadata,
+	// }
 
 	EmptyWasmOpts []wasmkeeper.Option
 )
@@ -701,7 +701,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 
 	paramsKeeper.Subspace(authtypes.ModuleName)
 	paramsKeeper.Subspace(banktypes.ModuleName)
-	paramsKeeper.Subspace(stakingtypes.ModuleName).WithKeyTable(stakingtypes.ParamKeyTable()) // Used for GlobalFee
+	paramsKeeper.Subspace(stakingtypes.ModuleName) // Used for GlobalFee
 	paramsKeeper.Subspace(minttypes.ModuleName)
 	paramsKeeper.Subspace(distrtypes.ModuleName)
 	paramsKeeper.Subspace(slashingtypes.ModuleName)

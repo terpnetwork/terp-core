@@ -24,7 +24,7 @@ import (
 
 	tmcfg "github.com/cometbft/cometbft/config"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
-	dbm "github.com/cosmos/cosmos-db"
+
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	rosettaCmd "github.com/cosmos/rosetta/cmd"
@@ -153,7 +153,6 @@ func initAppConfig() (string, interface{}) {
 
 		// SidecarQueryServerConfig sqs.Config `mapstructure:"terp-sqs"`
 		// IndexerConfig indexer.Config `mapstructure:"terp-indexer"`
-
 	}
 
 	// Optionally allow the chain developer to overwrite the SDK's default
@@ -327,7 +326,7 @@ type appCreator struct {
 // newApp creates the application
 func (ac appCreator) newApp(
 	logger log.Logger,
-	db dbm.DB,
+	db cosmosdb.DB,
 	traceStore io.Writer,
 	appOpts servertypes.AppOptions,
 ) servertypes.Application {
@@ -359,7 +358,7 @@ func (ac appCreator) newApp(
 // appExport creates a new wasm app (optionally at a given height) and exports state.
 func (ac appCreator) appExport(
 	logger log.Logger,
-	db dbm.DB,
+	db cosmosdb.DB,
 	traceStore io.Writer,
 	height int64,
 	forZeroHeight bool,
@@ -418,7 +417,8 @@ func autoCliOpts(initClientCtx client.Context, tempApp *app.TerpApp) autocli.App
 		AddressCodec:          authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
 		ValidatorAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix()),
 		ConsensusAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ConsensusAddrPrefix()),
-		ClientCtx:             initClientCtx}
+		ClientCtx:             initClientCtx,
+	}
 }
 
 var tempDir = func() string {

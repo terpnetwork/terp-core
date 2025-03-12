@@ -10,7 +10,6 @@ import (
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/header"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/terpnetwork/terp-core/v4/app/apptesting"
 	v5 "github.com/terpnetwork/terp-core/v4/app/upgrades/v5"
@@ -25,11 +24,7 @@ const (
 )
 
 var (
-	consAddr = sdk.ConsAddress(sdk.AccAddress([]byte("addr1_______________")))
-	denomA   = "denomA"
-	denomB   = "denomB"
-	denomC   = "denomC"
-	denomD   = "denomD"
+// consAddr = sdk.ConsAddress(sdk.AccAddress([]byte("addr1_______________")))
 )
 
 type UpgradeTestSuite struct {
@@ -57,7 +52,6 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 
 	// post upgrade
 	s.ExecuteVoteExtensionsEnableHeightTest()
-
 }
 
 func dummyUpgrade(s *UpgradeTestSuite) {
@@ -74,7 +68,8 @@ func dummyUpgrade(s *UpgradeTestSuite) {
 func (s *UpgradeTestSuite) PrepareVoteExtensionsEnableHeightTest() {
 	defaultConsensusParams := cmttypes.DefaultConsensusParams().ToProto()
 
-	s.App.ConsensusParamsKeeper.ParamsStore.Set(s.Ctx, defaultConsensusParams)
+	err := s.App.ConsensusParamsKeeper.ParamsStore.Set(s.Ctx, defaultConsensusParams)
+	s.Require().NoError(err)
 }
 
 func (s *UpgradeTestSuite) ExecuteVoteExtensionsEnableHeightTest() {

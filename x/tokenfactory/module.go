@@ -174,7 +174,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 	cdc.MustUnmarshalJSON(gs, &genState)
 
 	am.keeper.InitGenesis(ctx, genState)
-
 }
 
 // ExportGenesis returns the x/tokenfactory module's exported genesis state as raw

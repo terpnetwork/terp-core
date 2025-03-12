@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	amino    = codec.NewLegacyAmino()
-	AminoCdc = codec.NewAminoCodec(amino)
+	amino = codec.NewLegacyAmino()
 )
 
 func init() {
