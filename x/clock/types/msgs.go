@@ -37,7 +37,7 @@ func (msg MsgUpdateParams) Type() string { return TypeMsgUpdateParams }
 
 // GetSignBytes implements the LegacyMsg interface.
 func (msg MsgUpdateParams) GetSignBytes() []byte {
-	return sdk.MustSortJSON(AminoCdc.MustMarshalJSON(&msg))
+	return sdk.MustSortJSON(amino.MustMarshalJSON(&msg))
 }
 
 // GetSigners returns the expected signers for a MsgUpdateParams message.
