@@ -6,14 +6,15 @@ import (
 	"testing"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	transfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
-	"github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v7/ibc"
-	interchaintestrelayer "github.com/strangelove-ventures/interchaintest/v7/relayer"
-	"github.com/strangelove-ventures/interchaintest/v7/testreporter"
-	"github.com/strangelove-ventures/interchaintest/v7/testutil"
+	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	"github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v8/ibc"
+	interchaintestrelayer "github.com/strangelove-ventures/interchaintest/v8/relayer"
+	"github.com/strangelove-ventures/interchaintest/v8/testreporter"
+	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 )
@@ -49,22 +50,21 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 
 	// base config which all networks will use as defaults.
 	baseCfg := ibc.ChainConfig{
-		Type:                   "cosmos",
-		Name:                   "terp",
-		ChainID:                "", // change this for each
-		Images:                 []ibc.DockerImage{TerpImage},
-		Bin:                    "terpd",
-		Bech32Prefix:           "terp",
-		Denom:                  Denom,
-		CoinType:               "118",
-		GasPrices:              "0uterpx",
-		GasAdjustment:          2.0,
-		TrustingPeriod:         "112h",
-		NoHostMount:            false,
-		ConfigFileOverrides:    nil,
-		EncodingConfig:         terpEncoding(),
-		UsingNewGenesisCommand: true,
-		ModifyGenesis:          cosmos.ModifyGenesis(defaultGenesisKV),
+		Type:                "cosmos",
+		Name:                "terp",
+		ChainID:             "", // change this for each
+		Images:              []ibc.DockerImage{TerpImage},
+		Bin:                 "terpd",
+		Bech32Prefix:        "terp",
+		Denom:               Denom,
+		CoinType:            "118",
+		GasPrices:           "0uterpx",
+		GasAdjustment:       2.0,
+		TrustingPeriod:      "112h",
+		NoHostMount:         false,
+		ConfigFileOverrides: nil,
+		EncodingConfig:      terpEncoding(),
+		ModifyGenesis:       cosmos.ModifyGenesis(defaultGenesisKV),
 	}
 
 	// Set specific chain ids for each so they are their own unique networks
@@ -166,7 +166,7 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 	})
 
 	const userFunds = int64(10_000_000_000)
-	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), userFunds, chainA, chainB, chainC, chainD)
+	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), sdkmath.NewInt(userFunds), chainA, chainB, chainC, chainD)
 
 	abChan, err := ibc.GetTransferChannel(ctx, r, eRep, chainID_A, chainID_B)
 	require.NoError(t, err)
@@ -224,7 +224,7 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 		transfer := ibc.WalletAmount{
 			Address: userB.FormattedAddress(),
 			Denom:   chainA.Config().Denom,
-			Amount:  transferAmount,
+			Amount:  sdkmath.NewInt(transferAmount),
 		}
 
 		secondHopMetadata := &PacketMetadata{

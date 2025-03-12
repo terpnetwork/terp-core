@@ -3,6 +3,8 @@ package types
 import (
 	"testing"
 
+	"cosmossdk.io/math"
+
 	"github.com/stretchr/testify/suite"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,7 +23,7 @@ func TestMsgsTestSuite(t *testing.T) {
 func (suite *MsgsTestSuite) SetupTest() {
 	sender := "cosmos1"
 	suite.sender = sdk.AccAddress([]byte(sender))
-	suite.amount = sdk.NewCoins(sdk.NewCoin("ujuice", sdk.NewInt(1000000)))
+	suite.amount = sdk.NewCoins(sdk.NewCoin("ujuice", math.NewInt(1000000)))
 }
 
 func (suite *MsgsTestSuite) TestMsgDistributeTokensGetters() {

@@ -6,12 +6,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v7/ibc"
-	interchaintestrelayer "github.com/strangelove-ventures/interchaintest/v7/relayer"
-	"github.com/strangelove-ventures/interchaintest/v7/testreporter"
-	"github.com/strangelove-ventures/interchaintest/v7/testutil"
+	sdkmath "cosmossdk.io/math"
+	"github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v8/ibc"
+	interchaintestrelayer "github.com/strangelove-ventures/interchaintest/v8/relayer"
+	"github.com/strangelove-ventures/interchaintest/v8/testreporter"
+	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
@@ -101,7 +102,7 @@ func TestTerpIBCHooks(t *testing.T) {
 	})
 
 	// Create some user accounts on both chains
-	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), genesisWalletAmount, terp, terp2)
+	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), sdkmath.NewInt(10_000_000), terp, terp2)
 
 	// Wait a few blocks for relayer to start and for user accounts to be created
 	err = testutil.WaitForBlocks(ctx, 5, terp, terp2)
@@ -134,7 +135,7 @@ func TestTerpIBCHooks(t *testing.T) {
 	transfer := ibc.WalletAmount{
 		Address: contractAddr,
 		Denom:   terp.Config().Denom,
-		Amount:  int64(1),
+		Amount:  sdkmath.OneInt(),
 	}
 
 	memo := ibc.TransferOptions{

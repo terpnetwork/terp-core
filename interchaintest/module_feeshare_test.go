@@ -3,8 +3,9 @@ package interchaintest
 import (
 	"testing"
 
-	"github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
+	sdkmath "cosmossdk.io/math"
+	"github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
 
 	helpers "github.com/terpnetwork/terp-core/tests/interchaintest/helpers"
 )
@@ -24,7 +25,7 @@ func TestTerpFeeShare(t *testing.T) {
 	nativeDenom := terp.Config().Denom
 
 	// Users
-	users := interchaintest.GetAndFundTestUsers(t, ctx, "default", int64(10_000_000), terp, terp)
+	users := interchaintest.GetAndFundTestUsers(t, ctx, "default", sdkmath.NewInt(10_000_000), terp, terp)
 	user := users[0]
 	feeRcvAddr := "terp1v75wlkccpv7le3560zw32v2zjes5n0e7fgfzdc"
 
@@ -35,7 +36,7 @@ func TestTerpFeeShare(t *testing.T) {
 	helpers.RegisterFeeShare(t, ctx, terp, user, contractAddr, feeRcvAddr)
 	if balance, err := terp.GetBalance(ctx, feeRcvAddr, nativeDenom); err != nil {
 		t.Fatal(err)
-	} else if balance != 0 {
+	} else if balance != sdkmath.ZeroInt() {
 		t.Fatal("balance not 0")
 	}
 
@@ -45,7 +46,7 @@ func TestTerpFeeShare(t *testing.T) {
 	// check balance of nativeDenom now
 	if balance, err := terp.GetBalance(ctx, feeRcvAddr, nativeDenom); err != nil {
 		t.Fatal(err)
-	} else if balance != 5000 {
+	} else if balance != sdkmath.NewInt(5000) {
 		t.Fatal("balance not 5,000. it is ", balance, nativeDenom)
 	}
 

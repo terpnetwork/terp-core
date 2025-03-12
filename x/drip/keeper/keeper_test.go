@@ -2,11 +2,8 @@ package keeper_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/suite"
-
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,11 +28,7 @@ func (s *IntegrationTestSuite) SetupTest() {
 	isCheckTx := false
 	s.app = app.Setup(s.T())
 
-	s.ctx = s.app.BaseApp.NewContext(isCheckTx, tmproto.Header{
-		ChainID: "testing",
-		Height:  9,
-		Time:    time.Now().UTC(),
-	})
+	s.ctx = s.app.BaseApp.NewContext(isCheckTx)
 
 	queryHelper := baseapp.NewQueryServerTestHelper(s.ctx, s.app.InterfaceRegistry())
 	types.RegisterQueryServer(queryHelper, keeper.NewQuerier(s.app.AppKeepers.DripKeeper))

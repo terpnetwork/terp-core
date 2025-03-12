@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
+	sdkmath "cosmossdk.io/math"
+	"github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
 
 	helpers "github.com/terpnetwork/terp-core/tests/interchaintest/helpers"
 )
@@ -22,7 +23,7 @@ func TestTerpTokenFactory(t *testing.T) {
 	terp := chains[0].(*cosmos.CosmosChain)
 	t.Log("terp.GetHostRPCAddress()", terp.GetHostRPCAddress())
 
-	users := interchaintest.GetAndFundTestUsers(t, ctx, "default", int64(10_000_000), terp, terp)
+	users := interchaintest.GetAndFundTestUsers(t, ctx, "default", sdkmath.NewInt(10_000_000), terp, terp)
 	user := users[0]
 	uaddr := user.FormattedAddress()
 
@@ -37,7 +38,7 @@ func TestTerpTokenFactory(t *testing.T) {
 	t.Log("minted tfDenom to user")
 	if balance, err := terp.GetBalance(ctx, uaddr, tfDenom); err != nil {
 		t.Fatal(err)
-	} else if balance != 100 {
+	} else if balance != sdkmath.NewInt(100) {
 		t.Fatal("balance not 100")
 	}
 
@@ -46,7 +47,7 @@ func TestTerpTokenFactory(t *testing.T) {
 	t.Log("minted tfDenom to user")
 	if balance, err := terp.GetBalance(ctx, uaddr2, tfDenom); err != nil {
 		t.Fatal(err)
-	} else if balance != 70 {
+	} else if balance != sdkmath.NewInt(70) {
 		t.Fatal("balance not 70")
 	}
 

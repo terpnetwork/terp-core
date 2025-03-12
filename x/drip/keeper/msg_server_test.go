@@ -3,6 +3,7 @@ package keeper_test
 import (
 	_ "embed"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -12,8 +13,8 @@ import (
 func (s *IntegrationTestSuite) TestDripDistributeTokensMsgs() {
 	_, _, allowedSender := testdata.KeyTestPubAddr()
 	_, _, notAllowedSender := testdata.KeyTestPubAddr()
-	_ = s.FundAccount(s.ctx, allowedSender, sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(1_000_000))))
-	_ = s.FundAccount(s.ctx, notAllowedSender, sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(1_000_000))))
+	_ = s.FundAccount(s.ctx, allowedSender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
+	_ = s.FundAccount(s.ctx, notAllowedSender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
 
 	_ = s.app.AppKeepers.DripKeeper.SetParams(s.ctx, types.Params{
 		EnableDrip: true,
@@ -31,13 +32,13 @@ func (s *IntegrationTestSuite) TestDripDistributeTokensMsgs() {
 		{
 			desc:       "Success - Allowed sender with proper funds",
 			senderAddr: allowedSender.String(),
-			coins:      sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(1))),
+			coins:      sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1))),
 			success:    true,
 		},
 		{
 			desc:       "Fail - Allowed sender no proper funds",
 			senderAddr: allowedSender.String(),
-			coins:      sdk.NewCoins(sdk.NewCoin("notarealtoken", sdk.NewInt(1))),
+			coins:      sdk.NewCoins(sdk.NewCoin("notarealtoken", math.NewInt(1))),
 			success:    false,
 		},
 		{
@@ -55,19 +56,19 @@ func (s *IntegrationTestSuite) TestDripDistributeTokensMsgs() {
 		{
 			desc:       "Fail - No sender withproper funds",
 			senderAddr: "",
-			coins:      sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(1))),
+			coins:      sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1))),
 			success:    false,
 		},
 		{
 			desc:       "Fail - Non Allowed sender proper funds",
 			senderAddr: notAllowedSender.String(),
-			coins:      sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(1))),
+			coins:      sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1))),
 			success:    false,
 		},
 		{
 			desc:       "Fail - Non Allowed sender improper funds",
 			senderAddr: notAllowedSender.String(),
-			coins:      sdk.NewCoins(sdk.NewCoin("notarealtoken", sdk.NewInt(1))),
+			coins:      sdk.NewCoins(sdk.NewCoin("notarealtoken", math.NewInt(1))),
 			success:    false,
 		},
 	} {

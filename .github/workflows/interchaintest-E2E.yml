@@ -42,7 +42,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          tags: terpnetwork:local
+          tags: terpnetwork/terp-core:local
           outputs: type=docker,dest=${{ env.TAR_PATH }}
 
       - name: Upload artifact

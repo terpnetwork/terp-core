@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"crypto/sha256"
 
+	"cosmossdk.io/math"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	_ "embed"
@@ -65,8 +66,8 @@ func (s *IntegrationTestSuite) InstantiateContract(sender string, admin string) 
 func (s *IntegrationTestSuite) TestGetContractAdminOrCreatorAddress() {
 	_, _, sender := testdata.KeyTestPubAddr()
 	_, _, admin := testdata.KeyTestPubAddr()
-	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(1_000_000))))
-	_ = s.FundAccount(s.ctx, admin, sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(1_000_000))))
+	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
+	_ = s.FundAccount(s.ctx, admin, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
 
 	noAdminContractAddress := s.InstantiateContract(sender.String(), "")
 	withAdminContractAddress := s.InstantiateContract(sender.String(), admin.String())
@@ -111,7 +112,7 @@ func (s *IntegrationTestSuite) TestGetContractAdminOrCreatorAddress() {
 
 func (s *IntegrationTestSuite) TestRegisterFeeShare() {
 	_, _, sender := testdata.KeyTestPubAddr()
-	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(1_000_000))))
+	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
 
 	contractAddress := s.InstantiateContract(sender.String(), "")
 	contractAddress2 := s.InstantiateContract(contractAddress, contractAddress)
@@ -203,7 +204,7 @@ func (s *IntegrationTestSuite) TestRegisterFeeShare() {
 
 func (s *IntegrationTestSuite) TestUpdateFeeShare() {
 	_, _, sender := testdata.KeyTestPubAddr()
-	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(1_000_000))))
+	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
 
 	contractAddress := s.InstantiateContract(sender.String(), "")
 	_, _, withdrawer := testdata.KeyTestPubAddr()
@@ -297,7 +298,7 @@ func (s *IntegrationTestSuite) TestUpdateFeeShare() {
 
 func (s *IntegrationTestSuite) TestCancelFeeShare() {
 	_, _, sender := testdata.KeyTestPubAddr()
-	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(1_000_000))))
+	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(1_000_000))))
 
 	contractAddress := s.InstantiateContract(sender.String(), "")
 	_, _, withdrawer := testdata.KeyTestPubAddr()

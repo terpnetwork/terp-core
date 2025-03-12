@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
+	sdkmath "cosmossdk.io/math"
+
+	"github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
 
 	helpers "github.com/terpnetwork/terp-core/tests/interchaintest/helpers"
 )
@@ -35,18 +37,18 @@ func TestTerpDrip(t *testing.T) {
 	nativeDenom := terp.Config().Denom
 
 	// User
-	user, err := interchaintest.GetAndFundTestUserWithMnemonic(ctx, "default", mnemonic, int64(1000000_000_000), terp)
+	user, err := interchaintest.GetAndFundTestUserWithMnemonic(ctx, "default", mnemonic, sdkmath.NewInt(1000000_000_000), terp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// New TF token to distributes
 	tfDenom := helpers.CreateTokenFactoryDenom(t, ctx, terp, user, "dripme", fmt.Sprintf("0%s", Denom))
-	distributeAmt := uint64(1_000_000)
-	helpers.MintTokenFactoryDenom(t, ctx, terp, user, distributeAmt, tfDenom)
+	distributeAmt := sdkmath.NewInt(1_000_000)
+	helpers.MintTokenFactoryDenom(t, ctx, terp, user, distributeAmt.Uint64(), tfDenom)
 	if balance, err := terp.GetBalance(ctx, user.FormattedAddress(), tfDenom); err != nil {
 		t.Fatal(err)
-	} else if uint64(balance) != distributeAmt {
+	} else if balance != distributeAmt {
 		t.Fatalf("balance not %d, got %d", distributeAmt, balance)
 	}
 
@@ -65,7 +67,7 @@ func TestTerpDrip(t *testing.T) {
 	helpers.ClaimStakingRewards(t, ctx, terp, user, valoper)
 
 	// Check balances has the TF Denom from the claim
-	bals, _ := terp.AllBalances(ctx, user.FormattedAddress())
+	bals, _ := terp.BankQueryAllBalances(ctx, user.FormattedAddress())
 	fmt.Println("balances", bals)
 
 	found := false

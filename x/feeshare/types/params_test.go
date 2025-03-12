@@ -3,9 +3,8 @@ package types
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // func TestParamKeyTable(t *testing.T) {
@@ -19,7 +18,7 @@ func TestDefaultParams(t *testing.T) {
 }
 
 func TestParamsValidate(t *testing.T) {
-	devShares := sdk.NewDecWithPrec(60, 2)
+	devShares := math.LegacyNewDecWithPrec(60, 2)
 	acceptedDenoms := []string{"uthiolx"}
 
 	testCases := []struct {
@@ -40,7 +39,7 @@ func TestParamsValidate(t *testing.T) {
 		},
 		{
 			"valid: 100% devs",
-			Params{true, sdk.NewDecFromInt(sdk.NewInt(1)), acceptedDenoms},
+			Params{true, math.LegacyNewDecFromInt(math.NewInt(1)), acceptedDenoms},
 			false,
 		},
 		{
@@ -50,17 +49,17 @@ func TestParamsValidate(t *testing.T) {
 		},
 		{
 			"invalid: share > 1",
-			Params{true, sdk.NewDecFromInt(sdk.NewInt(2)), acceptedDenoms},
+			Params{true, math.LegacyNewDecFromInt(math.NewInt(2)), acceptedDenoms},
 			true,
 		},
 		{
 			"invalid: share < 0",
-			Params{true, sdk.NewDecFromInt(sdk.NewInt(-1)), acceptedDenoms},
+			Params{true, math.LegacyNewDecFromInt(math.NewInt(-1)), acceptedDenoms},
 			true,
 		},
 		{
 			"valid: all denoms allowed",
-			Params{true, sdk.NewDecFromInt(sdk.NewInt(-1)), []string{}},
+			Params{true, math.LegacyNewDecFromInt(math.NewInt(-1)), []string{}},
 			true,
 		},
 	}
@@ -82,14 +81,14 @@ func TestParamsValidateShares(t *testing.T) {
 		expError bool
 	}{
 		{"default", DefaultDeveloperShares, false},
-		{"valid", sdk.NewDecFromInt(sdk.NewInt(1)), false},
+		{"valid", math.LegacyNewDecFromInt(math.NewInt(1)), false},
 		{"invalid - wrong type - bool", false, true},
 		{"invalid - wrong type - string", "", true},
 		{"invalid - wrong type - int64", int64(123), true},
-		{"invalid - wrong type - math.Int", sdk.NewInt(1), true},
+		{"invalid - wrong type - math.Int", math.NewInt(1), true},
 		{"invalid - is nil", nil, true},
-		{"invalid - is negative", sdk.NewDecFromInt(sdk.NewInt(-1)), true},
-		{"invalid - is > 1", sdk.NewDecFromInt(sdk.NewInt(2)), true},
+		{"invalid - is negative", math.LegacyNewDecFromInt(math.NewInt(-1)), true},
+		{"invalid - is > 1", math.LegacyNewDecFromInt(math.NewInt(2)), true},
 	}
 	for _, tc := range testCases {
 		err := validateShares(tc.value)

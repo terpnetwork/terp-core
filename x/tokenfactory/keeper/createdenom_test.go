@@ -3,10 +3,10 @@ package keeper_test
 import (
 	"fmt"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/terpnetwork/terp-core/v4/app/apptesting"
 	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 )
 
@@ -71,12 +71,12 @@ func (suite *KeeperTestSuite) TestMsgCreateDenom() {
 
 func (suite *KeeperTestSuite) TestCreateDenom() {
 	var (
-		primaryDenom            = types.DefaultParams().DenomCreationFee[0].Denom
-		secondaryDenom          = apptesting.SecondaryDenom
-		defaultDenomCreationFee = types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin(primaryDenom, sdk.NewInt(50000000)))}
-		twoDenomCreationFee     = types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin(primaryDenom, sdk.NewInt(50000000)), sdk.NewCoin(secondaryDenom, sdk.NewInt(50000000)))}
+		primaryDenom = types.DefaultParams().DenomCreationFee[0].Denom
+		// secondaryDenom          = apptesting.SecondaryDenom
+		defaultDenomCreationFee = types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin(primaryDenom, math.NewInt(50000000)))}
+		twoDenomCreationFee     = types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin(primaryDenom, math.NewInt(50000000)), sdk.NewCoin("uthiol", math.NewInt(50000000)))}
 		nilCreationFee          = types.Params{DenomCreationFee: nil}
-		largeCreationFee        = types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin(primaryDenom, sdk.NewInt(5000000000)))}
+		largeCreationFee        = types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin(primaryDenom, math.NewInt(5000000000)))}
 	)
 
 	for _, tc := range []struct {
@@ -141,9 +141,7 @@ func (suite *KeeperTestSuite) TestCreateDenom() {
 			tokenFactoryKeeper := suite.App.AppKeepers.TokenFactoryKeeper
 			bankKeeper := suite.App.AppKeepers.BankKeeper
 			// Set denom creation fee in params
-			if err := tokenFactoryKeeper.SetParams(suite.Ctx, tc.denomCreationFee); err != nil {
-				suite.Require().NoError(err)
-			}
+			tokenFactoryKeeper.SetParams(suite.Ctx, tc.denomCreationFee)
 			denomCreationFee := tokenFactoryKeeper.GetParams(suite.Ctx).DenomCreationFee
 			suite.Require().Equal(tc.denomCreationFee.DenomCreationFee, denomCreationFee)
 

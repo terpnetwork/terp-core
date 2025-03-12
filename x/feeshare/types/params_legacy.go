@@ -3,15 +3,16 @@ package types
 // TODO: Remove this and params_legacy_test.go after v0.47.x (v16) upgrade
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"cosmossdk.io/math"
+
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 // Parameter store key
 var (
 	DefaultEnableFeeShare  = true
-	DefaultDeveloperShares = sdk.NewDecWithPrec(50, 2) // 50%
-	DefaultAllowedDenoms   = []string(nil)             // all allowed
+	DefaultDeveloperShares = math.LegacyNewDecWithPrec(50, 2) // 50%
+	DefaultAllowedDenoms   = []string(nil)                    // all allowed
 
 	ParamStoreKeyEnableFeeShare  = []byte("EnableFeeShare")
 	ParamStoreKeyDeveloperShares = []byte("DeveloperShares")

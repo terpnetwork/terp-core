@@ -1,7 +1,7 @@
 ###############################################################################
 ###                             e2e interchain test                         ###
 ###############################################################################
-
+E2E_UPGRADE_VERSION := "v4"
 e2e-help:
 	@echo "e2e subcommands"
 	@echo ""
@@ -18,7 +18,7 @@ e2e-help:
 	@echo "  setup                                 Set up e2e environment"
 	@echo "  basic						   Run basic test"
 	@echo "  upgrade   				       Run basic planned upgrade test"
-	@echo "  upgrade-local 				   Run basic upgrade locally after compiling a local image as terpnetwork:local"
+	@echo "  upgrade-local 				   Run basic upgrade locally after compiling a local image as terpnetwork/terp-core:local"
 	@echo "  statesync					   Run basic test on node statesync capabilities"
 	@echo "  ibc   				           Run basic ibc test"
 	@echo "  pfm					           Run basic packet-forward-middleware test"

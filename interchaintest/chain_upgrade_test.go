@@ -4,19 +4,22 @@ package interchaintest
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
-	cosmosproto "github.com/cosmos/gogoproto/proto"
+	sdkmath "cosmossdk.io/math"
+	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/docker/docker/client"
-	"github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v7/ibc"
-	"github.com/strangelove-ventures/interchaintest/v7/testutil"
+	"github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v8/conformance"
+	"github.com/strangelove-ventures/interchaintest/v8/ibc"
+	"github.com/strangelove-ventures/interchaintest/v8/relayer"
+	"github.com/strangelove-ventures/interchaintest/v8/testreporter"
+	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 	"github.com/stretchr/testify/require"
-
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	"go.uber.org/zap/zaptest"
 )
 
 const (
@@ -26,8 +29,8 @@ const (
 
 func TestBasicTerpUpgrade(t *testing.T) {
 	repo, version := GetDockerImageInfo()
-	startVersion := "v3.0.0"
-	upgradeName := "v4.0.0"
+	startVersion := "v4.2.2"
+	upgradeName := "v5"
 	CosmosChainUpgradeTest(t, "terp", startVersion, version, repo, upgradeName)
 }
 
@@ -41,35 +44,103 @@ func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBran
 	t.Log(chainName, initialVersion, upgradeBranchVersion, upgradeRepo, upgradeName)
 
 	numVals, numNodes := 2, 2
-	chains := CreateThisBranchChain(t, numVals, numNodes)
-	chain := chains[0].(*cosmos.CosmosChain)
+	chains := interchaintest.CreateChainsWithChainSpecs(t, []*interchaintest.ChainSpec{
+		{
+			Name:          chainName,
+			ChainName:     chainName,
+			Version:       initialVersion,
+			ChainConfig:   terpConfig,
+			NumValidators: &numVals,
+			NumFullNodes:  &numNodes,
+		},
+		{
+			Name:          "terp",
+			ChainName:     "terpnetwork",
+			Version:       "v4.2.2",
+			NumValidators: &numVals,
+			NumFullNodes:  &numNodes,
+		},
+	})
 
-	ic, ctx, client, _ := BuildInitialChain(t, chains)
+	client, network := interchaintest.DockerSetup(t)
+	// chains := CreateThisBranchChain(t, numVals, numNodes)
+	chain, counterpartyChain := chains[0].(*cosmos.CosmosChain), chains[1].(*cosmos.CosmosChain)
+
+	const (
+		path        = "ibc-upgrade-test-path"
+		relayerName = "relayer"
+	)
+
+	// Get a relayer instance
+	rf := interchaintest.NewBuiltinRelayerFactory(
+		ibc.CosmosRly,
+		zaptest.NewLogger(t),
+		relayer.StartupFlags("-b", "100"),
+	)
+
+	r := rf.Build(t, client, network)
+
+	ic := interchaintest.NewInterchain().
+		AddChain(chain).
+		AddChain(counterpartyChain).
+		AddRelayer(r, relayerName).
+		AddLink(interchaintest.InterchainLink{
+			Chain1:  chain,
+			Chain2:  counterpartyChain,
+			Relayer: r,
+			Path:    path,
+		})
+
+	ctx := context.Background()
+	rep := testreporter.NewNopReporter()
 
 	t.Cleanup(func() {
 		_ = ic.Close()
 	})
 
 	const userFunds = int64(10_000_000_000)
-	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), userFunds, chain)
+	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), sdkmath.NewInt(userFunds), chain)
 	chainUser := users[0]
 
 	// upgrade
 	height, err := chain.Height(ctx)
 	require.NoError(t, err, "error fetching height before submit upgrade proposal")
 
-	haltHeight := height + haltHeightDelta
-	proposalID := SubmitUpgradeProposal(t, ctx, chain, chainUser, upgradeName, haltHeight)
+	haltHeight := uint64(height) + haltHeightDelta
+	propId := SubmitUpgradeProposal(t, ctx, chain, chainUser, upgradeName, haltHeight)
 
-	ValidatorVoting(t, ctx, chain, proposalID, height, haltHeight)
+	chain.VoteOnProposalAllValidators(ctx, propId, "yes")
+	require.NoError(t, err, "failed to submit votes")
+
+	_, err = cosmos.PollForProposalStatus(ctx, chain, height, int64(haltHeight), propId, govv1beta1.StatusPassed)
+	require.NoError(t, err, "proposal status did not change to passed in expected number of blocks")
 
 	UpgradeNodes(t, ctx, chain, client, haltHeight, upgradeRepo, upgradeBranchVersion)
+
+	// test IBC conformance after chain upgrade on same path
+	conformance.TestChainPair(t, ctx, client, network, chain, counterpartyChain, rf, rep, r, path)
 }
 
 func UpgradeNodes(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, client *client.Client, haltHeight uint64, upgradeRepo, upgradeBranchVersion string) {
+
+	height, err := chain.Height(ctx)
+	require.NoError(t, err, "error fetching height before upgrade")
+
+	timeoutCtx, timeoutCtxCancel := context.WithTimeout(ctx, time.Second*45)
+	defer timeoutCtxCancel()
+
+	// this should timeout due to chain halt at upgrade height.
+	_ = testutil.WaitForBlocks(timeoutCtx, int(int64(haltHeight)-height)+1, chain)
+
+	height, err = chain.Height(ctx)
+	require.NoError(t, err, "error fetching height after chain should have halted")
+
+	// make sure that chain is halted
+	require.Equal(t, haltHeight, height, "height is not equal to halt height")
+
 	// bring down nodes to prepare for upgrade
 	t.Log("stopping node(s)")
-	err := chain.StopAllNodes(ctx)
+	err = chain.StopAllNodes(ctx)
 	require.NoError(t, err, "error stopping node(s)")
 
 	// upgrade version on all nodes
@@ -83,60 +154,25 @@ func UpgradeNodes(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, 
 	err = chain.StartAllNodes(ctx)
 	require.NoError(t, err, "error starting upgraded node(s)")
 
-	timeoutCtx, timeoutCtxCancel := context.WithTimeout(ctx, time.Second*60)
+	timeoutCtx, timeoutCtxCancel = context.WithTimeout(ctx, time.Second*45)
 	defer timeoutCtxCancel()
 
 	err = testutil.WaitForBlocks(timeoutCtx, int(blocksAfterUpgrade), chain)
 	require.NoError(t, err, "chain did not produce blocks after upgrade")
 
-	height, err := chain.Height(ctx)
-	require.NoError(t, err, "error fetching height after upgrade")
-
-	require.GreaterOrEqual(t, height, haltHeight+blocksAfterUpgrade, "height did not increment enough after upgrade")
 }
 
-func ValidatorVoting(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, proposalID string, height uint64, haltHeight uint64) {
-	err := chain.VoteOnProposalAllValidators(ctx, proposalID, cosmos.ProposalVoteYes)
-	require.NoError(t, err, "failed to submit votes")
-
-	_, err = cosmos.PollForProposalStatus(ctx, chain, height, height+haltHeightDelta, proposalID, cosmos.ProposalStatusPassed)
-	require.NoError(t, err, "proposal status did not change to passed in expected number of blocks")
-
-	timeoutCtx, timeoutCtxCancel := context.WithTimeout(ctx, time.Second*45)
-	defer timeoutCtxCancel()
-
-	height, err = chain.Height(ctx)
-	require.NoError(t, err, "error fetching height before upgrade")
-
-	// this should timeout due to chain halt at upgrade height.
-	_ = testutil.WaitForBlocks(timeoutCtx, int(haltHeight-height), chain)
-
-	height, err = chain.Height(ctx)
-	require.NoError(t, err, "error fetching height after chain should have halted")
-
-	// make sure that chain is halted
-	require.Equal(t, haltHeight, height, "height is not equal to halt height")
-}
-
-func SubmitUpgradeProposal(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, user ibc.Wallet, upgradeName string, haltHeight uint64) string {
-	// TODO Return proposal id
-	upgradeMsg := []cosmosproto.Message{
-		&upgradetypes.MsgSoftwareUpgrade{
-			// gGov Module account
-			Authority: "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
-			Plan: upgradetypes.Plan{
-				Name:   upgradeName,
-				Height: int64(haltHeight),
-			},
-		},
+func SubmitUpgradeProposal(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, user ibc.Wallet, upgradeName string, haltHeight uint64) uint64 {
+	proposal := cosmos.SoftwareUpgradeProposal{
+		Deposit:     "500000000" + chain.Config().Denom, // greater than min deposit
+		Title:       "Chain Upgrade 1",
+		Name:        upgradeName,
+		Description: "First chain software upgrade",
+		Height:      int64(haltHeight),
 	}
 
-	proposal, err := chain.BuildProposal(upgradeMsg, "Chain Upgrade 1", "Summary desc", "ipfs://CID", fmt.Sprintf(`500000000%s`, chain.Config().Denom))
-	require.NoError(t, err, "error building proposal")
-
-	txProp, err := chain.SubmitProposal(ctx, user.KeyName(), proposal)
-	t.Log("txProp", txProp)
-	require.NoError(t, err, "error submitting proposal")
-
-	return txProp.ProposalID
+	upgradeTx, err := chain.UpgradeProposal(ctx, user.KeyName(), proposal)
+	require.NoError(t, err, "error submitting software upgrade proposal tx")
+	propId, err := strconv.ParseUint(upgradeTx.ProposalID, 10, 64)
+	return propId
 }

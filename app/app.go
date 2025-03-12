@@ -14,15 +14,16 @@ import (
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 	errorsmod "cosmossdk.io/errors"
 
-	dbm "github.com/cometbft/cometbft-db"
+	"cosmossdk.io/log"
+	storetypes "cosmossdk.io/store/types"
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/log"
 	tmos "github.com/cometbft/cometbft/libs/os"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
-	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -31,8 +32,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	"github.com/cosmos/cosmos-sdk/store/streaming"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -40,27 +39,26 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/posthandler"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+	txmodule "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
-	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	"github.com/prometheus/client_golang/prometheus"
 
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
-	ibcclientclient "github.com/cosmos/ibc-go/v7/modules/core/02-client/client"
-	ibcclienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
-	ibcmock "github.com/cosmos/ibc-go/v7/testing/mock"
+	// upgradeclient "cosmossdk.io/x/upgrade/client"
+	upgradetypes "cosmossdk.io/x/upgrade/types"
+	// ibcclientclient "github.com/cosmos/ibc-go/v8/modules/core/02-client"
+	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	ibcmock "github.com/cosmos/ibc-go/v8/testing/mock"
 
 	"github.com/spf13/cast"
-
-	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 
 	"github.com/terpnetwork/terp-core/v4/app/openapiconsole"
 	v2 "github.com/terpnetwork/terp-core/v4/app/upgrades/v2"
@@ -71,12 +69,11 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-
+	sigtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/terpnetwork/terp-core/v4/app/keepers"
 	"github.com/terpnetwork/terp-core/v4/app/upgrades"
-
 	// unnamed import of statik for swagger UI support
-	_ "github.com/cosmos/cosmos-sdk/client/docs/statik" // statik for swagger UI support
+	// _ "github.com/cosmos/cosmos-sdk/client/docs/statik" // statik for swagger UI support
 )
 
 const (
@@ -96,6 +93,9 @@ var (
 	// of "EnableAllProposals" (takes precedence over ProposalsEnabled)
 	// https://github.com/terpnetwork/terp-core/blob/02a54d33ff2c064f3539ae12d75d027d9c665f05/x/wasm/internal/types/proposal.go#L28-L34
 	EnableSpecificProposals = ""
+
+	// EmptyWasmOpts defines a type alias for a list of wasm options.
+	EmptyWasmOpts []wasmkeeper.Option
 
 	Upgrades = []upgrades.Upgrade{
 		v2.Upgrade,
@@ -163,19 +163,10 @@ func GetWasmOpts(appOpts servertypes.AppOptions) []wasmkeeper.Option {
 		wasmOpts = append(wasmOpts, wasmkeeper.WithVMCacheMetrics(prometheus.DefaultRegisterer))
 	}
 
+	// default wasm gas configuration.
 	wasmOpts = append(wasmOpts, wasmkeeper.WithGasRegister(NewTerpWasmGasRegister()))
 
 	return wasmOpts
-}
-
-func getGovProposalHandlers() []govclient.ProposalHandler {
-	return []govclient.ProposalHandler{
-		paramsclient.ProposalHandler,
-		upgradeclient.LegacyProposalHandler,
-		upgradeclient.LegacyCancelProposalHandler,
-		ibcclientclient.UpdateClientProposalHandler,
-		ibcclientclient.UpgradeProposalHandler,
-	}
 }
 
 var (
@@ -199,9 +190,8 @@ type TerpApp struct {
 	AppKeepers keepers.AppKeepers
 
 	// the module manager
-	ModuleManager *module.Manager
-
-	// simulation manager
+	mm *module.Manager
+	mb *module.BasicManager
 	sm *module.SimulationManager
 
 	// module configurator
@@ -236,8 +226,8 @@ func NewTerpApp(
 		appCodec:          appCodec,
 		txConfig:          txConfig,
 		interfaceRegistry: interfaceRegistry,
-		tkeys:             sdk.NewTransientStoreKeys(paramstypes.TStoreKey),
-		memKeys:           sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey),
+		tkeys:             storetypes.NewTransientStoreKeys(paramstypes.TStoreKey),
+		memKeys:           storetypes.NewMemoryStoreKeys(capabilitytypes.MemStoreKey),
 	}
 
 	// Setup keepers
@@ -251,10 +241,23 @@ func NewTerpApp(
 	)
 	app.keys = app.AppKeepers.GetKVStoreKey()
 
+	enabledSignModes := append(tx.DefaultSignModes, sigtypes.SignMode_SIGN_MODE_TEXTUAL)
+	txConfigOpts := tx.ConfigOptions{
+		EnabledSignModes:           enabledSignModes,
+		TextualCoinMetadataQueryFn: txmodule.NewBankKeeperCoinMetadataQueryFn(app.AppKeepers.BankKeeper),
+	}
+	txConfig, err := tx.NewTxConfigWithOptions(
+		appCodec,
+		txConfigOpts,
+	)
+	if err != nil {
+		panic(err)
+	}
+	app.txConfig = txConfig
+
 	// load state streaming if enabled
-	if _, _, err := streaming.LoadStreamingServices(bApp, appOpts, appCodec, logger, app.keys); err != nil {
-		logger.Error("failed to load state streaming", "err", err)
-		os.Exit(1)
+	if err := app.RegisterStreamingServices(appOpts, app.keys); err != nil {
+		panic(err)
 	}
 
 	if maxSize := os.Getenv("MAX_WASM_SIZE"); maxSize != "" {
@@ -272,20 +275,23 @@ func NewTerpApp(
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
-	app.ModuleManager = module.NewManager(appModules(app, encodingConfig, skipGenesisInvariants)...)
-	app.ModuleManager.RegisterServices(app.configurator)
+	app.mm = module.NewManager(appModules(app, encodingConfig, skipGenesisInvariants)...)
+	app.mm.RegisterServices(app.configurator)
+
+	// Upgrades from v0.50.x onwards happen in pre block
+	app.mm.SetOrderPreBlockers(upgradetypes.ModuleName)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
-	app.ModuleManager.SetOrderBeginBlockers(orderBeginBlockers()...)
+	app.mm.SetOrderBeginBlockers(orderBeginBlockers()...)
 
-	app.ModuleManager.SetOrderEndBlockers(orderEndBlockers()...)
+	app.mm.SetOrderEndBlockers(orderEndBlockers()...)
 
-	app.ModuleManager.SetOrderInitGenesis(orderInitBlockers()...)
+	app.mm.SetOrderInitGenesis(orderInitBlockers()...)
 
-	app.ModuleManager.RegisterInvariants(app.AppKeepers.CrisisKeeper)
+	app.mm.RegisterInvariants(app.AppKeepers.CrisisKeeper)
 	// initialize stores
 	app.MountKVStores(app.keys)
 	app.MountTransientStores(app.AppKeepers.GetTransientStoreKey())
@@ -294,7 +300,7 @@ func NewTerpApp(
 	// register upgrade
 	app.setupUpgradeHandlers(app.configurator)
 
-	autocliv1.RegisterQueryServer(app.GRPCQueryRouter(), runtimeservices.NewAutoCLIQueryService(app.ModuleManager.Modules))
+	autocliv1.RegisterQueryServer(app.GRPCQueryRouter(), runtimeservices.NewAutoCLIQueryService(app.mm.Modules))
 	reflectionSvc, err := runtimeservices.NewReflectionService()
 	if err != nil {
 		panic(err)
@@ -320,7 +326,7 @@ func NewTerpApp(
 			IBCKeeper:         app.AppKeepers.IBCKeeper,
 			FeeShareKeeper:    app.AppKeepers.FeeShareKeeper,
 			BankKeeperFork:    app.AppKeepers.BankKeeper, // since we need extra methods
-			TXCounterStoreKey: app.AppKeepers.GetKey(wasmtypes.StoreKey),
+			TXCounterStoreKey: runtime.NewKVStoreService(app.AppKeepers.GetKey(wasmtypes.StoreKey)),
 			WasmConfig:        &wasmConfig,
 			Cdc:               appCodec,
 
@@ -354,25 +360,6 @@ func NewTerpApp(
 	}
 
 	app.setupUpgradeStoreLoaders()
-
-	// In v0.46, the SDK introduces _postHandlers_. PostHandlers are like
-	// antehandlers, but are run _after_ the `runMsgs` execution. They are also
-	// defined as a chain, and have the same signature as antehandlers.
-	//
-	// In baseapp, postHandlers are run in the same store branch as `runMsgs`,
-	// meaning that both `runMsgs` and `postHandler` state will be committed if
-	// both are successful, and both will be reverted if any of the two fails.
-	//
-	// The SDK exposes a default postHandlers chain, which comprises of only
-	// one decorator: the Transaction Tips decorator. However, some chains do
-	// not need it by default, so feel free to comment the next line if you do
-	// not need tips.
-	// To read more about tips:
-	// https://docs.cosmos.network/main/core/tips.html
-	//
-	// Please note that changing any of the anteHandler or postHandler chain is
-	// likely to be a state-machine breaking change, which needs a coordinated
-	// upgrade.
 	app.setPostHandler()
 
 	if loadLatest {
@@ -432,23 +419,23 @@ func (app *TerpApp) setPostHandler() {
 func (app *TerpApp) Name() string { return app.BaseApp.Name() }
 
 // BeginBlocker application updates every begin block
-func (app *TerpApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-	return app.ModuleManager.BeginBlock(ctx, req)
+func (app *TerpApp) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
+	return app.mm.BeginBlock(ctx)
 }
 
 // EndBlocker application updates every end block
-func (app *TerpApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-	return app.ModuleManager.EndBlock(ctx, req)
+func (app *TerpApp) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
+	return app.mm.EndBlock(ctx)
 }
 
 // InitChainer application update at chain initialization
-func (app *TerpApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *TerpApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	var genesisState GenesisState
 	if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
-	app.AppKeepers.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap())
-	return app.ModuleManager.InitGenesis(ctx, app.appCodec, genesisState)
+	app.AppKeepers.UpgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
+	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
 // LoadHeight loads a particular height
@@ -487,6 +474,10 @@ func (app *TerpApp) InterfaceRegistry() types.InterfaceRegistry {
 	return app.interfaceRegistry
 }
 
+func (app *TerpApp) ModuleManager() module.Manager {
+	return *app.mm
+}
+
 // GetSubspace returns a param subspace for a given module name.
 //
 // NOTE: This is solely to be used for testing purposes.
@@ -503,7 +494,7 @@ func (app *TerpApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APICo
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register new tendermint queries routes from grpc-gateway.
-	tmservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	cmtservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register node gRPC service for grpc-gateway.
 	nodeservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
@@ -528,7 +519,7 @@ func (app *TerpApp) RegisterTxService(clientCtx client.Context) {
 
 // RegisterTendermintService implements the Application.RegisterTendermintService method.
 func (app *TerpApp) RegisterTendermintService(clientCtx client.Context) {
-	tmservice.RegisterTendermintService(
+	cmtservice.RegisterTendermintService(
 		clientCtx,
 		app.BaseApp.GRPCQueryRouter(),
 		app.interfaceRegistry,
@@ -536,8 +527,8 @@ func (app *TerpApp) RegisterTendermintService(clientCtx client.Context) {
 	)
 }
 
-func (app *TerpApp) RegisterNodeService(clientCtx client.Context) {
-	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter())
+func (app *TerpApp) RegisterNodeService(clientCtx client.Context, cfg config.Config) {
+	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter(), cfg)
 }
 
 func (app *TerpApp) Configurator() module.Configurator {
@@ -570,8 +561,9 @@ func (app *TerpApp) setupUpgradeHandlers(cfg module.Configurator) {
 		app.AppKeepers.UpgradeKeeper.SetUpgradeHandler(
 			upgrade.UpgradeName,
 			upgrade.CreateUpgradeHandler(
-				app.ModuleManager,
+				app.mm,
 				cfg,
+				app.BaseApp,
 				&app.AppKeepers,
 			),
 		)

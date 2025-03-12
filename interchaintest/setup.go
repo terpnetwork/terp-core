@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	ibclocalhost "github.com/cosmos/ibc-go/v7/modules/light-clients/09-localhost"
+	ibclocalhost "github.com/cosmos/ibc-go/v8/modules/light-clients/09-localhost"
 	"github.com/docker/docker/client"
-	interchaintest "github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v7/ibc"
-	"github.com/strangelove-ventures/interchaintest/v7/testreporter"
+	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v8/ibc"
+	"github.com/strangelove-ventures/interchaintest/v8/testreporter"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
@@ -24,6 +24,8 @@ import (
 )
 
 var (
+	Mnemonic = "decorate bright ozone fork gallery riot bus exhaust worth way bone indoor calm squirrel merry zero scheme cotton until shop any excess stage laundry"
+
 	VotingPeriod     = "15s"
 	MaxDepositPeriod = "10s"
 	Denom            = "uterp"
@@ -59,22 +61,21 @@ var (
 	}
 
 	terpConfig = ibc.ChainConfig{
-		Type:                   "cosmos",
-		Name:                   "terpnetwork",
-		ChainID:                "120u-1",
-		Images:                 []ibc.DockerImage{TerpImage},
-		Bin:                    "terpd",
-		Bech32Prefix:           "terp",
-		Denom:                  Denom,
-		CoinType:               "118",
-		GasPrices:              fmt.Sprintf("0%s", Denom),
-		GasAdjustment:          2.0,
-		TrustingPeriod:         "112h",
-		NoHostMount:            false,
-		ConfigFileOverrides:    nil,
-		EncodingConfig:         terpEncoding(),
-		UsingNewGenesisCommand: true,
-		ModifyGenesis:          cosmos.ModifyGenesis(defaultGenesisKV),
+		Type:                "cosmos",
+		Name:                "terpnetwork",
+		ChainID:             "120u-1",
+		Images:              []ibc.DockerImage{TerpImage},
+		Bin:                 "terpd",
+		Bech32Prefix:        "terp",
+		Denom:               Denom,
+		CoinType:            "118",
+		GasPrices:           fmt.Sprintf("0%s", Denom),
+		GasAdjustment:       2.0,
+		TrustingPeriod:      "112h",
+		NoHostMount:         false,
+		ConfigFileOverrides: nil,
+		EncodingConfig:      terpEncoding(),
+		ModifyGenesis:       cosmos.ModifyGenesis(defaultGenesisKV),
 	}
 
 	genesisWalletAmount = int64(10_000_000)

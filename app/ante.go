@@ -1,8 +1,8 @@
 package app
 
 import (
+	corestoretypes "cosmossdk.io/core/store"
 	errorsmod "cosmossdk.io/errors"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -10,8 +10,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	ibcante "github.com/cosmos/ibc-go/v7/modules/core/ante"
-	"github.com/cosmos/ibc-go/v7/modules/core/keeper"
+	ibcante "github.com/cosmos/ibc-go/v8/modules/core/ante"
+	"github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
 	feeshareante "github.com/terpnetwork/terp-core/v4/x/feeshare/ante"
 	feesharekeeper "github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
@@ -35,7 +35,7 @@ type HandlerOptions struct {
 	FeeShareKeeper    feesharekeeper.Keeper
 	BankKeeperFork    feeshareante.BankKeeper
 	WasmConfig        *wasmTypes.WasmConfig
-	TXCounterStoreKey storetypes.StoreKey
+	TXCounterStoreKey corestoretypes.KVStoreService
 	Cdc               codec.BinaryCodec
 
 	BypassMinFeeMsgTypes []string

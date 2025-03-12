@@ -6,8 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/terpnetwork/terp-core/v4/app"
@@ -28,16 +27,14 @@ func TestGenesisTestSuite(t *testing.T) {
 	suite.Run(t, new(GenesisTestSuite))
 }
 
-func (suite *GenesisTestSuite) SetupTest() {
-	app := app.Setup(suite.T())
-	ctx := app.BaseApp.NewContext(false, tmproto.Header{
-		ChainID: "testing",
-	})
+func (s *GenesisTestSuite) SetupTest() {
+	app := app.Setup(s.T())
+	ctx := app.BaseApp.NewContext(false)
 
-	suite.app = app
-	suite.ctx = ctx
+	s.app = app
+	s.ctx = ctx
 
-	suite.genesis = *types.DefaultGenesisState()
+	s.genesis = *types.DefaultGenesisState()
 }
 
 func (suite *GenesisTestSuite) TestFeeShareInitGenesis() {
@@ -67,7 +64,7 @@ func (suite *GenesisTestSuite) TestFeeShareInitGenesis() {
 			types.GenesisState{
 				Params: types.Params{
 					EnableFeeShare:  true,
-					DeveloperShares: sdk.NewDecWithPrec(0, 2),
+					DeveloperShares: math.LegacyNewDecWithPrec(0, 2),
 					AllowedDenoms:   []string{"uthiol"},
 				},
 			},
@@ -78,7 +75,7 @@ func (suite *GenesisTestSuite) TestFeeShareInitGenesis() {
 			types.GenesisState{
 				Params: types.Params{
 					EnableFeeShare:  true,
-					DeveloperShares: sdk.NewDecWithPrec(100, 2),
+					DeveloperShares: math.LegacyNewDecWithPrec(100, 2),
 					AllowedDenoms:   []string{"uthiol"},
 				},
 			},
@@ -89,7 +86,7 @@ func (suite *GenesisTestSuite) TestFeeShareInitGenesis() {
 			types.GenesisState{
 				Params: types.Params{
 					EnableFeeShare:  true,
-					DeveloperShares: sdk.NewDecWithPrec(10, 2),
+					DeveloperShares: math.LegacyNewDecWithPrec(10, 2),
 					AllowedDenoms:   []string(nil),
 				},
 			},

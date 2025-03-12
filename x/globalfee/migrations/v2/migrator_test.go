@@ -3,6 +3,8 @@ package v2_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
+	storetypes "cosmossdk.io/store/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/testutil"
@@ -33,14 +35,14 @@ func TestMigrateMainnet(t *testing.T) {
 	encCfg := moduletestutil.MakeTestEncodingConfig(globalfee.AppModuleBasic{})
 	cdc := encCfg.Codec
 
-	storeKey := sdk.NewKVStoreKey(v2.ModuleName)
-	tKey := sdk.NewTransientStoreKey("transient_test")
+	storeKey := storetypes.NewKVStoreKey(v2.ModuleName)
+	tKey := storetypes.NewTransientStoreKey("transient_test")
 	ctx := testutil.DefaultContext(storeKey, tKey)
 	store := ctx.KVStore(storeKey)
 
 	params := types.Params{
 		MinimumGasPrices: sdk.DecCoins{
-			sdk.NewDecCoinFromDec("uthiol", sdk.NewDecWithPrec(75, 3)),
+			sdk.NewDecCoinFromDec("uthiol", math.LegacyNewDecWithPrec(75, 3)),
 		},
 	}
 
@@ -56,14 +58,14 @@ func TestMigrateTestnet(t *testing.T) {
 	encCfg := moduletestutil.MakeTestEncodingConfig(globalfee.AppModuleBasic{})
 	cdc := encCfg.Codec
 
-	storeKey := sdk.NewKVStoreKey(v2.ModuleName)
-	tKey := sdk.NewTransientStoreKey("transient_test")
+	storeKey := storetypes.NewKVStoreKey(v2.ModuleName)
+	tKey := storetypes.NewTransientStoreKey("transient_test")
 	ctx := testutil.DefaultContext(storeKey, tKey)
 	store := ctx.KVStore(storeKey)
 
 	params := types.Params{
 		MinimumGasPrices: sdk.DecCoins{
-			sdk.NewDecCoinFromDec("uthiolx", sdk.NewDecWithPrec(75, 3)),
+			sdk.NewDecCoinFromDec("uthiolx", math.LegacyNewDecWithPrec(75, 3)),
 		},
 	}
 

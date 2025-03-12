@@ -4,13 +4,14 @@ import (
 	"context"
 	"testing"
 
-	transfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
-	"github.com/strangelove-ventures/interchaintest/v7"
-	"github.com/strangelove-ventures/interchaintest/v7/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v7/ibc"
-	interchaintestrelayer "github.com/strangelove-ventures/interchaintest/v7/relayer"
-	"github.com/strangelove-ventures/interchaintest/v7/testreporter"
-	"github.com/strangelove-ventures/interchaintest/v7/testutil"
+	sdkmath "cosmossdk.io/math"
+	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	"github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v8/ibc"
+	interchaintestrelayer "github.com/strangelove-ventures/interchaintest/v8/relayer"
+	"github.com/strangelove-ventures/interchaintest/v8/testreporter"
+	"github.com/strangelove-ventures/interchaintest/v8/testutil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 )
@@ -95,7 +96,7 @@ func TestTerpGaiaIBCTransfer(t *testing.T) {
 	})
 
 	// Create some user accounts on both chains
-	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), genesisWalletAmount, terp, gaia)
+	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), sdkmath.NewInt(genesisWalletAmount), terp, gaia)
 
 	// Wait a few blocks for relayer to start and for user accounts to be created
 	err = testutil.WaitForBlocks(ctx, 5, terp, gaia)
@@ -121,7 +122,7 @@ func TestTerpGaiaIBCTransfer(t *testing.T) {
 	transfer := ibc.WalletAmount{
 		Address: gaiaUserAddr,
 		Denom:   terp.Config().Denom,
-		Amount:  transferAmount,
+		Amount:  sdkmath.NewInt(transferAmount),
 	}
 
 	channel, err := ibc.GetTransferChannel(ctx, r, eRep, terp.Config().ChainID, gaia.Config().ChainID)
@@ -161,7 +162,7 @@ func TestTerpGaiaIBCTransfer(t *testing.T) {
 	// Assert that the funds are no longer present in user acc on Terp and are in the user acc on Gaia
 	terpUpdateBal, err := terp.GetBalance(ctx, terpUserAddr, terp.Config().Denom)
 	require.NoError(t, err)
-	require.Equal(t, terpOrigBal-transferAmount, terpUpdateBal)
+	require.Equal(t, terpOrigBal.Sub(sdkmath.NewInt(transferAmount)), terpUpdateBal)
 
 	gaiaUpdateBal, err := gaia.GetBalance(ctx, gaiaUserAddr, terpIBCDenom)
 	require.NoError(t, err)
@@ -171,7 +172,7 @@ func TestTerpGaiaIBCTransfer(t *testing.T) {
 	transfer = ibc.WalletAmount{
 		Address: terpUserAddr,
 		Denom:   terpIBCDenom,
-		Amount:  transferAmount,
+		Amount:  sdkmath.NewInt(transferAmount),
 	}
 
 	gaiaHeight, err := gaia.Height(ctx)

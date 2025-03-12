@@ -6,8 +6,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -28,17 +26,15 @@ func TestGenesisTestSuite(t *testing.T) {
 	suite.Run(t, new(GenesisTestSuite))
 }
 
-func (suite *GenesisTestSuite) SetupTest() {
-	app := app.Setup(suite.T())
-	ctx := app.BaseApp.NewContext(false, tmproto.Header{
-		ChainID: "testing",
-	})
+func (s *GenesisTestSuite) SetupTest() {
+	app := app.Setup(s.T())
+	ctx := app.BaseApp.NewContext(false)
 
-	suite.app = app
-	suite.ctx = ctx
+	s.app = app
+	s.ctx = ctx
 }
 
-func (suite *GenesisTestSuite) TestClockInitGenesis() {
+func (s *GenesisTestSuite) TestClockInitGenesis() {
 	_, _, addr := testdata.KeyTestPubAddr()
 	_, _, addr2 := testdata.KeyTestPubAddr()
 
@@ -87,20 +83,20 @@ func (suite *GenesisTestSuite) TestClockInitGenesis() {
 	}
 
 	for _, tc := range testCases {
-		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
-			suite.SetupTest() // reset
+		s.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			s.SetupTest() // reset
 
 			if tc.expPanic {
-				suite.Require().Panics(func() {
-					clock.InitGenesis(suite.ctx, suite.app.AppKeepers.ClockKeeper, tc.genesis)
+				s.Require().Panics(func() {
+					clock.InitGenesis(s.ctx, s.app.AppKeepers.ClockKeeper, tc.genesis)
 				})
 			} else {
-				suite.Require().NotPanics(func() {
-					clock.InitGenesis(suite.ctx, suite.app.AppKeepers.ClockKeeper, tc.genesis)
+				s.Require().NotPanics(func() {
+					clock.InitGenesis(s.ctx, s.app.AppKeepers.ClockKeeper, tc.genesis)
 				})
 
-				params := suite.app.AppKeepers.ClockKeeper.GetParams(suite.ctx)
-				suite.Require().Equal(tc.genesis.Params, params)
+				params := s.app.AppKeepers.ClockKeeper.GetParams(s.ctx)
+				s.Require().Equal(tc.genesis.Params, params)
 			}
 		})
 	}

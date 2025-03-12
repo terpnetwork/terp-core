@@ -1,7 +1,7 @@
-# docker build . -t terpnetwork/terpd:latest
-# docker run --rm -it terpnetwork/terpd:latest /bin/sh
-FROM golang:1.21-alpine AS go-builder 
-ARG arch=x86_64
+# docker build . -t terpnetwork/terp-core:latest
+# docker run --rm -it terpnetwork/terp-core:latest /bin/sh
+FROM golang:1.23.6-alpine AS go-builder
+
 
 # this comes from standard alpine nightly file
 #  https://github.com/rust-lang/docker-rust-nightly/blob/master/alpine3.12/Dockerfile
@@ -14,27 +14,26 @@ RUN apk add git
 
 WORKDIR /code
 COPY . /code/
-# See https://github.com/CosmWasm/wasmvm/releases
-
 # Cosmwasm - Download correct libwasmvm version
-RUN WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm | cut -d ' ' -f 2) && \
-  wget https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/libwasmvm_muslc.$(uname -m).a \
-  -O /lib/libwasmvm_muslc.a && \
-  # verify checksum
-  wget https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/checksums.txt -O /tmp/checksums.txt && \
-  sha256sum /lib/libwasmvm_muslc.a | grep $(cat /tmp/checksums.txt | grep libwasmvm_muslc.$(uname -m) | cut -d ' ' -f 1)
+RUN ARCH=$(uname -m) && WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v2 | sed 's/.* //') && \
+    wget https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/libwasmvm_muslc.$ARCH.a \
+    -O /lib/libwasmvm_muslc.$ARCH.a && \
+    # verify checksum
+    wget https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/checksums.txt -O /tmp/checksums.txt && \
+    sha256sum /lib/libwasmvm_muslc.$ARCH.a | grep $(cat /tmp/checksums.txt | grep libwasmvm_muslc.$ARCH | cut -d ' ' -f 1) 
 
-# Copy the library you want to the final location that will be found by the linker flag `-lwasmvm_muslc`
-COPY . .
+# Copy over code
+COPY . /code/
 
 # force it to use static lib (from above) not standard libgo_cosmwasm.so file
+# then log output of file /code/build/terpd
+# then ensure static linking
 RUN LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build
 RUN echo "Ensuring binary is statically linked ..." \
-  && (file /code/build/terpd | grep "statically linked")
+  && (file /code/build/wasmd | grep "statically linked")
 
 # --------------------------------------------------------
-
-FROM alpine:3.16
+FROM alpine:3.18
 
 COPY --from=go-builder /code/build/terpd /usr/bin/terpd
 
@@ -50,4 +49,7 @@ EXPOSE 26656
 # tendermint rpc
 EXPOSE 26657
 
-CMD ["/usr/bin/terpd", "version"]
+CMD ["/usr/bin/terpd"]
+
+## To use as CLI:
+# alias bsd="docker run --rm -it -v ~/.terpd:/root/.terpd terpnetowrk/terp-core:v0.12323 terpd"

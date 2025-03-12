@@ -3,7 +3,7 @@ package v4
 import (
 	"github.com/terpnetwork/terp-core/v4/app/upgrades"
 
-	store "github.com/cosmos/cosmos-sdk/store/types"
+	store "cosmossdk.io/store/types"
 )
 
 // UpgradeName defines the on-chain upgrade name for the Terp v4 upgrade.

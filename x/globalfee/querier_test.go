@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	globalfeekeeper "github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
@@ -20,20 +22,20 @@ func TestQueryMinimumGasPrices(t *testing.T) {
 		"one coin": {
 			setupStore: func(ctx sdk.Context, k globalfeekeeper.Keeper) {
 				err := k.SetParams(ctx, types.Params{
-					MinimumGasPrices: sdk.NewDecCoins(sdk.NewDecCoin("ALX", sdk.OneInt())),
+					MinimumGasPrices: sdk.NewDecCoins(sdk.NewDecCoin("ALX", math.OneInt())),
 				})
 				require.NoError(t, err)
 			},
-			expMin: sdk.NewDecCoins(sdk.NewDecCoin("ALX", sdk.OneInt())),
+			expMin: sdk.NewDecCoins(sdk.NewDecCoin("ALX", math.OneInt())),
 		},
 		"multiple coins": {
 			setupStore: func(ctx sdk.Context, k globalfeekeeper.Keeper) {
 				err := k.SetParams(ctx, types.Params{
-					MinimumGasPrices: sdk.NewDecCoins(sdk.NewDecCoin("ALX", sdk.OneInt()), sdk.NewDecCoin("BLX", sdk.NewInt(2))),
+					MinimumGasPrices: sdk.NewDecCoins(sdk.NewDecCoin("ALX", math.OneInt()), sdk.NewDecCoin("BLX", math.NewInt(2))),
 				})
 				require.NoError(t, err)
 			},
-			expMin: sdk.NewDecCoins(sdk.NewDecCoin("ALX", sdk.OneInt()), sdk.NewDecCoin("BLX", sdk.NewInt(2))),
+			expMin: sdk.NewDecCoins(sdk.NewDecCoin("ALX", math.OneInt()), sdk.NewDecCoin("BLX", math.NewInt(2))),
 		},
 		"no min gas price set": {
 			setupStore: func(ctx sdk.Context, k globalfeekeeper.Keeper) {

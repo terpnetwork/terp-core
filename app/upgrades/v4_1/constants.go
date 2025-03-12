@@ -1,7 +1,7 @@
 package v4_1
 
 import (
-	store "github.com/cosmos/cosmos-sdk/store/types"
+	store "cosmossdk.io/store/types"
 	"github.com/terpnetwork/terp-core/v4/app/upgrades"
 	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 	driptypes "github.com/terpnetwork/terp-core/v4/x/drip/types"

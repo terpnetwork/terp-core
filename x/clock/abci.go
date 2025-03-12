@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -13,11 +14,11 @@ import (
 
 // EndBlocker executes on contracts at the end of the block.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyEndBlocker)
 
 	message := []byte(types.EndBlockSudoMessage)
-
-	p := k.GetParams(ctx)
+	p := k.GetParams(sdkCtx)
 
 	errorExecs := make([]string, len(p.ContractAddresses))
 
@@ -28,7 +29,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 			continue
 		}
 
-		childCtx := ctx.WithGasMeter(sdk.NewGasMeter(p.ContractGasLimit))
+		childCtx := sdkCtx.WithGasMeter(storetypes.NewGasMeter(p.ContractGasLimit))
 		_, err = k.GetContractKeeper().Sudo(childCtx, contract, message)
 		if err != nil {
 			errorExecs[idx] = addr

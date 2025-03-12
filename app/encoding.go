@@ -6,6 +6,12 @@ import (
 	"github.com/terpnetwork/terp-core/v4/app/params"
 )
 
+var encodingConfig params.EncodingConfig = MakeEncodingConfig()
+
+func GetEncodingConfig() params.EncodingConfig {
+	return encodingConfig
+}
+
 // MakeEncodingConfig creates a new EncodingConfig with all modules registered
 func MakeEncodingConfig() params.EncodingConfig {
 	encodingConfig := params.MakeEncodingConfig()

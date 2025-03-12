@@ -9,15 +9,14 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	abci "github.com/cometbft/cometbft/abci/types"
-
+	"cosmossdk.io/core/appmodule"
 	errorsmod "cosmossdk.io/errors"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
 	"github.com/terpnetwork/terp-core/v4/x/globalfee/client/cli"
 	"github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
@@ -25,9 +24,15 @@ import (
 )
 
 var (
-	_ module.AppModuleBasic   = AppModuleBasic{}
-	_ module.AppModuleGenesis = AppModule{}
-	_ module.AppModule        = AppModule{}
+	_ module.AppModule           = AppModule{}
+	_ module.AppModuleBasic      = AppModuleBasic{}
+	_ module.AppModuleBasic      = (*AppModule)(nil)
+	_ module.AppModuleSimulation = (*AppModule)(nil)
+	_ module.HasGenesis          = (*AppModule)(nil)
+
+	_ appmodule.AppModule       = (*AppModule)(nil)
+	_ appmodule.HasBeginBlocker = (*AppModule)(nil)
+	_ appmodule.HasEndBlocker   = (*AppModule)(nil)
 )
 
 // ConsensusVersion defines the current x/globalfee module consensus version.
@@ -109,12 +114,18 @@ func NewAppModule(
 	}
 }
 
-func (a AppModule) InitGenesis(ctx sdk.Context, marshaler codec.JSONCodec, message json.RawMessage) []abci.ValidatorUpdate {
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
+
+// IsOnePerModuleType is a marker function just indicates that this is a one-per-module type.
+func (am AppModule) IsOnePerModuleType() {}
+
+func (a AppModule) InitGenesis(ctx sdk.Context, marshaler codec.JSONCodec, message json.RawMessage) {
 	var genesisState types.GenesisState
 	marshaler.MustUnmarshalJSON(message, &genesisState)
 	// a.paramSpace.SetParamSet(ctx, &genesisState.Params)
 	_ = a.keeper.SetParams(ctx, genesisState.Params) // note: we may want to have this function return an error in the future.
-	return nil
+	return
 }
 
 func (a AppModule) ExportGenesis(ctx sdk.Context, marshaler codec.JSONCodec) json.RawMessage {
@@ -139,10 +150,11 @@ func (a AppModule) RegisterServices(cfg module.Configurator) {
 	}
 }
 
-func (a AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {
+func (a AppModule) BeginBlock(_ context.Context) error {
+	return nil
 }
 
-func (a AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (a AppModule) EndBlock(_ context.Context) error {
 	return nil
 }
 
@@ -152,4 +164,24 @@ func (a AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.Valida
 // should be set to 1.
 func (a AppModule) ConsensusVersion() uint64 {
 	return ConsensusVersion
+}
+
+// GenerateGenesisState creates a randomized GenState of the valset module.
+func (am AppModule) SimulatorGenesisState(simState *module.SimulationState) {
+	ftDefaultGen := types.DefaultGenesisState()
+	ftDefaultGenJson := simState.Cdc.MustMarshalJSON(ftDefaultGen)
+	simState.GenState[types.ModuleName] = ftDefaultGenJson
+}
+
+// GenerateGenesisState creates a randomized GenState of the fees module.
+func (am AppModule) GenerateGenesisState(_ *module.SimulationState) {
+}
+
+// RegisterStoreDecoder registers a decoder for fees module's types.
+func (am AppModule) RegisterStoreDecoder(_ simtypes.StoreDecoderRegistry) {
+}
+
+// WeightedOperations doesn't return any mint module operation.
+func (AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
+	return nil
 }
