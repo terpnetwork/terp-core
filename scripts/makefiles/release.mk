@@ -16,8 +16,10 @@ release-help:
 GORELEASER_IMAGE := ghcr.io/goreleaser/goreleaser-cross:v$(GO_VERSION)
 COSMWASM_VERSION := $(shell go list -m github.com/CosmWasm/wasmvm/v2 | sed 's/.* //')
 
+release: release-help
+
 ifdef GITHUB_TOKEN
-release:
+release-run:
 	docker run \
 		--rm \
 		-e GITHUB_TOKEN=$(GITHUB_TOKEN) \

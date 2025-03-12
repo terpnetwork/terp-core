@@ -17,15 +17,19 @@ help:
 	@echo "To run commands, use:"
 	@echo "    make [command]"
 	@echo ""
-	@echo "  make build                 Build Terp Network node binary"
-	@echo "  make docker                Show available docker related commands"
+	@echo "  make install               Install terpd binary"
+	@echo "  make build                 Build terpd binary"
+	@echo "  make build-help            Show advanced available build commands"
+	@echo "  make deps                  Show available deps commands"
+	@echo "  make heighliner            Show available docker commands"
 	@echo "  make e2e                   Show available e2e commands"
-	@echo "  make format                Show available formatting commands"
-	@echo "  make hl                    Show available docker commands (via Strangelove's Heighliner Tooling)"
-	@echo "  make install               Install Terp Network node binary"
-	@echo "  make localnet              Show available localnet commands"
-	@echo "  make proto                 Show available protobuf commands"
-	@echo "  make test					Show available testing commands"
+	@echo "  make lint                  Show available lint commands"
+	@echo "  make proto                 Show available proto commands"
+	@echo "  make release               Show available release commands"
+	@echo "  make release-help          Show available release commands"
+	@echo "  make test                  Show available test commands"
+	@echo ""
+  
 	@echo "Run 'make [subcommand]' to see the available commands for each subcommand."
 
 APP_DIR = ./app
@@ -122,9 +126,8 @@ endif
 ldflags += $(LDFLAGS)
 ldflags := $(strip $(ldflags))
 
+ 
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
-
-
 
 
 ########################################
@@ -154,3 +157,4 @@ distclean: clean
 	go-mod-cache draw-deps clean build \
 	build-docker localnet-start localnet-stop test-docker test-docker-push \
 	test test-all test-cover
+ 
