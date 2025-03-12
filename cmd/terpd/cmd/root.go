@@ -146,7 +146,7 @@ func initAppConfig() (string, interface{}) {
 	type CustomAppConfig struct {
 		serverconfig.Config
 
-		Wasm wasmtypes.WasmConfig `mapstructure:"wasm"`
+		Wasm wasmtypes.NodeConfig `mapstructure:"wasm"`
 
 		// SidecarQueryServerConfig sqs.Config `mapstructure:"terp-sqs"`
 		// IndexerConfig indexer.Config `mapstructure:"terp-indexer"`
@@ -173,7 +173,7 @@ func initAppConfig() (string, interface{}) {
 
 	terpAppConfig := CustomAppConfig{
 		Config: *srvCfg,
-		Wasm:   wasmtypes.DefaultWasmConfig(),
+		Wasm:   wasmtypes.DefaultNodeConfig(),
 	}
 
 	customAppTemplate := serverconfig.DefaultConfigTemplate +

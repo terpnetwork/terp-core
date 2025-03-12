@@ -2,16 +2,20 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
+	pruningtypes "cosmossdk.io/store/pruning/types"
 	"cosmossdk.io/store/snapshots"
 	snapshottypes "cosmossdk.io/store/snapshots/types"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	cmttypes "github.com/cometbft/cometbft/types"
@@ -22,8 +26,11 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	"github.com/cosmos/cosmos-sdk/testutil/network"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -300,4 +307,38 @@ func GenesisStateWithValSet(t *testing.T,
 	// println("genesisStateWithValSet bankState:", string(genesisState[banktypes.ModuleName]))
 
 	return genesisState
+}
+
+var emptyWasmOptions []wasmkeeper.Option
+
+// NewTestNetworkFixture returns a new WasmApp AppConstructor for network simulation tests
+func NewTestNetworkFixture() network.TestFixture {
+	dir, err := os.MkdirTemp("", "simapp")
+	if err != nil {
+		panic(fmt.Sprintf("failed creating temporary directory: %v", err))
+	}
+	defer os.RemoveAll(dir)
+
+	app := NewTerpApp(log.NewNopLogger(), cosmosdb.NewMemDB(), nil, true, simtestutil.NewAppOptionsWithFlagHome(dir), emptyWasmOptions)
+	appCtr := func(val network.ValidatorI) servertypes.Application {
+		return NewTerpApp(
+			val.GetCtx().Logger, cosmosdb.NewMemDB(), nil, true,
+			simtestutil.NewAppOptionsWithFlagHome(val.GetCtx().Config.RootDir),
+			emptyWasmOptions,
+			bam.SetPruning(pruningtypes.NewPruningOptionsFromString(val.GetAppConfig().Pruning)),
+			bam.SetMinGasPrices(val.GetAppConfig().MinGasPrices),
+			bam.SetChainID(val.GetCtx().Viper.GetString(flags.FlagChainID)),
+		)
+	}
+
+	return network.TestFixture{
+		AppConstructor: appCtr,
+		GenesisState:   app.mb.DefaultGenesis(app.appCodec),
+		EncodingConfig: testutil.TestEncodingConfig{
+			InterfaceRegistry: app.InterfaceRegistry(),
+			Codec:             app.AppCodec(),
+			TxConfig:          app.txConfig,
+			Amino:             app.LegacyAmino(),
+		},
+	}
 }

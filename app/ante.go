@@ -34,7 +34,7 @@ type HandlerOptions struct {
 	IBCKeeper         *keeper.Keeper
 	FeeShareKeeper    feesharekeeper.Keeper
 	BankKeeperFork    feeshareante.BankKeeper
-	WasmConfig        *wasmTypes.WasmConfig
+	WasmConfig        *wasmTypes.NodeConfig
 	TXCounterStoreKey corestoretypes.KVStoreService
 	Cdc               codec.BinaryCodec
 

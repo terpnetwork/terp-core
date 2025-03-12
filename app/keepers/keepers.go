@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/spf13/cast"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -524,7 +525,7 @@ func NewAppKeepers(
 	)
 
 	wasmDir := filepath.Join(homePath, "wasm")
-	wasmConfig, err := wasm.ReadWasmConfig(appOpts)
+	wasmConfig, err := wasm.ReadNodeConfig(appOpts)
 	if err != nil {
 		panic(fmt.Sprintf("error while reading wasm config: %s", err))
 	}
@@ -536,28 +537,28 @@ func NewAppKeepers(
 	// Stargate Queries
 	accepted := wasmkeeper.AcceptedQueries{
 		// ibc
-		"/ibc.core.client.v1.Query/ClientState":    &ibcclienttypes.QueryClientStateResponse{},
-		"/ibc.core.client.v1.Query/ConsensusState": &ibcclienttypes.QueryConsensusStateResponse{},
-		"/ibc.core.connection.v1.Query/Connection": &ibcconnectiontypes.QueryConnectionResponse{},
+		"/ibc.core.client.v1.Query/ClientState":    func() proto.Message { return &ibcclienttypes.QueryClientStateResponse{} },
+		"/ibc.core.client.v1.Query/ConsensusState": func() proto.Message { return &ibcclienttypes.QueryConsensusStateResponse{} },
+		"/ibc.core.connection.v1.Query/Connection": func() proto.Message { return &ibcconnectiontypes.QueryConnectionResponse{} },
 
 		// governance
-		"/cosmos.gov.v1beta1.Query/Vote": &govv1beta1.QueryVoteResponse{},
+		"/cosmos.gov.v1beta1.Query/Vote": func() proto.Message { return &govv1beta1.QueryVoteResponse{} },
 
 		// distribution
-		"/cosmos.distribution.v1beta1.Query/DelegationRewards": &distrtypes.QueryDelegationRewardsResponse{},
+		"/cosmos.distribution.v1beta1.Query/DelegationRewards": func() proto.Message { return &distrtypes.QueryDelegationRewardsResponse{} },
 
 		// staking
-		"/cosmos.staking.v1beta1.Query/Delegation":          &stakingtypes.QueryDelegationResponse{},
-		"/cosmos.staking.v1beta1.Query/Redelegations":       &stakingtypes.QueryRedelegationsResponse{},
-		"/cosmos.staking.v1beta1.Query/UnbondingDelegation": &stakingtypes.QueryUnbondingDelegationResponse{},
-		"/cosmos.staking.v1beta1.Query/Validator":           &stakingtypes.QueryValidatorResponse{},
-		"/cosmos.staking.v1beta1.Query/Params":              &stakingtypes.QueryParamsResponse{},
-		"/cosmos.staking.v1beta1.Query/Pool":                &stakingtypes.QueryPoolResponse{},
+		"/cosmos.staking.v1beta1.Query/Delegation":          func() proto.Message { return &stakingtypes.QueryDelegationResponse{} },
+		"/cosmos.staking.v1beta1.Query/Redelegations":       func() proto.Message { return &stakingtypes.QueryRedelegationsResponse{} },
+		"/cosmos.staking.v1beta1.Query/UnbondingDelegation": func() proto.Message { return &stakingtypes.QueryUnbondingDelegationResponse{} },
+		"/cosmos.staking.v1beta1.Query/Validator":           func() proto.Message { return &stakingtypes.QueryValidatorResponse{} },
+		"/cosmos.staking.v1beta1.Query/Params":              func() proto.Message { return &stakingtypes.QueryParamsResponse{} },
+		"/cosmos.staking.v1beta1.Query/Pool":                func() proto.Message { return &stakingtypes.QueryPoolResponse{} },
 
 		// token factory
-		"/osmosis.tokenfactory.v1beta1.Query/Params":                 &tokenfactorytypes.QueryParamsResponse{},
-		"/osmosis.tokenfactory.v1beta1.Query/DenomAuthorityMetadata": &tokenfactorytypes.QueryDenomAuthorityMetadataResponse{},
-		"/osmosis.tokenfactory.v1beta1.Query/DenomsFromCreator":      &tokenfactorytypes.QueryDenomsFromCreatorResponse{},
+		"/osmosis.tokenfactory.v1beta1.Query/Params":                 func() proto.Message { return &tokenfactorytypes.QueryParamsResponse{} },
+		"/osmosis.tokenfactory.v1beta1.Query/DenomAuthorityMetadata": func() proto.Message { return &tokenfactorytypes.QueryDenomAuthorityMetadataResponse{} },
+		"/osmosis.tokenfactory.v1beta1.Query/DenomsFromCreator":      func() proto.Message { return &tokenfactorytypes.QueryDenomsFromCreatorResponse{} },
 	}
 
 	wasmOpts = append(wasmOpts,
@@ -584,6 +585,7 @@ func NewAppKeepers(
 		bApp.GRPCQueryRouter(),
 		wasmDir,
 		wasmConfig,
+		wasmtypes.VMConfig{},
 		wasmCapabilities,
 		govModAddress,
 		wasmOpts...,

@@ -41,7 +41,7 @@ var (
 	TerpImage = ibc.DockerImage{
 		Repository: terpRepo,
 		Version:    terpVersion,
-		UidGid:     "1025:1025",
+		UIDGID:     "1025:1025",
 	}
 
 	// SDK v47 Genesis
