@@ -2,6 +2,8 @@ package keeper_test
 
 import (
 	"crypto/sha256"
+	"fmt"
+	"time"
 
 	_ "embed"
 
@@ -44,7 +46,7 @@ func (s *KeeperTestSuite) InstantiateContract(sender string, admin string) strin
 		m.WASMByteCode = wasmContract
 		m.Sender = sender
 	})
-	_, err := s.App.MsgServiceRouter().Handler(msgStoreCode)(s.Ctx, msgStoreCode)
+	_, err := s.wasmMsgServer.StoreCode(s.Ctx, msgStoreCode)
 	s.Require().NoError(err)
 
 	msgInstantiate := wasmtypes.MsgInstantiateContractFixture(func(m *wasmtypes.MsgInstantiateContract) {
@@ -53,16 +55,16 @@ func (s *KeeperTestSuite) InstantiateContract(sender string, admin string) strin
 		m.Msg = []byte(`{}`)
 	})
 
-	resp, err := s.App.MsgServiceRouter().Handler(msgInstantiate)(s.Ctx, msgInstantiate)
+	resp, err := s.wasmMsgServer.InstantiateContract(s.Ctx.WithBlockTime(time.Now()), msgInstantiate)
 	s.Require().NoError(err)
-	var result wasmtypes.MsgInstantiateContractResponse
-	s.Require().NoError(s.App.AppCodec().Unmarshal(resp.Data, &result))
-	contractInfo := s.App.WasmKeeper.GetContractInfo(s.Ctx, sdk.MustAccAddressFromBech32(result.Address))
+
+	fmt.Printf("result: %v\n", resp)
+	contractInfo := s.App.WasmKeeper.GetContractInfo(s.Ctx, sdk.MustAccAddressFromBech32(resp.Address))
 	s.Require().Equal(contractInfo.CodeID, uint64(1))
 	s.Require().Equal(contractInfo.Admin, admin)
 	s.Require().Equal(contractInfo.Creator, sender)
 
-	return result.Address
+	return resp.Address
 }
 
 func (s *KeeperTestSuite) TestGetContractAdminOrCreatorAddress() {

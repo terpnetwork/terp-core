@@ -45,7 +45,7 @@ func (s *KeeperTestHelper) Setup() {
 
 	s.TestAccs = CreateRandomAccounts(3)
 	s.StakingHelper = stakinghelper.NewHelper(s.Suite.T(), s.Ctx, s.App.StakingKeeper)
-	s.StakingHelper.Denom = "ubtsg"
+	s.StakingHelper.Denom = "uterp"
 }
 
 // CreateRandomAccounts is a function return a list of randomly generated AccAddresses
