@@ -62,14 +62,17 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	cfg.SetAddressVerifier(wasmtypes.VerifyAddressLen())
 	cfg.Seal()
 
-	appOptions := make(simtestutil.AppOptionsMap, 0)
-	// tempDir := tempDir()
+	tempDir := tempDir()
+
+	// cleanup temp dir after we are done with the tempApp, so we don't leave behind a
+	// new temporary directory for every invocation. See https://github.com/CosmWasm/wasmd/issues/2017
+	defer os.RemoveAll(tempDir)
 	tempApp := app.NewTerpApp(
 		log.NewNopLogger(),
 		cosmosdb.NewMemDB(),
 		nil,
 		true,
-		appOptions,
+		simtestutil.NewAppOptionsWithFlagHome(tempDir),
 		[]wasmkeeper.Option{},
 	)
 
@@ -416,4 +419,13 @@ func autoCliOpts(initClientCtx client.Context, tempApp *app.TerpApp) autocli.App
 		ValidatorAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix()),
 		ConsensusAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ConsensusAddrPrefix()),
 		ClientCtx:             initClientCtx}
+}
+
+var tempDir = func() string {
+	dir, err := os.MkdirTemp("", "terpd")
+	if err != nil {
+		panic("failed to create temp dir: " + err.Error())
+	}
+
+	return dir
 }
