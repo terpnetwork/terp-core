@@ -32,6 +32,9 @@ build-check-version:
 		exit 1; \
 	fi
 
+install: build-check-version go.sum
+	go install -mod=readonly $(BUILD_FLAGS) ./cmd/terpd
+
 all: install
 	@echo "--> project root: go mod tidy"	
 	@go mod tidy	

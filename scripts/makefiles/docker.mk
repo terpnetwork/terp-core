@@ -19,9 +19,13 @@ docker-help:
 	@echo "  docker-build-nonroot        Build nonroot Docker image"
 docker: docker-help
 
+docker-build-localnet:
+	docker buildx build --target runtime -t terpnetwork/terp-core:latest .
+
 docker-build:
 	@DOCKER_BUILDKIT=1 docker build \
 		-t terpnetwork/terp-core:local \
+		--target runtime \
 		--build-arg GO_VERSION=$(GO_VERSION) \
 		--build-arg RUNNER_IMAGE=$(RUNNER_BASE_IMAGE_DISTROLESS) \
 		--build-arg GIT_VERSION=$(VERSION) \
@@ -33,6 +37,7 @@ docker-build-distroless: docker-build
 docker-build-alpine:
 	@DOCKER_BUILDKIT=1 docker build \
 		-t terpnetwork/terp-core:local-alpine \
+		--target runtime \  
 		--build-arg GO_VERSION=$(GO_VERSION) \
 		--build-arg RUNNER_IMAGE=$(RUNNER_BASE_IMAGE_ALPINE) \
 		--build-arg GIT_VERSION=$(VERSION) \
@@ -42,6 +47,7 @@ docker-build-alpine:
 docker-build-nonroot:
 	@DOCKER_BUILDKIT=1 docker build \
 		-t terpnetwork/terp-core:local-nonroot \
+		--target runtime \  
 		--build-arg GO_VERSION=$(GO_VERSION) \
 		--build-arg RUNNER_IMAGE=$(RUNNER_BASE_IMAGE_NONROOT) \
 		--build-arg GIT_VERSION=$(VERSION) \
