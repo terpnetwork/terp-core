@@ -20,7 +20,7 @@ docker-help:
 docker: docker-help
 
 docker-build-localnet:
-	docker buildx build --target runtime -t terpnetwork/terp-core:latest .
+	docker buildx build --target localterp -t terpnetwork/terp-core:localterp .
 
 docker-build:
 	@DOCKER_BUILDKIT=1 docker build \
