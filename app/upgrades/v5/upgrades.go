@@ -9,6 +9,7 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/terpnetwork/terp-core/v4/app/keepers"
 	"github.com/terpnetwork/terp-core/v4/app/upgrades"
@@ -65,6 +66,11 @@ func CreateV5UpgradeHandler(
 		}
 
 		// enable wasm clients
+		// set wasm client as an allowed client.
+		// https://github.com/cosmos/ibc-go/blob/main/docs/docs/03-light-clients/04-wasm/03-integration.md
+		params := keepers.IBCKeeper.ClientKeeper.GetParams(ctx)
+		params.AllowedClients = append(params.AllowedClients, wasmlctypes.Wasm)
+		keepers.IBCKeeper.ClientKeeper.SetParams(ctx, params)
 
 		logger.Info(`
 		

@@ -2,7 +2,6 @@ package keepers
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/spf13/cast"
 
@@ -18,11 +17,16 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmvm "github.com/CosmWasm/wasmvm/v3"
+	ibcwlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10"
+	ibcwlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/keeper"
+	ibcwlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
+	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
+	appparams "github.com/terpnetwork/terp-core/v4/app/params"
 
 	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
 	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/keeper"
 	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
-	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v8/types"
 
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
 	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/keeper"
@@ -113,19 +117,6 @@ import (
 )
 
 var (
-	wasmCapabilities = []string{
-		"iterator",
-		"staking",
-		"stargate",
-		"cosmwasm_1_1",
-		"cosmwasm_1_2",
-		"cosmwasm_1_3",
-		"cosmwasm_1_4",
-		"cosmwasm_2_0",
-		"cosmwasm_2_1",
-		"terp",
-	}
-
 	EmptyWasmOpts []wasmkeeper.Option
 )
 
@@ -139,7 +130,6 @@ var maccPerms = map[string][]string{
 	govtypes.ModuleName:            {authtypes.Burner},
 	nft.ModuleName:                 nil,
 	ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
-	icqtypes.ModuleName:            nil,
 	icatypes.ModuleName:            nil,
 	globalfee.ModuleName:           nil,
 	wasmtypes.ModuleName:           {authtypes.Burner},
@@ -186,6 +176,7 @@ type AppKeepers struct {
 	AuthenticatorManager *authenticator.AuthenticatorManager
 	ContractKeeper       *wasmkeeper.PermissionedKeeper
 	WasmKeeper           *wasmkeeper.Keeper
+	IBCWasmClientKeeper  *ibcwlckeeper.Keeper
 
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
@@ -193,7 +184,6 @@ type AppKeepers struct {
 	ScopedTransferKeeper      capabilitykeeper.ScopedKeeper
 
 	ScopedWasmKeeper capabilitykeeper.ScopedKeeper
-	ScopedICQKeeper  capabilitykeeper.ScopedKeeper
 
 	DripKeeper dripkeeper.Keeper
 
@@ -204,11 +194,15 @@ type AppKeepers struct {
 
 func NewAppKeepers(
 	appCodec codec.Codec,
+	encodingConfig appparams.EncodingConfig,
 	bApp *baseapp.BaseApp,
 	cdc *codec.LegacyAmino,
 	maccPerms map[string][]string,
 	appOpts servertypes.AppOptions,
 	wasmOpts []wasmkeeper.Option,
+	wasmDir string,
+	wasmConfig wasmtypes.NodeConfig,
+	ibcWasmConfig ibcwlctypes.WasmConfig,
 ) AppKeepers {
 	appKeepers := AppKeepers{}
 
@@ -246,8 +240,6 @@ func NewAppKeepers(
 	scopedIBCKeeper := appKeepers.CapabilityKeeper.ScopeToModule(ibcexported.ModuleName)
 	scopedICAHostKeeper := appKeepers.CapabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
 	scopedICAControllerKeeper := appKeepers.CapabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
-	scopedTransferKeeper := appKeepers.CapabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
-	scopedICQKeeper := appKeepers.CapabilityKeeper.ScopeToModule(icqtypes.ModuleName)
 	scopedWasmKeeper := appKeepers.CapabilityKeeper.ScopeToModule(wasmtypes.ModuleName)
 
 	// add keepers
@@ -298,6 +290,17 @@ func NewAppKeepers(
 	)
 	appKeepers.FeeGrantKeeper = &feegrantKeeper
 
+	// Initialize authenticators
+	appKeepers.AuthenticatorManager = authenticator.NewAuthenticatorManager()
+	appKeepers.AuthenticatorManager.InitializeAuthenticators([]authenticator.Authenticator{
+		authenticator.NewSignatureVerification(appKeepers.AccountKeeper),
+		authenticator.NewMessageFilter(encodingConfig),
+		authenticator.NewAllOf(appKeepers.AuthenticatorManager),
+		authenticator.NewAnyOf(appKeepers.AuthenticatorManager),
+		authenticator.NewPartitionedAnyOf(appKeepers.AuthenticatorManager),
+		authenticator.NewPartitionedAllOf(appKeepers.AuthenticatorManager),
+	})
+
 	smartAccountKeeper := smartaccountkeeper.NewKeeper(
 		appCodec,
 		appKeepers.keys[smartaccounttypes.StoreKey],
@@ -329,6 +332,18 @@ func NewAppKeepers(
 	appKeepers.SlashingKeeper = &slashKeeper
 
 	invCheckPeriod := cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod))
+
+	// Initialize authenticators
+	appKeepers.AuthenticatorManager = authenticator.NewAuthenticatorManager()
+	appKeepers.AuthenticatorManager.InitializeAuthenticators([]authenticator.Authenticator{
+		authenticator.NewSignatureVerification(appKeepers.AccountKeeper),
+		authenticator.NewMessageFilter(encodingConfig),
+		authenticator.NewAllOf(appKeepers.AuthenticatorManager),
+		authenticator.NewAnyOf(appKeepers.AuthenticatorManager),
+		authenticator.NewPartitionedAnyOf(appKeepers.AuthenticatorManager),
+		authenticator.NewPartitionedAllOf(appKeepers.AuthenticatorManager),
+	})
+
 	appKeepers.CrisisKeeper = crisiskeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[crisistypes.StoreKey]),
@@ -452,18 +467,6 @@ func NewAppKeepers(
 	appKeepers.TransferKeeper = &transferKeeper
 	appKeepers.PacketForwardKeeper.SetTransferKeeper(appKeepers.TransferKeeper)
 
-	// // ICQ Keeper
-	// appKeepers.ICQKeeper = icqkeeper.NewKeeper(
-	// 	appCodec,
-	// 	appKeepers.keys[icqtypes.StoreKey],
-	// 	appKeepers.IBCKeeper.ChannelKeeper, // may be replaced with middleware
-	// 	appKeepers.IBCKeeper.ChannelKeeper,
-	// 	appKeepers.IBCKeeper.PortKeeper,
-	// 	scopedICQKeeper,
-	// 	bApp.GRPCQueryRouter(),
-	// 	govModAddress,
-	// )
-
 	icaHostKeeper := icahostkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[icahosttypes.StoreKey]),
@@ -510,7 +513,6 @@ func NewAppKeepers(
 	)
 	appKeepers.TokenFactoryKeeper = &tfKeeper
 
-	wasmDir := filepath.Join(homePath, "wasm")
 	wasmConfig, err := wasm.ReadNodeConfig(appOpts)
 	if err != nil {
 		panic(fmt.Sprintf("error while reading wasm config: %s", err))
@@ -531,6 +533,18 @@ func NewAppKeepers(
 			}),
 	)
 
+	wasmCapabilities := append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0")
+	// create wasmvm to use for both x/wasm and wasm-light-client
+	wasmVm, err := wasmvm.NewVM(wasmDir, wasmCapabilities, 32, wasmConfig.ContractDebugMode, wasmConfig.MemoryCacheSize)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create bitsong wasm vm: %s", err))
+	}
+
+	lcWasmer, err := wasmvm.NewVM(ibcWasmConfig.DataDir, wasmCapabilities, 32, ibcWasmConfig.ContractDebugMode, wasmConfig.MemoryCacheSize)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create bitsong wasm vm for 08-wasm: %s", err))
+	}
+
 	wasmKeeper := wasmkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[wasmtypes.StoreKey]),
@@ -549,9 +563,19 @@ func NewAppKeepers(
 		wasmtypes.VMConfig{},
 		wasmCapabilities,
 		govModAddress,
-		wasmOpts...,
+		append(wasmOpts, wasmkeeper.WithWasmEngine(wasmVm))...,
 	)
 	appKeepers.WasmKeeper = &wasmKeeper
+
+	ibcWasmClientKeeper := ibcwlckeeper.NewKeeperWithVM(
+		appCodec,
+		runtime.NewKVStoreService(appKeepers.keys[ibcwlctypes.StoreKey]),
+		appKeepers.IBCKeeper.ClientKeeper,
+		govModAddress,
+		lcWasmer,
+		bApp.GRPCQueryRouter(),
+	)
+	appKeepers.IBCWasmClientKeeper = &ibcWasmClientKeeper
 
 	// set the contract keeper for the Ics20WasmHooks
 	appKeepers.ContractKeeper = wasmkeeper.NewDefaultPermissionKeeper(appKeepers.WasmKeeper)
@@ -637,10 +661,17 @@ func NewAppKeepers(
 		AddRoute(icahosttypes.SubModuleName, icaHostStack)
 	appKeepers.IBCKeeper.SetRouter(ibcRouter)
 
+	clientKeeper := appKeepers.IBCKeeper.ClientKeeper
+	storeProvider := appKeepers.IBCKeeper.ClientKeeper.GetStoreProvider()
+
+	// Add tendermint & ibcWasm light client routes
+	tmLightClientModule := ibctm.NewLightClientModule(appCodec, storeProvider)
+	ibcWasmLightClientModule := ibcwlc.NewLightClientModule(*appKeepers.IBCWasmClientKeeper, storeProvider)
+	clientKeeper.AddRoute(ibctm.ModuleName, &tmLightClientModule)
+	clientKeeper.AddRoute(ibcwlctypes.ModuleName, ibcWasmLightClientModule)
+
 	appKeepers.ScopedIBCKeeper = scopedIBCKeeper
-	appKeepers.ScopedTransferKeeper = scopedTransferKeeper
 	appKeepers.ScopedWasmKeeper = scopedWasmKeeper
-	appKeepers.ScopedICQKeeper = scopedICQKeeper
 	appKeepers.ScopedICAHostKeeper = scopedICAHostKeeper
 	appKeepers.ScopedICAControllerKeeper = scopedICAControllerKeeper
 
@@ -667,10 +698,11 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(tokenfactorytypes.ModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
-	paramsKeeper.Subspace(icqtypes.ModuleName)
 	paramsKeeper.Subspace(packetforwardtypes.ModuleName)
 	paramsKeeper.Subspace(globalfee.ModuleName)
+	paramsKeeper.Subspace(ibchookstypes.ModuleName)
 	paramsKeeper.Subspace(feesharetypes.ModuleName).WithKeyTable(feesharetypes.ParamKeyTable())
+	paramsKeeper.Subspace(smartaccounttypes.ModuleName).WithKeyTable(smartaccounttypes.ParamKeyTable())
 	paramsKeeper.Subspace(wasmtypes.ModuleName)
 
 	return paramsKeeper

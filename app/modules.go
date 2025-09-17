@@ -203,6 +203,7 @@ func simulationModules(
 		feeshare.NewAppModule(app.FeeShareKeeper, *app.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
 		drip.NewAppModule(app.DripKeeper, *app.AccountKeeper),
 		globalfee.NewAppModule(appCodec, app.GlobalFeeKeeper, bondDenom),
+		// smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
 	}
 }
 
@@ -276,6 +277,7 @@ func orderEndBlockers() []string {
 		clocktypes.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
+		smartaccounttypes.ModuleName,
 		// cwhooks.ModuleName,
 		wasmtypes.ModuleName,
 	}
@@ -299,6 +301,7 @@ func orderInitBlockers() []string {
 		packetforwardtypes.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
+		smartaccounttypes.ModuleName,
 		clocktypes.ModuleName,
 		// cwhooks.ModuleName,
 		wasmtypes.ModuleName,

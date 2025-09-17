@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -47,7 +48,7 @@ import (
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	"github.com/prometheus/client_golang/prometheus"
 
-	upgradetypes "cosmossdk.io/x/upgrade/types"
+	sigtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
@@ -56,16 +57,18 @@ import (
 
 	"github.com/spf13/cast"
 
+	"github.com/terpnetwork/terp-core/v4/app/keepers"
 	"github.com/terpnetwork/terp-core/v4/app/openapiconsole"
-	v5 "github.com/terpnetwork/terp-core/v4/app/upgrades/v5"
 	"github.com/terpnetwork/terp-core/v4/docs"
+
+	upgradetypes "cosmossdk.io/x/upgrade/types"
+	"github.com/terpnetwork/terp-core/v4/app/upgrades"
+	v5 "github.com/terpnetwork/terp-core/v4/app/upgrades/v5"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	sigtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
-	"github.com/terpnetwork/terp-core/v4/app/keepers"
-	"github.com/terpnetwork/terp-core/v4/app/upgrades"
+	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
 	// unnamed import of statik for swagger UI support
 	// _ "github.com/cosmos/cosmos-sdk/client/docs/statik" // statik for swagger UI support
 )
@@ -224,14 +227,30 @@ func NewTerpApp(
 	}
 	app.homePath = homePath
 
+	// isolate data paths for appstate, wasmstate, & ibcwasmlcstate
+	wasmDir := filepath.Join(homePath, "wasm")
+	wasmConfig, err := wasm.ReadNodeConfig(appOpts)
+	if err != nil {
+		panic("error while reading wasm config: " + err.Error())
+	}
+	ibcWasmConfig := wasmlctypes.WasmConfig{
+		DataDir:               filepath.Join(homePath, "ibc_08-wasm"),
+		SupportedCapabilities: append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0"),
+		ContractDebugMode:     false,
+	}
+
 	// Setup keepers
 	app.AppKeepers = keepers.NewAppKeepers(
 		appCodec,
+		encodingConfig,
 		bApp,
 		legacyAmino,
 		keepers.GetMaccPerms(),
 		appOpts,
 		wasmOpts,
+		wasmDir,
+		wasmConfig,
+		ibcWasmConfig,
 	)
 	app.keys = app.GetKVStoreKey()
 
@@ -240,7 +259,7 @@ func NewTerpApp(
 		EnabledSignModes:           enabledSignModes,
 		TextualCoinMetadataQueryFn: txmodule.NewBankKeeperCoinMetadataQueryFn(app.BankKeeper),
 	}
-	txConfig, err := authtx.NewTxConfigWithOptions(
+	txConfig, err = authtx.NewTxConfigWithOptions(
 		appCodec,
 		txConfigOpts,
 	)
@@ -269,7 +288,8 @@ func NewTerpApp(
 	app.mm = module.NewManager(appModules(app, encodingConfig, skipGenesisInvariants)...)
 
 	// Upgrades from v0.50.x onwards happen in pre block
-	app.mm.SetOrderPreBlockers(upgradetypes.ModuleName)
+	app.mm.SetOrderPreBlockers(upgradetypes.ModuleName,
+		authtypes.ModuleName)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
@@ -303,11 +323,6 @@ func NewTerpApp(
 		panic(err)
 	}
 	reflectionv1.RegisterReflectionServiceServer(app.GRPCQueryRouter(), reflectionSvc)
-
-	wasmConfig, err := wasm.ReadNodeConfig(appOpts)
-	if err != nil {
-		panic("error while reading wasm config: " + err.Error())
-	}
 
 	anteHandler, err := NewAnteHandler(
 		HandlerOptions{

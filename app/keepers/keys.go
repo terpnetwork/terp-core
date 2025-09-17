@@ -29,7 +29,6 @@ import (
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v8/types"
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/types"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
@@ -64,7 +63,6 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		wasmtypes.StoreKey,
 		icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey,
-		icqtypes.StoreKey,
 		packetforwardtypes.StoreKey,
 		ibchookstypes.StoreKey,
 		feesharetypes.StoreKey,
