@@ -11,7 +11,7 @@ import (
 	"cosmossdk.io/core/header"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v4/app/apptesting"
+	testutils "github.com/terpnetwork/terp-core/v4/app/testutil"
 	v5 "github.com/terpnetwork/terp-core/v4/app/upgrades/v5"
 
 	"cosmossdk.io/x/upgrade"
@@ -28,7 +28,7 @@ var (
 )
 
 type UpgradeTestSuite struct {
-	apptesting.KeeperTestHelper
+	testutils.KeeperTestHelper
 	preModule appmodule.HasPreBlocker
 }
 

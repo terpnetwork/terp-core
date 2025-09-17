@@ -12,10 +12,10 @@ import (
 var _ types.QueryServer = &GrpcQuerier{}
 
 type GrpcQuerier struct {
-	keeper keeper.Keeper
+	keeper *keeper.Keeper
 }
 
-func NewGrpcQuerier(k keeper.Keeper) GrpcQuerier {
+func NewGrpcQuerier(k *keeper.Keeper) GrpcQuerier {
 	return GrpcQuerier{
 		keeper: k,
 	}

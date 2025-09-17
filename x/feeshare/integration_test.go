@@ -81,6 +81,7 @@ func GenApp(t *testing.T, withGenesis bool, opts ...wasmkeeper.Option) (*terpapp
 		db,
 		nil,
 		true,
+		nodeHome,
 		simtestutil.EmptyAppOptions{},
 		opts,
 		bam.SetChainID("testing"),
@@ -88,7 +89,7 @@ func GenApp(t *testing.T, withGenesis bool, opts ...wasmkeeper.Option) (*terpapp
 	)
 
 	if withGenesis {
-		return app, terpapp.NewDefaultGenesisState(app.AppCodec())
+		return app, terpapp.NewDefaultGenesisState()
 	}
 
 	return app, terpapp.GenesisState{}

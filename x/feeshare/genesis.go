@@ -10,7 +10,7 @@ import (
 // InitGenesis import module genesis
 func InitGenesis(
 	ctx sdk.Context,
-	k keeper.Keeper,
+	k *keeper.Keeper,
 	data types.GenesisState,
 ) {
 	if err := k.SetParams(ctx, data.Params); err != nil {
@@ -33,7 +33,7 @@ func InitGenesis(
 }
 
 // ExportGenesis export module state
-func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
+func ExportGenesis(ctx sdk.Context, k *keeper.Keeper) *types.GenesisState {
 	return &types.GenesisState{
 		Params:   k.GetParams(ctx),
 		FeeShare: k.GetFeeShares(ctx),

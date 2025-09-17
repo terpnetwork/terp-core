@@ -108,7 +108,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements the AppModule interface for the fees module.
 type AppModule struct {
 	AppModuleBasic
-	keeper keeper.Keeper
+	keeper *keeper.Keeper
 	ak     authkeeper.AccountKeeper
 
 	// legacySubspace is used solely for migration of x/params managed parameters
@@ -117,7 +117,7 @@ type AppModule struct {
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(
-	k keeper.Keeper,
+	k *keeper.Keeper,
 	ak authkeeper.AccountKeeper,
 	ss exported.Subspace,
 ) AppModule {

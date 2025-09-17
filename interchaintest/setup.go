@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	ibclocalhost "github.com/cosmos/ibc-go/v8/modules/light-clients/09-localhost"
+	ibclocalhost "github.com/cosmos/ibc-go/v10/modules/light-clients/09-localhost"
 	"github.com/docker/docker/client"
 	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
 	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"

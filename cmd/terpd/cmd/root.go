@@ -42,7 +42,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
@@ -72,6 +71,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		cosmosdb.NewMemDB(),
 		nil,
 		true,
+		tempDir,
 		simtestutil.NewAppOptionsWithFlagHome(tempDir),
 		[]wasmkeeper.Option{},
 	)
@@ -232,7 +232,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
-		NewTestnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
+		// NewTestnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 		AddGenesisIcaCmd(app.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
 		DebugCmd(),
@@ -349,6 +349,7 @@ func (ac appCreator) newApp(
 		db,
 		traceStore,
 		loadLatest,
+		cast.ToString(appOpts.Get(flags.FlagHome)),
 		appOpts,
 		wasmOpts,
 		baseappOptions...,
@@ -387,6 +388,7 @@ func (ac appCreator) appExport(
 		db,
 		traceStore,
 		height == -1,
+		cast.ToString(appOpts.Get(flags.FlagHome)),
 		appOpts,
 		emptyWasmOpts,
 	)

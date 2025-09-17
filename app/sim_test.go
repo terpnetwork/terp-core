@@ -108,6 +108,7 @@ func TestFullAppSimulation(t *testing.T) {
 		db,
 		nil,
 		true,
+		DefaultNodeHome,
 		appOptions,
 		emptyWasmOption,
 		fauxMerkleModeOpt,
@@ -120,7 +121,7 @@ func TestFullAppSimulation(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		simtestutil.AppStateFn(app.appCodec, app.SimulationManager(), NewDefaultGenesisState(app.appCodec)),
+		simtestutil.AppStateFn(app.appCodec, app.SimulationManager(), NewDefaultGenesisState()),
 		simtypes.RandomAccounts, // Replace with own random account function if using keys other than secp256k1
 		simtestutil.SimulationOperations(app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),

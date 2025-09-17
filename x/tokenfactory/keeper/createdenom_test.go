@@ -72,7 +72,7 @@ func (suite *KeeperTestSuite) TestMsgCreateDenom() {
 func (suite *KeeperTestSuite) TestCreateDenom() {
 	var (
 		primaryDenom = types.DefaultParams().DenomCreationFee[0].Denom
-		// secondaryDenom          = apptesting.SecondaryDenom
+		// secondaryDenom          = testutils.SecondaryDenom
 		defaultDenomCreationFee = types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin(primaryDenom, math.NewInt(50000000)))}
 		twoDenomCreationFee     = types.Params{DenomCreationFee: sdk.NewCoins(sdk.NewCoin(primaryDenom, math.NewInt(50000000)), sdk.NewCoin("uthiol", math.NewInt(50000000)))}
 		nilCreationFee          = types.Params{DenomCreationFee: nil}

@@ -18,12 +18,11 @@ import (
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8/packetforward/types"
+	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	icacontrollertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
-	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
-	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	icacontrollertypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/types"
+	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 
 	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
@@ -31,9 +30,10 @@ import (
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	icqtypes "github.com/cosmos/ibc-apps/modules/async-icq/v8/types"
-	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v4/x/smart-account/types"
 
 	// cwhookstypes "github.com/terpnetwork/terp-core/v4/x/cw-hooks/types"
 	driptypes "github.com/terpnetwork/terp-core/v4/x/drip/types"
@@ -61,7 +61,6 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		// non sdk store keys
 		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
-		ibcfeetypes.StoreKey,
 		wasmtypes.StoreKey,
 		icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey,
@@ -72,7 +71,7 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		globalfeetypes.StoreKey,
 		clocktypes.StoreKey,
 		driptypes.StoreKey,
-		// cwhookstypes.StoreKey,
+		smartaccounttypes.StoreKey,
 		tokenfactorytypes.StoreKey,
 	)
 

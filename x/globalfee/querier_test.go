@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"github.com/terpnetwork/terp-core/v4/app/apptesting"
+	testutils "github.com/terpnetwork/terp-core/v4/app/testutil"
 
 	"cosmossdk.io/math"
 
@@ -18,16 +18,16 @@ import (
 )
 
 type QuerierTestSuite struct {
-	apptesting.KeeperTestHelper
+	testutils.KeeperTestHelper
 }
 
 func (s *QuerierTestSuite) TestQueryMinimumGasPrices() {
 	specs := map[string]struct {
-		setupStore func(ctx sdk.Context, k globalfeekeeper.Keeper)
+		setupStore func(ctx sdk.Context, k *globalfeekeeper.Keeper)
 		expMin     sdk.DecCoins
 	}{
 		"one coin": {
-			setupStore: func(ctx sdk.Context, k globalfeekeeper.Keeper) {
+			setupStore: func(ctx sdk.Context, k *globalfeekeeper.Keeper) {
 				err := k.SetParams(ctx, types.Params{
 					MinimumGasPrices: sdk.NewDecCoins(sdk.NewDecCoin("ALX", math.OneInt())),
 				})
@@ -36,7 +36,7 @@ func (s *QuerierTestSuite) TestQueryMinimumGasPrices() {
 			expMin: sdk.NewDecCoins(sdk.NewDecCoin("ALX", math.OneInt())),
 		},
 		"multiple coins": {
-			setupStore: func(ctx sdk.Context, k globalfeekeeper.Keeper) {
+			setupStore: func(ctx sdk.Context, k *globalfeekeeper.Keeper) {
 				err := k.SetParams(ctx, types.Params{
 					MinimumGasPrices: sdk.NewDecCoins(sdk.NewDecCoin("ALX", math.OneInt()), sdk.NewDecCoin("BLX", math.NewInt(2))),
 				})
@@ -45,13 +45,13 @@ func (s *QuerierTestSuite) TestQueryMinimumGasPrices() {
 			expMin: sdk.NewDecCoins(sdk.NewDecCoin("ALX", math.OneInt()), sdk.NewDecCoin("BLX", math.NewInt(2))),
 		},
 		"no min gas price set": {
-			setupStore: func(ctx sdk.Context, k globalfeekeeper.Keeper) {
+			setupStore: func(ctx sdk.Context, k *globalfeekeeper.Keeper) {
 				err := k.SetParams(ctx, types.Params{})
 				require.NoError(s.T(), err)
 			},
 		},
 		"no param set": {
-			setupStore: func(ctx sdk.Context, k globalfeekeeper.Keeper) {
+			setupStore: func(ctx sdk.Context, k *globalfeekeeper.Keeper) {
 			},
 		},
 	}

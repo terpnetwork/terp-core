@@ -50,16 +50,13 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
-	ibcmock "github.com/cosmos/ibc-go/v8/testing/mock"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
 
 	"github.com/spf13/cast"
 
 	"github.com/terpnetwork/terp-core/v4/app/openapiconsole"
-	"github.com/terpnetwork/terp-core/v4/app/upgrades/v4_1"
 	v5 "github.com/terpnetwork/terp-core/v4/app/upgrades/v5"
 	"github.com/terpnetwork/terp-core/v4/docs"
 
@@ -74,8 +71,7 @@ import (
 )
 
 const (
-	appName            = "TerpApp"
-	MockFeePort string = ibcmock.ModuleName + ibcfeetypes.ModuleName
+	appName = "TerpApp"
 )
 
 // We pull these out so we can set them with LDFLAGS in the Makefile
@@ -94,8 +90,8 @@ var (
 	// EmptyWasmOpts defines a type alias for a list of wasm options.
 	EmptyWasmOpts []wasmkeeper.Option
 
-	Upgrades = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,
-		v4_1.Upgrade, v5.Upgrade,
+	Upgrades = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,v4_1.Upgrade,
+		v5.Upgrade,
 	}
 )
 
@@ -185,11 +181,11 @@ type TerpApp struct {
 
 	// the module manager
 	mm *module.Manager
-	mb *module.BasicManager
 	sm *module.SimulationManager
 
 	// module configurator
 	configurator module.Configurator
+	homePath     string
 }
 
 // NewTerpApp returns a reference to an initialized TerpApp.
@@ -198,10 +194,12 @@ func NewTerpApp(
 	db dbm.DB,
 	traceStore io.Writer,
 	loadLatest bool,
+	homePath string,
 	appOpts servertypes.AppOptions,
 	wasmOpts []wasmkeeper.Option,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *TerpApp {
+
 	encodingConfig := MakeEncodingConfig()
 
 	appCodec, legacyAmino := encodingConfig.Marshaler, encodingConfig.Amino
@@ -224,6 +222,7 @@ func NewTerpApp(
 		tkeys:             storetypes.NewTransientStoreKeys(paramstypes.TStoreKey),
 		memKeys:           storetypes.NewMemoryStoreKeys(capabilitytypes.MemStoreKey),
 	}
+	app.homePath = homePath
 
 	// Setup keepers
 	app.AppKeepers = keepers.NewAppKeepers(
@@ -319,8 +318,7 @@ func NewTerpApp(
 				SignModeHandler: txConfig.SignModeHandler(),
 				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 			},
-
-			GovKeeper:         app.GovKeeper,
+			SmartAccount:      app.SmartAccountKeeper,
 			IBCKeeper:         app.IBCKeeper,
 			FeeShareKeeper:    app.FeeShareKeeper,
 			BankKeeperFork:    app.BankKeeper, // since we need extra methods
@@ -354,7 +352,7 @@ func NewTerpApp(
 	// see cmd/wasmd/root.go: 206 - 214 approx
 	if manager := app.SnapshotManager(); manager != nil {
 		err := manager.RegisterExtensions(
-			wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), &app.WasmKeeper),
+			wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), app.WasmKeeper),
 		)
 		if err != nil {
 			panic(fmt.Errorf("failed to register snapshot extension: %s", err))
@@ -416,6 +414,10 @@ func (app *TerpApp) setPostHandler() {
 
 // Name returns the name of the App
 func (app *TerpApp) Name() string { return app.BaseApp.Name() }
+
+func (app *TerpApp) GetBaseApp() *baseapp.BaseApp {
+	return app.BaseApp
+}
 
 // BeginBlocker application updates every begin block
 func (app *TerpApp) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
@@ -594,6 +596,7 @@ func (app *TerpApp) setupUpgradeHandlers(cfg module.Configurator) {
 				cfg,
 				app.BaseApp,
 				&app.AppKeepers,
+				app.homePath,
 			),
 		)
 	}

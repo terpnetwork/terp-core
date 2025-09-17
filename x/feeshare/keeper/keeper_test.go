@@ -13,7 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 
-	"github.com/terpnetwork/terp-core/v4/app/apptesting"
+	testutils "github.com/terpnetwork/terp-core/v4/app/testutil"
 	"github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
 	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
 )
@@ -28,7 +28,7 @@ type BankKeeper interface {
 }
 
 type KeeperTestSuite struct {
-	apptesting.KeeperTestHelper
+	testutils.KeeperTestHelper
 
 	queryClient       types.QueryClient
 	feeShareMsgServer types.MsgServer
@@ -45,7 +45,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.queryClient = types.NewQueryClient(queryHelper)
 
 	s.feeShareMsgServer = s.App.FeeShareKeeper
-	s.wasmMsgServer = wasmkeeper.NewMsgServerImpl(&s.App.WasmKeeper)
+	s.wasmMsgServer = wasmkeeper.NewMsgServerImpl(s.App.WasmKeeper)
 }
 
 func (s *KeeperTestSuite) FundAccount(ctx sdk.Context, addr sdk.AccAddress, amounts sdk.Coins) error {

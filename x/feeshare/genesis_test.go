@@ -28,7 +28,7 @@ func TestGenesisTestSuite(t *testing.T) {
 }
 
 func (s *GenesisTestSuite) SetupTest() {
-	app := app.Setup(s.T())
+	app := app.Setup(false)
 	ctx := app.BaseApp.NewContext(false)
 
 	s.app = app

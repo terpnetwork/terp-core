@@ -10,13 +10,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/terpnetwork/terp-core/v4/app"
-	"github.com/terpnetwork/terp-core/v4/app/apptesting"
 	ap "github.com/terpnetwork/terp-core/v4/app/params"
+	testutils "github.com/terpnetwork/terp-core/v4/app/testutil"
 	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
 )
 
 type KeeperTestSuite struct {
-	apptesting.KeeperTestHelper
+	testutils.KeeperTestHelper
 
 	clientCtx   client.Context
 	queryClient types.QueryClient
