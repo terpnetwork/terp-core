@@ -13,9 +13,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/strangelove-ventures/interchaintest/v8"
-	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v8/ibc"
+	"github.com/strangelove-ventures/interchaintest/v10"
+	"github.com/strangelove-ventures/interchaintest/v10/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v10/ibc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,8 +25,8 @@ var (
 	mnemonic   = "decorate bright ozone fork gallery riot bus exhaust worth way bone indoor calm squirrel merry zero scheme cotton until shop any excess stage laundry"
 )
 
-// TestBasicBtsgStart is a basic test to assert that spinning up a Terp Network network with one validator works properly.
-func TestBasicBtsgStart(t *testing.T) {
+// TestBasicTerpStart is a basic test to assert that spinning up a Terp Network network with one validator works properly.
+func TestBasicTerpStart(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -166,7 +166,7 @@ func testBank(ctx context.Context, t *testing.T, chain *cosmos.CosmosChain, user
 
 	// send 1 token
 	sendAmt := int64(1)
-	_, err = sendTokens(ctx, chain, users[0], users[1], "ubtsg", sendAmt)
+	_, err = sendTokens(ctx, chain, users[0], users[1], "uterp", sendAmt)
 	require.NoError(t, err)
 
 	// send multiples
@@ -459,7 +459,7 @@ func testStaking(ctx context.Context, t *testing.T, chain *cosmos.CosmosChain, u
 	t.Run("misc", func(t *testing.T) {
 		params, err := chain.StakingQueryParams(ctx)
 		require.NoError(t, err)
-		require.EqualValues(t, "ubtsg", params.BondDenom)
+		require.EqualValues(t, "uterp", params.BondDenom)
 
 		pool, err := chain.StakingQueryPool(ctx)
 		require.NoError(t, err)

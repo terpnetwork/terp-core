@@ -23,6 +23,8 @@ import (
 	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
 
 	tmcfg "github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/crypto"
+	"github.com/cometbft/cometbft/libs/bytes"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
@@ -231,7 +233,6 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
-		// NewTestnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 		AddGenesisIcaCmd(app.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
 		DebugCmd(),
@@ -239,6 +240,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		pruning.Cmd(ac.newApp, app.DefaultNodeHome),
 	)
 
+	server.AddTestnetCreatorCommand(rootCmd, ac.newTestnetApp, addModuleInitFlags)
 	server.AddCommands(rootCmd, app.DefaultNodeHome, ac.newApp, ac.appExport, addModuleInitFlags)
 	wasmcli.ExtendUnsafeResetAllCmd(rootCmd)
 
@@ -430,4 +432,57 @@ var tempDir = func() string {
 	}
 
 	return dir
+}
+
+// newTestnetApp starts by running the normal newApp method. From there, the app interface returned is modified in order
+// for a testnet to be created from the provided app.
+func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
+	// Create an app and type cast to an BitsongApp
+	terpApp := ac.newApp(logger, db, traceStore, appOpts)
+	bitsongApp, ok := terpApp.(*app.TerpApp)
+	if !ok {
+		panic("app created from newApp is not of type bitsongApp")
+	}
+
+	newValAddr, ok := appOpts.Get(server.KeyNewValAddr).(bytes.HexBytes)
+	if !ok {
+		panic("newValAddr is not of type bytes.HexBytes")
+	}
+	newValPubKey, ok := appOpts.Get(server.KeyUserPubKey).(crypto.PubKey)
+	if !ok {
+		panic("newValPubKey is not of type crypto.PubKey")
+	}
+	newOperatorAddress, ok := appOpts.Get(server.KeyNewOpAddr).(string)
+	if !ok {
+		panic("newOperatorAddress is not of type string")
+	}
+	upgradeToTrigger, ok := appOpts.Get(server.KeyTriggerTestnetUpgrade).(string)
+	if !ok {
+		panic("upgradeToTrigger is not of type string")
+	}
+
+	// if !ok {
+	// 	panic("cannot parse broken validators strings")
+	// }
+
+	// brokenVals := strings.Split(brokenValidators, ",")
+	// fmt.Printf("brokenVals: %v\n", brokenVals)
+
+	// get the json file to additional vals powers
+	// newValsPowerJson, ok := appOpts.Get(testnetserver.KeyNewValsPowerJson).(string)
+	// if !ok {
+	// 	panic(fmt.Errorf("expected path to new validators json %s", testnetserver.KeyNewValsPowerJson))
+	// }
+
+	//  parse json to get list of validators
+	// [{"val":  "bitsong1val...", "num_dels": , "num_tokens": ,"jailed": }]
+	// newValsPower, err := testnetserver.ParseValidatorInfos(newValsPowerJson)
+	// if err != nil {
+	// 	panic(fmt.Errorf("error parsing validator infos %v ", err))
+	// }
+	// fmt.Printf("newValsPower: %v\n", newValsPower)
+
+	// Make modifications to the normal BitsongApp required to run the network locally
+	return app.InitTerpAppForTestnet(bitsongApp, newValAddr, newValPubKey, newOperatorAddress, upgradeToTrigger, newOperatorAddress) //newValsPower
+
 }

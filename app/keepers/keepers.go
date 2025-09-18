@@ -183,8 +183,6 @@ type AppKeepers struct {
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper      capabilitykeeper.ScopedKeeper
 
-	ScopedWasmKeeper capabilitykeeper.ScopedKeeper
-
 	DripKeeper dripkeeper.Keeper
 
 	// Middleware wrapper
@@ -240,7 +238,6 @@ func NewAppKeepers(
 	scopedIBCKeeper := appKeepers.CapabilityKeeper.ScopeToModule(ibcexported.ModuleName)
 	scopedICAHostKeeper := appKeepers.CapabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
 	scopedICAControllerKeeper := appKeepers.CapabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
-	scopedWasmKeeper := appKeepers.CapabilityKeeper.ScopeToModule(wasmtypes.ModuleName)
 
 	// add keepers
 	Bech32Prefix := "terp"
@@ -441,7 +438,7 @@ func NewAppKeepers(
 		appKeepers.Ics20WasmHooks,
 	)
 
-	// Initialize packet forward middleware router
+	// Initialize packet forward middleware router (BEFORE transferKeeper)
 	appKeepers.PacketForwardKeeper = packetforwardkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[packetforwardtypes.StoreKey]),
@@ -465,6 +462,7 @@ func NewAppKeepers(
 		govModAddress,
 	)
 	appKeepers.TransferKeeper = &transferKeeper
+
 	appKeepers.PacketForwardKeeper.SetTransferKeeper(appKeepers.TransferKeeper)
 
 	icaHostKeeper := icahostkeeper.NewKeeper(
@@ -490,6 +488,17 @@ func NewAppKeepers(
 		govModAddress,
 	)
 	appKeepers.ICAControllerKeeper = &icaControllerKeeper
+
+	// Create Transfer Stack
+	var transferStack porttypes.IBCModule
+	transferStack = transfer.NewIBCModule(*appKeepers.TransferKeeper)
+	transferStack = ibchooks.NewIBCMiddleware(transferStack, &appKeepers.HooksICS4Wrapper)
+	transferStack = packetforward.NewIBCMiddleware(
+		transferStack,
+		appKeepers.PacketForwardKeeper,
+		0,
+		packetforwardkeeper.DefaultForwardTransferPacketTimeoutTimestamp,
+	)
 
 	// create evidence keeper with router
 	evidenceKeeper := evidencekeeper.NewKeeper(
@@ -627,17 +636,6 @@ func NewAppKeepers(
 	// Set legacy router for backwards compatibility with gov v1beta1
 	appKeepers.GovKeeper.SetLegacyRouter(govRouter)
 
-	// Create Transfer Stack
-	var transferStack porttypes.IBCModule
-	transferStack = transfer.NewIBCModule(*appKeepers.TransferKeeper)
-	transferStack = ibchooks.NewIBCMiddleware(transferStack, &appKeepers.HooksICS4Wrapper)
-	transferStack = packetforward.NewIBCMiddleware(
-		transferStack,
-		appKeepers.PacketForwardKeeper,
-		0,
-		packetforwardkeeper.DefaultForwardTransferPacketTimeoutTimestamp,
-	)
-
 	// Create Interchain Accounts Stack
 	// SendPacket, since it is originating from the application to core IBC:
 	// icaAuthModuleKeeper.SendTx -> icaController.SendPacket -> fee.SendPacket -> channel.SendPacket
@@ -671,7 +669,6 @@ func NewAppKeepers(
 	clientKeeper.AddRoute(ibcwlctypes.ModuleName, ibcWasmLightClientModule)
 
 	appKeepers.ScopedIBCKeeper = scopedIBCKeeper
-	appKeepers.ScopedWasmKeeper = scopedWasmKeeper
 	appKeepers.ScopedICAHostKeeper = scopedICAHostKeeper
 	appKeepers.ScopedICAControllerKeeper = scopedICAControllerKeeper
 

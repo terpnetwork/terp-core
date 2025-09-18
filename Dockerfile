@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine AS go-builder
+FROM golang:1.24-alpine AS go-builder
 
 SHELL ["/bin/sh", "-ecuxo", "pipefail"]
 # this comes from standard alpine nightly file
@@ -17,7 +17,7 @@ ADD go.mod go.sum ./
 # Pull in the exact wasmvm lib that the Cosmos SDK wants
 # ---------------------------------------------------------
 RUN ARCH=$(uname -m) && \
-    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v2 | awk '{print $2}') && \
+    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}') && \
     wget -q https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/libwasmvm_muslc.$ARCH.a \
          -O /lib/libwasmvm_muslc.$ARCH.a && \
     wget -q https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/checksums.txt -O /tmp/checksums.txt && \

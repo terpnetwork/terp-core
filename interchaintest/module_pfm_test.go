@@ -7,16 +7,18 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	transfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
-	"github.com/strangelove-ventures/interchaintest/v8"
-	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v8/ibc"
-	interchaintestrelayer "github.com/strangelove-ventures/interchaintest/v8/relayer"
-	"github.com/strangelove-ventures/interchaintest/v8/testreporter"
-	"github.com/strangelove-ventures/interchaintest/v8/testutil"
+	"github.com/strangelove-ventures/interchaintest/v10"
+	"github.com/strangelove-ventures/interchaintest/v10/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v10/ibc"
+	interchaintestrelayer "github.com/strangelove-ventures/interchaintest/v10/relayer"
+	"github.com/strangelove-ventures/interchaintest/v10/testreporter"
+	"github.com/strangelove-ventures/interchaintest/v10/testutil"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
+
+	transfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type PacketMetadata struct {
@@ -51,7 +53,7 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 	// base config which all networks will use as defaults.
 	baseCfg := ibc.ChainConfig{
 		Type:                "cosmos",
-		Name:                "terp",
+		Name:                "bitsongd",
 		ChainID:             "", // change this for each
 		Images:              []ibc.DockerImage{TerpImage},
 		Bin:                 "terpd",
@@ -80,7 +82,7 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 	baseCfg.ChainID = chainID_D
 	configD := baseCfg
 
-	// Create chain factory with multiple Terp individual networks.
+	// Create chain factory with multiple Bitsong individual networks.
 	numVals := 1
 	numFullNodes := 0
 
@@ -127,6 +129,7 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 	const pathAB = "ab"
 	const pathBC = "bc"
 	const pathCD = "cd"
+	const pathDA = "da"
 
 	ic := interchaintest.NewInterchain().
 		AddChain(chainA).
@@ -165,8 +168,8 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 		_ = ic.Close()
 	})
 
-	const userFunds = int64(10_000_000_000)
-	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), sdkmath.NewInt(userFunds), chainA, chainB, chainC, chainD)
+	userFunds := sdkmath.NewInt(10_000_000_000)
+	users := interchaintest.GetAndFundTestUsers(t, ctx, t.Name(), userFunds, chainA, chainB, chainC, chainD)
 
 	abChan, err := ibc.GetTransferChannel(ctx, r, eRep, chainID_A, chainID_B)
 	require.NoError(t, err)
@@ -191,7 +194,7 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 		func() {
 			err := r.StopRelayer(ctx, eRep)
 			if err != nil {
-				t.Logf("an error occured while stopping the relayer: %s", err)
+				t.Logf("an error occurred while stopping the relayer: %s", err)
 			}
 		},
 	)
@@ -199,7 +202,7 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 	// Get original account balances
 	userA, userB, userC, userD := users[0], users[1], users[2], users[3]
 
-	const transferAmount int64 = 100000
+	transferAmount := sdkmath.NewInt(100_000)
 
 	// Compose the prefixed denoms and ibc denom for asserting balances
 	firstHopDenom := transfertypes.GetPrefixedDenom(baChan.PortID, baChan.ChannelID, chainA.Config().Denom)
@@ -224,7 +227,7 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 		transfer := ibc.WalletAmount{
 			Address: userB.FormattedAddress(),
 			Denom:   chainA.Config().Denom,
-			Amount:  sdkmath.NewInt(transferAmount),
+			Amount:  transferAmount,
 		}
 
 		secondHopMetadata := &PacketMetadata{
@@ -257,7 +260,7 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 		require.NoError(t, err)
 		_, err = testutil.PollForAck(ctx, chainA, chainAHeight, chainAHeight+30, transferTx.Packet)
 		require.NoError(t, err)
-		err = testutil.WaitForBlocks(ctx, 1, chainA)
+		err = testutil.WaitForBlocks(ctx, 5, chainA)
 		require.NoError(t, err)
 
 		chainABalance, err := chainA.GetBalance(ctx, userA.FormattedAddress(), chainA.Config().Denom)
@@ -272,10 +275,10 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 		chainDBalance, err := chainD.GetBalance(ctx, userD.FormattedAddress(), thirdHopIBCDenom)
 		require.NoError(t, err)
 
-		require.Equal(t, userFunds-transferAmount, chainABalance)
-		require.Equal(t, int64(0), chainBBalance)
-		require.Equal(t, int64(0), chainCBalance)
-		require.Equal(t, transferAmount, chainDBalance)
+		require.Equal(t, userFunds.Sub(transferAmount), chainABalance)
+		require.Equal(t, sdkmath.NewInt(0), chainBBalance)
+		require.Equal(t, sdkmath.NewInt(0), chainCBalance)
+		require.Equal(t, transferAmount.Int64(), chainDBalance.Int64())
 
 		firstHopEscrowBalance, err := chainA.GetBalance(ctx, firstHopEscrowAccount, chainA.Config().Denom)
 		require.NoError(t, err)
@@ -286,8 +289,8 @@ func TestPacketForwardMiddlewareRouter(t *testing.T) {
 		thirdHopEscrowBalance, err := chainC.GetBalance(ctx, thirdHopEscrowAccount, secondHopIBCDenom)
 		require.NoError(t, err)
 
-		require.Equal(t, transferAmount, firstHopEscrowBalance)
-		require.Equal(t, transferAmount, secondHopEscrowBalance)
-		require.Equal(t, transferAmount, thirdHopEscrowBalance)
+		require.Equal(t, transferAmount.Int64(), firstHopEscrowBalance.Int64())
+		require.Equal(t, transferAmount.Int64(), secondHopEscrowBalance.Int64())
+		require.Equal(t, transferAmount.Int64(), thirdHopEscrowBalance.Int64())
 	})
 }

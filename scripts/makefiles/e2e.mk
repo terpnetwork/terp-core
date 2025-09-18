@@ -16,7 +16,7 @@ e2e-help:
 	@echo "  docker-build-e2e-init-node            Build e2e init node Docker image"
 	@echo "  remove-resources                      Remove e2e resources"
 	@echo "  setup                                 Set up e2e environment"
-	@echo "  basic						   Run basic test"
+	@echo "  basic						           Run basic test"
 	@echo "  upgrade   				       Run basic planned upgrade test"
 	@echo "  upgrade-local 				   Run basic upgrade locally after compiling a local image as terpnetwork/terp-core:local"
 	@echo "  statesync					   Run basic test on node statesync capabilities"

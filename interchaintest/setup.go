@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	ibclocalhost "github.com/cosmos/ibc-go/v10/modules/light-clients/09-localhost"
 	"github.com/docker/docker/client"
-	interchaintest "github.com/strangelove-ventures/interchaintest/v8"
-	"github.com/strangelove-ventures/interchaintest/v8/chain/cosmos"
-	"github.com/strangelove-ventures/interchaintest/v8/ibc"
-	"github.com/strangelove-ventures/interchaintest/v8/testreporter"
+	interchaintest "github.com/strangelove-ventures/interchaintest/v10"
+	"github.com/strangelove-ventures/interchaintest/v10/chain/cosmos"
+	"github.com/strangelove-ventures/interchaintest/v10/ibc"
+	"github.com/strangelove-ventures/interchaintest/v10/testreporter"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
@@ -41,7 +41,7 @@ var (
 	TerpImage = ibc.DockerImage{
 		Repository: terpRepo,
 		Version:    terpVersion,
-		UIDGID:     "1025:1025",
+		UidGid:     "1025:1025",
 	}
 
 	// SDK v47 Genesis
@@ -73,7 +73,7 @@ var (
 		GasAdjustment:       2.0,
 		TrustingPeriod:      "112h",
 		NoHostMount:         false,
-		ConfigFileOverrides: nil,
+		ConfigFileOverrides: nil, // TODO: use faster blocks
 		EncodingConfig:      terpEncoding(),
 		ModifyGenesis:       cosmos.ModifyGenesis(defaultGenesisKV),
 	}
@@ -91,7 +91,6 @@ func terpEncoding() *testutil.TestEncodingConfig {
 	cfg := cosmos.DefaultEncoding()
 
 	// register custom types
-	ibclocalhost.RegisterInterfaces(cfg.InterfaceRegistry)
 	wasmtypes.RegisterInterfaces(cfg.InterfaceRegistry)
 	feesharetypes.RegisterInterfaces(cfg.InterfaceRegistry)
 	tokenfactorytypes.RegisterInterfaces(cfg.InterfaceRegistry)
@@ -160,7 +159,7 @@ func BuildInitialChain(t *testing.T, chains []ibc.Chain) (*interchaintest.Interc
 	rep := testreporter.NewNopReporter()
 	eRep := rep.RelayerExecReporter(t)
 
-	ctx := context.Background()
+	ctx, _ := context.WithTimeout(context.Background(), 60*time.Second)
 	client, network := interchaintest.DockerSetup(t)
 
 	err := ic.Build(ctx, eRep, interchaintest.InterchainBuildOptions{

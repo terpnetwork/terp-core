@@ -13,7 +13,7 @@ func GetDockerImageInfo() (repo, version string) {
 	repo = TerpE2ERepo
 	if !found {
 		// make local-image
-		repo = "terpnetwork"
+		repo = "terpnetwork/terp-core"
 		branchVersion = "local"
 	}
 

@@ -10,14 +10,19 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
+	"cosmossdk.io/api/cosmos/crypto/ed25519"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
 	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/crypto"
+	"github.com/cometbft/cometbft/libs/bytes"
 	tmos "github.com/cometbft/cometbft/libs/os"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -35,11 +40,13 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/posthandler"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	txmodule "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
@@ -54,6 +61,11 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	ibcchanneltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
+
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"github.com/spf13/cast"
 
@@ -635,4 +647,209 @@ func (app *TerpApp) GetChainBondDenom() string {
 		d = "uterpx"
 	}
 	return d
+}
+
+// source: https://github.com/osmosis-labs/osmosis/blob/7b1a78d397b632247fe83f51867f319adf3a858c/app/app.go#L786
+// one-liner: cd ../bitsong-snapshots && bitsongd comet unsafe-reset-all && cp ~/.bitsongd/data/priv_validator_state.json ~/.bitsongd/priv_validator_state.json && lz4 -c -d <bitsong-snapshot>.tar.lz4 | tar -x -C $HOME/.bitsongd && cp ~/.bitsongd/priv_validator_state.json ~/.bitsongd/data/priv_validator_state.json && cd ../go-bitsong && make install && bitsongd in-place-testnet test1 bitsong1mt3wj088jvurp3vlh2yfar6vqrqp0llnsj8lar bitsongvaloper1qxw4fjged2xve8ez7nu779tm8ejw92rv0vcuqr
+func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey crypto.PubKey, newOperatorAddress, upgradeToTrigger, retainValAddr string) *TerpApp { // newValsPower []testnetserver.ValidatorInfo
+
+	ctx := app.BaseApp.NewUncachedContext(true, cmtproto.Header{})
+	pubkey := &ed25519.PubKey{Key: newValPubKey.Bytes()}
+	pubkeyAny, err := types.NewAnyWithValue(pubkey)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	// STAKING
+	brokeValAddr, err := sdk.ValAddressFromBech32(retainValAddr)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	retainedValidator, err := app.StakingKeeper.GetValidator(ctx, brokeValAddr)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	fmt.Printf("retainedValidator: %v\n", retainedValidator)
+
+	retainedValDels, err := app.StakingKeeper.GetValidatorDelegations(ctx, brokeValAddr)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	fmt.Printf("retainedValDels: %v\n", retainedValDels)
+
+	// Create Validator struct for our new validator.
+	_, bz, err := bech32.DecodeAndConvert(newOperatorAddress)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	bech32Addr, err := bech32.ConvertAndEncode("bitsongvaloper", bz)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	newVal := stakingtypes.Validator{
+		OperatorAddress: bech32Addr,
+		ConsensusPubkey: pubkeyAny,
+		Jailed:          false,
+		Status:          stakingtypes.Bonded,
+		Tokens:          math.NewInt(900000000000000),
+		DelegatorShares: math.LegacyMustNewDecFromStr("10000000"),
+		Description: stakingtypes.Description{
+			Moniker: "Testnet Validator",
+		},
+		Commission: stakingtypes.Commission{
+			CommissionRates: stakingtypes.CommissionRates{
+				Rate:          math.LegacyMustNewDecFromStr("0.05"),
+				MaxRate:       math.LegacyMustNewDecFromStr("0.1"),
+				MaxChangeRate: math.LegacyMustNewDecFromStr("0.05"),
+			},
+		},
+		MinSelfDelegation: math.OneInt(),
+	}
+
+	// Remove all validators from power store
+	stakingKey := app.GetKey(stakingtypes.ModuleName)
+	stakingStore := ctx.KVStore(stakingKey)
+	iterator, err := app.StakingKeeper.ValidatorsPowerStoreIterator(ctx)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	for ; iterator.Valid(); iterator.Next() {
+		stakingStore.Delete(iterator.Key())
+	}
+	iterator.Close()
+
+	// Remove all valdiators from last validators store
+	iterator, err = app.StakingKeeper.LastValidatorsIterator(ctx)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	for ; iterator.Valid(); iterator.Next() {
+		stakingStore.Delete(iterator.Key())
+	}
+	iterator.Close()
+
+	//  TODO: retain validator from store
+	// Remove all validators from validators store
+	iterator = storetypes.KVStorePrefixIterator(stakingStore, stakingtypes.ValidatorsKey)
+	for ; iterator.Valid(); iterator.Next() {
+		stakingStore.Delete(iterator.Key())
+	}
+	iterator.Close()
+
+	// Remove all validators from unbonding queue
+	iterator = storetypes.KVStorePrefixIterator(stakingStore, stakingtypes.ValidatorQueueKey)
+	for ; iterator.Valid(); iterator.Next() {
+		stakingStore.Delete(iterator.Key())
+	}
+	iterator.Close()
+
+	// Add our validator to power and last validators store
+	err = app.StakingKeeper.SetValidator(ctx, newVal)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	// Add retainedValidator to power and last validators store
+	err = app.StakingKeeper.SetValidator(ctx, retainedValidator)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	err = app.StakingKeeper.SetValidatorByConsAddr(ctx, newVal)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	err = app.StakingKeeper.SetValidatorByConsAddr(ctx, retainedValidator)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	err = app.StakingKeeper.SetValidatorByPowerIndex(ctx, newVal)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	valAddr, err := sdk.ValAddressFromBech32(newVal.GetOperator())
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	err = app.StakingKeeper.SetLastValidatorPower(ctx, valAddr, 1)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	if err := app.StakingKeeper.Hooks().AfterValidatorCreated(ctx, valAddr); err != nil {
+		panic(err)
+	}
+
+	// Initialize records for this validator across all distribution stores
+	valAddr, err = sdk.ValAddressFromBech32(newVal.GetOperator())
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	err = app.DistrKeeper.SetValidatorHistoricalRewards(ctx, valAddr, 0, distrtypes.NewValidatorHistoricalRewards(sdk.DecCoins{}, 1))
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	err = app.DistrKeeper.SetValidatorCurrentRewards(ctx, valAddr, distrtypes.NewValidatorCurrentRewards(sdk.DecCoins{}, 1))
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	err = app.DistrKeeper.SetValidatorAccumulatedCommission(ctx, valAddr, distrtypes.InitialValidatorAccumulatedCommission())
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+	err = app.DistrKeeper.SetValidatorOutstandingRewards(ctx, valAddr, distrtypes.ValidatorOutstandingRewards{Rewards: sdk.DecCoins{}})
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	// SLASHING
+	// Set validator signing info for our new validator.
+	newConsAddr := sdk.ConsAddress(newValAddr.Bytes())
+	newValidatorSigningInfo := slashingtypes.ValidatorSigningInfo{
+		Address:     newConsAddr.String(),
+		StartHeight: app.LastBlockHeight() - 1,
+		Tombstoned:  false,
+	}
+	err = app.SlashingKeeper.SetValidatorSigningInfo(ctx, newConsAddr, newValidatorSigningInfo)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	newExpeditedVotingPeriod := time.Minute
+	newVotingPeriod := time.Minute * 2
+
+	govParams, err := app.GovKeeper.Params.Get(ctx)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	govParams.ExpeditedVotingPeriod = &newExpeditedVotingPeriod
+	govParams.VotingPeriod = &newVotingPeriod
+	govParams.MinDeposit = sdk.NewCoins(sdk.NewInt64Coin("ubtsg", 100000000))
+	govParams.ExpeditedMinDeposit = sdk.NewCoins(sdk.NewInt64Coin("ubtsg", 150000000))
+	err = app.GovKeeper.Params.Set(ctx, govParams)
+	if err != nil {
+		tmos.Exit(err.Error())
+	}
+
+	// BANK
+	//
+
+	// Fund edgenet faucet
+
+	// UPGRADE
+	//
+
+	if upgradeToTrigger != "" {
+		upgradePlan := upgradetypes.Plan{
+			Name:   upgradeToTrigger,
+			Height: app.LastBlockHeight() + 10,
+		}
+		err = app.UpgradeKeeper.ScheduleUpgrade(ctx, upgradePlan)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return app
 }
