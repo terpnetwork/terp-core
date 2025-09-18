@@ -34,7 +34,7 @@ var (
 	TerpMainRepo = "ghcr.io/terpnetwork/terp-core"
 
 	IBCRelayerImage   = "ghcr.io/cosmos/relayer"
-	IBCRelayerVersion = "justin-localhost-ibc"
+	IBCRelayerVersion = "main"
 
 	terpRepo, terpVersion = GetDockerImageInfo()
 

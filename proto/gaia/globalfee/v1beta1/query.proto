@@ -9,11 +9,10 @@ option go_package = "github.com/cosmos/gaia/x/globalfee/types";
 
 // Query defines the gRPC querier service.
 service Query {
-   // MinimumGasPrices returns the minimum gas prices.
+  // MinimumGasPrices returns the minimum gas prices.
   rpc MinimumGasPrices(QueryMinimumGasPricesRequest)
       returns (QueryMinimumGasPricesResponse) {
-    option (google.api.http).get =
-        "/gaia/globalfee/v1beta1/minimum_gas_prices";
+    option (google.api.http).get = "/gaia/globalfee/v1beta1/minimum_gas_prices";
   }
 }
 

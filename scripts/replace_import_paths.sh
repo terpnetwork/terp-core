@@ -1,4 +1,5 @@
 #!/bin/bash
+# Upgrades this workspace workspace version effeciently 
 
 set -euo pipefail
 

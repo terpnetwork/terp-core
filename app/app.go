@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -34,8 +35,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	runtimeservices "github.com/cosmos/cosmos-sdk/runtime/services"
-	"github.com/cosmos/cosmos-sdk/server"
-	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -48,6 +47,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/posthandler"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
+	"github.com/cosmos/cosmos-sdk/server/api"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	txmodule "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -70,7 +70,6 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/terpnetwork/terp-core/v4/app/keepers"
-	"github.com/terpnetwork/terp-core/v4/app/openapiconsole"
 	"github.com/terpnetwork/terp-core/v4/docs"
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
@@ -561,13 +560,20 @@ func (app *TerpApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APICo
 	// Register grpc-gateway routes for all modules.
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// register app's OpenAPI routes.
-	apiSvr.Router.Handle("/static/openapi.yml", http.FileServer(http.FS(docs.Docs)))
-	apiSvr.Router.HandleFunc("/", openapiconsole.Handler(appName, "/static/openapi.yml"))
+	// Register legacy and grpc-gateway routes for all modules.
+	module.NewBasicManagerFromManager(app.mm, nil).RegisterGRPCGatewayRoutes(
+		clientCtx,
+		apiSvr.GRPCGatewayRouter,
+	) // Register legacy and grpc-gateway routes for all modules.
+
+	module.NewBasicManagerFromManager(app.mm, nil).RegisterGRPCGatewayRoutes(
+		clientCtx,
+		apiSvr.GRPCGatewayRouter,
+	)
 
 	// register swagger API from root so that other applications can override easily
-	if err := server.RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {
-		panic(err)
+	if apiConfig.Swagger {
+		RegisterSwaggerAPI(clientCtx, apiSvr)
 	}
 }
 
@@ -659,6 +665,25 @@ func getReflectionService() *runtimeservices.ReflectionService {
 	}
 	cachedReflectionService = reflectionSvc
 	return reflectionSvc
+}
+
+// RegisterSwaggerAPI registers swagger route with API Server
+func RegisterSwaggerAPI(_ client.Context, apiSvr *api.Server) error {
+	staticSubDir, err := fs.Sub(docs.Docs, "static")
+	if err != nil {
+		return err
+	}
+
+	staticServer := http.FileServer(http.FS(staticSubDir))
+
+	// Handle /swag without trailing slash - redirect to /swag/
+	apiSvr.Router.HandleFunc("/swag", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/swag/", http.StatusMovedPermanently)
+	})
+
+	apiSvr.Router.PathPrefix("/swag/").Handler(http.StripPrefix("/swag/", staticServer))
+
+	return nil
 }
 
 // source: https://github.com/osmosis-labs/osmosis/blob/7b1a78d397b632247fe83f51867f319adf3a858c/app/app.go#L786

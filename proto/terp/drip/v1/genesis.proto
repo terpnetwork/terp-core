@@ -15,6 +15,8 @@ message Params {
   // enable_drip defines a parameter to enable the drip module
   bool enable_drip = 1;
 
-  // allowed_addresses defines the list of addresses authorized to use the module
-  repeated string allowed_addresses = 3 [ (gogoproto.moretags) = "yaml:\"addresses\"" ];
+  // allowed_addresses defines the list of addresses authorized to use the
+  // module
+  repeated string allowed_addresses = 3
+      [ (gogoproto.moretags) = "yaml:\"addresses\"" ];
 }
