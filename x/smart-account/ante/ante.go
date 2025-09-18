@@ -260,7 +260,7 @@ func (ad AuthenticatorDecorator) AnteHandle(
 // ValidateAuthenticatorFeePayer enforces that the tx fee payer has not been set manually
 // to an account different to the signer of the first message. This is a requirement
 // for the authenticator module.
-// The only user of a manually set fee payer is with fee grants, which are available on bitsong,
+// The only user of a manually set fee payer is with fee grants, which are available on terp,
 // therefore only if an active feegrant exists for the
 func (ad AuthenticatorDecorator) ValidateAuthenticatorFeePayer(ctx sdk.Context, tx sdk.Tx) error {
 	feeTx, ok := tx.(sdk.FeeTx)

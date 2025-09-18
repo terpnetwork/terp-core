@@ -50,7 +50,7 @@ func TestAuthenticatorSuite(t *testing.T) {
 
 func (s *AuthenticatorSuite) SetupTest() {
 
-	// Use the bitsong custom function for creating an bitsong app
+	// Use the terp custom function for creating an terp app
 	ibctesting.DefaultTestingAppInit = bitsongibctesting.SetupTestingApp
 
 	// Here we create the app using ibctesting
@@ -91,8 +91,8 @@ func (s *AuthenticatorSuite) CreateAccount(privKey cryptotypes.PrivKey, amount i
 func (s *AuthenticatorSuite) TestKeyRotationStory() {
 	coins := sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 100))
 	sendMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      coins,
 	}
 
@@ -135,8 +135,8 @@ func (s *AuthenticatorSuite) TestKeyRotationStory() {
 func (s *AuthenticatorSuite) TestCircuitBreaker() {
 	coins := sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 50))
 	sendMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      coins,
 	}
 
@@ -171,8 +171,8 @@ func (s *AuthenticatorSuite) TestCircuitBreaker() {
 func (s *AuthenticatorSuite) TestMessageFilterStory() {
 	coins := sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 50))
 	sendMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      coins,
 	}
 
@@ -195,8 +195,8 @@ func (s *AuthenticatorSuite) TestMessageFilterStory() {
 
 	coins = sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 100))
 	sendMsg = &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      coins,
 	}
 	_, err = s.chainA.SendMsgsFromPrivKeysWithAuthenticator(pks{s.PrivKeys[0]}, pks{s.PrivKeys[1]}, []uint64{1}, sendMsg)
@@ -208,8 +208,8 @@ func (s *AuthenticatorSuite) TestMessageFilterStory() {
 func (s *AuthenticatorSuite) TestKeyRotation() {
 	coins := sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 100))
 	sendMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      coins,
 	}
 
@@ -264,14 +264,14 @@ func (s *AuthenticatorSuite) TestKeyRotation() {
 // it increments a test authenticator state by 1 on each successful pass through the Ante and Post handlers.
 func (s *AuthenticatorSuite) TestAuthenticatorState() {
 	successSendMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1)),
 	}
 	// This amount is too large, so the send should fail
 	failSendMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1_000_000_000_000)),
 	}
 
@@ -296,8 +296,8 @@ func (s *AuthenticatorSuite) TestAuthenticatorState() {
 // TestAuthenticatorMultiMsg tests failure cases for multiple test authenticators
 func (s *AuthenticatorSuite) TestAuthenticatorMultiMsg() {
 	successSendMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1_000)),
 	}
 
@@ -326,8 +326,8 @@ func (s *AuthenticatorSuite) TestAuthenticatorMultiMsg() {
 // that the gas limit is reset after the fee payer is authenticated.
 func (s *AuthenticatorSuite) TestAuthenticatorGas() {
 	sendFromAcc1 := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1_000)),
 	}
 
@@ -343,8 +343,8 @@ func (s *AuthenticatorSuite) TestAuthenticatorGas() {
 	account2 := s.App.AccountKeeper.GetAccount(s.chainA.GetContext(), accountAddr)
 
 	sendFromAcc2 := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", account2.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", account2.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", account2.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", account2.GetAddress()),
 		Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1_000)),
 	}
 
@@ -399,8 +399,8 @@ func (s *AuthenticatorSuite) TestAuthenticatorGas() {
 func (s *AuthenticatorSuite) TestCompositeAuthenticatorAnyOf() {
 	coins := sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 100))
 	sendMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      coins,
 	}
 
@@ -450,8 +450,8 @@ func (s *AuthenticatorSuite) TestCompositeAuthenticatorAllOf() {
 	coins := sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 50))
 
 	sendMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      coins,
 	}
 
@@ -496,8 +496,8 @@ func (s *AuthenticatorSuite) TestCompositeAuthenticatorAllOf() {
 
 	wrongCoins := sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 100))
 	failedSendMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
-		ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", s.Account.GetAddress()),
+		FromAddress: sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
+		ToAddress:   sdk.MustBech32ifyAddressBytes("terp", s.Account.GetAddress()),
 		Amount:      wrongCoins,
 	}
 	// Send from account 0 the account key using the AllOf authenticator
@@ -620,8 +620,8 @@ func (s *AuthenticatorSuite) TestFeeDeduction() {
 			selectedAuthenticators: []uint64{payerYes},
 			messages: []sdk.Msg{
 				&banktypes.MsgSend{
-					FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", address1),
-					ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", address1),
+					FromAddress: sdk.MustBech32ifyAddressBytes("terp", address1),
+					ToAddress:   sdk.MustBech32ifyAddressBytes("terp", address1),
 					Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1_000)),
 				},
 			},
@@ -634,8 +634,8 @@ func (s *AuthenticatorSuite) TestFeeDeduction() {
 			selectedAuthenticators: []uint64{payerNo},
 			messages: []sdk.Msg{
 				&banktypes.MsgSend{
-					FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", address1),
-					ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", address1),
+					FromAddress: sdk.MustBech32ifyAddressBytes("terp", address1),
+					ToAddress:   sdk.MustBech32ifyAddressBytes("terp", address1),
 					Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1_000)),
 				},
 			},
@@ -649,13 +649,13 @@ func (s *AuthenticatorSuite) TestFeeDeduction() {
 			selectedAuthenticators: []uint64{payerYes, otherYes},
 			messages: []sdk.Msg{
 				&banktypes.MsgSend{
-					FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", address1),
-					ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", address1),
+					FromAddress: sdk.MustBech32ifyAddressBytes("terp", address1),
+					ToAddress:   sdk.MustBech32ifyAddressBytes("terp", address1),
 					Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 500)),
 				},
 				&banktypes.MsgSend{
-					FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", address2),
-					ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", address2),
+					FromAddress: sdk.MustBech32ifyAddressBytes("terp", address2),
+					ToAddress:   sdk.MustBech32ifyAddressBytes("terp", address2),
 					Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 500)),
 				},
 			},
@@ -668,13 +668,13 @@ func (s *AuthenticatorSuite) TestFeeDeduction() {
 			selectedAuthenticators: []uint64{payerYes, otherNo},
 			messages: []sdk.Msg{
 				&banktypes.MsgSend{
-					FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", address1),
-					ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", address1),
+					FromAddress: sdk.MustBech32ifyAddressBytes("terp", address1),
+					ToAddress:   sdk.MustBech32ifyAddressBytes("terp", address1),
 					Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 500)),
 				},
 				&banktypes.MsgSend{
-					FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", address2),
-					ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", address2),
+					FromAddress: sdk.MustBech32ifyAddressBytes("terp", address2),
+					ToAddress:   sdk.MustBech32ifyAddressBytes("terp", address2),
 					Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 500)),
 				},
 			},
@@ -688,13 +688,13 @@ func (s *AuthenticatorSuite) TestFeeDeduction() {
 			selectedAuthenticators: []uint64{payerNo, otherNo},
 			messages: []sdk.Msg{
 				&banktypes.MsgSend{
-					FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", address1),
-					ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", address1),
+					FromAddress: sdk.MustBech32ifyAddressBytes("terp", address1),
+					ToAddress:   sdk.MustBech32ifyAddressBytes("terp", address1),
 					Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 500)),
 				},
 				&banktypes.MsgSend{
-					FromAddress: sdk.MustBech32ifyAddressBytes("bitsong", address2),
-					ToAddress:   sdk.MustBech32ifyAddressBytes("bitsong", address2),
+					FromAddress: sdk.MustBech32ifyAddressBytes("terp", address2),
+					ToAddress:   sdk.MustBech32ifyAddressBytes("terp", address2),
 					Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 500)),
 				},
 			},

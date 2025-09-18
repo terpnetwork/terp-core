@@ -65,7 +65,7 @@ type SignatureVerificationTest struct {
 
 // TestSignatureAuthenticator test a non-smart account signature verification
 func (s *SigVerifyAuthenticationSuite) TestSignatureAuthenticator() {
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 
 	// Create a test messages for signing
@@ -292,7 +292,7 @@ func (s *SigVerifyAuthenticationSuite) TestSignatureAuthenticator() {
 
 // TODO: revisit multisignature
 //func (s *SigVerifyAuthenticationSuite) TestMultiSignatureAuthenticator() {
-//	bitsongToken := "bitsong"
+//	bitsongToken := "terp"
 //	priv := []cryptotypes.PrivKey{
 //		s.TestPrivKeys[0],
 //		s.TestPrivKeys[1],

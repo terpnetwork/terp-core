@@ -93,7 +93,7 @@ func (s *AuthenticatorPostSuite) TearDownTest() {
 
 // TestAutenticatorPostHandlerSuccess tests that the post handler can succeed with the default authenticator
 func (s *AuthenticatorPostSuite) TestAuthenticatorPostHandlerSuccess() {
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 
 	// Create a test messages for signing
@@ -148,7 +148,7 @@ func (s *AuthenticatorPostSuite) TestAuthenticatorPostHandlerSuccess() {
 // TestAutenticatorPostHandlerReturnEarly tests that the post handler fails early on IsCircuitBreakActive
 // the transaction should pass through the normal flow.
 func (s *AuthenticatorPostSuite) TestAuthenticatorPostHandlerReturnEarly() {
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 
 	// Create a test messages for signing
@@ -176,7 +176,7 @@ func (s *AuthenticatorPostSuite) TestAuthenticatorPostHandlerReturnEarly() {
 
 // TestAuthenticatorPostHandlerFailConfirmExecution tests how the post handler behaves when ConfirmExecution fails.
 func (s *AuthenticatorPostSuite) TestAuthenticatorPostHandlerFailConfirmExecution() {
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 	approveAndBlock := testutils.TestingAuthenticator{
 		Approve:        testutils.Always,

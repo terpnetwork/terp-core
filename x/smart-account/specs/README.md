@@ -91,7 +91,7 @@ pub enum AuthenticatorSudoMsg {
     OnAuthenticatorRemoved(OnAuthenticatorRemovedRequest),
 
     // These three are run during authenticating a transaction, specifically during steps 3,5,& 7 in the authentication process
-    // link: https://github.com/permissionlessweb/go-bitsong/blob/d7962e28589e2977280cdffbd2d2ea7e62b181e0/x/smart-account/README.md#transaction-authentication-overvie
+    // link: https://github.com/permissionlessweb/go-terp/blob/d7962e28589e2977280cdffbd2d2ea7e62b181e0/x/smart-account/README.md#transaction-authentication-overvie
     Authenticate(AuthenticationRequest),
     Track(TrackRequest),
     ConfirmExecution(ConfirmExecutionRequest),
@@ -116,7 +116,7 @@ For example, a faucet-like account can be created by allowing allowing any spend
   "@type": "/cosmos.bank.v1beta1.MsgSend",
   "amount": [
     {
-      "denom": "ubtsg",
+      "denom": "uterp",
       "amount": "69"
     }
   ]
@@ -126,7 +126,7 @@ For example, a faucet-like account can be created by allowing allowing any spend
 Or a way to mint new tokens during a streaming session:
 ```json
 {
-   "@type":"/bitsong.fantoken.v1beta1.MsgMint",
+   "@type":"/terp.fantoken.v1beta1.MsgMint",
    "sender":"bitsong1...", 
    // ...
 }

@@ -69,7 +69,7 @@ func (s *BaseAuthenticatorSuite) SetupKeys() {
 
 func (s *BaseAuthenticatorSuite) GenSimpleTx(msgs []sdk.Msg, signers []cryptotypes.PrivKey) (sdk.Tx, error) {
 	txconfig := app.MakeEncodingConfig().TxConfig
-	feeCoins := sdk.Coins{sdk.NewInt64Coin("bitsong", 2500)}
+	feeCoins := sdk.Coins{sdk.NewInt64Coin("terp", 2500)}
 	var accNums []uint64
 	var accSeqs []uint64
 

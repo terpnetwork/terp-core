@@ -12,7 +12,7 @@ func GetEncodingConfig() params.EncodingConfig {
 	return encodingConfig
 }
 
-// MakeEncodingConfig creates a new EncodingConfig with all modules registered
+// MakeEncodingConfig creates an EncodingConfig for testing
 func MakeEncodingConfig() params.EncodingConfig {
 	encodingConfig := params.MakeEncodingConfig()
 	std.RegisterLegacyAminoCodec(encodingConfig.Amino)

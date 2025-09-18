@@ -24,7 +24,7 @@ var (
 type KeeperTestHelper struct {
 	suite.Suite
 
-	App         *app.TerpApp                    // Mock bitsong application
+	App         *app.TerpApp                    // Mock terp application
 	Ctx         sdk.Context                     // simulated context
 	QueryHelper *baseapp.QueryServiceTestHelper // GRPC query simulator
 	TestAccs    []sdk.AccAddress                // Test accounts

@@ -170,7 +170,6 @@ func appModules(
 		// cwhooks.NewAppModule(appCodec, app.CWHooksKeeper),
 		ibchooks.NewAppModule(*app.AccountKeeper),
 		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
-
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 	}
 }
@@ -232,7 +231,6 @@ func orderBeginBlockers() []string {
 		ibctransfertypes.ModuleName,
 		ibcexported.ModuleName,
 		icatypes.ModuleName,
-		smartaccounttypes.ModuleName,
 		packetforwardtypes.ModuleName,
 		driptypes.ModuleName,
 		feesharetypes.ModuleName,

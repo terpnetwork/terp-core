@@ -75,7 +75,7 @@ var defaultGenesisStatebytes = []byte{}
 
 // SetupWithCustomHome initializes a new TerpApp with a custom home directory
 func SetupWithCustomHome(isCheckTx bool, dir string) *TerpApp {
-	return SetupWithCustomHomeAndChainId(isCheckTx, dir, "bitsong-2b")
+	return SetupWithCustomHomeAndChainId(isCheckTx, dir, "terp-2b")
 }
 
 func SetupWithCustomHomeAndChainId(isCheckTx bool, dir, chainId string) *TerpApp {

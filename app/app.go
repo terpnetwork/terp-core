@@ -548,13 +548,14 @@ func (app *TerpApp) GetSubspace(moduleName string) paramstypes.Subspace {
 // API server.
 func (app *TerpApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
 	clientCtx := apiSvr.ClientCtx
+
 	// Register new tx routes from grpc-gateway.
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register new tendermint queries routes from grpc-gateway.
 	cmtservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// Register node gRPC service for grpc-gateway.
+	// Register new tendermint queries routes from grpc-gateway.
 	nodeservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register grpc-gateway routes for all modules.
@@ -587,10 +588,6 @@ func (app *TerpApp) RegisterTendermintService(clientCtx client.Context) {
 
 func (app *TerpApp) RegisterNodeService(clientCtx client.Context, cfg config.Config) {
 	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter(), cfg)
-}
-
-func (app *TerpApp) Configurator() module.Configurator {
-	return app.configurator
 }
 
 // configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -649,8 +646,23 @@ func (app *TerpApp) GetChainBondDenom() string {
 	return d
 }
 
+// we cache the reflectionService to save us time within tests.
+var cachedReflectionService *runtimeservices.ReflectionService = nil
+
+func getReflectionService() *runtimeservices.ReflectionService {
+	if cachedReflectionService != nil {
+		return cachedReflectionService
+	}
+	reflectionSvc, err := runtimeservices.NewReflectionService()
+	if err != nil {
+		panic(err)
+	}
+	cachedReflectionService = reflectionSvc
+	return reflectionSvc
+}
+
 // source: https://github.com/osmosis-labs/osmosis/blob/7b1a78d397b632247fe83f51867f319adf3a858c/app/app.go#L786
-// one-liner: cd ../bitsong-snapshots && bitsongd comet unsafe-reset-all && cp ~/.bitsongd/data/priv_validator_state.json ~/.bitsongd/priv_validator_state.json && lz4 -c -d <bitsong-snapshot>.tar.lz4 | tar -x -C $HOME/.bitsongd && cp ~/.bitsongd/priv_validator_state.json ~/.bitsongd/data/priv_validator_state.json && cd ../go-bitsong && make install && bitsongd in-place-testnet test1 bitsong1mt3wj088jvurp3vlh2yfar6vqrqp0llnsj8lar bitsongvaloper1qxw4fjged2xve8ez7nu779tm8ejw92rv0vcuqr
+// one-liner: cd ../terp-snapshots && bitsongd comet unsafe-reset-all && cp ~/.bitsongd/data/priv_validator_state.json ~/.bitsongd/priv_validator_state.json && lz4 -c -d <terp-snapshot>.tar.lz4 | tar -x -C $HOME/.bitsongd && cp ~/.bitsongd/priv_validator_state.json ~/.bitsongd/data/priv_validator_state.json && cd ../go-terp && make install && bitsongd in-place-testnet test1 bitsong1mt3wj088jvurp3vlh2yfar6vqrqp0llnsj8lar bitsongvaloper1qxw4fjged2xve8ez7nu779tm8ejw92rv0vcuqr
 func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey crypto.PubKey, newOperatorAddress, upgradeToTrigger, retainValAddr string) *TerpApp { // newValsPower []testnetserver.ValidatorInfo
 
 	ctx := app.BaseApp.NewUncachedContext(true, cmtproto.Header{})
@@ -826,8 +838,8 @@ func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey
 
 	govParams.ExpeditedVotingPeriod = &newExpeditedVotingPeriod
 	govParams.VotingPeriod = &newVotingPeriod
-	govParams.MinDeposit = sdk.NewCoins(sdk.NewInt64Coin("ubtsg", 100000000))
-	govParams.ExpeditedMinDeposit = sdk.NewCoins(sdk.NewInt64Coin("ubtsg", 150000000))
+	govParams.MinDeposit = sdk.NewCoins(sdk.NewInt64Coin("uterp", 100000000))
+	govParams.ExpeditedMinDeposit = sdk.NewCoins(sdk.NewInt64Coin("uterp", 150000000))
 	err = app.GovKeeper.Params.Set(ctx, govParams)
 	if err != nil {
 		tmos.Exit(err.Error())

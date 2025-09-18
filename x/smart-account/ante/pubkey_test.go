@@ -80,7 +80,7 @@ func (s *AuthenticatorSetPubKeyAnteSuite) TearDownTest() {
 
 // TestSetPubKeyAnte verifies that the SetPubKey AnteDecorator functions correctly.
 func (s *AuthenticatorSetPubKeyAnteSuite) TestSetPubKeyAnte() {
-	btsgToken := "bitsong"
+	btsgToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(btsgToken, 2500)}
 
 	// Create test messages for signing
@@ -119,7 +119,7 @@ func (s *AuthenticatorSetPubKeyAnteSuite) TestSetPubKeyAnte() {
 
 // TestSetPubKeyAnteWithSenderNotSigner verifies that SetPubKey AnteDecorator correctly handles a non-signer sender.
 func (s *AuthenticatorSetPubKeyAnteSuite) TestSetPubKeyAnteWithSenderNotSigner() {
-	btsgToken := "bitsong"
+	btsgToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(btsgToken, 2500)}
 	testAcc3 := s.TestAccAddress[4]
 	testAcc2 := s.TestAccAddress[3]

@@ -102,7 +102,7 @@ func (s *AuthenticatorAnteSuite) TearDownTest() {
 // TestSignatureVerificationNoAuthenticatorInStore test a non-smart account signature verification
 // with no authenticator in the store
 func (s *AuthenticatorAnteSuite) TestSignatureVerificationNoAuthenticatorInStore() {
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 
 	// Create a test messages for signing
@@ -138,7 +138,7 @@ func (s *AuthenticatorAnteSuite) TestSignatureVerificationNoAuthenticatorInStore
 // TestSignatureVerificationWithAuthenticatorInStore test a non-smart account signature verification
 // with a single authenticator in the store
 func (s *AuthenticatorAnteSuite) TestSignatureVerificationWithAuthenticatorInStore() {
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 
 	// Ensure the feepayer has funds
@@ -199,7 +199,7 @@ func (s *AuthenticatorAnteSuite) TestSignatureVerificationWithAuthenticatorInSto
 // fee payer has not been authenticated before consuming the parametrized max unauthenticated gas limit (even if the specified limit is 300k)
 // This is to ensure that the amount of compute a non-authenticated user can execute is limited.
 func (s *AuthenticatorAnteSuite) TestSignatureVerificationOutOfGas() {
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 	feeCoins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 
@@ -284,7 +284,7 @@ func (s *AuthenticatorAnteSuite) TestSignatureVerificationOutOfGas() {
 
 // TestFeePayerGasComsumption tests that the fee payer only gets charged gas for the transaction once.
 func (s *AuthenticatorAnteSuite) TestFeePayerGasComsumption() {
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 	feeCoins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 
@@ -342,7 +342,7 @@ func (s *AuthenticatorAnteSuite) TestFeePayerGasComsumption() {
 }
 
 func (s *AuthenticatorAnteSuite) TestSpecificAuthenticator() {
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 
 	// Create a test messages for signing

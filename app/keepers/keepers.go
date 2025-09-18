@@ -118,6 +118,7 @@ import (
 
 var (
 	EmptyWasmOpts []wasmkeeper.Option
+	Bech32Prefix  = "terp"
 )
 
 // module account permissions
@@ -179,9 +180,9 @@ type AppKeepers struct {
 	IBCWasmClientKeeper  *ibcwlckeeper.Keeper
 
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
+	ScopedTransferKeeper      capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
-	ScopedTransferKeeper      capabilitykeeper.ScopedKeeper
 
 	DripKeeper dripkeeper.Keeper
 
@@ -240,7 +241,7 @@ func NewAppKeepers(
 	scopedICAControllerKeeper := appKeepers.CapabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
 
 	// add keepers
-	Bech32Prefix := "terp"
+
 	accountKeeper := authkeeper.NewAccountKeeper(
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[authtypes.StoreKey]),
@@ -546,12 +547,12 @@ func NewAppKeepers(
 	// create wasmvm to use for both x/wasm and wasm-light-client
 	wasmVm, err := wasmvm.NewVM(wasmDir, wasmCapabilities, 32, wasmConfig.ContractDebugMode, wasmConfig.MemoryCacheSize)
 	if err != nil {
-		panic(fmt.Sprintf("failed to create bitsong wasm vm: %s", err))
+		panic(fmt.Sprintf("failed to create terp wasm vm: %s", err))
 	}
 
 	lcWasmer, err := wasmvm.NewVM(ibcWasmConfig.DataDir, wasmCapabilities, 32, ibcWasmConfig.ContractDebugMode, wasmConfig.MemoryCacheSize)
 	if err != nil {
-		panic(fmt.Sprintf("failed to create bitsong wasm vm for 08-wasm: %s", err))
+		panic(fmt.Sprintf("failed to create terp wasm vm for 08-wasm: %s", err))
 	}
 
 	wasmKeeper := wasmkeeper.NewKeeper(

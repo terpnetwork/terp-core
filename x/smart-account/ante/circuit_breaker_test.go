@@ -99,7 +99,7 @@ func (m MockAnteDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool,
 
 // TestCircuitBreakerAnte verifies that the CircuitBreaker AnteDecorator functions correctly.
 func (s *AuthenticatorCircuitBreakerAnteSuite) TestCircuitBreakerAnte() {
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 
 	// Create test messages for signing

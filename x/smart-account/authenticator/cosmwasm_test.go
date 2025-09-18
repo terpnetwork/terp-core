@@ -248,7 +248,7 @@ func (s *CosmwasmAuthenticatorTest) TestGeneral() {
 	}
 
 	// Mocking some data for the GenTx function based on PassKeyTests
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	feeCoins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 
 	// Create a test message for signing
@@ -387,7 +387,7 @@ func (s *CosmwasmAuthenticatorTest) TestCosignerContract() {
 	}
 
 	// Mocking some data for the GenTx function based on PassKeyTests
-	bitsongToken := "bitsong"
+	bitsongToken := "terp"
 	feeCoins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
 
 	// Create a test message for signing
