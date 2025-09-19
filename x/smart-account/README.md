@@ -273,7 +273,7 @@ Similarly, to match a `MsgMint` message with a specific sender and token, the pa
 ```json
 {
    "@type":"/terp.fantoken.v1beta1.MsgMint",
-   "sender":"bitsong1...", 
+   "sender":"terp1...", 
    // ...
 }
 ```

@@ -437,11 +437,11 @@ var tempDir = func() string {
 // newTestnetApp starts by running the normal newApp method. From there, the app interface returned is modified in order
 // for a testnet to be created from the provided app.
 func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
-	// Create an app and type cast to an BitsongApp
-	terpApp := ac.newApp(logger, db, traceStore, appOpts)
-	bitsongApp, ok := terpApp.(*app.TerpApp)
+	// Create an app and type cast to an TerpApp
+	cosmosApp := ac.newApp(logger, db, traceStore, appOpts)
+	terpApp, ok := cosmosApp.(*app.TerpApp)
 	if !ok {
-		panic("app created from newApp is not of type bitsongApp")
+		panic("app created from newApp is not of type terpApp")
 	}
 
 	newValAddr, ok := appOpts.Get(server.KeyNewValAddr).(bytes.HexBytes)
@@ -475,14 +475,14 @@ func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, traceStore
 	// }
 
 	//  parse json to get list of validators
-	// [{"val":  "bitsong1val...", "num_dels": , "num_tokens": ,"jailed": }]
+	// [{"val":  "terp1val...", "num_dels": , "num_tokens": ,"jailed": }]
 	// newValsPower, err := testnetserver.ParseValidatorInfos(newValsPowerJson)
 	// if err != nil {
 	// 	panic(fmt.Errorf("error parsing validator infos %v ", err))
 	// }
 	// fmt.Printf("newValsPower: %v\n", newValsPower)
 
-	// Make modifications to the normal BitsongApp required to run the network locally
-	return app.InitTerpAppForTestnet(bitsongApp, newValAddr, newValPubKey, newOperatorAddress, upgradeToTrigger, newOperatorAddress) //newValsPower
+	// Make modifications to the normal TerpApp required to run the network locally
+	return app.InitTerpAppForTestnet(terpApp, newValAddr, newValPubKey, newOperatorAddress, upgradeToTrigger, newOperatorAddress) //newValsPower
 
 }

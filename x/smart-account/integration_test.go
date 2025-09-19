@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	bitsongibctesting "github.com/terpnetwork/terp-core/v4/tests/ibctesting"
+	terpibctesting "github.com/terpnetwork/terp-core/v4/tests/ibctesting"
 	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
 	moduletestutils "github.com/terpnetwork/terp-core/v4/x/smart-account/testutils"
 
@@ -33,7 +33,7 @@ type AuthenticatorSuite struct {
 	// TODO: is there a better way to do this?
 	coordinator *ibctesting.Coordinator
 
-	chainA         *bitsongibctesting.TestChain
+	chainA         *terpibctesting.TestChain
 	app            *app.TerpApp
 	EncodingConfig params.EncodingConfig
 
@@ -51,11 +51,11 @@ func TestAuthenticatorSuite(t *testing.T) {
 func (s *AuthenticatorSuite) SetupTest() {
 
 	// Use the terp custom function for creating an terp app
-	ibctesting.DefaultTestingAppInit = bitsongibctesting.SetupTestingApp
+	ibctesting.DefaultTestingAppInit = terpibctesting.SetupTestingApp
 
 	// Here we create the app using ibctesting
 	s.coordinator = ibctesting.NewCoordinator(s.T(), 1)
-	s.chainA = &bitsongibctesting.TestChain{
+	s.chainA = &terpibctesting.TestChain{
 		TestChain: s.coordinator.GetChain(ibctesting.GetChainID(1)),
 	}
 	s.App = s.chainA.GetTerpApp()
@@ -72,7 +72,7 @@ func (s *AuthenticatorSuite) SetupTest() {
 }
 
 func (suite *AuthenticatorSuite) TearDownSuite() {
-	for _, dir := range bitsongibctesting.TestingDirectories {
+	for _, dir := range terpibctesting.TestingDirectories {
 		os.RemoveAll(dir)
 	}
 }

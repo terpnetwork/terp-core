@@ -93,21 +93,21 @@ func (s *AuthenticatorPostSuite) TearDownTest() {
 
 // TestAutenticatorPostHandlerSuccess tests that the post handler can succeed with the default authenticator
 func (s *AuthenticatorPostSuite) TestAuthenticatorPostHandlerSuccess() {
-	bitsongToken := "terp"
-	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
+	terpToken := "terp"
+	coins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Create a test messages for signing
 	testMsg1 := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[0]),
-		ToAddress:   sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[1]),
+		FromAddress: sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[0]),
+		ToAddress:   sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[1]),
 		Amount:      coins,
 	}
 	testMsg2 := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[1]),
-		ToAddress:   sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[1]),
+		FromAddress: sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[1]),
+		ToAddress:   sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[1]),
 		Amount:      coins,
 	}
-	feeCoins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
+	feeCoins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Add the authenticators for the accounts
 	id, err := s.TerpApp.SmartAccountKeeper.AddAuthenticator(
@@ -148,16 +148,16 @@ func (s *AuthenticatorPostSuite) TestAuthenticatorPostHandlerSuccess() {
 // TestAutenticatorPostHandlerReturnEarly tests that the post handler fails early on IsCircuitBreakActive
 // the transaction should pass through the normal flow.
 func (s *AuthenticatorPostSuite) TestAuthenticatorPostHandlerReturnEarly() {
-	bitsongToken := "terp"
-	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
+	terpToken := "terp"
+	coins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Create a test messages for signing
 	testMsg1 := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[0]),
-		ToAddress:   sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[1]),
+		FromAddress: sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[0]),
+		ToAddress:   sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[1]),
 		Amount:      coins,
 	}
-	feeCoins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
+	feeCoins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Generate a transaction that is signed incorrectly
 	tx, _ := GenTx(s.Ctx, s.EncodingConfig.TxConfig, []sdk.Msg{
@@ -176,8 +176,8 @@ func (s *AuthenticatorPostSuite) TestAuthenticatorPostHandlerReturnEarly() {
 
 // TestAuthenticatorPostHandlerFailConfirmExecution tests how the post handler behaves when ConfirmExecution fails.
 func (s *AuthenticatorPostSuite) TestAuthenticatorPostHandlerFailConfirmExecution() {
-	bitsongToken := "terp"
-	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
+	terpToken := "terp"
+	coins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 	approveAndBlock := testutils.TestingAuthenticator{
 		Approve:        testutils.Always,
 		GasConsumption: 10,
@@ -189,11 +189,11 @@ func (s *AuthenticatorPostSuite) TestAuthenticatorPostHandlerFailConfirmExecutio
 
 	// Create a test messages for signing
 	testMsg1 := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[0]),
-		ToAddress:   sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[1]),
+		FromAddress: sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[0]),
+		ToAddress:   sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[1]),
 		Amount:      coins,
 	}
-	feeCoins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
+	feeCoins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Generate a transaction that is signed correctly
 	tx, _ := GenTx(s.Ctx, s.EncodingConfig.TxConfig, []sdk.Msg{

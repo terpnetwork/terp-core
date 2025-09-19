@@ -2,7 +2,7 @@ swagger: '2.0'
 info:
   title: Terp Network API
   version: v4
-  description: REST API for Bitsong blockchain
+  description: REST API for Terp Network blockchain
 host: localhost:1317
 schemes:
   - http

@@ -21,6 +21,7 @@ import (
 
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
+	nftmodule "cosmossdk.io/x/nft/module"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/crypto"
 	"github.com/cometbft/cometbft/libs/bytes"
@@ -43,24 +44,53 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/posthandler"
+	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
+	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
+	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/cosmos-sdk/x/consensus"
+	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
+	distr "github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
+	"github.com/cosmos/cosmos-sdk/x/gov"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	mint "github.com/cosmos/cosmos-sdk/x/mint"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
+	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
+
+	smartaccount "github.com/terpnetwork/terp-core/v4/x/smart-account"
 
 	"github.com/cosmos/cosmos-sdk/server/api"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	txmodule "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	"github.com/prometheus/client_golang/prometheus"
 
 	sigtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
+	groupmodule "github.com/cosmos/cosmos-sdk/x/group/module"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
+	ibcwlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10"
+	// ibcwlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/keeper"
+	ibcwlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
+	ica "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts"
+	transfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v10/modules/core"
 	ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	ibcchanneltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
+	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -71,14 +101,26 @@ import (
 
 	"github.com/terpnetwork/terp-core/v4/app/keepers"
 	"github.com/terpnetwork/terp-core/v4/docs"
+	"github.com/terpnetwork/terp-core/v4/x/feeshare"
+	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v4/x/globalfee"
+	"github.com/terpnetwork/terp-core/v4/x/tokenfactory"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 
+	"cosmossdk.io/x/evidence"
+	"cosmossdk.io/x/upgrade"
+
+	feegrantmodule "cosmossdk.io/x/feegrant/module"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
+
 	"github.com/terpnetwork/terp-core/v4/app/upgrades"
 	v5 "github.com/terpnetwork/terp-core/v4/app/upgrades/v5"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/keeper"
 	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
 	// unnamed import of statik for swagger UI support
 	// _ "github.com/cosmos/cosmos-sdk/client/docs/statik" // statik for swagger UI support
@@ -234,7 +276,6 @@ func NewTerpApp(
 		txConfig:          txConfig,
 		interfaceRegistry: interfaceRegistry,
 		tkeys:             storetypes.NewTransientStoreKeys(paramstypes.TStoreKey),
-		memKeys:           storetypes.NewMemoryStoreKeys(capabilitytypes.MemStoreKey),
 	}
 	app.homePath = homePath
 
@@ -250,8 +291,7 @@ func NewTerpApp(
 		ContractDebugMode:     false,
 	}
 
-	// Setup keepers
-	app.AppKeepers = keepers.NewAppKeepers(
+	appKeepers := keepers.NewAppKeepers(
 		appCodec,
 		encodingConfig,
 		bApp,
@@ -263,6 +303,18 @@ func NewTerpApp(
 		wasmConfig,
 		ibcWasmConfig,
 	)
+
+	clientKeeper := appKeepers.IBCKeeper.ClientKeeper
+	storeProvider := appKeepers.IBCKeeper.ClientKeeper.GetStoreProvider()
+
+	// Add tendermint & ibcWasm light client routes
+	tmLightClientModule := ibctm.NewLightClientModule(appCodec, storeProvider)
+	ibcWasmLightClientModule := ibcwlc.NewLightClientModule(*appKeepers.IBCWasmClientKeeper, storeProvider)
+	clientKeeper.AddRoute(ibctm.ModuleName, &tmLightClientModule)
+	clientKeeper.AddRoute(ibcwlctypes.ModuleName, ibcWasmLightClientModule)
+	// Setup keepers
+	app.AppKeepers = appKeepers
+
 	app.keys = app.GetKVStoreKey()
 
 	enabledSignModes := append(authtx.DefaultSignModes, sigtypes.SignMode_SIGN_MODE_TEXTUAL)
@@ -296,7 +348,44 @@ func NewTerpApp(
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
-	app.mm = module.NewManager(appModules(app, encodingConfig, skipGenesisInvariants)...)
+	bondDenom := app.GetChainBondDenom()
+
+	app.mm = module.NewManager(genutil.NewAppModule(
+		app.AccountKeeper,
+		app.StakingKeeper,
+		app.BaseApp,
+		encodingConfig.TxConfig,
+	),
+		auth.NewAppModule(appCodec, *app.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
+		vesting.NewAppModule(*app.AccountKeeper, app.BankKeeper),
+		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, app.GetSubspace(banktypes.ModuleName)),
+		feegrantmodule.NewAppModule(appCodec, app.AccountKeeper, app.BankKeeper, *app.FeeGrantKeeper, app.interfaceRegistry),
+		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
+		mint.NewAppModule(appCodec, *app.MintKeeper, app.AccountKeeper, nil, app.GetSubspace(minttypes.ModuleName)),
+		slashing.NewAppModule(appCodec, *app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(slashingtypes.ModuleName), app.interfaceRegistry),
+		distr.NewAppModule(appCodec, *app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
+		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(stakingtypes.ModuleName)),
+		upgrade.NewAppModule(app.UpgradeKeeper, addresscodec.NewBech32Codec(Bech32PrefixAccAddr)),
+		ibctm.NewAppModule(tmLightClientModule),
+		evidence.NewAppModule(*app.EvidenceKeeper),
+		params.NewAppModule(app.ParamsKeeper),
+		authzmodule.NewAppModule(appCodec, *app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
+		groupmodule.NewAppModule(appCodec, *app.GroupKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
+		nftmodule.NewAppModule(appCodec, *app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
+		consensus.NewAppModule(appCodec, *app.ConsensusParamsKeeper),
+		feeshare.NewAppModule(app.FeeShareKeeper, *app.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
+		globalfee.NewAppModule(appCodec, app.GlobalFeeKeeper, bondDenom),
+		tokenfactory.NewAppModule(app.TokenFactoryKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(tokenfactorytypes.ModuleName)),
+		wasm.NewAppModule(appCodec, app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), app.GetSubspace(wasmtypes.ModuleName)),
+		ibc.NewAppModule(app.IBCKeeper),
+		transfer.NewAppModule(*app.TransferKeeper),
+		ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper),
+		packetforward.NewAppModule(app.PacketForwardKeeper, app.GetSubspace(packetforwardtypes.ModuleName)),
+		// cwhooks.NewAppModule(appCodec, app.CWHooksKeeper),
+		ibchooks.NewAppModule(*app.AccountKeeper),
+		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
+		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
+	)
 
 	// Upgrades from v0.50.x onwards happen in pre block
 	app.mm.SetOrderPreBlockers(upgradetypes.ModuleName,
@@ -323,7 +412,6 @@ func NewTerpApp(
 	// initialize stores
 	app.MountKVStores(app.keys)
 	app.MountTransientStores(app.GetTransientStoreKey())
-	app.MountMemoryStores(app.GetMemoryStoreKey())
 
 	// register upgrade
 	app.setupUpgradeHandlers(app.configurator)
@@ -377,8 +465,15 @@ func NewTerpApp(
 	// requires the snapshot store to be created and registered as a BaseAppOption
 	// see cmd/wasmd/root.go: 206 - 214 approx
 	if manager := app.SnapshotManager(); manager != nil {
-		err := manager.RegisterExtensions(
+		err = manager.RegisterExtensions(
 			wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), app.WasmKeeper),
+		)
+		if err != nil {
+			panic(fmt.Errorf("failed to register snapshot extension: %s", err))
+		}
+		//  takes care of persisting the external state from wasm code when snapshot is created
+		err = manager.RegisterExtensions(
+			wasmlckeeper.NewWasmSnapshotter(app.CommitMultiStore(), app.IBCWasmClientKeeper),
 		)
 		if err != nil {
 			panic(fmt.Errorf("failed to register snapshot extension: %s", err))
@@ -396,7 +491,9 @@ func NewTerpApp(
 		if err := app.WasmKeeper.InitializePinnedCodes(ctx); err != nil {
 			tmos.Exit(fmt.Sprintf("failed initialize pinned codes %s", err))
 		}
-
+		if err := app.IBCWasmClientKeeper.InitializePinnedCodes(ctx); err != nil {
+			panic(fmt.Sprintf("WasmClientKeeper failed initialize pinned codes %s", err))
+		}
 		// Initialize and seal the capability keeper so all persistent capabilities
 		// are loaded in-memory and prevent any further modules from creating scoped
 		// sub-keepers.
@@ -404,7 +501,6 @@ func NewTerpApp(
 		// that in-memory capabilities get regenerated on app restart.
 		// Note that since this reads from the store, we can only perform it when
 		// `loadLatest` is set to true.
-		app.CapabilityKeeper.Seal()
 	}
 
 	app.sm = module.NewSimulationManager(simulationModules(app, encodingConfig, skipGenesisInvariants)...)
@@ -687,7 +783,7 @@ func RegisterSwaggerAPI(_ client.Context, apiSvr *api.Server) error {
 }
 
 // source: https://github.com/osmosis-labs/osmosis/blob/7b1a78d397b632247fe83f51867f319adf3a858c/app/app.go#L786
-// one-liner: cd ../terp-snapshots && bitsongd comet unsafe-reset-all && cp ~/.bitsongd/data/priv_validator_state.json ~/.bitsongd/priv_validator_state.json && lz4 -c -d <terp-snapshot>.tar.lz4 | tar -x -C $HOME/.bitsongd && cp ~/.bitsongd/priv_validator_state.json ~/.bitsongd/data/priv_validator_state.json && cd ../go-terp && make install && bitsongd in-place-testnet test1 bitsong1mt3wj088jvurp3vlh2yfar6vqrqp0llnsj8lar bitsongvaloper1qxw4fjged2xve8ez7nu779tm8ejw92rv0vcuqr
+// one-liner: cd ../terp-snapshots && terpd comet unsafe-reset-all && cp ~/.terpd/data/priv_validator_state.json ~/.terpd/priv_validator_state.json && lz4 -c -d <terp-snapshot>.tar.lz4 | tar -x -C $HOME/.terpd && cp ~/.terpd/priv_validator_state.json ~/.terpd/data/priv_validator_state.json && cd ../go-terp && make install && terpd in-place-testnet test1 terp1mt3wj088jvurp3vlh2yfar6vqrqp0llnsj8lar terpvaloper1qxw4fjged2xve8ez7nu779tm8ejw92rv0vcuqr
 func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey crypto.PubKey, newOperatorAddress, upgradeToTrigger, retainValAddr string) *TerpApp { // newValsPower []testnetserver.ValidatorInfo
 
 	ctx := app.BaseApp.NewUncachedContext(true, cmtproto.Header{})
@@ -719,7 +815,7 @@ func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	bech32Addr, err := bech32.ConvertAndEncode("bitsongvaloper", bz)
+	bech32Addr, err := bech32.ConvertAndEncode("terpvaloper", bz)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}

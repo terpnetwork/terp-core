@@ -99,21 +99,21 @@ func (m MockAnteDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool,
 
 // TestCircuitBreakerAnte verifies that the CircuitBreaker AnteDecorator functions correctly.
 func (s *AuthenticatorCircuitBreakerAnteSuite) TestCircuitBreakerAnte() {
-	bitsongToken := "terp"
-	coins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
+	terpToken := "terp"
+	coins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Create test messages for signing
 	testMsg1 := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[0]),
-		ToAddress:   sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[1]),
+		FromAddress: sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[0]),
+		ToAddress:   sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[1]),
 		Amount:      coins,
 	}
 	testMsg2 := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[1]),
-		ToAddress:   sdk.MustBech32ifyAddressBytes(bitsongToken, s.TestAccAddress[1]),
+		FromAddress: sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[1]),
+		ToAddress:   sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[1]),
 		Amount:      coins,
 	}
-	feeCoins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
+	feeCoins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Generate a test transaction
 	tx, _ := GenTx(s.Ctx, s.EncodingConfig.TxConfig, []sdk.Msg{

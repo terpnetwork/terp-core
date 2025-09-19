@@ -2,7 +2,7 @@
 
 This modules standout feature is allowing **an account-by-account customization on how transaction are authenticated.**
 
-Bitsong nodes now make use of their compute resources prior to a block being finalized, in order to handle the minimum processes that are needed to verify whether or not an account is valid to be included in the mempool.
+Terp Network nodes now make use of their compute resources prior to a block being finalized, in order to handle the minimum processes that are needed to verify whether or not an account is valid to be included in the mempool.
 
 **This logic is now programmable via smart contracts & additional configurations,vastly expanding how transactions can be implemented.**
 
@@ -60,7 +60,7 @@ The signature verification authenticator is the default authenticator for all ac
 When an account registers a contract address to be used as an autheentication method, the specific paramaters sent by the account registering is **not** stored in the contract state, but rather the module storage,which keeps things light & keeps the compute resources light when making use of the contract. 
  
 ### How it work's
-Bitsong will make use of the contract sudo entry point, only which can be done called by the chain itself. This means when an account making use of cosmwasm authentications submits a tx to be authenticated, the CosmwasmVM is deterministically processed & either is validated or rejected processed prior to deterministically processing the actual message to perform.
+Terp Network will make use of the contract sudo entry point, only which can be done called by the chain itself. This means when an account making use of cosmwasm authentications submits a tx to be authenticated, the CosmwasmVM is deterministically processed & either is validated or rejected processed prior to deterministically processing the actual message to perform.
 
 
 ### Modules Go Message Structure
@@ -127,7 +127,7 @@ Or a way to mint new tokens during a streaming session:
 ```json
 {
    "@type":"/terp.fantoken.v1beta1.MsgMint",
-   "sender":"bitsong1...", 
+   "sender":"terp1...", 
    // ...
 }
 ```

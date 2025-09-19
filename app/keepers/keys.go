@@ -19,7 +19,6 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	icacontrollertypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/types"
 	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
@@ -29,9 +28,10 @@ import (
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
+
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/types"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
-	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 	smartaccounttypes "github.com/terpnetwork/terp-core/v4/x/smart-account/types"
 
 	// cwhookstypes "github.com/terpnetwork/terp-core/v4/x/cw-hooks/types"
@@ -53,7 +53,6 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		upgradetypes.StoreKey,
 		feegrant.StoreKey,
 		evidencetypes.StoreKey,
-		capabilitytypes.StoreKey,
 		authzkeeper.StoreKey,
 		nftkeeper.StoreKey,
 		group.StoreKey,
@@ -61,20 +60,19 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
 		wasmtypes.StoreKey,
+		ibcwasmtypes.StoreKey,
 		icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey,
 		packetforwardtypes.StoreKey,
 		ibchookstypes.StoreKey,
 		feesharetypes.StoreKey,
 		globalfeetypes.StoreKey,
-		clocktypes.StoreKey,
 		driptypes.StoreKey,
 		smartaccounttypes.StoreKey,
 		tokenfactorytypes.StoreKey,
 	)
 
 	appKeepers.tkeys = storetypes.NewTransientStoreKeys(paramstypes.TStoreKey)
-	appKeepers.memKeys = storetypes.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 }
 
 func (appKeepers *AppKeepers) GetKVStoreKey() map[string]*storetypes.KVStoreKey {
@@ -83,10 +81,6 @@ func (appKeepers *AppKeepers) GetKVStoreKey() map[string]*storetypes.KVStoreKey 
 
 func (appKeepers *AppKeepers) GetTransientStoreKey() map[string]*storetypes.TransientStoreKey {
 	return appKeepers.tkeys
-}
-
-func (appKeepers *AppKeepers) GetMemoryStoreKey() map[string]*storetypes.MemoryStoreKey {
-	return appKeepers.memKeys
 }
 
 // GetKey returns the KVStoreKey for the provided store key.

@@ -18,10 +18,8 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmvm "github.com/CosmWasm/wasmvm/v3"
-	ibcwlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10"
 	ibcwlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/keeper"
 	ibcwlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
-	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 	appparams "github.com/terpnetwork/terp-core/v4/app/params"
 
 	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
@@ -90,11 +88,7 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 
-	clockkeeper "github.com/terpnetwork/terp-core/v4/x/clock/keeper"
-	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 	dripkeeper "github.com/terpnetwork/terp-core/v4/x/drip/keeper"
 	driptypes "github.com/terpnetwork/terp-core/v4/x/drip/types"
 	feesharekeeper "github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
@@ -148,7 +142,6 @@ type AppKeepers struct {
 	AuthzKeeper   *authzkeeper.Keeper
 	BankKeeper    bankkeeper.BaseKeeper
 
-	CapabilityKeeper      *capabilitykeeper.Keeper
 	StakingKeeper         *stakingkeeper.Keeper
 	SlashingKeeper        *slashingkeeper.Keeper
 	MintKeeper            *mintkeeper.Keeper
@@ -171,18 +164,12 @@ type AppKeepers struct {
 	TokenFactoryKeeper   *tokenfactorykeeper.Keeper
 	PacketForwardKeeper  *packetforwardkeeper.Keeper
 	ICAHostKeeper        *icahostkeeper.Keeper
-	ClockKeeper          clockkeeper.Keeper
 	TransferKeeper       *ibctransferkeeper.Keeper
 	SmartAccountKeeper   *smartaccountkeeper.Keeper
 	AuthenticatorManager *authenticator.AuthenticatorManager
 	ContractKeeper       *wasmkeeper.PermissionedKeeper
 	WasmKeeper           *wasmkeeper.Keeper
 	IBCWasmClientKeeper  *ibcwlckeeper.Keeper
-
-	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
-	ScopedTransferKeeper      capabilitykeeper.ScopedKeeper
-	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
-	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 
 	DripKeeper dripkeeper.Keeper
 
@@ -228,17 +215,6 @@ func NewAppKeepers(
 	)
 	appKeepers.ConsensusParamsKeeper = &consensusParamsKeeper
 	bApp.SetParamStore(&appKeepers.ConsensusParamsKeeper.ParamsStore)
-
-	// add capability keeper and ScopeToModule for ibc module
-	appKeepers.CapabilityKeeper = capabilitykeeper.NewKeeper(
-		appCodec,
-		appKeepers.keys[capabilitytypes.StoreKey],
-		appKeepers.memKeys[capabilitytypes.MemStoreKey],
-	)
-
-	scopedIBCKeeper := appKeepers.CapabilityKeeper.ScopeToModule(ibcexported.ModuleName)
-	scopedICAHostKeeper := appKeepers.CapabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
-	scopedICAControllerKeeper := appKeepers.CapabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
 
 	// add keepers
 
@@ -397,7 +373,7 @@ func NewAppKeepers(
 	// Register the proposal types
 	govRouter := govv1beta1.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler).
-		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(appKeepers.ParamsKeeper)) // This should be removed. It is still in place to avoid failures of modules that have not yet been upgraded.
+		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(appKeepers.ParamsKeeper))
 
 	govConfig := govtypes.DefaultConfig()
 
@@ -457,7 +433,8 @@ func NewAppKeepers(
 		appKeepers.GetSubspace(ibctransfertypes.ModuleName),
 		// The ICS4Wrapper is replaced by the PacketForwardKeeper instead of the channel so that sending can be overridden by the middleware
 		appKeepers.PacketForwardKeeper,
-		appKeepers.IBCKeeper.ChannelKeeper, bApp.MsgServiceRouter(),
+		appKeepers.IBCKeeper.ChannelKeeper,
+		bApp.MsgServiceRouter(),
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		govModAddress,
@@ -500,6 +477,9 @@ func NewAppKeepers(
 		0,
 		packetforwardkeeper.DefaultForwardTransferPacketTimeoutTimestamp,
 	)
+	// Since packetforward is outermost middleware, the ICS4Wrapper should be the innermost (base)
+	// So we pass the callback-enabled wrapper (HooksICS4Wrapper) via WithICS4Wrapper
+	appKeepers.TransferKeeper.WithICS4Wrapper(appKeepers.HooksICS4Wrapper)
 
 	// create evidence keeper with router
 	evidenceKeeper := evidencekeeper.NewKeeper(
@@ -617,23 +597,6 @@ func NewAppKeepers(
 		govModAddress,
 	)
 
-	appKeepers.ClockKeeper = clockkeeper.NewKeeper(
-		appKeepers.keys[clocktypes.StoreKey],
-		appCodec,
-		*appKeepers.ContractKeeper,
-		govModAddress,
-	)
-
-	// appKeepers.CWHooksKeeper = cwhookskeeper.NewKeeper(
-	// 	appKeepers.keys[cwhookstypes.StoreKey],
-	// 	appCodec,
-	// 	stakingKeeper,
-	// 	*govKeeper,
-	// 	appKeepers.WasmKeeper,
-	// 	*appKeepers.ContractKeeper,
-	// 	govModAddress,
-	// )
-
 	// Set legacy router for backwards compatibility with gov v1beta1
 	appKeepers.GovKeeper.SetLegacyRouter(govRouter)
 
@@ -659,19 +622,6 @@ func NewAppKeepers(
 		AddRoute(icacontrollertypes.SubModuleName, icaControllerStack).
 		AddRoute(icahosttypes.SubModuleName, icaHostStack)
 	appKeepers.IBCKeeper.SetRouter(ibcRouter)
-
-	clientKeeper := appKeepers.IBCKeeper.ClientKeeper
-	storeProvider := appKeepers.IBCKeeper.ClientKeeper.GetStoreProvider()
-
-	// Add tendermint & ibcWasm light client routes
-	tmLightClientModule := ibctm.NewLightClientModule(appCodec, storeProvider)
-	ibcWasmLightClientModule := ibcwlc.NewLightClientModule(*appKeepers.IBCWasmClientKeeper, storeProvider)
-	clientKeeper.AddRoute(ibctm.ModuleName, &tmLightClientModule)
-	clientKeeper.AddRoute(ibcwlctypes.ModuleName, ibcWasmLightClientModule)
-
-	appKeepers.ScopedIBCKeeper = scopedIBCKeeper
-	appKeepers.ScopedICAHostKeeper = scopedICAHostKeeper
-	appKeepers.ScopedICAControllerKeeper = scopedICAControllerKeeper
 
 	return appKeepers
 }
@@ -722,11 +672,6 @@ func (appKeepers *AppKeepers) GetStakingKeeper() *stakingkeeper.Keeper {
 // GetIBCKeeper implements the TestingApp interface.
 func (appKeepers *AppKeepers) GetIBCKeeper() *ibckeeper.Keeper {
 	return appKeepers.IBCKeeper
-}
-
-// GetScopedIBCKeeper implements the TestingApp interface.
-func (appKeepers *AppKeepers) GetScopedIBCKeeper() capabilitykeeper.ScopedKeeper {
-	return appKeepers.ScopedIBCKeeper
 }
 
 // GetWasmKeeper implements the TestingApp interface.

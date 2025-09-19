@@ -80,7 +80,7 @@ func (s *CosmwasmAuthenticatorTest) TestOnAuthenticatorAdded() {
 		{"Valid Contract, missing authenticator params (required by contract)", []byte(fmt.Sprintf(`{"contract": "%s"}`, contractAddr)), false},
 		{"Missing Contract", []byte(`{}`), false},
 		{"Invalid Contract Address", []byte(`{"contract": "invalid_address"}`), false},
-		{"Valid address but non-existing contract", []byte(`{"contract": "bitsong175dck737jmvr9mw34pqs7y5fv0umnak3vrsj3mjxg75cnkmyulfs0c3sxr"}`), false},
+		{"Valid address but non-existing contract", []byte(`{"contract": "terp175dck737jmvr9mw34pqs7y5fv0umnak3vrsj3mjxg75cnkmyulfs0c3sxr"}`), false},
 	}
 
 	for _, tt := range tests {
@@ -139,7 +139,7 @@ func (s *CosmwasmAuthenticatorTest) TestOnAuthenticatorRemoved() {
 		{"Valid Contract, missing authenticator params (required by contract)", []byte(fmt.Sprintf(`{"contract": "%s"}`, contractAddr)), false},
 		{"Missing Contract", []byte(`{}`), false},
 		{"Invalid Contract Address", []byte(`{"contract": "invalid_address"}`), false},
-		{"Valid address but non-existing contract", []byte(`{"contract": "bitsong175dck737jmvr9mw34pqs7y5fv0umnak3vrsj3mjxg75cnkmyulfs0c3sxr"}`), false},
+		{"Valid address but non-existing contract", []byte(`{"contract": "terp175dck737jmvr9mw34pqs7y5fv0umnak3vrsj3mjxg75cnkmyulfs0c3sxr"}`), false},
 	}
 
 	for _, tt := range tests {
@@ -181,22 +181,22 @@ func (s *CosmwasmAuthenticatorTest) TestInitialize() {
 	}{
 		// {
 		// 	"Valid Contract",
-		// 	[]byte(`{"contract": "bitsong1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69"}`),
-		// 	"bitsong1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69",
+		// 	[]byte(`{"contract": "terp1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69"}`),
+		// 	"terp1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69",
 		// 	nil,
 		// 	true,
 		// },
 		// {
 		// 	"Valid Contract, valid params",
-		// 	[]byte(fmt.Sprintf(`{"contract": "bitsong1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69", "params": %s }`, toBytesString(`{ "p1": "v1", "p2": { "p21": "v21" } }`))),
-		// 	"bitsong1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69",
+		// 	[]byte(fmt.Sprintf(`{"contract": "terp1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69", "params": %s }`, toBytesString(`{ "p1": "v1", "p2": { "p21": "v21" } }`))),
+		// 	"terp1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69",
 		// 	[]byte(`{ "p1": "v1", "p2": { "p21": "v21" } }`),
 		// 	true,
 		// },
 		// {
 		// 	"Valid Contract, invalid params",
-		// 	[]byte(fmt.Sprintf(`{"contract": "bitsong1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69", "params": %s }`, toBytesString(`{ "p1": "v1", "p2": { "p21" "v21" } }`))),
-		// 	"bitsong1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69",
+		// 	[]byte(fmt.Sprintf(`{"contract": "terp1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69", "params": %s }`, toBytesString(`{ "p1": "v1", "p2": { "p21" "v21" } }`))),
+		// 	"terp1t3gjpqadhhqcd29v64xa06z66mmz7kazsvkp69",
 		// 	[]byte(`{ "p1": "v1", "p2": { "p21" "v21" } }`),
 		// 	false,
 		// },
@@ -248,13 +248,13 @@ func (s *CosmwasmAuthenticatorTest) TestGeneral() {
 	}
 
 	// Mocking some data for the GenTx function based on PassKeyTests
-	bitsongToken := "terp"
-	feeCoins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
+	terpToken := "terp"
+	feeCoins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Create a test message for signing
 	testMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes(bitsongToken, accounts[0]),
-		ToAddress:   sdk.MustBech32ifyAddressBytes(bitsongToken, accounts[1]),
+		FromAddress: sdk.MustBech32ifyAddressBytes(terpToken, accounts[0]),
+		ToAddress:   sdk.MustBech32ifyAddressBytes(terpToken, accounts[1]),
 		Amount:      feeCoins,
 	}
 	msgs := []sdk.Msg{testMsg}
@@ -387,13 +387,13 @@ func (s *CosmwasmAuthenticatorTest) TestCosignerContract() {
 	}
 
 	// Mocking some data for the GenTx function based on PassKeyTests
-	bitsongToken := "terp"
-	feeCoins := sdk.Coins{sdk.NewInt64Coin(bitsongToken, 2500)}
+	terpToken := "terp"
+	feeCoins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Create a test message for signing
 	testMsg := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes(bitsongToken, accounts[0]),
-		ToAddress:   sdk.MustBech32ifyAddressBytes(bitsongToken, accounts[1]),
+		FromAddress: sdk.MustBech32ifyAddressBytes(terpToken, accounts[0]),
+		ToAddress:   sdk.MustBech32ifyAddressBytes(terpToken, accounts[1]),
 		Amount:      feeCoins,
 	}
 

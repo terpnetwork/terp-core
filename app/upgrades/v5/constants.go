@@ -19,6 +19,9 @@ var Upgrade = upgrades.Upgrade{
 		},
 		Deleted: []string{
 			"interchainquery",
+			"capability",
+			"ibcfee",
+			"clock",
 		},
 	},
 }

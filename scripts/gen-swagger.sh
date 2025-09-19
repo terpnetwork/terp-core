@@ -42,7 +42,7 @@ run_swagger_merger() {
   fi
 }
 
-echo "Generating Swagger API documentation for Bitsong..."
+echo "Generating Swagger API documentation for Terp Network..."
 
 go mod tidy
 prepare_swagger_gen
@@ -136,7 +136,7 @@ fi
 # Build the base JSON structure.
 base_json=$(jq -n --arg version "$version" '{
   swagger: "2.0",
-  info: { title: "Terp Network API", version: $version, description: "REST API for Bitsong blockchain" },
+  info: { title: "Terp Network API", version: $version, description: "REST API for Terp Network blockchain" },
   host: "localhost:1317",
   schemes: ["http", "https"],
   consumes: ["application/json"],

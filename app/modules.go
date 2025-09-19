@@ -4,7 +4,6 @@ import (
 	wasm "github.com/CosmWasm/wasmd/x/wasm"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/cosmos/cosmos-sdk/client"
-	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	mint "github.com/cosmos/cosmos-sdk/x/mint"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
@@ -17,9 +16,6 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 	appparams "github.com/terpnetwork/terp-core/v4/app/params"
-
-	"github.com/terpnetwork/terp-core/v4/x/clock"
-	clocktypes "github.com/terpnetwork/terp-core/v4/x/clock/types"
 
 	"cosmossdk.io/x/evidence"
 	evidencetypes "cosmossdk.io/x/evidence/types"
@@ -117,62 +113,11 @@ var ModuleBasics = module.NewBasicManager(
 	packetforward.AppModuleBasic{},
 	feeshare.AppModuleBasic{},
 	globalfee.AppModuleBasic{},
-	clock.AppModuleBasic{},
 	drip.AppModuleBasic{},
 	tokenfactory.AppModuleBasic{},
 	smartaccount.AppModuleBasic{},
 	// cwhooks.AppModuleBasic{},
 )
-
-func appModules(
-	app *TerpApp,
-	encodingConfig appparams.EncodingConfig,
-	skipGenesisInvariants bool,
-) []module.AppModule {
-	appCodec := encodingConfig.Marshaler
-
-	bondDenom := app.GetChainBondDenom()
-
-	return []module.AppModule{
-		genutil.NewAppModule(
-			app.AccountKeeper,
-			app.StakingKeeper,
-			app.BaseApp,
-			encodingConfig.TxConfig,
-		),
-		auth.NewAppModule(appCodec, *app.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
-		vesting.NewAppModule(*app.AccountKeeper, app.BankKeeper),
-		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, app.GetSubspace(banktypes.ModuleName)),
-		capability.NewAppModule(appCodec, *app.CapabilityKeeper, false),
-		feegrantmodule.NewAppModule(appCodec, app.AccountKeeper, app.BankKeeper, *app.FeeGrantKeeper, app.interfaceRegistry),
-		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
-		mint.NewAppModule(appCodec, *app.MintKeeper, app.AccountKeeper, nil, app.GetSubspace(minttypes.ModuleName)),
-		slashing.NewAppModule(appCodec, *app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(slashingtypes.ModuleName), app.interfaceRegistry),
-		distr.NewAppModule(appCodec, *app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
-		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(stakingtypes.ModuleName)),
-		upgrade.NewAppModule(app.UpgradeKeeper, addresscodec.NewBech32Codec(appparams.Bech32PrefixAccAddr)),
-
-		evidence.NewAppModule(*app.EvidenceKeeper),
-		params.NewAppModule(app.ParamsKeeper),
-		authzmodule.NewAppModule(appCodec, *app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
-		groupmodule.NewAppModule(appCodec, *app.GroupKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
-		nftmodule.NewAppModule(appCodec, *app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
-		consensus.NewAppModule(appCodec, *app.ConsensusParamsKeeper),
-		feeshare.NewAppModule(app.FeeShareKeeper, *app.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
-		globalfee.NewAppModule(appCodec, app.GlobalFeeKeeper, bondDenom),
-		tokenfactory.NewAppModule(app.TokenFactoryKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(tokenfactorytypes.ModuleName)),
-		wasm.NewAppModule(appCodec, app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), app.GetSubspace(wasmtypes.ModuleName)),
-		ibc.NewAppModule(app.IBCKeeper),
-		transfer.NewAppModule(*app.TransferKeeper),
-		ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper),
-		packetforward.NewAppModule(app.PacketForwardKeeper, app.GetSubspace(packetforwardtypes.ModuleName)),
-		clock.NewAppModule(appCodec, app.ClockKeeper),
-		// cwhooks.NewAppModule(appCodec, app.CWHooksKeeper),
-		ibchooks.NewAppModule(*app.AccountKeeper),
-		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
-		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
-	}
-}
 
 func simulationModules(
 	app *TerpApp,
@@ -186,7 +131,6 @@ func simulationModules(
 	return []module.AppModuleSimulation{
 		auth.NewAppModule(appCodec, *app.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
 		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, app.GetSubspace(banktypes.ModuleName)),
-		capability.NewAppModule(appCodec, *app.CapabilityKeeper, false),
 		feegrantmodule.NewAppModule(appCodec, app.AccountKeeper, app.BankKeeper, *app.FeeGrantKeeper, app.interfaceRegistry),
 		authzmodule.NewAppModule(appCodec, *app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
@@ -235,7 +179,6 @@ func orderBeginBlockers() []string {
 		driptypes.ModuleName,
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
-		clocktypes.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		// cwhooks.ModuleName,
@@ -272,7 +215,6 @@ func orderEndBlockers() []string {
 		driptypes.ModuleName,
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
-		clocktypes.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		smartaccounttypes.ModuleName,
@@ -300,7 +242,6 @@ func orderInitBlockers() []string {
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		smartaccounttypes.ModuleName,
-		clocktypes.ModuleName,
 		// cwhooks.ModuleName,
 		wasmtypes.ModuleName,
 	}
