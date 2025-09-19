@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"time"
 
 	"cosmossdk.io/math"
@@ -63,6 +64,13 @@ func (s *KeeperTestHelper) Setup() {
 	if err != nil {
 		panic(fmt.Sprintf("failed creating temporary directory: %v", err))
 	}
+
+	// Create minimal config files for testing
+	err = s.createTestConfigFiles(dir)
+	if err != nil {
+		panic(fmt.Sprintf("failed creating test config files: %v", err))
+	}
+
 	s.T().Cleanup(func() { os.RemoveAll(dir); s.withCaching = false })
 	s.App = app.SetupWithCustomHome(false, dir)
 	// configure ctx, caching, query helper,& test accounts
@@ -88,6 +96,29 @@ func (s *KeeperTestHelper) setupGeneralCustomChainId(chainId string) {
 	s.TestAccs = []sdk.AccAddress{}
 	s.TestAccs = append(s.TestAccs, baseTestAccts...)
 	s.hasUsedAbci = false
+}
+
+// createTestConfigFiles creates minimal config files needed for upgrade handler tests
+func (s *KeeperTestHelper) createTestConfigFiles(homeDir string) error {
+	configDir := filepath.Join(homeDir, "config")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		return err
+	}
+	configContent := `
+# Minimal config.toml for testing
+[consensus]
+timeout_commit = "5s"
+timeout_propose = "3s"
+timeout_propose_delta = "500ms"
+timeout_prevote = "1s"
+timeout_prevote_delta = "500ms"
+timeout_precommit = "1s"
+timeout_precommit_delta = "500ms"
+ 
+`
+
+	configPath := filepath.Join(configDir, "config.toml")
+	return os.WriteFile(configPath, []byte(configContent), 0o644)
 }
 
 // CreateRandomAccounts is a function return a list of randomly generated AccAddresses
