@@ -11,6 +11,7 @@ option go_package = "github.com/terpnetwork/terp-core/x/feeshare/types";
 
 // Msg defines the fees Msg service.
 service Msg {
+  option (cosmos.msg.v1.service) = true;
   // RegisterFeeShare registers a new contract for receiving transaction fees
   rpc RegisterFeeShare(MsgRegisterFeeShare)
       returns (MsgRegisterFeeShareResponse) {

@@ -29,8 +29,8 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // Params defines the parameters for the tokenfactory module.
 type Params struct {
 	DenomCreationFee github_com_cosmos_cosmos_sdk_types.Coins `protobuf:"bytes,1,rep,name=denom_creation_fee,json=denomCreationFee,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"denom_creation_fee" yaml:"denom_creation_fee"`
-	// if denom_creation_fee is an empty array, then this field is used to add more gas consumption
-	// to the base cost.
+	// if denom_creation_fee is an empty array, then this field is used to add
+	// more gas consumption to the base cost.
 	// https://github.com/CosmWasm/token-factory/issues/11
 	DenomCreationGasConsume uint64 `protobuf:"varint,2,opt,name=denom_creation_gas_consume,json=denomCreationGasConsume,proto3" json:"denom_creation_gas_consume,omitempty" yaml:"denom_creation_gas_consume"`
 }

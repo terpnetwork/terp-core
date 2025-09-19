@@ -386,8 +386,7 @@ func NewTerpApp(
 	)
 
 	// Upgrades from v0.50.x onwards happen in pre block
-	app.mm.SetOrderPreBlockers(upgradetypes.ModuleName,
-		authtypes.ModuleName)
+	app.mm.SetOrderPreBlockers(upgradetypes.ModuleName, authtypes.ModuleName)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the

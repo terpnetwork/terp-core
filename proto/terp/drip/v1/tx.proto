@@ -13,6 +13,7 @@ option go_package = "github.com/terpnetwork/terp-core/x/drip/types";
 
 // Msg defines the fees Msg service.
 service Msg {
+  option (cosmos.msg.v1.service) = true;
   // DistributeTokens distribute the sent tokens to all stakers in the next
   // block
   rpc DistributeTokens(MsgDistributeTokens)

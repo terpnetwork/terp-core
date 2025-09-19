@@ -376,7 +376,8 @@ type TxExtension struct {
 	// selected_authenticators holds the authenticator_id for the chosen
 	// authenticator per message.
 	SelectedAuthenticators []uint64 `protobuf:"varint,1,rep,packed,name=selected_authenticators,json=selectedAuthenticators,proto3" json:"selected_authenticators,omitempty"`
-	// optional, used to provide aggregate key signature data to module for authentication.
+	// optional, used to provide aggregate key signature data to module for
+	// authentication.
 	AggAuth *AgAuthData `protobuf:"bytes,2,opt,name=agg_auth,json=aggAuth,proto3" json:"agg_auth,omitempty"`
 }
 
