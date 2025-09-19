@@ -483,6 +483,5 @@ func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, traceStore
 	// fmt.Printf("newValsPower: %v\n", newValsPower)
 
 	// Make modifications to the normal TerpApp required to run the network locally
-	return app.InitTerpAppForTestnet(terpApp, newValAddr, newValPubKey, newOperatorAddress, upgradeToTrigger, newOperatorAddress) //newValsPower
-
+	return app.InitTerpAppForTestnet(terpApp, newValAddr, newValPubKey, newOperatorAddress, upgradeToTrigger, newOperatorAddress) // newValsPower
 }

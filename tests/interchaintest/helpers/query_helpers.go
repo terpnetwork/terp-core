@@ -67,7 +67,8 @@ type Vals struct {
 func GetValidators(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain) Vals {
 	var res Vals
 
-	cmd := []string{"terpd", "query", "staking", "validators",
+	cmd := []string{
+		"terpd", "query", "staking", "validators",
 		"--node", chain.GetRPCAddress(),
 		"--chain-id", chain.Config().ChainID,
 		"--output", "json",

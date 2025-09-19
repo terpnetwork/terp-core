@@ -39,8 +39,7 @@ type VoiceInstantiate struct {
 	ContractAddrLen uint8  `json:"contract_addr_len"`
 }
 
-type TesterInstantiate struct {
-}
+type TesterInstantiate struct{}
 
 type NoteExecute struct {
 	Query   *NoteQuery      `json:"query,omitempty"`
@@ -371,28 +370,30 @@ func (s *Suite) CreateChannel(initModule string, tryModule string, initChain, tr
 		Version:        "polytone-1",
 	})
 	if err != nil {
-		return
+		return initChannel, tryChannel, err
 	}
 	err = testutil.WaitForBlocks(s.ctx, 10, initChain.Ibc, tryChain.Ibc)
 	if err != nil {
-		return
+		return initChannel, tryChannel, err
 	}
 
 	initChannels := s.QueryOpenChannels(initChain)
 
 	if len(initChannels) == len(initStartChannels) {
 		err = errors.New("no new channels created")
-		return
+		return initChannel, tryChannel, err
 	}
 
 	initChannel = initChannels[len(initChannels)-1].ChannelID
 	tryChannel = initChannels[len(initChannels)-1].Counterparty.ChannelID
-	return
+	return initChannel, tryChannel, err
 }
 
-const CHANNEL_STATE_OPEN = "STATE_OPEN"
-const CHANNEL_STATE_TRY = "STATE_TRYOPEN"
-const CHANNEL_STATE_INIT = "STATE_INIT"
+const (
+	CHANNEL_STATE_OPEN = "STATE_OPEN"
+	CHANNEL_STATE_TRY  = "STATE_TRYOPEN"
+	CHANNEL_STATE_INIT = "STATE_INIT"
+)
 
 func (s *Suite) QueryOpenChannels(chain *SuiteChain) []ibc.ChannelOutput {
 	eq := s.QueryChannelsInState(chain, CHANNEL_STATE_OPEN)

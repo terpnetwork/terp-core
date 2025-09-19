@@ -1,6 +1,11 @@
 package testutils
 
 import (
+	"fmt"
+	"math/rand"
+	"os"
+	"time"
+
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/crypto/ed25519"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -9,22 +14,24 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakinghelper "github.com/cosmos/cosmos-sdk/x/staking/testutil"
-	"github.com/stretchr/testify/suite"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/terpnetwork/terp-core/v4/app"
+
+	"github.com/stretchr/testify/suite"
 )
 
 var (
-	SecondaryDenom  = "uion"
-	SecondaryAmount = math.NewInt(100000000)
-	// baseTestAccts   = []sdk.AccAddress{}
-	// defaultTestStartTime = time.Now().UTC()
-	// testDescription      = stakingtypes.NewDescription("test_moniker", "test_identity", "test_website", "test_security_contact", "test_details")
+	SecondaryDenom       = "uakt"
+	SecondaryAmount      = math.NewInt(100000000)
+	baseTestAccts        = []sdk.AccAddress{}
+	defaultTestStartTime = time.Now().UTC()
+	testDescription      = stakingtypes.NewDescription("test_moniker", "test_identity", "test_website", "test_security_contact", "test_details")
 )
 
 type KeeperTestHelper struct {
 	suite.Suite
 
-	App         *app.TerpApp                    // Mock terp application
+	App         *app.TerpApp                    // Mock bitsong application
 	Ctx         sdk.Context                     // simulated context
 	QueryHelper *baseapp.QueryServiceTestHelper // GRPC query simulator
 	TestAccs    []sdk.AccAddress                // Test accounts
@@ -37,17 +44,50 @@ type KeeperTestHelper struct {
 	withCaching bool
 }
 
+func init() {
+	baseTestAccts = CreateRandomAccounts(3)
+}
+
+func (s *KeeperTestHelper) Reset() {
+	if s.hasUsedAbci || !s.withCaching {
+		s.withCaching = true
+		s.Setup()
+	} else {
+		s.setupGeneral()
+	}
+}
+
 func (s *KeeperTestHelper) Setup() {
-	s.App = app.Setup(true)
-	s.Ctx = s.App.BaseApp.NewContext(false)
+	dir, err := os.MkdirTemp("", fmt.Sprintf("terp-test-%d-*", rand.Int()))
+
+	if err != nil {
+		panic(fmt.Sprintf("failed creating temporary directory: %v", err))
+	}
+	s.T().Cleanup(func() { os.RemoveAll(dir); s.withCaching = false })
+	s.App = app.SetupWithCustomHome(false, dir)
+	// configure ctx, caching, query helper,& test accounts
+	s.setupGeneral()
+
+}
+
+func (s *KeeperTestHelper) setupGeneral() {
+	s.setupGeneralCustomChainId("bitsong-2b")
+}
+
+func (s *KeeperTestHelper) setupGeneralCustomChainId(chainId string) {
+	s.Ctx = s.App.BaseApp.NewContextLegacy(false,
+		cmtproto.Header{Height: 1, ChainID: chainId, Time: defaultTestStartTime})
+	if s.withCaching {
+		s.Ctx, _ = s.Ctx.CacheContext()
+	}
 	s.QueryHelper = &baseapp.QueryServiceTestHelper{
 		GRPCQueryRouter: s.App.GRPCQueryRouter(),
 		Ctx:             s.Ctx,
 	}
 
-	s.TestAccs = CreateRandomAccounts(3)
-	s.StakingHelper = stakinghelper.NewHelper(s.Suite.T(), s.Ctx, s.App.StakingKeeper)
-	s.StakingHelper.Denom = "uterp"
+	s.TestAccs = []sdk.AccAddress{}
+	s.TestAccs = append(s.TestAccs, baseTestAccts...)
+	s.hasUsedAbci = false
 }
 
 // CreateRandomAccounts is a function return a list of randomly generated AccAddresses
@@ -61,12 +101,10 @@ func CreateRandomAccounts(numAccts int) []sdk.AccAddress {
 	return testAddrs
 }
 
-type (
-	GenerateAccountStrategy func(int) []sdk.AccAddress
-	BondDenomProvider       interface {
-		BondDenom(ctx sdk.Context) string
-	}
-)
+type GenerateAccountStrategy func(int) []sdk.AccAddress
+type BondDenomProvider interface {
+	BondDenom(ctx sdk.Context) string
+}
 
 // AddTestAddrs constructs and returns accNum amount of accounts with an
 // initial balance of accAmt in random order
@@ -105,19 +143,4 @@ func ConvertAddrsToValAddrs(addrs []sdk.AccAddress) []sdk.ValAddress {
 	}
 
 	return valAddrs
-}
-
-func (s *KeeperTestHelper) SetupTestForInitGenesis() {
-	// Setting to True, leads to init genesis not running
-	s.App = app.Setup(true)
-	s.Ctx = s.App.BaseApp.NewContextLegacy(true, cmtproto.Header{})
-}
-
-func (s *KeeperTestHelper) Reset() {
-	if s.hasUsedAbci || !s.withCaching {
-		s.withCaching = true
-		s.Setup()
-	} else {
-		s.Setup()
-	}
 }

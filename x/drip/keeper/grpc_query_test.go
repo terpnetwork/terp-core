@@ -45,10 +45,10 @@ func (s *IntegrationTestSuite) TestDripQueryParams() {
 	} {
 		s.Run(tc.desc, func() {
 			// Set the params to what is expected, then query and ensure the query is the same
-			err := s.app.DripKeeper.SetParams(s.ctx, tc.Expected)
+			err := s.App.DripKeeper.SetParams(s.Ctx, tc.Expected)
 			s.Require().NoError(err)
 
-			goCtx := s.ctx
+			goCtx := s.Ctx
 			resp, err := s.queryClient.Params(goCtx, &types.QueryParamsRequest{})
 			s.Require().NoError(err)
 			s.Require().Equal(tc.Expected, resp.Params)

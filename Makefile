@@ -4,7 +4,7 @@
 include scripts/makefiles/build.mk
 include scripts/makefiles/docker.mk
 include scripts/makefiles/e2e.mk
-# include scripts/makefiles/format.mk
+include scripts/makefiles/format.mk
 # include scripts/makefiles/localnet.mk
 include scripts/makefiles/hl.mk
 include scripts/makefiles/lint.mk

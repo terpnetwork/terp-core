@@ -53,6 +53,7 @@ func (s *KeeperTestSuite) TestKeeper_AddAuthenticatorWithId() {
 	s.Require().Error(err)
 	s.Require().ErrorContains(err, "invalid secp256k1 public key size")
 
+	// cannot add non-existing authenticator
 	s.App.AuthenticatorManager.ResetAuthenticators()
 	err = s.App.SmartAccountKeeper.AddAuthenticatorWithId(
 		ctx,

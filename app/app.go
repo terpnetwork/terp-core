@@ -46,7 +46,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
-	"github.com/cosmos/cosmos-sdk/x/auth/posthandler"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
@@ -255,7 +254,6 @@ func NewTerpApp(
 	wasmOpts []wasmkeeper.Option,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *TerpApp {
-
 	encodingConfig := MakeEncodingConfig()
 
 	appCodec, legacyAmino := encodingConfig.Marshaler, encodingConfig.Amino
@@ -526,11 +524,7 @@ func GetDefaultBypassFeeMessages() []string {
 }
 
 func (app *TerpApp) setPostHandler() {
-	postHandler, err := posthandler.NewPostHandler(posthandler.HandlerOptions{})
-	if err != nil {
-		panic(err)
-	}
-
+	postHandler := NewPostHandler(app.appCodec, app.SmartAccountKeeper, app.AccountKeeper, encodingConfig.TxConfig.SignModeHandler())
 	app.SetPostHandler(postHandler)
 }
 

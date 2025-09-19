@@ -307,17 +307,6 @@ func NewAppKeepers(
 
 	invCheckPeriod := cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod))
 
-	// Initialize authenticators
-	appKeepers.AuthenticatorManager = authenticator.NewAuthenticatorManager()
-	appKeepers.AuthenticatorManager.InitializeAuthenticators([]authenticator.Authenticator{
-		authenticator.NewSignatureVerification(appKeepers.AccountKeeper),
-		authenticator.NewMessageFilter(encodingConfig),
-		authenticator.NewAllOf(appKeepers.AuthenticatorManager),
-		authenticator.NewAnyOf(appKeepers.AuthenticatorManager),
-		authenticator.NewPartitionedAnyOf(appKeepers.AuthenticatorManager),
-		authenticator.NewPartitionedAllOf(appKeepers.AuthenticatorManager),
-	})
-
 	appKeepers.CrisisKeeper = crisiskeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[crisistypes.StoreKey]),
@@ -556,6 +545,10 @@ func NewAppKeepers(
 		append(wasmOpts, wasmkeeper.WithWasmEngine(wasmVm))...,
 	)
 	appKeepers.WasmKeeper = &wasmKeeper
+
+	// register CosmWasm authenticator
+	appKeepers.AuthenticatorManager.RegisterAuthenticator(
+		authenticator.NewCosmwasmAuthenticator(appKeepers.ContractKeeper, appKeepers.AccountKeeper, appCodec))
 
 	ibcWasmClientKeeper := ibcwlckeeper.NewKeeperWithVM(
 		appCodec,

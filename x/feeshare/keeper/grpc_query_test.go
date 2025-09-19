@@ -255,7 +255,7 @@ func (s *KeeperTestSuite) TestWithdrawerFeeShares() {
 		goCtx := s.Ctx
 		resp, err := s.queryClient.WithdrawerFeeShares(goCtx, request(nil, 0, 0, true))
 		s.Require().NoError(err)
-		s.Require().Equal(len(contractAddressList), resp.Pagination.Total)
+		s.Require().Equal(uint64(len(contractAddressList)), resp.Pagination.Total)
 		s.Require().ElementsMatch(nullify.Fill(contractAddressList), nullify.Fill(resp.ContractAddresses))
 	})
 }

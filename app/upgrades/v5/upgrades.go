@@ -121,7 +121,7 @@ func MoveWasmDataPath(homepath string) error {
 	}
 
 	// ensure parent directory of new path exists
-	if err := os.MkdirAll(filepath.Dir(newPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(newPath), 0o755); err != nil {
 		return err
 	}
 
@@ -130,7 +130,6 @@ func MoveWasmDataPath(homepath string) error {
 }
 
 func DecreaseBlockTimes(homepath string) error {
-
 	// retrieve config.toml
 	appConfigPath := filepath.Join(homepath, "config", "config.toml")
 	configBytes, err := os.ReadFile(appConfigPath)
@@ -150,6 +149,6 @@ func DecreaseBlockTimes(homepath string) error {
 	}
 	// apply changes to config file
 	updatedBytes, err := toml.Marshal(config)
-	os.WriteFile(appConfigPath, updatedBytes, 0644)
+	os.WriteFile(appConfigPath, updatedBytes, 0o644)
 	return nil
 }

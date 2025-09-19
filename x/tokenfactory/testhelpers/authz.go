@@ -14,9 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 )
 
-var (
-	Amino = codec.NewLegacyAmino()
-)
+var Amino = codec.NewLegacyAmino()
 
 func init() {
 	cryptocodec.RegisterCrypto(Amino)

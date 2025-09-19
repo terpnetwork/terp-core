@@ -195,7 +195,6 @@ func (s *SpendLimitAuthenticatorTest) TestSpendLimit() {
 	// ante
 	// _, err = anteHandler(s.Ctx, tx, false)
 	// s.Require().Error(err)
-
 }
 
 func (s *SpendLimitAuthenticatorTest) StoreContractCode(path string) uint64 {

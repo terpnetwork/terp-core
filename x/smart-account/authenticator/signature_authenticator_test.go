@@ -484,7 +484,7 @@ func generatePubKeysForMultiSig(
 	for i, p := range priv {
 		pubkeys[i] = p.PubKey()
 	}
-	return
+	return pubkeys
 }
 
 func generateSignaturesForMultiSig(
@@ -499,5 +499,5 @@ func generateSignaturesForMultiSig(
 			panic(err)
 		}
 	}
-	return
+	return signatures
 }

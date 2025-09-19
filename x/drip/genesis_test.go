@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/terpnetwork/terp-core/v4/app"
 	apptesting "github.com/terpnetwork/terp-core/v4/app/testutil"
 	drip "github.com/terpnetwork/terp-core/v4/x/drip"
 	"github.com/terpnetwork/terp-core/v4/x/drip/types"
@@ -15,7 +14,6 @@ import (
 type GenesisTestSuite struct {
 	apptesting.KeeperTestHelper
 
-	app     *app.TerpApp
 	genesis types.GenesisState
 }
 
@@ -24,7 +22,7 @@ func TestGenesisTestSuite(t *testing.T) {
 }
 
 func (s *GenesisTestSuite) SetupTest() {
-	s.app = app.Setup(false)
+	s.Setup()
 	s.genesis = *types.DefaultGenesisState()
 }
 
@@ -87,14 +85,14 @@ func (s *GenesisTestSuite) TestDripInitGenesis() {
 
 			if tc.expPanic {
 				s.Require().Panics(func() {
-					drip.InitGenesis(s.Ctx, s.app.DripKeeper, tc.genesis)
+					drip.InitGenesis(s.Ctx, s.App.DripKeeper, tc.genesis)
 				})
 			} else {
 				s.Require().NotPanics(func() {
-					drip.InitGenesis(s.Ctx, s.app.DripKeeper, tc.genesis)
+					drip.InitGenesis(s.Ctx, s.App.DripKeeper, tc.genesis)
 				})
 
-				params := s.app.DripKeeper.GetParams(s.Ctx)
+				params := s.App.DripKeeper.GetParams(s.Ctx)
 				s.Require().Equal(tc.genesis.Params, params)
 			}
 		})

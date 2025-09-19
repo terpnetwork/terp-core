@@ -2,7 +2,9 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -68,7 +70,8 @@ var DefaultConsensusParams = &tmproto.ConsensusParams{
 
 // Setup initializes a new TerpApp
 func Setup(isCheckTx bool) *TerpApp {
-	return SetupWithCustomHome(isCheckTx, DefaultNodeHome)
+	dir, _ := os.MkdirTemp("", fmt.Sprintf("terp-test-%d-*", rand.Int()))
+	return SetupWithCustomHome(isCheckTx, dir)
 }
 
 var defaultGenesisStatebytes = []byte{}

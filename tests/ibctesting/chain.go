@@ -41,8 +41,8 @@ func SetupTestingApp() (ibctesting.TestingApp, map[string]json.RawMessage) {
 	// 1. look for sim-test  data folder
 	// - if exists,  delete & remke
 	// - if does not exists, create
-	dirName := fmt.Sprintf("%d", rand.Int())
-	btsgApp := app.Setup(false)
+	dirName := fmt.Sprintf("/tmp/terp-test-%d", rand.Int())
+	btsgApp := app.SetupWithCustomHome(false, dirName)
 	TestingDirectories = append(TestingDirectories, dirName)
 	return btsgApp, app.NewDefaultGenesisState()
 }
@@ -140,7 +140,6 @@ func SignAndDeliver(
 		accSeqs,
 		priv...,
 	)
-
 	if err != nil {
 		return nil, err
 	}

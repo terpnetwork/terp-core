@@ -84,7 +84,6 @@ func (s *AuthenticatorPostSuite) SetupTest() {
 		sdk.ChainPostDecorators(sdk.Terminator{}), //nolint
 	)
 	s.Ctx = s.Ctx.WithGasMeter(storetypes.NewGasMeter(1_000_000))
-
 }
 
 func (s *AuthenticatorPostSuite) TearDownTest() {

@@ -10,9 +10,7 @@ import (
 	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
 )
 
-var (
-	_ authenticator.Authenticator = &TestingAuthenticator{}
-)
+var _ authenticator.Authenticator = &TestingAuthenticator{}
 
 type ApproveOn int
 

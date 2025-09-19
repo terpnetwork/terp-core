@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"testing"
 
 	terpibctesting "github.com/terpnetwork/terp-core/v4/tests/ibctesting"
 	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
 	moduletestutils "github.com/terpnetwork/terp-core/v4/x/smart-account/testutils"
-
-	"testing"
 
 	"github.com/terpnetwork/terp-core/v4/app"
 	smartaccounttypes "github.com/terpnetwork/terp-core/v4/x/smart-account/types"
@@ -41,15 +40,16 @@ type AuthenticatorSuite struct {
 	Account  sdk.AccountI
 }
 
-type cpks = [][]cryptotypes.PrivKey
-type pks = []cryptotypes.PrivKey
+type (
+	cpks = [][]cryptotypes.PrivKey
+	pks  = []cryptotypes.PrivKey
+)
 
 func TestAuthenticatorSuite(t *testing.T) {
 	suite.Run(t, new(AuthenticatorSuite))
 }
 
 func (s *AuthenticatorSuite) SetupTest() {
-
 	// Use the terp custom function for creating an terp app
 	ibctesting.DefaultTestingAppInit = terpibctesting.SetupTestingApp
 
@@ -613,7 +613,6 @@ func (s *AuthenticatorSuite) TestFeeDeduction() {
 		expectedError          bool
 		expectedErrorMsg       string
 	}{
-
 		{
 			name:                   "single message, authenticated, fee deducted + tx succeeded",
 			signers:                []cryptotypes.PrivKey{addres1PrivateKey},

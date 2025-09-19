@@ -35,7 +35,7 @@ func (fsd FeeSharePayoutDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 	err = FeeSharePayout(ctx, fsd.bankKeeper, feeTx.GetFee(), fsd.feesharekeeper, tx.GetMsgs())
 	if err != nil {
-		return ctx, errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
+		return ctx, errorsmod.Wrap(sdkerrors.ErrInsufficientFunds, err.Error())
 	}
 
 	return next(ctx, tx, simulate)
