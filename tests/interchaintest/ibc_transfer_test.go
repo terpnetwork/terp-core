@@ -2,8 +2,10 @@ package interchaintest
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"cosmossdk.io/math"
 	sdkmath "cosmossdk.io/math"
 	transfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	"github.com/strangelove-ventures/interchaintest/v10"
@@ -166,7 +168,7 @@ func TestTerpGaiaIBCTransfer(t *testing.T) {
 
 	gaiaUpdateBal, err := gaia.GetBalance(ctx, gaiaUserAddr, terpIBCDenom)
 	require.NoError(t, err)
-	require.Equal(t, transferAmount, gaiaUpdateBal)
+	require.Equal(t, sdkmath.NewInt(transferAmount), gaiaUpdateBal)
 
 	// Compose an IBC transfer and send from Gaia -> Terp
 	transfer = ibc.WalletAmount{
@@ -192,5 +194,6 @@ func TestTerpGaiaIBCTransfer(t *testing.T) {
 
 	gaiaUpdateBal, err = gaia.GetBalance(ctx, gaiaUserAddr, terpIBCDenom)
 	require.NoError(t, err)
-	require.Equal(t, int64(0), gaiaUpdateBal)
+	fmt.Printf("gaiaUpdateBal.Int64(): %v\n", gaiaUpdateBal.Int64())
+	require.Equal(t, math.NewInt(0), gaiaUpdateBal)
 }
