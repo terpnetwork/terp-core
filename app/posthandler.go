@@ -5,8 +5,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	smartaccountkeeper "github.com/terpnetwork/terp-core/v4/x/smart-account/keeper"
-	smartaccountpost "github.com/terpnetwork/terp-core/v4/x/smart-account/post"
+	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
+	smartaccountpost "github.com/terpnetwork/terp-core/v5/x/smart-account/post"
 )
 
 func NewPostHandler(

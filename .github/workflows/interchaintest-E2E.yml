@@ -64,7 +64,6 @@ jobs:
           - "e2e-polytone"
           # - "e2e-clock"
           # - "e2e-upgrade"
-          # - "e2e-pob"
           # - "e2e-drip"
           # - "e2e-cwhooks"
       fail-fast: false

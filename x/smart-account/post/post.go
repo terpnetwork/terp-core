@@ -13,10 +13,10 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
-	smartaccountante "github.com/terpnetwork/terp-core/v4/x/smart-account/ante"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
-	smartaccountkeeper "github.com/terpnetwork/terp-core/v4/x/smart-account/keeper"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	smartaccountante "github.com/terpnetwork/terp-core/v5/x/smart-account/ante"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
+	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 // AuthenticatorPostDecorator handles post-transaction tasks for smart accounts.
@@ -98,7 +98,7 @@ func (ad AuthenticatorPostDecorator) PostHandle(
 
 		// We skip replay protection here as it was already checked on authenticate.
 		// TODO: Cache the authenticationRequest in the AnteHandler and reuse here.
-		// https://github.com/terpnetwork/terp-core/v4/issues/8371
+		// https://github.com/terpnetwork/terp-core/v5/issues/8371
 		authenticationRequest, err := authenticator.GenerateAuthenticationRequest(
 			ctx,
 			ad.cdc,

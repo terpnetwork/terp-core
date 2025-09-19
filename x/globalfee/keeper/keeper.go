@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
 )
 
 // Keeper of the globalfee store

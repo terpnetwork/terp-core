@@ -18,10 +18,10 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/client/cli"
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/exported"
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/client/cli"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/exported"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/keeper"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
 
 // type check to ensure the interface is properly implemented

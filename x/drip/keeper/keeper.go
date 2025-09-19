@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	driptypes "github.com/terpnetwork/terp-core/v4/x/drip/types"
+	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
 )
 
 // Keeper of this module maintains distributing tokens to all stakers.

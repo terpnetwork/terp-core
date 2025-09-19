@@ -5,8 +5,8 @@ import (
 
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
-	smartaccountkeeper "github.com/terpnetwork/terp-core/v4/x/smart-account/keeper"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 // CircuitBreakerDecorator routes transactions through appropriate ante handlers based on

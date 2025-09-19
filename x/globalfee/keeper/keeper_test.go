@@ -9,10 +9,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/app"
-	ap "github.com/terpnetwork/terp-core/v4/app/params"
-	testutils "github.com/terpnetwork/terp-core/v4/app/testutil"
-	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v5/app"
+	ap "github.com/terpnetwork/terp-core/v5/app/params"
+	testutils "github.com/terpnetwork/terp-core/v5/app/testutil"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
 )
 
 type KeeperTestSuite struct {

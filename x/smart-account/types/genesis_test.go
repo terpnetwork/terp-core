@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

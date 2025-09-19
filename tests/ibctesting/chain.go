@@ -19,14 +19,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
-	"github.com/terpnetwork/terp-core/v4/app"
+	"github.com/terpnetwork/terp-core/v5/app"
 
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	ibctesting "github.com/cosmos/ibc-go/v10/testing"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 const SimAppChainID = "simulation-app"

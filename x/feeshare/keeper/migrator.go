@@ -3,8 +3,8 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/exported"
-	v2 "github.com/terpnetwork/terp-core/v4/x/feeshare/migrations/v2"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/exported"
+	v2 "github.com/terpnetwork/terp-core/v5/x/feeshare/migrations/v2"
 )
 
 // Migrator is a struct for handling in-place state migrations.

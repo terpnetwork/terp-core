@@ -11,7 +11,7 @@ replace (
 	github.com/ChainSafe/go-schnorrkel/1 => github.com/ChainSafe/go-schnorrkel v1.0.0
 	github.com/strangelove-ventures/interchaintest/v10 => github.com/burnt-labs/interchaintest/v10 v10.0.0-wasmvm3
 	// For this nested module, you always want to replace the parent reference with the current worktree.
-	github.com/terpnetwork/terp-core/v4 => ../../
+	github.com/terpnetwork/terp-core/v5 => ../../
 
 )
 
@@ -24,7 +24,7 @@ require (
 	github.com/docker/docker v28.0.0+incompatible
 	github.com/strangelove-ventures/interchaintest/v10 v10.0.0
 	github.com/stretchr/testify v1.11.0
-	github.com/terpnetwork/terp-core/v4 v4.0.0-00010101000000-000000000000
+	github.com/terpnetwork/terp-core/v5 v4.0.0-00010101000000-000000000000
 	go.uber.org/zap v1.27.0
 )
 

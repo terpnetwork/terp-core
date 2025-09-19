@@ -15,7 +15,7 @@ import (
 	ibc "github.com/cosmos/ibc-go/v10/modules/core"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
-	appparams "github.com/terpnetwork/terp-core/v4/app/params"
+	appparams "github.com/terpnetwork/terp-core/v5/app/params"
 
 	"cosmossdk.io/x/evidence"
 	evidencetypes "cosmossdk.io/x/evidence/types"
@@ -54,26 +54,26 @@ import (
 	"github.com/cosmos/ibc-go/modules/capability"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/feeshare"
-	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
-	"github.com/terpnetwork/terp-core/v4/x/globalfee"
-	"github.com/terpnetwork/terp-core/v4/x/tokenfactory"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare"
+	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee"
+	"github.com/terpnetwork/terp-core/v5/x/tokenfactory"
 
-	"github.com/terpnetwork/terp-core/v4/x/drip"
-	driptypes "github.com/terpnetwork/terp-core/v4/x/drip/types"
+	"github.com/terpnetwork/terp-core/v5/x/drip"
+	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
 
 	"github.com/cosmos/cosmos-sdk/x/group"
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/types"
 
-	// cwhooks "github.com/terpnetwork/terp-core/v4/x/cw-hooks"
+	// cwhooks "github.com/terpnetwork/terp-core/v5/x/cw-hooks"
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 
-	smartaccount "github.com/terpnetwork/terp-core/v4/x/smart-account"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	smartaccount "github.com/terpnetwork/terp-core/v5/x/smart-account"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	groupmodule "github.com/cosmos/cosmos-sdk/x/group/module"
 )

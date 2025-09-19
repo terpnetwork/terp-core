@@ -17,8 +17,8 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {

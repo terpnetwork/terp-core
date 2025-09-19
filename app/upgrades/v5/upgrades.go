@@ -11,8 +11,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
 	"github.com/pelletier/go-toml/v2"
-	"github.com/terpnetwork/terp-core/v4/app/keepers"
-	"github.com/terpnetwork/terp-core/v4/app/upgrades"
+	"github.com/terpnetwork/terp-core/v5/app/keepers"
+	"github.com/terpnetwork/terp-core/v5/app/upgrades"
 )
 
 // CreateUpgradeHandler creates an SDK upgrade handler for v5

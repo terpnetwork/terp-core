@@ -67,7 +67,7 @@ import (
 	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
 
-	smartaccount "github.com/terpnetwork/terp-core/v4/x/smart-account"
+	smartaccount "github.com/terpnetwork/terp-core/v5/x/smart-account"
 
 	"github.com/cosmos/cosmos-sdk/server/api"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -98,13 +98,13 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/terpnetwork/terp-core/v4/app/keepers"
-	"github.com/terpnetwork/terp-core/v4/docs"
-	"github.com/terpnetwork/terp-core/v4/x/feeshare"
-	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
-	"github.com/terpnetwork/terp-core/v4/x/globalfee"
-	"github.com/terpnetwork/terp-core/v4/x/tokenfactory"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v5/app/keepers"
+	"github.com/terpnetwork/terp-core/v5/docs"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare"
+	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee"
+	"github.com/terpnetwork/terp-core/v5/x/tokenfactory"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 
 	"cosmossdk.io/x/evidence"
 	"cosmossdk.io/x/upgrade"
@@ -113,8 +113,8 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 
-	"github.com/terpnetwork/terp-core/v4/app/upgrades"
-	v5 "github.com/terpnetwork/terp-core/v4/app/upgrades/v5"
+	"github.com/terpnetwork/terp-core/v5/app/upgrades"
+	v5 "github.com/terpnetwork/terp-core/v5/app/upgrades/v5"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"

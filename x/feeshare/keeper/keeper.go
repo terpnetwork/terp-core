@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	revtypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	revtypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
 
 // Keeper of this module maintains collections of feeshares for contracts

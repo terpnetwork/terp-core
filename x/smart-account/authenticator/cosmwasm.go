@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	errorsmod "cosmossdk.io/errors"
 	"github.com/CosmWasm/wasmd/x/wasm/keeper"

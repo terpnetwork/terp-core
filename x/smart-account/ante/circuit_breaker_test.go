@@ -16,9 +16,9 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/terpnetwork/terp-core/v4/app"
-	"github.com/terpnetwork/terp-core/v4/app/params"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/ante"
+	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v5/app/params"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/ante"
 )
 
 // AuthenticatorCircuitBreakerAnteSuite is a test suite for the authenticator and CircuitBreaker AnteDecorator.

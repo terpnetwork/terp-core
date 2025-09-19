@@ -18,9 +18,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"github.com/terpnetwork/terp-core/v4/x/globalfee/client/cli"
-	"github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
-	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee/client/cli"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee/keeper"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
 )
 
 type AppModule struct {

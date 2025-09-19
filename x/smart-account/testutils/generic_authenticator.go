@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
 )
 
 var _ authenticator.Authenticator = &TestingAuthenticator{}

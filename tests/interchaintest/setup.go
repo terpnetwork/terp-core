@@ -15,8 +15,8 @@ import (
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	testutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
-	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
+	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )

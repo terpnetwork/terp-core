@@ -9,7 +9,7 @@ import (
 
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/strangelove-ventures/interchaintest/v10/chain/cosmos"

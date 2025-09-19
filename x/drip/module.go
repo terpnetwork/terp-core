@@ -18,9 +18,9 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
-	"github.com/terpnetwork/terp-core/v4/x/drip/client/cli"
-	"github.com/terpnetwork/terp-core/v4/x/drip/keeper"
-	"github.com/terpnetwork/terp-core/v4/x/drip/types"
+	"github.com/terpnetwork/terp-core/v5/x/drip/client/cli"
+	"github.com/terpnetwork/terp-core/v5/x/drip/keeper"
+	"github.com/terpnetwork/terp-core/v5/x/drip/types"
 )
 
 // type check to ensure the interface is properly implemented

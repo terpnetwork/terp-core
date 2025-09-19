@@ -16,9 +16,9 @@ import (
 
 	storetypes "cosmossdk.io/store/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/testutils"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 type AggregatedAuthenticatorsTest struct {

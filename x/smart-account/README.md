@@ -442,7 +442,7 @@ succeeds on B, whereas ConfirmExecution succeeds on A. There will then never be 
 
 This is the expected behaviour and authenticator authors should be aware that *there is no guarantee that both methods
 will be called on their authenticator*. There is a proposal to improve this in the future tracked in 
-[#8373](https://github.com/terpnetwork/terp-core/v4/issues/8373)
+[#8373](https://github.com/terpnetwork/terp-core/v5/issues/8373)
 
 ### Composition Logic
 

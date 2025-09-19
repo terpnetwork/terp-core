@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	storetypes "cosmossdk.io/store/types"
 )

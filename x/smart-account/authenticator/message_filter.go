@@ -10,7 +10,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	appparams "github.com/terpnetwork/terp-core/v4/app/params"
+	appparams "github.com/terpnetwork/terp-core/v5/app/params"
 )
 
 var _ Authenticator = &MessageFilter{}

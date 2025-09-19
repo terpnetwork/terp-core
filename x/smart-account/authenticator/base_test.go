@@ -17,13 +17,13 @@ import (
 
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
 
-	smartaccounttypes "github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
-	"github.com/terpnetwork/terp-core/v4/app"
-	"github.com/terpnetwork/terp-core/v4/app/params"
-	appparams "github.com/terpnetwork/terp-core/v4/app/params"
+	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v5/app/params"
+	appparams "github.com/terpnetwork/terp-core/v5/app/params"
 )
 
 type BaseAuthenticatorSuite struct {

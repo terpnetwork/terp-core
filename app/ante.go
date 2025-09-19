@@ -11,12 +11,12 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	ibcante "github.com/cosmos/ibc-go/v10/modules/core/ante"
 	"github.com/cosmos/ibc-go/v10/modules/core/keeper"
-	smartaccountante "github.com/terpnetwork/terp-core/v4/x/smart-account/ante"
+	smartaccountante "github.com/terpnetwork/terp-core/v5/x/smart-account/ante"
 
-	feeshareante "github.com/terpnetwork/terp-core/v4/x/feeshare/ante"
-	feesharekeeper "github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
-	globalfeekeeper "github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
-	smartaccountkeeper "github.com/terpnetwork/terp-core/v4/x/smart-account/keeper"
+	feeshareante "github.com/terpnetwork/terp-core/v5/x/feeshare/ante"
+	feesharekeeper "github.com/terpnetwork/terp-core/v5/x/feeshare/keeper"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v5/x/globalfee/keeper"
+	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmTypes "github.com/CosmWasm/wasmd/x/wasm/types"

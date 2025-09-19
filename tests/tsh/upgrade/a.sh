@@ -1,17 +1,17 @@
 #!/bin/bash
 
-BIND=terd
+BIND=terpd
 CHAINID=test-1
 UPGRADE_VERSION=v024
 
-OLD_RELEASE_GIT=https://github.com/bitsongofficial/go-terp
-NEW_RELEASE_GIT=https://github.com/permissionlessweb/go-terp
+OLD_RELEASE_GIT=https://github.com/terpnetwork/terp-core
+NEW_RELEASE_GIT=https://github.com/terpnetwork/terp-core
 OLD_TAG=main
-NEW_TAG=main
+NEW_TAG=v050-upgrade
 
-SNAPSHOT_PATH=./data/terp-snapshot.tar.lz4
-SNAPSHOT_URL=$(curl -s "https://www.polkachu.com/tendermint_snapshots/terp" | grep -o 'https://snapshots\.polkachu\.com/snapshots/terp/bitsong_[0-9]*\.tar\.lz4' | head -1)
-echo "Current snapshot url: $SNAPSHOT_URL"
+SNAPSHOT_PATH=../../../../snapshots/terp_2025-09-17_13973403_snap.tar.lz4
+# SNAPSHOT_URL=$(curl -s "https://www.polkachu.com/tendermint_snapshots/terp" | grep -o 'https://snapshots\.polkachu\.com/snapshots/terp/bitsong_[0-9]*\.tar\.lz4' | head -1)
+# echo "Current snapshot url: $SNAPSHOT_URL"
 
 # file paths
 CHAINDIR=./data
@@ -34,7 +34,7 @@ trap 'pkill -f '"$BIND" EXIT
 (
     echo "Starting repository clone and build..."
     git clone $OLD_RELEASE_GIT
-    cd go-terp &&
+    cd terp-core &&
     git checkout $OLD_TAG
     make install 
     cd ../
@@ -123,7 +123,7 @@ lz4 -c -d  $SNAPSHOT_PATH | tar -x -C $VAL1HOME
 
 echo "creating testnet-from-export"
 # create testnet-from-export
-$BIND in-place-testnet "$CHAINID" "$USERADDR" bitsongvaloper1qxw4fjged2xve8ez7nu779tm8ejw92rv0vcuqr --trigger-testnet-upgrade $UPGRADE_VERSION  --home $VAL1HOME --skip-confirmation & 
+$BIND in-place-testnet "$CHAINID" "$USERADDR" --trigger-testnet-upgrade $UPGRADE_VERSION  --home $VAL1HOME --skip-confirmation & 
 INPLACE_TESTNET=$!
 echo "INPLACE_TESTNET: $INPLACE_TESTNET"
 sleep 55

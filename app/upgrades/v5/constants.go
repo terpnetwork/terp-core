@@ -3,8 +3,8 @@ package v5
 import (
 	store "cosmossdk.io/store/types"
 	circuittypes "cosmossdk.io/x/circuit/types"
-	"github.com/terpnetwork/terp-core/v4/app/upgrades"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v5/app/upgrades"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 const UpgradeName = "v5"

@@ -14,11 +14,11 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/terpnetwork/terp-core/v4/app"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/ante"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/post"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/testutils"
+	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/ante"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/post"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
 
 	storetypes "cosmossdk.io/store/types"
 )

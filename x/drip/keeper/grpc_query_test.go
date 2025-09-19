@@ -3,7 +3,7 @@ package keeper_test
 import (
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 
-	"github.com/terpnetwork/terp-core/v4/x/drip/types"
+	"github.com/terpnetwork/terp-core/v5/x/drip/types"
 )
 
 func (s *IntegrationTestSuite) TestDripQueryParams() {

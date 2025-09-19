@@ -12,7 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 	"github.com/cosmos/cosmos-sdk/x/gov/client/cli"
-	"github.com/terpnetwork/terp-core/v4/terputils"
+	"github.com/terpnetwork/terp-core/v5/terputils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"

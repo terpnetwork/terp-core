@@ -18,9 +18,9 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	txsigning "cosmossdk.io/x/tx/signing"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
-	smartaccountkeeper "github.com/terpnetwork/terp-core/v4/x/smart-account/keeper"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
+	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 // AuthenticatorDecorator is responsible for processing authentication logic

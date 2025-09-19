@@ -8,7 +8,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
 )
 
 var _ authenticator.Authenticator = &StatefulAuthenticator{}

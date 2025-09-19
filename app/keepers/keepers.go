@@ -20,7 +20,7 @@ import (
 	wasmvm "github.com/CosmWasm/wasmvm/v3"
 	ibcwlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/keeper"
 	ibcwlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
-	appparams "github.com/terpnetwork/terp-core/v4/app/params"
+	appparams "github.com/terpnetwork/terp-core/v5/app/params"
 
 	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
 	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/keeper"
@@ -89,25 +89,25 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	dripkeeper "github.com/terpnetwork/terp-core/v4/x/drip/keeper"
-	driptypes "github.com/terpnetwork/terp-core/v4/x/drip/types"
-	feesharekeeper "github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
-	feesharetypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	dripkeeper "github.com/terpnetwork/terp-core/v5/x/drip/keeper"
+	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
+	feesharekeeper "github.com/terpnetwork/terp-core/v5/x/feeshare/keeper"
+	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/globalfee"
-	globalfeekeeper "github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
-	globalfeetypes "github.com/terpnetwork/terp-core/v4/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v5/x/globalfee/keeper"
+	globalfeetypes "github.com/terpnetwork/terp-core/v5/x/globalfee/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
-	smartaccountkeeper "github.com/terpnetwork/terp-core/v4/x/smart-account/keeper"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
+	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
-	// cwhookskeeper "github.com/terpnetwork/terp-core/v4/x/cw-hooks/keeper"
-	// cwhookstypes "github.com/terpnetwork/terp-core/v4/x/cw-hooks/types"
+	// cwhookskeeper "github.com/terpnetwork/terp-core/v5/x/cw-hooks/keeper"
+	// cwhookstypes "github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
 
-	tokenfactorykeeper "github.com/terpnetwork/terp-core/v4/x/tokenfactory/keeper"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
-	// terpwasm "github.com/terpnetwork/terp-core/v4/internal/wasm"
+	tokenfactorykeeper "github.com/terpnetwork/terp-core/v5/x/tokenfactory/keeper"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
+	// terpwasm "github.com/terpnetwork/terp-core/v5/internal/wasm"
 )
 
 var (

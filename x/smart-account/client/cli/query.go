@@ -2,10 +2,10 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/terpnetwork/terp-core/v4/terputils/terpcli"
+	"github.com/terpnetwork/terp-core/v5/terputils/terpcli"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/types"
-	// "github.com/terpnetwork/terp-core/v4/terputils/terpcli"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	// "github.com/terpnetwork/terp-core/v5/terputils/terpcli"
 )
 
 func GetQueryCmd() *cobra.Command {

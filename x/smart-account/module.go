@@ -10,9 +10,9 @@ import (
 
 	"cosmossdk.io/core/appmodule"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/client/cli"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/keeper"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/client/cli"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"

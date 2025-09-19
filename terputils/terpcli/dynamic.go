@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/cosmos/gogoproto/proto"
-	"github.com/terpnetwork/terp-core/v4/terputils"
+	"github.com/terpnetwork/terp-core/v5/terputils"
 )
 
 type Descriptor interface {

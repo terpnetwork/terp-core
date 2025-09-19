@@ -39,7 +39,7 @@ package cmd
 // 	"github.com/cosmos/cosmos-sdk/x/genutil"
 // 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 // 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-// 	"github.com/terpnetwork/terp-core/v4/app"
+// 	"github.com/terpnetwork/terp-core/v5/app"
 // )
 
 // var (

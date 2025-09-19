@@ -15,7 +15,7 @@ import (
 
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v4/x/smart-account/types"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -30,11 +30,11 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/terpnetwork/terp-core/v4/app"
-	"github.com/terpnetwork/terp-core/v4/app/params"
-	testutils "github.com/terpnetwork/terp-core/v4/app/testutil"
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/ante"
-	moduletestutils "github.com/terpnetwork/terp-core/v4/x/smart-account/testutils"
+	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v5/app/params"
+	testutils "github.com/terpnetwork/terp-core/v5/app/testutil"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/ante"
+	moduletestutils "github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
 )
 
 type AuthenticatorAnteSuite struct {

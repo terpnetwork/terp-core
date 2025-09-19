@@ -12,7 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/smart-account/authenticator"
+	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
 )
 
 // This is a very naive implementation of an authenticator that tracks sends and blocks if the total amount sent is greater than 3_000
