@@ -4,7 +4,9 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"time"
 
+	"cosmossdk.io/math"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,6 +15,8 @@ import (
 	"github.com/pelletier/go-toml/v2"
 	"github.com/terpnetwork/terp-core/v5/app/keepers"
 	"github.com/terpnetwork/terp-core/v5/app/upgrades"
+
+	sca "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 // CreateUpgradeHandler creates an SDK upgrade handler for v5
@@ -39,8 +43,15 @@ func CreateV5UpgradeHandler(
 			return nil, err
 		}
 
+		// retain signed blocks duration given new block speeds
+		p, _ := keepers.SlashingKeeper.GetParams(ctx)
+		p.SignedBlocksWindow = 25_000 /// ~16.67 hours
+		keepers.SlashingKeeper.SetParams(ctx, p)
+
+		consensusParams.Evidence.MaxAgeNumBlocks = 756_000
+		consensusParams.Evidence.MaxAgeDuration = time.Second * 1_814_400 // 21 days (in seconds)
 		// enable vote extensions
-		consensusParams.Abci.VoteExtensionsEnableHeight = ctx.BlockHeight()
+		consensusParams.Abci.VoteExtensionsEnableHeight = ctx.BlockHeight() + 1
 		err = keepers.ConsensusParamsKeeper.ParamsStore.Set(ctx, consensusParams)
 		if err != nil {
 			return nil, err
@@ -65,12 +76,33 @@ func CreateV5UpgradeHandler(
 			return nil, err
 		}
 
+		// update mint keepers blocks_per_year to reflect new block speed
+		mp, err := keepers.MintKeeper.Params.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+		mp.BlocksPerYear = 13148719 // @ 31556925 seconds per tropical year (365 days, 5 hours, 48 mins, 45 seconds)
+		keepers.MintKeeper.Params.Set(ctx, mp)
+
 		// enable wasm clients
 		// set wasm client as an allowed client.
 		// https://github.com/cosmos/ibc-go/blob/main/docs/docs/03-light-clients/04-wasm/03-integration.md
 		params := keepers.IBCKeeper.ClientKeeper.GetParams(ctx)
 		params.AllowedClients = append(params.AllowedClients, wasmlctypes.Wasm)
 		keepers.IBCKeeper.ClientKeeper.SetParams(ctx, params)
+
+		// configure expidited proposals
+		govparams, _ := keepers.GovKeeper.Params.Get(ctx)
+		govparams.ExpeditedMinDeposit = sdk.NewCoins(sdk.NewCoin("uterp", math.NewInt(10_000_000_000))) // 10K
+		newExpeditedVotingPeriod := time.Minute * 60 * 24                                               // 1 DAY
+		govparams.ExpeditedVotingPeriod = &newExpeditedVotingPeriod
+		govparams.ExpeditedThreshold = "0.75" // 75% voting threshold
+		keepers.GovKeeper.Params.Set(ctx, govparams)
+
+		// Set the x/smart-account authenticator params in the store
+		authenticatorParams := sca.DefaultParams()
+		// authenticatorParams.CircuitBreakerControllers = append(authenticatorParams.CircuitBreakerControllers, CircuitBreakerController)
+		keepers.SmartAccountKeeper.SetParams(ctx, authenticatorParams)
 
 		logger.Info(`
 		
