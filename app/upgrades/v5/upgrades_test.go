@@ -75,7 +75,7 @@ func (s *UpgradeTestSuite) PrepareVoteExtensionsEnableHeightTest() {
 func (s *UpgradeTestSuite) ExecuteVoteExtensionsEnableHeightTest() {
 	consParams, err := s.App.ConsensusParamsKeeper.ParamsStore.Get(s.Ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(consParams.Abci.VoteExtensionsEnableHeight, int64(10))
+	s.Require().Equal(consParams.Abci.VoteExtensionsEnableHeight, int64(11))
 }
 
 // func (s *UpgradeTestSuite) PrepareCostPerByteTest() {
