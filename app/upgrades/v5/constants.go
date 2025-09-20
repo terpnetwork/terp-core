@@ -3,6 +3,7 @@ package v5
 import (
 	store "cosmossdk.io/store/types"
 	circuittypes "cosmossdk.io/x/circuit/types"
+	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
 	"github.com/terpnetwork/terp-core/v5/app/upgrades"
 	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
@@ -16,6 +17,7 @@ var Upgrade = upgrades.Upgrade{
 		Added: []string{
 			circuittypes.ModuleName,
 			smartaccounttypes.ModuleName,
+			wasmlctypes.StoreKey,
 		},
 		Deleted: []string{
 			"interchainquery",
