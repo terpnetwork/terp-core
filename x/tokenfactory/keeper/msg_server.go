@@ -8,16 +8,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 )
 
 type msgServer struct {
-	Keeper
+	*Keeper
 }
 
 // NewMsgServerImpl returns an implementation of the MsgServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper Keeper) types.MsgServer {
+func NewMsgServerImpl(keeper *Keeper) types.MsgServer {
 	return &msgServer{Keeper: keeper}
 }
 
@@ -221,9 +221,7 @@ func (server msgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdate
 	}
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	if err := server.SetParams(ctx, req.Params); err != nil {
-		return nil, err
-	}
+	server.SetParams(ctx, req.Params)
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }

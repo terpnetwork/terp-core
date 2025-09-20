@@ -1,23 +1,25 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	"cosmossdk.io/store/prefix"
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-
-	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 )
 
 type (
 	Keeper struct {
-		cdc      codec.BinaryCodec
-		storeKey storetypes.StoreKey
+		storeKey  storetypes.StoreKey
+		permAddrs map[string]authtypes.PermissionsForAddress
+
+		paramSpace paramtypes.Subspace
 
 		accountKeeper       types.AccountKeeper
 		bankKeeper          types.BankKeeper
@@ -33,25 +35,33 @@ type (
 
 // NewKeeper returns a new instance of the x/tokenfactory keeper
 func NewKeeper(
-	cdc codec.BinaryCodec,
 	storeKey storetypes.StoreKey,
+	paramSpace paramtypes.Subspace,
+	maccPerms map[string][]string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	communityPoolKeeper types.CommunityPoolKeeper,
-	enabledCapabilities []string,
-	authority string,
 ) Keeper {
+	if !paramSpace.HasKeyTable() {
+		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
+	}
+
+	permAddrs := make(map[string]authtypes.PermissionsForAddress)
+	permAddrMap := make(map[string]bool)
+	for name, perms := range maccPerms {
+		permsForAddr := authtypes.NewPermissionsForAddress(name, perms)
+		permAddrs[name] = permsForAddr
+		permAddrMap[permsForAddr.GetAddress().String()] = true
+	}
+
 	return Keeper{
-		cdc:      cdc,
-		storeKey: storeKey,
+		storeKey:   storeKey,
+		paramSpace: paramSpace,
+		permAddrs:  permAddrs,
 
 		accountKeeper:       accountKeeper,
 		bankKeeper:          bankKeeper,
 		communityPoolKeeper: communityPoolKeeper,
-
-		enabledCapabilities: enabledCapabilities,
-
-		authority: authority,
 	}
 }
 
@@ -66,19 +76,19 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // GetDenomPrefixStore returns the substore for a specific denom
-func (k Keeper) GetDenomPrefixStore(ctx sdk.Context, denom string) sdk.KVStore {
+func (k Keeper) GetDenomPrefixStore(ctx sdk.Context, denom string) storetypes.KVStore {
 	store := ctx.KVStore(k.storeKey)
 	return prefix.NewStore(store, types.GetDenomPrefixStore(denom))
 }
 
 // GetCreatorPrefixStore returns the substore for a specific creator address
-func (k Keeper) GetCreatorPrefixStore(ctx sdk.Context, creator string) sdk.KVStore {
+func (k Keeper) GetCreatorPrefixStore(ctx sdk.Context, creator string) storetypes.KVStore {
 	store := ctx.KVStore(k.storeKey)
 	return prefix.NewStore(store, types.GetCreatorPrefix(creator))
 }
 
 // GetCreatorsPrefixStore returns the substore that contains a list of creators
-func (k Keeper) GetCreatorsPrefixStore(ctx sdk.Context) sdk.KVStore {
+func (k Keeper) GetCreatorsPrefixStore(ctx sdk.Context) storetypes.KVStore {
 	store := ctx.KVStore(k.storeKey)
 	return prefix.NewStore(store, types.GetCreatorsPrefix())
 }
@@ -87,7 +97,6 @@ func (k Keeper) GetCreatorsPrefixStore(ctx sdk.Context) sdk.KVStore {
 // This account isn't intended to store any coins,
 // it purely mints and burns them on behalf of the admin of respective denoms,
 // and sends to the relevant address.
-func (k Keeper) CreateModuleAccount(ctx sdk.Context) {
-	moduleAcc := authtypes.NewEmptyModuleAccount(types.ModuleName, authtypes.Minter, authtypes.Burner)
-	k.accountKeeper.SetModuleAccount(ctx, moduleAcc)
+func (k Keeper) CreateModuleAccount(ctx context.Context) {
+	k.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
 }

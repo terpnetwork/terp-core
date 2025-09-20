@@ -4,12 +4,13 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	feeshare "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	feeshare "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
 
 // FeeSharePayoutDecorator Run his after we already deduct the fee from the account with
@@ -34,7 +35,7 @@ func (fsd FeeSharePayoutDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 
 	err = FeeSharePayout(ctx, fsd.bankKeeper, feeTx.GetFee(), fsd.feesharekeeper, tx.GetMsgs())
 	if err != nil {
-		return ctx, errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
+		return ctx, errorsmod.Wrap(sdkerrors.ErrInsufficientFunds, err.Error())
 	}
 
 	return next(ctx, tx, simulate)
@@ -44,7 +45,7 @@ func (fsd FeeSharePayoutDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 // and the number of contracts we are executing on.
 // This returns the amount of fees each contract developer should get.
 // tested in ante_test.go
-func FeePayLogic(fees sdk.Coins, govPercent sdk.Dec, numPairs int) sdk.Coins {
+func FeePayLogic(fees sdk.Coins, govPercent math.LegacyDec, numPairs int) sdk.Coins {
 	var splitFees sdk.Coins
 	for _, c := range fees.Sort() {
 		rewardAmount := govPercent.MulInt(c.Amount).QuoInt64(int64(numPairs)).RoundInt()

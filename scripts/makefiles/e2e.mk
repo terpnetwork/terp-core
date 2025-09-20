@@ -1,7 +1,7 @@
 ###############################################################################
 ###                             e2e interchain test                         ###
 ###############################################################################
-
+E2E_UPGRADE_VERSION := "v4"
 e2e-help:
 	@echo "e2e subcommands"
 	@echo ""
@@ -16,9 +16,9 @@ e2e-help:
 	@echo "  docker-build-e2e-init-node            Build e2e init node Docker image"
 	@echo "  remove-resources                      Remove e2e resources"
 	@echo "  setup                                 Set up e2e environment"
-	@echo "  basic						   Run basic test"
+	@echo "  basic						           Run basic test"
 	@echo "  upgrade   				       Run basic planned upgrade test"
-	@echo "  upgrade-local 				   Run basic upgrade locally after compiling a local image as terpnetwork:local"
+	@echo "  upgrade-local 				   Run basic upgrade locally after compiling a local image as terpnetwork/terp-core:local"
 	@echo "  statesync					   Run basic test on node statesync capabilities"
 	@echo "  ibc   				           Run basic ibc test"
 	@echo "  pfm					           Run basic packet-forward-middleware test"
@@ -31,34 +31,37 @@ e2e: e2e-help
 
  # Executes basic chain tests via interchaintest
 e2e-basic: rm-testcache
-	cd interchaintest && go test -race -v -run TestBasicTerpStart .
+	cd tests/interchaintest && go test -race -v -run TestBasicTerpStart .
 
 e2e-statesync: rm-testcache
-	cd interchaintest && go test -race -v -run TestTerpStateSync .
+	cd tests/interchaintest && go test -race -v -run TestTerpStateSync .
 
 e2e-ibchooks: rm-testcache
-	cd interchaintest && go test -race -v -run TestTerpIBCHooks .
+	cd tests/interchaintest && go test -race -v -run TestTerpIBCHooks .
 
 e2e-pfm: rm-testcache
-	cd interchaintest && go test -race -v -run TestPacketForwardMiddlewareRouter .
+	cd tests/interchaintest && go test -race -v -run TestPacketForwardMiddlewareRouter .
 
 e2e-tokenfactory: rm-testcache
-	cd interchaintest && go test -race -v -run TestTerpTokenFactory .
+	cd tests/interchaintest && go test -race -v -run TestTerpTokenFactory .
 
 e2e-clock: rm-testcache
-	cd interchaintest &&  go test -race -v -run TestTerpClock .
+	cd tests/interchaintest &&  go test -race -v -run TestTerpClock .
 
 e2e-feeshare: rm-testcache
-	cd interchaintest && go test -race -v -run TestTerpFeeShare . 
+	cd tests/interchaintest && go test -race -v -run TestTerpFeeShare . 
 
 e2e-upgrade: rm-testcache
-	cd interchaintest && go test -race -v -run TestBasicTerpUpgrade .
+	cd tests/interchaintest && go test -race -v -run TestBasicTerpUpgrade .
 
 e2e-upgrade-local: local-image ictest-upgrade
 
+e2e-polytone: rm-testcache
+	cd tests/interchaintest && go test -race -v -run TestPolytoneOnTerp .
+
 # Executes IBC tests via interchaintest
 e2e-ibc: rm-testcache
-	cd interchaintest && go test -race -v -run TestTerpGaiaIBCTransfer .
+	cd tests/interchaintest && go test -race -v -run TestTerpGaiaIBCTransfer .
 
 rm-testcache:
 	go clean -testcache

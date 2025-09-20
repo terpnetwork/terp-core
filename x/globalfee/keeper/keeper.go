@@ -1,11 +1,11 @@
 package keeper
 
 import (
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
 )
 
 // Keeper of the globalfee store
@@ -58,4 +58,13 @@ func (k Keeper) GetParams(ctx sdk.Context) (p types.Params) {
 
 	k.cdc.MustUnmarshal(bz, &p)
 	return p
+}
+
+// ExportGenesis returns the txfees module's exported genesis.
+func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
+	genesis := types.DefaultGenesisState()
+	// genesis.Basedenom, _ = k.GetBaseDenom(ctx)
+	// genesis.Feetokens = k.GetFeeTokens(ctx)
+	genesis.Params = k.GetParams(ctx)
+	return genesis
 }

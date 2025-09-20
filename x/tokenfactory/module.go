@@ -13,11 +13,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"cosmossdk.io/core/appmodule"
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
-
-	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -26,16 +25,23 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/client/cli"
-	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/exported"
-	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/keeper"
-	simulation "github.com/terpnetwork/terp-core/v4/x/tokenfactory/simulation"
-	"github.com/terpnetwork/terp-core/v4/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v5/x/tokenfactory/client/cli"
+	"github.com/terpnetwork/terp-core/v5/x/tokenfactory/exported"
+	"github.com/terpnetwork/terp-core/v5/x/tokenfactory/keeper"
+	simulation "github.com/terpnetwork/terp-core/v5/x/tokenfactory/simulation"
+	"github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 )
 
 var (
-	_ module.AppModule      = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ module.AppModule           = AppModule{}
+	_ module.AppModuleBasic      = AppModuleBasic{}
+	_ module.AppModuleBasic      = (*AppModule)(nil)
+	_ module.AppModuleSimulation = (*AppModule)(nil)
+	_ module.HasGenesis          = (*AppModule)(nil)
+
+	_ appmodule.AppModule       = (*AppModule)(nil)
+	_ appmodule.HasBeginBlocker = (*AppModule)(nil)
+	_ appmodule.HasEndBlocker   = (*AppModule)(nil)
 )
 
 // ConsensusVersion defines the current x/tokenfactory module consensus version.
@@ -108,7 +114,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	keeper        keeper.Keeper
+	keeper        *keeper.Keeper
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
 
@@ -116,7 +122,7 @@ type AppModule struct {
 }
 
 func NewAppModule(
-	keeper keeper.Keeper,
+	keeper *keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 
@@ -137,6 +143,12 @@ func (am AppModule) Name() string {
 	return am.AppModuleBasic.Name()
 }
 
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
+
+// IsOnePerModuleType is a marker function just indicates that this is a one-per-module type.
+func (am AppModule) IsOnePerModuleType() {}
+
 // QuerierRoute returns the x/tokenfactory module's query routing key.
 func (AppModule) QuerierRoute() string { return types.QuerierRoute }
 
@@ -146,10 +158,10 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 
-	m := keeper.NewMigrator(am.keeper, am.legacySubspace)
-	if err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2); err != nil {
-		panic(fmt.Sprintf("failed to migrate x/%s from version 1 to 2: %v", types.ModuleName, err))
-	}
+	// m := keeper.NewMigrator(am.keeper, am.legacySubspace)
+	// if err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2); err != nil {
+	// 	panic(fmt.Sprintf("failed to migrate x/%s from version 1 to 2: %v", types.ModuleName, err))
+	// }
 }
 
 // RegisterInvariants registers the x/tokenfactory module's invariants.
@@ -157,13 +169,11 @@ func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // InitGenesis performs the x/tokenfactory module's genesis initialization. It
 // returns no validator updates.
-func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) []abci.ValidatorUpdate {
+func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) {
 	var genState types.GenesisState
 	cdc.MustUnmarshalJSON(gs, &genState)
 
 	am.keeper.InitGenesis(ctx, genState)
-
-	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis returns the x/tokenfactory module's exported genesis state as raw
@@ -179,12 +189,14 @@ func (AppModule) ConsensusVersion() uint64 {
 }
 
 // BeginBlock executes all ABCI BeginBlock logic respective to the tokenfactory module.
-func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (am AppModule) BeginBlock(_ context.Context) error {
+	return nil
+}
 
 // EndBlock executes all ABCI EndBlock logic respective to the tokenfactory module. It
 // returns no validator updates.
-func (am AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return []abci.ValidatorUpdate{}
+func (am AppModule) EndBlock(_ context.Context) error {
+	return nil
 }
 
 // ___________________________________________________________________________
@@ -194,7 +206,7 @@ func (am AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.Valid
 // // GenerateGenesisState creates a randomized GenState of the tokenfactory module.
 // func (am AppModule) SimulatorGenesisState(simState *module.SimulationState, s *simtypes.SimCtx) {
 // 	tfDefaultGen := types.DefaultGenesis()
-// 	tfDefaultGen.Params.DenomCreationFee = sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, sdk.NewInt(10000000)))
+// 	tfDefaultGen.Params.DenomCreationFee = sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, math.NewInt(10000000)))
 // 	tfDefaultGenJson := simState.Cdc.MustMarshalJSON(tfDefaultGen)
 // 	simState.GenState[types.ModuleName] = tfDefaultGenJson
 // }
@@ -222,7 +234,7 @@ func (am AppModule) ProposalContents(_ module.SimulationState) []simtypes.Weight
 }
 
 // RegisterStoreDecoder registers a decoder for supply module's types
-func (am AppModule) RegisterStoreDecoder(_ sdk.StoreDecoderRegistry) {
+func (am AppModule) RegisterStoreDecoder(_ simtypes.StoreDecoderRegistry) {
 }
 
 // WeightedOperations returns the all the gov module operations with their respective weights.

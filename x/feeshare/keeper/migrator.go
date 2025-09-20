@@ -3,17 +3,17 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/exported"
-	v2 "github.com/terpnetwork/terp-core/v4/x/feeshare/migrations/v2"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/exported"
+	v2 "github.com/terpnetwork/terp-core/v5/x/feeshare/migrations/v2"
 )
 
 // Migrator is a struct for handling in-place state migrations.
 type Migrator struct {
-	keeper         Keeper
+	keeper         *Keeper
 	legacySubspace exported.Subspace
 }
 
-func NewMigrator(k Keeper, ss exported.Subspace) Migrator {
+func NewMigrator(k *Keeper, ss exported.Subspace) Migrator {
 	return Migrator{
 		keeper:         k,
 		legacySubspace: ss,

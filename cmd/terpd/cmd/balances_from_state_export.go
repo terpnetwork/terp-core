@@ -23,7 +23,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	appparams "github.com/terpnetwork/terp-core/v4/app/params"
+	appparams "github.com/terpnetwork/terp-core/v5/app/params"
 )
 
 const (
@@ -51,8 +51,8 @@ func newDerivedAccount(address string) DerivedAccount {
 	return DerivedAccount{
 		Address:        address,
 		LiquidBalances: sdk.Coins{},
-		Staked:         sdk.ZeroInt(),
-		UnbondingStake: sdk.ZeroInt(),
+		Staked:         math.ZeroInt(),
+		UnbondingStake: math.ZeroInt(),
 		Bonded:         sdk.Coins{},
 	}
 }
@@ -134,7 +134,7 @@ Example:
 					acc = newDerivedAccount(address)
 				}
 
-				unbondingTerps := sdk.NewInt(0)
+				unbondingTerps := math.NewInt(0)
 				for _, entry := range unbonding.Entries {
 					unbondingTerps = unbondingTerps.Add(entry.Balance)
 				}
@@ -254,7 +254,7 @@ Example:
 			// iterate through all accounts, leave out accounts that do not meet the user provided min stake amount
 			for _, r := range deriveSnapshot.Accounts {
 				var csvRow []string
-				if r.Staked.GT(sdk.NewInt(minStakeAmount)) {
+				if r.Staked.GT(math.NewInt(minStakeAmount)) {
 					csvRow = append(csvRow, r.Address, r.Staked.String())
 					if err := writer.Write(csvRow); err != nil {
 						return err

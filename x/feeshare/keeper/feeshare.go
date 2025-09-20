@@ -1,10 +1,10 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/store/prefix"
+	"cosmossdk.io/store/prefix"
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
 
 // GetFeeShares returns all registered FeeShares.
@@ -12,7 +12,7 @@ func (k Keeper) GetFeeShares(ctx sdk.Context) []types.FeeShare {
 	feeshares := []types.FeeShare{}
 
 	store := ctx.KVStore(k.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, types.KeyPrefixFeeShare)
+	iterator := storetypes.KVStorePrefixIterator(store, types.KeyPrefixFeeShare)
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
@@ -32,7 +32,7 @@ func (k Keeper) IterateFeeShares(
 	handlerFn func(fee types.FeeShare) (stop bool),
 ) {
 	store := ctx.KVStore(k.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, types.KeyPrefixFeeShare)
+	iterator := storetypes.KVStorePrefixIterator(store, types.KeyPrefixFeeShare)
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {

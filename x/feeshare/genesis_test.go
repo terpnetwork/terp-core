@@ -6,13 +6,12 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/app"
-	"github.com/terpnetwork/terp-core/v4/x/feeshare"
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
 
 type GenesisTestSuite struct {
@@ -28,16 +27,14 @@ func TestGenesisTestSuite(t *testing.T) {
 	suite.Run(t, new(GenesisTestSuite))
 }
 
-func (suite *GenesisTestSuite) SetupTest() {
-	app := app.Setup(suite.T())
-	ctx := app.BaseApp.NewContext(false, tmproto.Header{
-		ChainID: "testing",
-	})
+func (s *GenesisTestSuite) SetupTest() {
+	app := app.Setup(false)
+	ctx := app.BaseApp.NewContext(false)
 
-	suite.app = app
-	suite.ctx = ctx
+	s.app = app
+	s.ctx = ctx
 
-	suite.genesis = *types.DefaultGenesisState()
+	s.genesis = *types.DefaultGenesisState()
 }
 
 func (suite *GenesisTestSuite) TestFeeShareInitGenesis() {
@@ -67,7 +64,7 @@ func (suite *GenesisTestSuite) TestFeeShareInitGenesis() {
 			types.GenesisState{
 				Params: types.Params{
 					EnableFeeShare:  true,
-					DeveloperShares: sdk.NewDecWithPrec(0, 2),
+					DeveloperShares: math.LegacyNewDecWithPrec(0, 2),
 					AllowedDenoms:   []string{"uthiol"},
 				},
 			},
@@ -78,7 +75,7 @@ func (suite *GenesisTestSuite) TestFeeShareInitGenesis() {
 			types.GenesisState{
 				Params: types.Params{
 					EnableFeeShare:  true,
-					DeveloperShares: sdk.NewDecWithPrec(100, 2),
+					DeveloperShares: math.LegacyNewDecWithPrec(100, 2),
 					AllowedDenoms:   []string{"uthiol"},
 				},
 			},
@@ -89,7 +86,7 @@ func (suite *GenesisTestSuite) TestFeeShareInitGenesis() {
 			types.GenesisState{
 				Params: types.Params{
 					EnableFeeShare:  true,
-					DeveloperShares: sdk.NewDecWithPrec(10, 2),
+					DeveloperShares: math.LegacyNewDecWithPrec(10, 2),
 					AllowedDenoms:   []string(nil),
 				},
 			},
@@ -103,14 +100,14 @@ func (suite *GenesisTestSuite) TestFeeShareInitGenesis() {
 
 			if tc.expPanic {
 				suite.Require().Panics(func() {
-					feeshare.InitGenesis(suite.ctx, suite.app.AppKeepers.FeeShareKeeper, tc.genesis)
+					feeshare.InitGenesis(suite.ctx, suite.app.FeeShareKeeper, tc.genesis)
 				})
 			} else {
 				suite.Require().NotPanics(func() {
-					feeshare.InitGenesis(suite.ctx, suite.app.AppKeepers.FeeShareKeeper, tc.genesis)
+					feeshare.InitGenesis(suite.ctx, suite.app.FeeShareKeeper, tc.genesis)
 				})
 
-				params := suite.app.AppKeepers.FeeShareKeeper.GetParams(suite.ctx)
+				params := suite.app.FeeShareKeeper.GetParams(suite.ctx)
 				suite.Require().Equal(tc.genesis.Params, params)
 			}
 		})

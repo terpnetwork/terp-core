@@ -17,7 +17,7 @@ export KEYRING=${KEYRING:-"test"}
 export HOME_DIR=$(eval echo "${HOME_DIR:-"~/.terp"}")
 export BINARY=${BINARY:-terpd}
 
-export CLEAN=${CLEAN:-"false"}
+export CLEAN=${CLEAN:-"true"}
 export RPC=${RPC:-"26657"}
 export REST=${REST:-"1317"}
 export PROFF=${PROFF:-"6060"}

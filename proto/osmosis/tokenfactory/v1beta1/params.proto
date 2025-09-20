@@ -6,7 +6,7 @@ import "osmosis/tokenfactory/v1beta1/authorityMetadata.proto";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-option go_package = "github.com/terpnetwork/terp-core/v4/x/tokenfactory/types";
+option go_package = "github.com/terpnetwork/terp-core/x/tokenfactory/types";
 
 // Params defines the parameters for the tokenfactory module.
 message Params {
@@ -16,10 +16,10 @@ message Params {
     (gogoproto.nullable) = false
   ];
 
-  // if denom_creation_fee is an empty array, then this field is used to add more gas consumption
-  // to the base cost.
+  // if denom_creation_fee is an empty array, then this field is used to add
+  // more gas consumption to the base cost.
   // https://github.com/CosmWasm/token-factory/issues/11
-  uint64 denom_creation_gas_consume = 2 [    
+  uint64 denom_creation_gas_consume = 2 [
     (gogoproto.moretags) = "yaml:\"denom_creation_gas_consume\"",
     (gogoproto.nullable) = true
   ];

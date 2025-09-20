@@ -3,10 +3,13 @@ package v2
 import (
 	"fmt"
 
+	"cosmossdk.io/math"
+
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
 )
 
 const (
@@ -21,7 +24,7 @@ var ParamsKey = []byte{0x00}
 // module state.
 func Migrate(
 	_ sdk.Context,
-	store sdk.KVStore,
+	store storetypes.KVStore,
 	cdc codec.BinaryCodec,
 	bondDenom string,
 ) error {
@@ -29,7 +32,7 @@ func Migrate(
 	currParams := types.Params{
 		MinimumGasPrices: sdk.DecCoins{
 			// 0.075000000000000000 / uterpx
-			sdk.NewDecCoinFromDec(bondDenom, sdk.NewDecWithPrec(75, 3)),
+			sdk.NewDecCoinFromDec(bondDenom, math.LegacyNewDecWithPrec(75, 3)),
 		},
 	}
 

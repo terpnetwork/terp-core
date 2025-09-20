@@ -3,8 +3,8 @@ package drip
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/drip/keeper"
-	"github.com/terpnetwork/terp-core/v4/x/drip/types"
+	"github.com/terpnetwork/terp-core/v5/x/drip/keeper"
+	"github.com/terpnetwork/terp-core/v5/x/drip/types"
 )
 
 // InitGenesis import module genesis

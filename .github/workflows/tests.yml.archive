@@ -14,8 +14,8 @@
 #       - name: Install Go
 #         uses: actions/setup-go@v3
 #         with:
-#           go-version: "1.21"
+#           go-version: "1.24"
 #       - name: Checkout code
-#         uses: actions/checkout@v3
+#         uses: actions/checkout@v5
 #       - name: Test
 #         run: go test ./...

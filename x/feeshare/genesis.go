@@ -3,14 +3,14 @@ package feeshare
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/keeper"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
 
 // InitGenesis import module genesis
 func InitGenesis(
 	ctx sdk.Context,
-	k keeper.Keeper,
+	k *keeper.Keeper,
 	data types.GenesisState,
 ) {
 	if err := k.SetParams(ctx, data.Params); err != nil {
@@ -33,7 +33,7 @@ func InitGenesis(
 }
 
 // ExportGenesis export module state
-func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
+func ExportGenesis(ctx sdk.Context, k *keeper.Keeper) *types.GenesisState {
 	return &types.GenesisState{
 		Params:   k.GetParams(ctx),
 		FeeShare: k.GetFeeShares(ctx),

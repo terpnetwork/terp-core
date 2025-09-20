@@ -6,11 +6,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/cosmos/cosmos-sdk/store/prefix"
+	"cosmossdk.io/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
 
 var _ types.QueryServer = Querier{}
@@ -18,10 +18,10 @@ var _ types.QueryServer = Querier{}
 // Querier defines a wrapper around the x/FeeShare keeper providing gRPC method
 // handlers.
 type Querier struct {
-	Keeper
+	*Keeper
 }
 
-func NewQuerier(k Keeper) Querier {
+func NewQuerier(k *Keeper) Querier {
 	return Querier{Keeper: k}
 }
 

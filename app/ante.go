@@ -1,22 +1,22 @@
 package app
 
 import (
+	corestoretypes "cosmossdk.io/core/store"
 	errorsmod "cosmossdk.io/errors"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
-	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	ibcante "github.com/cosmos/ibc-go/v7/modules/core/ante"
-	"github.com/cosmos/ibc-go/v7/modules/core/keeper"
+	ibcante "github.com/cosmos/ibc-go/v10/modules/core/ante"
+	"github.com/cosmos/ibc-go/v10/modules/core/keeper"
+	smartaccountante "github.com/terpnetwork/terp-core/v5/x/smart-account/ante"
 
-	feeshareante "github.com/terpnetwork/terp-core/v4/x/feeshare/ante"
-	feesharekeeper "github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
-	globalfeeante "github.com/terpnetwork/terp-core/v4/x/globalfee/ante"
-	globalfeekeeper "github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
+	feeshareante "github.com/terpnetwork/terp-core/v5/x/feeshare/ante"
+	feesharekeeper "github.com/terpnetwork/terp-core/v5/x/feeshare/keeper"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v5/x/globalfee/keeper"
+	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmTypes "github.com/CosmWasm/wasmd/x/wasm/types"
@@ -29,18 +29,17 @@ const maxBypassMinFeeMsgGasUsage = 2_000_000
 // channel keeper.
 type HandlerOptions struct {
 	ante.HandlerOptions
-
-	GovKeeper         govkeeper.Keeper
+	SmartAccount      *smartaccountkeeper.Keeper
 	IBCKeeper         *keeper.Keeper
-	FeeShareKeeper    feesharekeeper.Keeper
+	FeeShareKeeper    *feesharekeeper.Keeper
 	BankKeeperFork    feeshareante.BankKeeper
-	WasmConfig        *wasmTypes.WasmConfig
-	TXCounterStoreKey storetypes.StoreKey
-	Cdc               codec.BinaryCodec
+	WasmConfig        *wasmTypes.NodeConfig
+	TXCounterStoreKey corestoretypes.KVStoreService
+	Cdc               codec.Codec
 
 	BypassMinFeeMsgTypes []string
 
-	GlobalFeeKeeper globalfeekeeper.Keeper
+	GlobalFeeKeeper *globalfeekeeper.Keeper
 	StakingKeeper   stakingkeeper.Keeper
 
 	TxEncoder sdk.TxEncoder
@@ -56,9 +55,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	if options.SignModeHandler == nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "sign mode handler is required for ante builder")
 	}
-	if options.WasmConfig == nil {
-		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "wasm config is required for ante builder")
-	}
+
 	if options.TXCounterStoreKey == nil {
 		return nil, errorsmod.Wrap(sdkerrors.ErrLogic, "tx counter key is required for ante builder")
 	}
@@ -68,24 +65,40 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		sigGasConsumer = ante.DefaultSigVerificationGasConsumer
 	}
 
+	deductFeeDecorator := ante.NewDeductFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.TxFeeChecker)
+
+	classicSignatureVerificationDecorator := sdk.ChainAnteDecorators(
+		deductFeeDecorator,
+		ante.NewSetPubKeyDecorator(options.AccountKeeper),
+		ante.NewValidateSigCountDecorator(options.AccountKeeper),
+		ante.NewSigGasConsumeDecorator(options.AccountKeeper, sigGasConsumer),
+		ante.NewSigVerificationDecorator(options.AccountKeeper, options.SignModeHandler),
+		ante.NewIncrementSequenceDecorator(options.AccountKeeper),
+		ibcante.NewRedundantRelayDecorator(options.IBCKeeper),
+	)
+	authenticatorVerificationDecorator := sdk.ChainAnteDecorators(
+		smartaccountante.NewEmitPubKeyDecoratorEvents(options.AccountKeeper),
+		ante.NewValidateSigCountDecorator(options.AccountKeeper), // we can probably remove this as multisigs are not supported here
+		// Both the signature verification, fee deduction, and gas consumption functionality
+		// is embedded in the authenticator decorator
+		smartaccountante.NewAuthenticatorDecorator(options.Cdc, options.SmartAccount, options.AccountKeeper, options.SignModeHandler, deductFeeDecorator),
+		ante.NewIncrementSequenceDecorator(options.AccountKeeper),
+	)
+
 	anteDecorators := []sdk.AnteDecorator{
-		ante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
-		wasmkeeper.NewLimitSimulationGasDecorator(options.WasmConfig.SimulationGasLimit), // after setup context to enforce limits early
+		ante.NewSetUpContextDecorator(),
+		wasmkeeper.NewLimitSimulationGasDecorator(options.WasmConfig.SimulationGasLimit),
 		wasmkeeper.NewCountTXDecorator(options.TXCounterStoreKey),
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
 		ante.NewValidateBasicDecorator(),
 		ante.NewTxTimeoutHeightDecorator(),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),
 		ante.NewConsumeGasForTxSizeDecorator(options.AccountKeeper),
-		globalfeeante.NewFeeDecorator(options.BypassMinFeeMsgTypes, options.GlobalFeeKeeper, options.StakingKeeper, maxBypassMinFeeMsgGasUsage),
-		ante.NewDeductFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.TxFeeChecker),
-		feeshareante.NewFeeSharePayoutDecorator(options.BankKeeperFork, options.FeeShareKeeper),
-		ante.NewSetPubKeyDecorator(options.AccountKeeper), // SetPubKeyDecorator must be called before all signature verification decorators
-		ante.NewValidateSigCountDecorator(options.AccountKeeper),
-		ante.NewSigGasConsumeDecorator(options.AccountKeeper, sigGasConsumer),
-		ante.NewSigVerificationDecorator(options.AccountKeeper, options.SignModeHandler),
-		ante.NewIncrementSequenceDecorator(options.AccountKeeper),
-		ibcante.NewRedundantRelayDecorator(options.IBCKeeper),
+		smartaccountante.NewCircuitBreakerDecorator(
+			options.SmartAccount,
+			authenticatorVerificationDecorator,
+			classicSignatureVerificationDecorator,
+		),
 	}
 
 	return sdk.ChainAnteDecorators(anteDecorators...), nil

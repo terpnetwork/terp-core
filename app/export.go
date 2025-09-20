@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	storetypes "cosmossdk.io/store/types"
 
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,7 +18,7 @@ import (
 // file.
 func (app *TerpApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedAddrs []string, modulesToExport []string) (servertypes.ExportedApp, error) {
 	// as if they could withdraw from the start of the next block
-	ctx := app.NewContext(true, tmproto.Header{Height: app.LastBlockHeight()})
+	ctx := app.NewContext(true)
 
 	// We export at last height + 1, because that's the height at which
 	// Tendermint will start InitChain.
@@ -28,13 +28,13 @@ func (app *TerpApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedA
 		app.prepForZeroHeightGenesis(ctx, jailAllowedAddrs)
 	}
 
-	genState := app.ModuleManager.ExportGenesisForModules(ctx, app.appCodec, modulesToExport)
+	genState, _ := app.mm.ExportGenesisForModules(ctx, app.appCodec, modulesToExport)
 	appState, err := json.MarshalIndent(genState, "", "  ")
 	if err != nil {
 		return servertypes.ExportedApp{}, err
 	}
 
-	validators, err := staking.WriteValidators(ctx, app.AppKeepers.StakingKeeper)
+	validators, err := staking.WriteValidators(ctx, app.StakingKeeper)
 	return servertypes.ExportedApp{
 		AppState:        appState,
 		Validators:      validators,
@@ -66,18 +66,21 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 	}
 
 	/* Just to be safe, assert the invariants on current state. */
-	app.AppKeepers.CrisisKeeper.AssertInvariants(ctx)
+	app.CrisisKeeper.AssertInvariants(ctx)
 
 	/* Handle fee distribution state. */
 
 	// withdraw all validator commission
-	app.AppKeepers.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
-		_, _ = app.AppKeepers.DistrKeeper.WithdrawValidatorCommission(ctx, val.GetOperator())
+	err := app.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
+		_, _ = app.DistrKeeper.WithdrawValidatorCommission(ctx, sdk.ValAddress(val.GetOperator()))
 		return false
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// withdraw all delegator rewards
-	dels := app.AppKeepers.StakingKeeper.GetAllDelegations(ctx)
+	dels, _ := app.StakingKeeper.GetAllDelegations(ctx)
 	for _, delegation := range dels {
 		valAddr, err := sdk.ValAddressFromBech32(delegation.ValidatorAddress)
 		if err != nil {
@@ -86,30 +89,30 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 
 		delAddr := sdk.MustAccAddressFromBech32(delegation.DelegatorAddress)
 
-		if _, err = app.AppKeepers.DistrKeeper.WithdrawDelegationRewards(ctx, delAddr, valAddr); err != nil {
+		if _, err = app.DistrKeeper.WithdrawDelegationRewards(ctx, delAddr, valAddr); err != nil {
 			panic(err)
 		}
 	}
 
 	// clear validator slash events
-	app.AppKeepers.DistrKeeper.DeleteAllValidatorSlashEvents(ctx)
+	app.DistrKeeper.DeleteAllValidatorSlashEvents(ctx)
 
 	// clear validator historical rewards
-	app.AppKeepers.DistrKeeper.DeleteAllValidatorHistoricalRewards(ctx)
+	app.DistrKeeper.DeleteAllValidatorHistoricalRewards(ctx)
 
 	// set context height to zero
 	height := ctx.BlockHeight()
 	ctx = ctx.WithBlockHeight(0)
 
 	// reinitialize all validators
-	app.AppKeepers.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
+	app.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
 		// donate any unwithdrawn outstanding reward fraction tokens to the community pool
-		scraps := app.AppKeepers.DistrKeeper.GetValidatorOutstandingRewardsCoins(ctx, val.GetOperator())
-		feePool := app.AppKeepers.DistrKeeper.GetFeePool(ctx)
+		scraps, _ := app.DistrKeeper.GetValidatorOutstandingRewardsCoins(ctx, sdk.ValAddress(val.GetOperator()))
+		feePool, _ := app.DistrKeeper.FeePool.Get(ctx)
 		feePool.CommunityPool = feePool.CommunityPool.Add(scraps...)
-		app.AppKeepers.DistrKeeper.SetFeePool(ctx, feePool)
+		app.DistrKeeper.FeePool.Set(ctx, feePool)
 
-		if err := app.AppKeepers.DistrKeeper.Hooks().AfterValidatorCreated(ctx, val.GetOperator()); err != nil {
+		if err := app.DistrKeeper.Hooks().AfterValidatorCreated(ctx, sdk.ValAddress(val.GetOperator())); err != nil {
 			panic(err)
 		}
 		return false
@@ -123,12 +126,12 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 		}
 		delAddr := sdk.MustAccAddressFromBech32(del.DelegatorAddress)
 
-		if err := app.AppKeepers.DistrKeeper.Hooks().BeforeDelegationCreated(ctx, delAddr, valAddr); err != nil {
+		if err := app.DistrKeeper.Hooks().BeforeDelegationCreated(ctx, delAddr, valAddr); err != nil {
 			// never called as BeforeDelegationCreated always returns nil
 			panic(fmt.Errorf("error while incrementing period: %w", err))
 		}
 
-		if err := app.AppKeepers.DistrKeeper.Hooks().AfterDelegationModified(ctx, delAddr, valAddr); err != nil {
+		if err := app.DistrKeeper.Hooks().AfterDelegationModified(ctx, delAddr, valAddr); err != nil {
 			// never called as AfterDelegationModified always returns nil
 			panic(fmt.Errorf("error while creating a new delegation period record: %w", err))
 		}
@@ -140,33 +143,33 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 	/* Handle staking state. */
 
 	// iterate through redelegations, reset creation height
-	app.AppKeepers.StakingKeeper.IterateRedelegations(ctx, func(_ int64, red stakingtypes.Redelegation) (stop bool) {
+	app.StakingKeeper.IterateRedelegations(ctx, func(_ int64, red stakingtypes.Redelegation) (stop bool) {
 		for i := range red.Entries {
 			red.Entries[i].CreationHeight = 0
 		}
-		app.AppKeepers.StakingKeeper.SetRedelegation(ctx, red)
+		app.StakingKeeper.SetRedelegation(ctx, red)
 		return false
 	})
 
 	// iterate through unbonding delegations, reset creation height
-	app.AppKeepers.StakingKeeper.IterateUnbondingDelegations(ctx, func(_ int64, ubd stakingtypes.UnbondingDelegation) (stop bool) {
+	app.StakingKeeper.IterateUnbondingDelegations(ctx, func(_ int64, ubd stakingtypes.UnbondingDelegation) (stop bool) {
 		for i := range ubd.Entries {
 			ubd.Entries[i].CreationHeight = 0
 		}
-		app.AppKeepers.StakingKeeper.SetUnbondingDelegation(ctx, ubd)
+		app.StakingKeeper.SetUnbondingDelegation(ctx, ubd)
 		return false
 	})
 
 	// Iterate through validators by power descending, reset bond heights, and
 	// update bond intra-tx counters.
-	store := ctx.KVStore(app.AppKeepers.GetKey(stakingtypes.StoreKey))
-	iter := sdk.KVStoreReversePrefixIterator(store, stakingtypes.ValidatorsKey)
+	store := ctx.KVStore(app.GetKey(stakingtypes.StoreKey))
+	iter := storetypes.KVStoreReversePrefixIterator(store, stakingtypes.ValidatorsKey)
 	counter := int16(0)
 
 	for ; iter.Valid(); iter.Next() {
 		addr := sdk.ValAddress(stakingtypes.AddressFromValidatorsKey(iter.Key()))
-		validator, found := app.AppKeepers.StakingKeeper.GetValidator(ctx, addr)
-		if !found {
+		validator, err := app.StakingKeeper.GetValidator(ctx, addr)
+		if err != nil {
 			panic("expected validator, not found")
 		}
 
@@ -175,7 +178,7 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 			validator.Jailed = true
 		}
 
-		app.AppKeepers.StakingKeeper.SetValidator(ctx, validator)
+		app.StakingKeeper.SetValidator(ctx, validator)
 		counter++
 	}
 
@@ -184,7 +187,7 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 		return
 	}
 
-	_, err := app.AppKeepers.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
+	_, err = app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -192,11 +195,11 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 	/* Handle slashing state. */
 
 	// reset start height on signing infos
-	app.AppKeepers.SlashingKeeper.IterateValidatorSigningInfos(
+	app.SlashingKeeper.IterateValidatorSigningInfos(
 		ctx,
 		func(addr sdk.ConsAddress, info slashingtypes.ValidatorSigningInfo) (stop bool) {
 			info.StartHeight = 0
-			app.AppKeepers.SlashingKeeper.SetValidatorSigningInfo(ctx, addr, info)
+			app.SlashingKeeper.SetValidatorSigningInfo(ctx, addr, info)
 			return false
 		},
 	)

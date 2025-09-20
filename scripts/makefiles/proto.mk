@@ -9,28 +9,31 @@ proto-help:
 	@echo "  make proto-[command]"
 	@echo ""
 	@echo "Available Commands:"
-	@echo "  all        Run proto-format and proto-gen"
+	@echo "  all        Run proto-format and proto-gen for swagger & pulsar"
 	@echo "  format     Format Protobuf files"
-	@echo "  gen        Generate Protobuf files"
+	@echo "  gen-swagger        Generate Swagger Protobuf files"
+	@echo "  gen-pulsar         Generate Pulsar Protobuf files"
 	@echo "  image-build  Build the protobuf Docker image"
 	@echo "  image-push  Push the protobuf Docker image"
 
 proto: proto-help
-proto-all: proto-format proto-gen
 
-PROTO_BUILDER_IMAGE=ghcr.io/cosmos/proto-builder:0.14.0
-protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(PROTO_BUILDER_IMAGE)
+# export DOCKER_BUILDKIT=1
+# export DOCKER_DEFAULT_PLATFORM=linux/amd64
 
-proto-all: proto-format proto-gen
+protoVer=0.15.1
+protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
+protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
+SWAGGER_DIR=./swagger-proto
 
-proto-gen:
-	@echo "Generating Protobuf files"
-	@$(protoImage) sh ./scripts/protocgen.sh
-# generate the stubs for the proto files from the proto directory
-	spawn stub-gen
 
-proto-swagger-gen:
-	@$(protoImage) sh ./scripts/protoc_swagger_openapi_gen.sh
+proto-all: proto-format proto-gen-pulsar proto-gen-swagger
+
+proto-gen-pulsar:
+	@$(protoImage) sh ./scripts/get-pulsar.sh
+
+proto-gen-swagger:
+	@$(protoImage) sh ./scripts/gen-swagger.sh
 
 proto-lint:
 	@$(protoImage) buf lint --error-format=json
@@ -89,23 +92,3 @@ proto-download-deps:
 
 	mkdir -p "$(THIRD_PARTY_DIR)/cosmos/ics23/v1" && \
 	curl -sSL https://raw.githubusercontent.com/cosmos/ics23/master/proto/cosmos/ics23/v1/proofs.proto > "$(THIRD_PARTY_DIR)/cosmos/ics23/v1/proofs.proto"
-
-
-docs:
-	@echo
-	@echo "=========== Generate Message ============"
-	@echo
-	@make proto-download-deps
-	./scripts/generate-docs.sh
-
-	statik -src=client/docs/static -dest=client/docs -f -m
-	@if [ -n "$(git status --porcelain)" ]; then \
-        echo "\033[91mSwagger docs are out of sync!!!\033[0m";\
-        exit 1;\
-    else \
-        echo "\033[92mSwagger docs are in sync\033[0m";\
-    fi
-	@echo
-	@echo "=========== Generate Complete ============"
-	@echo
-.PHONY: docs

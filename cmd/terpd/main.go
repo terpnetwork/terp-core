@@ -7,8 +7,8 @@ import (
 
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
-	"github.com/terpnetwork/terp-core/v4/app"
-	"github.com/terpnetwork/terp-core/v4/cmd/terpd/cmd"
+	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v5/cmd/terpd/cmd"
 )
 
 func main() {

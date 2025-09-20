@@ -3,10 +3,16 @@ package app
 import (
 	"github.com/cosmos/cosmos-sdk/std"
 
-	"github.com/terpnetwork/terp-core/v4/app/params"
+	"github.com/terpnetwork/terp-core/v5/app/params"
 )
 
-// MakeEncodingConfig creates a new EncodingConfig with all modules registered
+var encodingConfig params.EncodingConfig = MakeEncodingConfig()
+
+func GetEncodingConfig() params.EncodingConfig {
+	return encodingConfig
+}
+
+// MakeEncodingConfig creates an EncodingConfig for testing
 func MakeEncodingConfig() params.EncodingConfig {
 	encodingConfig := params.MakeEncodingConfig()
 	std.RegisterLegacyAminoCodec(encodingConfig.Amino)

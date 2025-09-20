@@ -53,3 +53,7 @@ contract_tests/*
 # Protobuf 
 gogoproto
 github.com
+
+# tsh
+data
+terp-core

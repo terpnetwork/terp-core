@@ -3,16 +3,16 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	v2 "github.com/terpnetwork/terp-core/v4/x/globalfee/migrations/v2"
+	v2 "github.com/terpnetwork/terp-core/v5/x/globalfee/migrations/v2"
 )
 
 // Migrator is a struct for handling in-place state migrations.
 type Migrator struct {
-	keeper    Keeper
+	keeper    *Keeper
 	bondDenom string
 }
 
-func NewMigrator(k Keeper, bondDenom string) Migrator {
+func NewMigrator(k *Keeper, bondDenom string) Migrator {
 	return Migrator{
 		keeper:    k,
 		bondDenom: bondDenom,

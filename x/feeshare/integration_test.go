@@ -5,35 +5,31 @@ import (
 	"path/filepath"
 	"testing"
 
+	"cosmossdk.io/log"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	abci "github.com/cometbft/cometbft/abci/types"
+	cosmosdb "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/cometbft/cometbft-db"
-	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/log"
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-
+	"cosmossdk.io/store/snapshots"
+	snapshottypes "cosmossdk.io/store/snapshots/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/snapshots"
-	snapshottypes "github.com/cosmos/cosmos-sdk/snapshots/types"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/mint/types"
 
-	terpapp "github.com/terpnetwork/terp-core/v4/app"
+	terpapp "github.com/terpnetwork/terp-core/v5/app"
 )
 
 // returns context and an app with updated mint keeper
 func CreateTestApp(t *testing.T, isCheckTx bool) (*terpapp.TerpApp, sdk.Context) {
 	app := Setup(t, isCheckTx)
 
-	ctx := app.BaseApp.NewContext(isCheckTx, tmproto.Header{
-		ChainID: "testing",
-	})
-	if err := app.AppKeepers.MintKeeper.SetParams(ctx, types.DefaultParams()); err != nil {
+	ctx := app.BaseApp.NewContext(isCheckTx)
+	if err := app.MintKeeper.Params.Set(ctx, types.DefaultParams()); err != nil {
 		panic(err)
 	}
-	app.AppKeepers.MintKeeper.SetMinter(ctx, types.DefaultInitialMinter())
+	app.MintKeeper.Minter.Set(ctx, types.DefaultInitialMinter())
 
 	return app, ctx
 }
@@ -48,8 +44,8 @@ func Setup(t *testing.T, isCheckTx bool) *terpapp.TerpApp {
 		}
 
 		// Initialize the chain
-		app.InitChain(
-			abci.RequestInitChain{
+		_, err = app.InitChain(
+			&abci.RequestInitChain{
 				Validators: []abci.ValidatorUpdate{},
 				// ConsensusParams: &tmproto.ConsensusParams{},
 				ConsensusParams: simtestutil.DefaultConsensusParams,
@@ -57,17 +53,24 @@ func Setup(t *testing.T, isCheckTx bool) *terpapp.TerpApp {
 				ChainId:         "testing",
 			},
 		)
+		if err != nil {
+			panic(err)
+		}
+
 	}
 
 	return app
 }
 
 func GenApp(t *testing.T, withGenesis bool, opts ...wasmkeeper.Option) (*terpapp.TerpApp, terpapp.GenesisState) {
-	db := dbm.NewMemDB()
+	db := cosmosdb.NewMemDB()
 	nodeHome := t.TempDir()
 	snapshotDir := filepath.Join(nodeHome, "data", "snapshots")
 
-	snapshotDB, err := dbm.NewDB("metadata", dbm.GoLevelDBBackend, snapshotDir)
+	snapshotDB, err := cosmosdb.NewGoLevelDB("metadata", snapshotDir, nil)
+	if err != nil {
+		panic(err)
+	}
 	require.NoError(t, err)
 	t.Cleanup(func() { snapshotDB.Close() })
 	snapshotStore, err := snapshots.NewStore(snapshotDB, snapshotDir)
@@ -78,6 +81,7 @@ func GenApp(t *testing.T, withGenesis bool, opts ...wasmkeeper.Option) (*terpapp
 		db,
 		nil,
 		true,
+		nodeHome,
 		simtestutil.EmptyAppOptions{},
 		opts,
 		bam.SetChainID("testing"),
@@ -85,7 +89,7 @@ func GenApp(t *testing.T, withGenesis bool, opts ...wasmkeeper.Option) (*terpapp
 	)
 
 	if withGenesis {
-		return app, terpapp.NewDefaultGenesisState(app.AppCodec())
+		return app, terpapp.NewDefaultGenesisState()
 	}
 
 	return app, terpapp.GenesisState{}

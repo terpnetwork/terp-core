@@ -3,15 +3,13 @@ package keeper
 import (
 	"fmt"
 
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	"cosmossdk.io/log"
 
-	"github.com/cometbft/cometbft/libs/log"
-
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	revtypes "github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	revtypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
 
 // Keeper of this module maintains collections of feeshares for contracts
@@ -21,7 +19,7 @@ type Keeper struct {
 	cdc      codec.BinaryCodec
 
 	bankKeeper    revtypes.BankKeeper
-	wasmKeeper    wasmkeeper.Keeper
+	wasmKeeper    revtypes.WasmKeeper
 	accountKeeper revtypes.AccountKeeper
 
 	feeCollectorName string
@@ -36,7 +34,7 @@ func NewKeeper(
 	storeKey storetypes.StoreKey,
 	cdc codec.BinaryCodec,
 	bk revtypes.BankKeeper,
-	wk wasmkeeper.Keeper,
+	wk revtypes.WasmKeeper,
 	ak revtypes.AccountKeeper,
 	feeCollector string,
 	authority string,
@@ -53,11 +51,11 @@ func NewKeeper(
 }
 
 // GetAuthority returns the x/feeshare module's authority.
-func (k Keeper) GetAuthority() string {
+func (k *Keeper) GetAuthority() string {
 	return k.authority
 }
 
 // Logger returns a module-specific logger.
-func (k Keeper) Logger(ctx sdk.Context) log.Logger {
+func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", revtypes.ModuleName))
 }

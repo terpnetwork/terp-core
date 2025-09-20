@@ -14,10 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 )
 
-var (
-	Amino          = codec.NewLegacyAmino()
-	AuthzModuleCdc = codec.NewAminoCodec(Amino)
-)
+var Amino = codec.NewLegacyAmino()
 
 func init() {
 	cryptocodec.RegisterCrypto(Amino)
@@ -45,22 +42,22 @@ func TestMessageAuthzSerialization(t *testing.T, msg sdk.Msg) {
 	require.NoError(t, err)
 
 	msgGrant := authz.MsgGrant{Granter: mockGranter, Grantee: mockGrantee, Grant: grant}
-	msgGrantBytes := json.RawMessage(sdk.MustSortJSON(AuthzModuleCdc.MustMarshalJSON(&msgGrant)))
-	err = AuthzModuleCdc.UnmarshalJSON(msgGrantBytes, &mockMsgGrant)
+	msgGrantBytes := json.RawMessage(sdk.MustSortJSON(Amino.MustMarshalJSON(&msgGrant)))
+	err = Amino.UnmarshalJSON(msgGrantBytes, &mockMsgGrant)
 	require.NoError(t, err)
 
 	// Authz: Revoke Msg
 	msgRevoke := authz.MsgRevoke{Granter: mockGranter, Grantee: mockGrantee, MsgTypeUrl: typeURL}
-	msgRevokeByte := json.RawMessage(sdk.MustSortJSON(AuthzModuleCdc.MustMarshalJSON(&msgRevoke)))
-	err = AuthzModuleCdc.UnmarshalJSON(msgRevokeByte, &mockMsgRevoke)
+	msgRevokeByte := json.RawMessage(sdk.MustSortJSON(Amino.MustMarshalJSON(&msgRevoke)))
+	err = Amino.UnmarshalJSON(msgRevokeByte, &mockMsgRevoke)
 	require.NoError(t, err)
 
 	// Authz: Exec Msg
 	msgAny, err := cdctypes.NewAnyWithValue(msg)
 	require.NoError(t, err)
 	msgExec := authz.MsgExec{Grantee: mockGrantee, Msgs: []*cdctypes.Any{msgAny}}
-	execMsgByte := json.RawMessage(sdk.MustSortJSON(AuthzModuleCdc.MustMarshalJSON(&msgExec)))
-	err = AuthzModuleCdc.UnmarshalJSON(execMsgByte, &mockMsgExec)
+	execMsgByte := json.RawMessage(sdk.MustSortJSON(Amino.MustMarshalJSON(&msgExec)))
+	err = Amino.UnmarshalJSON(execMsgByte, &mockMsgExec)
 	require.NoError(t, err)
 	require.Equal(t, msgExec.Msgs[0].Value, mockMsgExec.Msgs[0].Value)
 }

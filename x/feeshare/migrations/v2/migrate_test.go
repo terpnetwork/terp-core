@@ -3,16 +3,17 @@ package v2_test
 import (
 	"testing"
 
+	storetypes "cosmossdk.io/store/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 
-	"github.com/terpnetwork/terp-core/v4/x/feeshare"
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/exported"
-	v2 "github.com/terpnetwork/terp-core/v4/x/feeshare/migrations/v2"
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/exported"
+	v2 "github.com/terpnetwork/terp-core/v5/x/feeshare/migrations/v2"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
 
 type mockSubspace struct {
@@ -31,8 +32,8 @@ func TestMigrate(t *testing.T) {
 	encCfg := moduletestutil.MakeTestEncodingConfig(feeshare.AppModuleBasic{})
 	cdc := encCfg.Codec
 
-	storeKey := sdk.NewKVStoreKey(v2.ModuleName)
-	tKey := sdk.NewTransientStoreKey("transient_test")
+	storeKey := storetypes.NewKVStoreKey(v2.ModuleName)
+	tKey := storetypes.NewTransientStoreKey("transient_test")
 	ctx := testutil.DefaultContext(storeKey, tKey)
 	store := ctx.KVStore(storeKey)
 

@@ -6,21 +6,14 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/terpnetwork/terp-core/v4/app"
-	drip "github.com/terpnetwork/terp-core/v4/x/drip"
-	"github.com/terpnetwork/terp-core/v4/x/drip/types"
+	apptesting "github.com/terpnetwork/terp-core/v5/app/testutil"
+	drip "github.com/terpnetwork/terp-core/v5/x/drip"
+	"github.com/terpnetwork/terp-core/v5/x/drip/types"
 )
 
 type GenesisTestSuite struct {
-	suite.Suite
+	apptesting.KeeperTestHelper
 
-	ctx sdk.Context
-
-	app     *app.TerpApp
 	genesis types.GenesisState
 }
 
@@ -28,19 +21,12 @@ func TestGenesisTestSuite(t *testing.T) {
 	suite.Run(t, new(GenesisTestSuite))
 }
 
-func (suite *GenesisTestSuite) SetupTest() {
-	app := app.Setup(suite.T())
-	ctx := app.BaseApp.NewContext(false, tmproto.Header{
-		ChainID: "testing",
-	})
-
-	suite.app = app
-	suite.ctx = ctx
-
-	suite.genesis = *types.DefaultGenesisState()
+func (s *GenesisTestSuite) SetupTest() {
+	s.Setup()
+	s.genesis = *types.DefaultGenesisState()
 }
 
-func (suite *GenesisTestSuite) TestDripInitGenesis() {
+func (s *GenesisTestSuite) TestDripInitGenesis() {
 	testCases := []struct {
 		name     string
 		genesis  types.GenesisState
@@ -48,7 +34,7 @@ func (suite *GenesisTestSuite) TestDripInitGenesis() {
 	}{
 		{
 			"default genesis",
-			suite.genesis,
+			s.genesis,
 			false,
 		},
 		{
@@ -94,20 +80,20 @@ func (suite *GenesisTestSuite) TestDripInitGenesis() {
 	}
 
 	for _, tc := range testCases {
-		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
-			suite.SetupTest() // reset
+		s.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			s.SetupTest() // reset
 
 			if tc.expPanic {
-				suite.Require().Panics(func() {
-					drip.InitGenesis(suite.ctx, suite.app.AppKeepers.DripKeeper, tc.genesis)
+				s.Require().Panics(func() {
+					drip.InitGenesis(s.Ctx, s.App.DripKeeper, tc.genesis)
 				})
 			} else {
-				suite.Require().NotPanics(func() {
-					drip.InitGenesis(suite.ctx, suite.app.AppKeepers.DripKeeper, tc.genesis)
+				s.Require().NotPanics(func() {
+					drip.InitGenesis(s.Ctx, s.App.DripKeeper, tc.genesis)
 				})
 
-				params := suite.app.AppKeepers.DripKeeper.GetParams(suite.ctx)
-				suite.Require().Equal(tc.genesis.Params, params)
+				params := s.App.DripKeeper.GetParams(s.Ctx)
+				s.Require().Equal(tc.genesis.Params, params)
 			}
 		})
 	}

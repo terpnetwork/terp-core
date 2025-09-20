@@ -5,17 +5,17 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
-	"github.com/terpnetwork/terp-core/v4/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee/keeper"
+	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
 )
 
 var _ types.QueryServer = &GrpcQuerier{}
 
 type GrpcQuerier struct {
-	keeper keeper.Keeper
+	keeper *keeper.Keeper
 }
 
-func NewGrpcQuerier(k keeper.Keeper) GrpcQuerier {
+func NewGrpcQuerier(k *keeper.Keeper) GrpcQuerier {
 	return GrpcQuerier{
 		keeper: k,
 	}

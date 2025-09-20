@@ -6,12 +6,13 @@ import (
 	tmstrings "github.com/cometbft/cometbft/libs/strings"
 
 	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
-	globalfeekeeper "github.com/terpnetwork/terp-core/v4/x/globalfee/keeper"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v5/x/globalfee/keeper"
 )
 
 // FeeWithBypassDecorator checks if the transaction's fee is at least as large
@@ -67,7 +68,7 @@ func (mfd FeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 	}
 
 	// Get local minimum-gas-prices
-	localFees := GetMinGasPrice(ctx, int64(feeTx.GetGas()))
+	localFees := GetMinGasPrice(ctx, feeTx.GetGas())
 
 	// CombinedFeeRequirement should never be empty since
 	// global fee is set to its default value, i.e. 0uatom, if empty
@@ -154,7 +155,7 @@ func (mfd FeeDecorator) GetGlobalFee(ctx sdk.Context, feeTx sdk.FeeTx) (sdk.Coin
 	requiredGlobalFees := make(sdk.Coins, len(globalMinGasPrices))
 	// Determine the required fees by multiplying each required minimum gas
 	// price by the gas limit, where fee = ceil(minGasPrice * gasLimit).
-	glDec := sdk.NewDec(int64(feeTx.GetGas()))
+	glDec := math.LegacyNewDec(int64(feeTx.GetGas()))
 	for i, gp := range globalMinGasPrices {
 		fee := gp.Amount.Mul(glDec)
 		requiredGlobalFees[i] = sdk.NewCoin(gp.Denom, fee.Ceil().RoundInt())
@@ -164,15 +165,15 @@ func (mfd FeeDecorator) GetGlobalFee(ctx sdk.Context, feeTx sdk.FeeTx) (sdk.Coin
 }
 
 func (mfd FeeDecorator) DefaultZeroGlobalFee(ctx sdk.Context) ([]sdk.DecCoin, error) {
-	bondDenom := mfd.getBondDenom(ctx)
+	bondDenom, _ := mfd.getBondDenom(ctx)
 	if bondDenom == "" {
 		return nil, errors.New("empty staking bond denomination")
 	}
 
-	return []sdk.DecCoin{sdk.NewDecCoinFromDec(bondDenom, sdk.NewDec(0))}, nil
+	return []sdk.DecCoin{sdk.NewDecCoinFromDec(bondDenom, math.LegacyNewDec(0))}, nil
 }
 
-func (mfd FeeDecorator) getBondDenom(ctx sdk.Context) string {
+func (mfd FeeDecorator) getBondDenom(ctx sdk.Context) (string, error) {
 	return mfd.StakingKeeper.BondDenom(ctx)
 }
 
@@ -191,7 +192,7 @@ func (mfd FeeDecorator) ContainsOnlyBypassMinFeeMsgs(msgs []sdk.Msg) bool {
 
 // GetMinGasPrice returns the validator's minimum gas prices
 // fees given a gas limit
-func GetMinGasPrice(ctx sdk.Context, gasLimit int64) sdk.Coins {
+func GetMinGasPrice(ctx sdk.Context, gasLimit uint64) sdk.Coins {
 	minGasPrices := ctx.MinGasPrices()
 	// special case: if minGasPrices=[], requiredFees=[]
 	if minGasPrices.IsZero() {
@@ -201,7 +202,7 @@ func GetMinGasPrice(ctx sdk.Context, gasLimit int64) sdk.Coins {
 	requiredFees := make(sdk.Coins, len(minGasPrices))
 	// Determine the required fees by multiplying each required minimum gas
 	// price by the gas limit, where fee = ceil(minGasPrice * gasLimit).
-	glDec := sdk.NewDec(gasLimit)
+	glDec := math.LegacyNewDec(math.NewIntFromUint64(gasLimit).Int64())
 	for i, gp := range minGasPrices {
 		fee := gp.Amount.Mul(glDec)
 		requiredFees[i] = sdk.NewCoin(gp.Denom, fee.Ceil().RoundInt())

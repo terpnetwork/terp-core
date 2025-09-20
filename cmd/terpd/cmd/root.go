@@ -15,12 +15,20 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	dbm "github.com/cometbft/cometbft-db"
-	tmcfg "github.com/cometbft/cometbft/config"
-	tmcli "github.com/cometbft/cometbft/libs/cli"
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/client/v2/autocli"
+	"cosmossdk.io/core/appmodule"
+	"cosmossdk.io/log"
+	cosmosdb "github.com/cosmos/cosmos-db"
+	runtimeservices "github.com/cosmos/cosmos-sdk/runtime/services"
+	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
 
-	rosettaCmd "cosmossdk.io/tools/rosetta/cmd"
+	tmcfg "github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/crypto"
+	"github.com/cometbft/cometbft/libs/bytes"
+	tmcli "github.com/cometbft/cometbft/libs/cli"
+
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
@@ -35,12 +43,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
-	"github.com/terpnetwork/terp-core/v4/app"
-	"github.com/terpnetwork/terp-core/v4/app/params"
+	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v5/app/params"
 )
 
 // NewRootCmd creates a new root command for terpd. It is called once in the
@@ -54,6 +61,21 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	cfg.SetBech32PrefixForConsensusNode(app.Bech32PrefixConsAddr, app.Bech32PrefixConsPub)
 	cfg.SetAddressVerifier(wasmtypes.VerifyAddressLen())
 	cfg.Seal()
+
+	tempDir := tempDir()
+
+	// cleanup temp dir after we are done with the tempApp, so we don't leave behind a
+	// new temporary directory for every invocation. See https://github.com/CosmWasm/wasmd/issues/2017
+	defer os.RemoveAll(tempDir)
+	tempApp := app.NewTerpApp(
+		log.NewNopLogger(),
+		cosmosdb.NewMemDB(),
+		nil,
+		true,
+		tempDir,
+		simtestutil.NewAppOptionsWithFlagHome(tempDir),
+		[]wasmkeeper.Option{},
+	)
 
 	initClientCtx := client.Context{}.
 		WithCodec(encodingConfig.Marshaler).
@@ -101,6 +123,10 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 	initRootCmd(rootCmd, encodingConfig)
 
+	if err := autoCliOpts(initClientCtx, tempApp).EnhanceRootCommand(rootCmd); err != nil {
+		panic(err)
+	}
+
 	return rootCmd, encodingConfig
 }
 
@@ -124,7 +150,10 @@ func initAppConfig() (string, interface{}) {
 	type CustomAppConfig struct {
 		serverconfig.Config
 
-		Wasm wasmtypes.WasmConfig `mapstructure:"wasm"`
+		Wasm wasmtypes.NodeConfig `mapstructure:"wasm"`
+
+		// SidecarQueryServerConfig sqs.Config `mapstructure:"terp-sqs"`
+		// IndexerConfig indexer.Config `mapstructure:"terp-indexer"`
 	}
 
 	// Optionally allow the chain developer to overwrite the SDK's default
@@ -145,15 +174,15 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.MinGasPrices = "0stake"
 	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
 
-	customAppConfig := CustomAppConfig{
+	terpAppConfig := CustomAppConfig{
 		Config: *srvCfg,
-		Wasm:   wasmtypes.DefaultWasmConfig(),
+		Wasm:   wasmtypes.DefaultNodeConfig(),
 	}
 
 	customAppTemplate := serverconfig.DefaultConfigTemplate +
 		wasmtypes.DefaultConfigTemplate()
 
-	return customAppTemplate, customAppConfig
+	return customAppTemplate, terpAppConfig
 }
 
 // Reads the custom extra values in the config.toml file if set.
@@ -204,27 +233,27 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
-		NewTestnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 		AddGenesisIcaCmd(app.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
 		DebugCmd(),
 		ConfigCmd(),
-		pruning.PruningCmd(ac.newApp),
+		pruning.Cmd(ac.newApp, app.DefaultNodeHome),
 	)
 
+	server.AddTestnetCreatorCommand(rootCmd, ac.newTestnetApp, addModuleInitFlags)
 	server.AddCommands(rootCmd, app.DefaultNodeHome, ac.newApp, ac.appExport, addModuleInitFlags)
 	wasmcli.ExtendUnsafeResetAllCmd(rootCmd)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(
-		rpc.StatusCommand(),
+		server.StatusCommand(),
 		genesisCommand(encodingConfig),
 		queryCommand(),
 		txCommand(),
-		keys.Commands(app.DefaultNodeHome),
+		keys.Commands(),
 	)
 	// add rosetta
-	rootCmd.AddCommand(rosettaCmd.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Marshaler))
+	// rootCmd.AddCommand(rosettaCmd.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Marshaler))
 }
 
 func addModuleInitFlags(startCmd *cobra.Command) {
@@ -253,14 +282,13 @@ func queryCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		authcmd.GetAccountCmd(),
 		rpc.ValidatorCommand(),
-		rpc.BlockCommand(),
 		authcmd.QueryTxsByEventsCmd(),
 		authcmd.QueryTxCmd(),
 	)
 
 	app.ModuleBasics.AddQueryCommands(cmd)
+
 	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
 
 	return cmd
@@ -285,10 +313,9 @@ func txCommand() *cobra.Command {
 		authcmd.GetBroadcastCommand(),
 		authcmd.GetEncodeCommand(),
 		authcmd.GetDecodeCommand(),
-		authcmd.GetAuxToFeeCommand(),
+		// authcmd.GetAuxToFeeCommand(),
 	)
 
-	app.ModuleBasics.AddTxCommands(cmd)
 	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
 
 	return cmd
@@ -301,7 +328,7 @@ type appCreator struct {
 // newApp creates the application
 func (ac appCreator) newApp(
 	logger log.Logger,
-	db dbm.DB,
+	db cosmosdb.DB,
 	traceStore io.Writer,
 	appOpts servertypes.AppOptions,
 ) servertypes.Application {
@@ -324,6 +351,7 @@ func (ac appCreator) newApp(
 		db,
 		traceStore,
 		loadLatest,
+		cast.ToString(appOpts.Get(flags.FlagHome)),
 		appOpts,
 		wasmOpts,
 		baseappOptions...,
@@ -333,7 +361,7 @@ func (ac appCreator) newApp(
 // appExport creates a new wasm app (optionally at a given height) and exports state.
 func (ac appCreator) appExport(
 	logger log.Logger,
-	db dbm.DB,
+	db cosmosdb.DB,
 	traceStore io.Writer,
 	height int64,
 	forZeroHeight bool,
@@ -362,6 +390,7 @@ func (ac appCreator) appExport(
 		db,
 		traceStore,
 		height == -1,
+		cast.ToString(appOpts.Get(flags.FlagHome)),
 		appOpts,
 		emptyWasmOpts,
 	)
@@ -373,4 +402,86 @@ func (ac appCreator) appExport(
 	}
 
 	return wasmApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
+}
+
+func autoCliOpts(initClientCtx client.Context, tempApp *app.TerpApp) autocli.AppOptions {
+	modules := make(map[string]appmodule.AppModule, 0)
+	for _, m := range tempApp.ModuleManager().Modules {
+		if moduleWithName, ok := m.(module.HasName); ok {
+			moduleName := moduleWithName.Name()
+			if appModule, ok := moduleWithName.(appmodule.AppModule); ok {
+				modules[moduleName] = appModule
+			}
+		}
+	}
+
+	return autocli.AppOptions{
+		Modules:               modules,
+		ModuleOptions:         runtimeservices.ExtractAutoCLIOptions(tempApp.ModuleManager().Modules),
+		AddressCodec:          authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
+		ValidatorAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix()),
+		ConsensusAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ConsensusAddrPrefix()),
+		ClientCtx:             initClientCtx,
+	}
+}
+
+var tempDir = func() string {
+	dir, err := os.MkdirTemp("", "terpd")
+	if err != nil {
+		panic("failed to create temp dir: " + err.Error())
+	}
+
+	return dir
+}
+
+// newTestnetApp starts by running the normal newApp method. From there, the app interface returned is modified in order
+// for a testnet to be created from the provided app.
+func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
+	// Create an app and type cast to an TerpApp
+	cosmosApp := ac.newApp(logger, db, traceStore, appOpts)
+	terpApp, ok := cosmosApp.(*app.TerpApp)
+	if !ok {
+		panic("app created from newApp is not of type terpApp")
+	}
+
+	newValAddr, ok := appOpts.Get(server.KeyNewValAddr).(bytes.HexBytes)
+	if !ok {
+		panic("newValAddr is not of type bytes.HexBytes")
+	}
+	newValPubKey, ok := appOpts.Get(server.KeyUserPubKey).(crypto.PubKey)
+	if !ok {
+		panic("newValPubKey is not of type crypto.PubKey")
+	}
+	newOperatorAddress, ok := appOpts.Get(server.KeyNewOpAddr).(string)
+	if !ok {
+		panic("newOperatorAddress is not of type string")
+	}
+	upgradeToTrigger, ok := appOpts.Get(server.KeyTriggerTestnetUpgrade).(string)
+	if !ok {
+		panic("upgradeToTrigger is not of type string")
+	}
+
+	// if !ok {
+	// 	panic("cannot parse broken validators strings")
+	// }
+
+	// brokenVals := strings.Split(brokenValidators, ",")
+	// fmt.Printf("brokenVals: %v\n", brokenVals)
+
+	// get the json file to additional vals powers
+	// newValsPowerJson, ok := appOpts.Get(testnetserver.KeyNewValsPowerJson).(string)
+	// if !ok {
+	// 	panic(fmt.Errorf("expected path to new validators json %s", testnetserver.KeyNewValsPowerJson))
+	// }
+
+	//  parse json to get list of validators
+	// [{"val":  "terp1val...", "num_dels": , "num_tokens": ,"jailed": }]
+	// newValsPower, err := testnetserver.ParseValidatorInfos(newValsPowerJson)
+	// if err != nil {
+	// 	panic(fmt.Errorf("error parsing validator infos %v ", err))
+	// }
+	// fmt.Printf("newValsPower: %v\n", newValsPower)
+
+	// Make modifications to the normal TerpApp required to run the network locally
+	return app.InitTerpAppForTestnet(terpApp, newValAddr, newValPubKey, newOperatorAddress, upgradeToTrigger, newOperatorAddress) // newValsPower
 }

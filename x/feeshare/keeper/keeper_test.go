@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -8,66 +9,53 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/stretchr/testify/suite"
 
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 
-	"github.com/terpnetwork/terp-core/v4/app"
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/keeper"
-	"github.com/terpnetwork/terp-core/v4/x/feeshare/types"
+	testutils "github.com/terpnetwork/terp-core/v5/app/testutil"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/keeper"
+	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
 
 // BankKeeper defines the expected interface needed to retrieve account balances.
 type BankKeeper interface {
-	MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
-	SendCoins(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error
-	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
-	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
-	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
+	SendCoins(ctx context.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error
+	SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
 }
 
-type IntegrationTestSuite struct {
-	suite.Suite
+type KeeperTestSuite struct {
+	testutils.KeeperTestHelper
 
-	ctx               sdk.Context
-	app               *app.TerpApp
-	bankKeeper        BankKeeper
-	accountKeeper     types.AccountKeeper
 	queryClient       types.QueryClient
 	feeShareMsgServer types.MsgServer
 	wasmMsgServer     wasmtypes.MsgServer
 }
 
-func (s *IntegrationTestSuite) SetupTest() {
-	isCheckTx := false
-	s.app = app.Setup(s.T())
+func (s *KeeperTestSuite) SetupTest() {
+	s.Setup()
+	s.Ctx = s.Ctx.WithBlockTime(s.Ctx.BlockTime().Add(time.Hour))
 
-	s.ctx = s.app.BaseApp.NewContext(isCheckTx, tmproto.Header{
-		ChainID: "testing",
-		Height:  9,
-		Time:    time.Now().UTC(),
-	})
-
-	queryHelper := baseapp.NewQueryServerTestHelper(s.ctx, s.app.InterfaceRegistry())
-	types.RegisterQueryServer(queryHelper, keeper.NewQuerier(s.app.AppKeepers.FeeShareKeeper))
+	queryHelper := baseapp.NewQueryServerTestHelper(s.Ctx, s.App.InterfaceRegistry())
+	types.RegisterQueryServer(queryHelper, keeper.NewQuerier(s.App.FeeShareKeeper))
 
 	s.queryClient = types.NewQueryClient(queryHelper)
-	s.bankKeeper = s.app.AppKeepers.BankKeeper
-	s.accountKeeper = s.app.AppKeepers.AccountKeeper
-	s.feeShareMsgServer = s.app.AppKeepers.FeeShareKeeper
-	s.wasmMsgServer = wasmkeeper.NewMsgServerImpl(&s.app.AppKeepers.WasmKeeper)
+
+	s.feeShareMsgServer = s.App.FeeShareKeeper
+	s.wasmMsgServer = wasmkeeper.NewMsgServerImpl(s.App.WasmKeeper)
 }
 
-func (s *IntegrationTestSuite) FundAccount(ctx sdk.Context, addr sdk.AccAddress, amounts sdk.Coins) error {
-	if err := s.bankKeeper.MintCoins(ctx, minttypes.ModuleName, amounts); err != nil {
+func (s *KeeperTestSuite) FundAccount(ctx sdk.Context, addr sdk.AccAddress, amounts sdk.Coins) error {
+	if err := s.App.BankKeeper.MintCoins(ctx, minttypes.ModuleName, amounts); err != nil {
 		return err
 	}
 
-	return s.bankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, amounts)
+	return s.App.BankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, addr, amounts)
 }
 
 func TestKeeperTestSuite(t *testing.T) {
-	suite.Run(t, new(IntegrationTestSuite))
+	suite.Run(t, new(KeeperTestSuite))
 }

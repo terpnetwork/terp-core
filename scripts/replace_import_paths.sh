@@ -1,4 +1,5 @@
 #!/bin/bash
+# Upgrades this workspace workspace version effeciently 
 
 set -euo pipefail
 
@@ -15,11 +16,11 @@ modules=$(go list -tags e2e ./... | sed "s/g.*v${version_to_replace}\///")
 
 while IFS= read -r line; do
   modules_to_upgrade_manually+=("$line")
-done < <(find . -name go.mod -exec grep -l "github.com/terpnetwork/terp-core/v4" {} \; | grep -v  "^./go.mod$" | sed 's|/go.mod||' | sed 's|^./||')
+done < <(find . -name go.mod -exec grep -l "github.com/terpnetwork/terp-core/v5" {} \; | grep -v  "^./go.mod$" | sed 's|/go.mod||' | sed 's|^./||')
 
 replace_paths() {
     file="${1}"
-    sed -i "s/github.com\/terpnetwork\/terp-core/v4\/v${version_to_replace}/github.com\/terpnetwork\/terp-core/v4\/v${NEXT_MAJOR_VERSION}/g" ${file}
+    sed -i "s/github.com\/terpnetwork\/terp-core/v5\/v${version_to_replace}/github.com\/terpnetwork\/terp-core/v5\/v${NEXT_MAJOR_VERSION}/g" ${file}
 }
 
 echo "Replacing import paths in all files"
