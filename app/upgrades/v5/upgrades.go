@@ -2,21 +2,33 @@ package v5
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
 	"cosmossdk.io/math"
+	"github.com/pelletier/go-toml/v2"
+
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	"github.com/CosmWasm/wasmd/x/wasm/types"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
-	"github.com/pelletier/go-toml/v2"
 	"github.com/terpnetwork/terp-core/v5/app/keepers"
 	"github.com/terpnetwork/terp-core/v5/app/upgrades"
 
+	"github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
+	icacontrollertypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/types"
+	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
 	sca "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+)
+
+const (
+	green  = "\033[32m"
+	yellow = "\033[33m"
+	red    = "\033[31m"
+	reset  = "\033[0m"
 )
 
 // CreateUpgradeHandler creates an SDK upgrade handler for v5
@@ -30,6 +42,11 @@ func CreateV5UpgradeHandler(
 	return func(context context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		ctx := sdk.UnwrapSDKContext(context)
 		logger := ctx.Logger().With("upgrade", UpgradeName)
+		// set params
+		icahostparam := icahosttypes.DefaultParams()
+		icacontrollerparam := icacontrollertypes.DefaultParams()
+		keepers.ICAHostKeeper.SetParams(ctx, icahostparam)
+		keepers.ICAControllerKeeper.SetParams(ctx, icacontrollerparam)
 
 		// Run migrations first
 		migrations, err := mm.RunMigrations(ctx, configurator, vm)
@@ -39,10 +56,19 @@ func CreateV5UpgradeHandler(
 
 		// Update consensus params in order to safely enable comet pruning
 		consensusParams, err := keepers.ConsensusParamsKeeper.ParamsStore.Get(ctx)
+		consensusParams = cmtproto.ConsensusParams{
+			Block:     consensusParams.Block,
+			Evidence:  consensusParams.Evidence,
+			Validator: consensusParams.Validator,
+			Version:   consensusParams.Version,
+			Abci: &cmtproto.ABCIParams{
+				VoteExtensionsEnableHeight: ctx.BlockHeight() + 1,
+			},
+		}
 		if err != nil {
 			return nil, err
 		}
-
+		fmt.Printf("consensusParams: %v\n", consensusParams)
 		// retain signed blocks duration given new block speeds
 		p, _ := keepers.SlashingKeeper.GetParams(ctx)
 		p.SignedBlocksWindow = 25_000 /// ~16.67 hours
@@ -104,40 +130,38 @@ func CreateV5UpgradeHandler(
 		// authenticatorParams.CircuitBreakerControllers = append(authenticatorParams.CircuitBreakerControllers, CircuitBreakerController)
 		keepers.SmartAccountKeeper.SetParams(ctx, authenticatorParams)
 
-		logger.Info(`
-		
-                  .!: ^7  7!^!^:J:.J:                                                               
-                   7^^7Y  J^ :^:5~^5^^~.                                                            
-                   ..  :  :!~!:.~  ~:^?^                                                            
-                          ?DAB?     .::.                                                            
-             .:.          !&&&!          .:.                                                        
-         .:^~^:^~^:.      .B&B.      .:^~^:^~^:.                                                    
-     .:^~^:.     .^~~^.    5@Y    .^~~^.  .. .:^~^:                                                 
-  .^~~^.     ~!     .:^~^:.!&! :^~^:.    ~!7^    .^~^^.                                             
-~~^:         :7         .:^!G!^:.        :!7:        :^~~.                                          
-?   ::.       .             7. ^::^^              .~^   !^                                          
-?  .~7^                     7  !!7:?              ~7?:  !^                                          
-?  :7~.                     7  .::^:              :^^.  !^                      ^~~^ ~. :^          
-?           Eudesmol        7           v5.0.0          !^                     !?  77J7^??          
-?                     :.    7                           !^                     ^7^^7~?^ !7          
-?  .~7:              ^?!.   7                      ^!^  !^                    ~: ::. .   .          
-?  .^7^              :~!:.. 7                      :7.  !^          ^! !~   :!:                     
-7^:...       .^      .:^^~^^7^:.         .^^       :. :^!~^::.      :7 ~! .~~.                      
- .^~^:.     :?J.  .^^~~~~^:. .:^~^:      !?7:     .:^~^.  ..:^^^^^:...  .:!:           .^^: :  ..   
-    .:^~^:.  .~^^~~~~^:.         .^~~^.  .^^. .:^~^:.           ..:^^^^^77^::::::::::.:J^:~^Y^:Y^.:.
-        .:^~^:^~~~^:                .:^~^:.:^~^:.                      .?^.......:.:^.:J:.~^Y^:Y^:!7
-            .~7:.                       .:^^.                           :7      :?.:^7.:^^^.:  :.:~7
-             .!                                                          !^      !.^7~            . 
-             :!                                                          .7                         
-             :!                                                           ~~                        
-             :!                                                    ~! ^!^  ~.                       
-      . ..   .!                                                    :! ^!! !!~!:^7..J.               
-     ^?^?!.  .^. .   .                                              . .. .Y. ::~5~~P.^~:            
-      !^~!^ !!^~^?~.~? .                                                  ^!~!::~  !.:7!            
-        .   J~ :^J7^7J.^7:                                                           :^:            
-            .~~!:^. .^.^7^    
-
-		`)
+		logger.Info("\n\n" +
+			green + "                  .!: ^7  7!^!^:J:.J:                                                            \n" +
+			"                   7^^7Y  J^ :^:5~^5^^~.                                                          \n" +
+			"                   ..  :  :!~!:.~  ~:^?^                                                            \n" +
+			"                          ?DAB?     .::.                                                            \n" +
+			"             .:.          !&&&!          .:.                                                        \n" +
+			"         .:^~^:^~^:.      .B&B.      .:^~^:^~^:.                                                    \n" +
+			"     .:^~^:.     .^~~^.    5@Y    .^~~^.  .. .:^~^:                                                 \n" +
+			"  .^~~^.     ~!     .:^~^:.!&! :^~^:.    ~!7^    .^~^^.                                             \n" +
+			"~~^:         :7         .:^!G!^:.        :!7:        :^~~.                                       \n" +
+			"?   ::.       .             7. ^::^^              .~^   !^                                       \n" +
+			"?  .~7^                     7  !!7:?              ~7?:  !^                                       \n" +
+			"?  :7~.                     7  .::^:              :^^.  !^                      ^~~^ ~. :^       \n" +
+			"?           " + red + "Eudesmol" + green + "        7           " + yellow + "v5.0.0" + green + "          !^                     !?  77J7^??       \n" +
+			"?                     :.    7                           !^                     ^7^^7~?^ !7       \n" +
+			"?  .~7:              ^?!.   7                      ^!^  !^                    ~: ::. .   .       \n" +
+			"?  .^7^              :~!:.. 7                      :7.  !^          ^! !~   :!:                  \n" +
+			"7^:...       .^      .:^^~^^7^:.         .^^       :. :^!~^::.      :7 ~! .~~.                    \n" +
+			" .^~^:.     :?J.  .^^~~~~^:. .:^~^:      !?7:     .:^~^.  ..:^^^^^:...  .:!:           .^^: :  .. \n" +
+			"    .:^~^:.  .~^^~~~~^:.         .^~~^.  .^^. .:^~^:.           ..:^^^^^77^::::::::::.:J^:~^Y^:Y^.:.\n" +
+			"        .:^~^:^~~~^:                .:^~^:.:^~^:.                      .?^.......:.:^.:J:.~^Y^:Y^:!7\n" +
+			"            .~7:.                       .:^^.                           :7      :?.:^7.:^^^.:  :.:~7\n" +
+			"             .!                                                          !^      !.^7~            . \n" +
+			"             :!                                                          .7                         \n" +
+			"             :!                                                           ~~                        \n" +
+			"             :!                                                    ~! ^!^  ~.                       \n" +
+			"      . ..   .!                                                    :! ^!! !!~!:^7..J.               \n" +
+			"     ^?^?!.  .^. .   .                                              . .. .Y. ::~5~~P.^~:            \n" +
+			"      !^~!^ !!^~^?~.~? .                                                  ^!~!::~  !.:7!            \n" +
+			"        .   J~ :^J7^7J.^7:                                                           :^:            \n" +
+			"            .~~!:^. .^.^7^    " + reset + "\n\n",
+		)
 		return migrations, nil
 	}
 }
