@@ -23,7 +23,6 @@ require (
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
 	github.com/cosmos/cosmos-sdk v0.53.4
 	github.com/cosmos/gogoproto v1.7.0
-	github.com/cosmos/ibc-go/modules/capability v1.0.1
 	github.com/cosmos/ibc-go/v10 v10.3.0
 	github.com/golang/protobuf v1.5.4
 )
@@ -34,7 +33,6 @@ require (
 	github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10 v10.3.0
 	github.com/gorilla/mux v1.8.1
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/prometheus/client_golang v1.23.2
 	github.com/spf13/cast v1.9.2
 	github.com/spf13/cobra v1.10.1
@@ -222,6 +220,7 @@ require (
 	github.com/mtibben/percent v0.2.1 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/petermattis/goid v0.0.0-20250303134427-723919f7f203 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rs/cors v1.11.1 // indirect
@@ -262,6 +261,7 @@ require (
 replace (
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 	// temporary replace until upstream release of ibc-hooks for v10
+	github.com/cosmos/cosmos-sdk => github.com/permissionlessweb/cosmos-sdk v0.53.4-pfm-migrate
 	github.com/cosmos/ibc-apps/modules/ibc-hooks/v10 => github.com/permissionlessweb/ibc-apps/modules/ibc-hooks/v10 v10.1.1
 	github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10 => github.com/permissionlessweb/ibc-go/modules/light-clients/08-wasm/v10 v10.0.0-20250829182455-85668e331d2f
 	// dgrijalva/jwt-go is deprecated and doesn't receive security updates.
