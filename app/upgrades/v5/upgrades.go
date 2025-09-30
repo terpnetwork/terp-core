@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
-	"github.com/pelletier/go-toml/v2"
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -47,7 +46,6 @@ func CreateV5UpgradeHandler(
 		icacontrollerparam := icacontrollertypes.DefaultParams()
 		keepers.ICAHostKeeper.SetParams(ctx, icahostparam)
 		keepers.ICAControllerKeeper.SetParams(ctx, icacontrollerparam)
-
 		// Run migrations first
 		migrations, err := mm.RunMigrations(ctx, configurator, vm)
 		if err != nil {
@@ -88,11 +86,7 @@ func CreateV5UpgradeHandler(
 		if err != nil {
 			return nil, err
 		}
-		// decrease block times
-		err = DecreaseBlockTimes(homepath)
-		if err != nil {
-			return nil, err
-		}
+
 		// enable permissionless uploads
 		wasmParams := keepers.WasmKeeper.GetParams(ctx)
 		wasmParams.CodeUploadAccess = types.AllowEverybody
@@ -183,28 +177,4 @@ func MoveWasmDataPath(homepath string) error {
 
 	// move directory
 	return os.Rename(oldPath, newPath)
-}
-
-func DecreaseBlockTimes(homepath string) error {
-	// retrieve config.toml
-	appConfigPath := filepath.Join(homepath, "config", "config.toml")
-	configBytes, err := os.ReadFile(appConfigPath)
-	if err != nil {
-		return err
-	}
-	// unmarshal file
-	var config map[string]interface{}
-	if err := toml.Unmarshal(configBytes, &config); err != nil {
-		return err
-	}
-
-	// update block speed to 2.4s
-	if consensus, ok := config["consensus"].(map[string]interface{}); ok {
-		consensus["timeout_commit"] = "2400ms"  // 2.4s
-		consensus["timeout_propose"] = "2400ms" // 2.4s
-	}
-	// apply changes to config file
-	updatedBytes, err := toml.Marshal(config)
-	os.WriteFile(appConfigPath, updatedBytes, 0o644)
-	return nil
 }
