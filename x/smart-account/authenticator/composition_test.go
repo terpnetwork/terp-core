@@ -326,6 +326,7 @@ func (s *AggregatedAuthenticatorsTest) TestAllOf() {
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
 			// Convert the authenticators to InitializationData
+			fmt.Printf("running test w/ name: = %s\n", tc.name)
 			initData := []sat.SubAuthenticatorInitData{}
 			for _, auth := range tc.authenticators {
 				initData = append(initData, sat.SubAuthenticatorInitData{
@@ -767,10 +768,12 @@ func (s *AggregatedAuthenticatorsTest) TestAnyOfNotWritingFailedSubAuthState() {
 		s.Require().NoError(err)
 
 		var auth authenticator.Authenticator
+		fmt.Printf("running test w/ name: = %s\n", tc.name)
 		if tc.compositeAuth.isAllOf() {
 			auth, err = s.AllOfAuth.Initialize(data)
 			s.Require().NoError(err)
 		} else if tc.compositeAuth.isAnyOf() {
+			fmt.Printf("initalizing...")
 			auth, err = s.AnyOfAuth.Initialize(data)
 			s.Require().NoError(err)
 		} else {

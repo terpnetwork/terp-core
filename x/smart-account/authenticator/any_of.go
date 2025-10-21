@@ -64,16 +64,14 @@ func (aoa AnyOf) Initialize(config []byte) (Authenticator, error) {
 	var initDatas []sat.SubAuthenticatorInitData
 	var items []subAuthDataJSON
 	if err := json.Unmarshal(config, &items); err != nil {
-		return nil, errorsmod.Wrapf(err, "failed to parse top-level JSON")
+		return nil, errorsmod.Wrapf(err, "any_of.Initialize: failed to parse top-level JSON")
 	}
 
 	for _, item := range items {
 		var config sat.AuthenticatorConfig
 		if err := UnmarshalAuthConfig(item.Config, &config); err != nil {
-			fmt.Printf("DEBUG: raw config JSON = %s\n", string(item.Config))
-			return nil, errors.Wrap(err, "failed to unmarshal AuthenticatorConfig from JSON")
+			return nil, errors.Wrap(err, "any_of.Initialize: failed to unmarshal AuthenticatorConfig from JSON,index")
 		}
-		fmt.Printf("DEBUG: raw config JSON = %s\n", config.Data)
 
 		initDatas = append(initDatas, sat.SubAuthenticatorInitData{
 			Type:   item.Type,
@@ -88,24 +86,22 @@ func (aoa AnyOf) Initialize(config []byte) (Authenticator, error) {
 	// Call Initialize on each sub-authenticator with its appropriate data using AuthenticatorManager
 	for _, initData := range initDatas {
 		authenticatorCode := aoa.am.GetAuthenticatorByType(initData.Type)
+		// transform data into bytes dependent on its type:
 		raw := initData.Config.GetValueRaw()
 		if len(raw) == 0 {
 			raw = []byte(initData.Config.GetValueString())
 		}
-		// transform data into bytes dependent on its type:
-		fmt.Printf("DEBUG: initData.Config.GetValueRaw() = %x\n", initData.Config.GetValueRaw())
-		fmt.Printf("DEBUG: initData.Config.GetValueString() = %x\n", initData.Config.GetValueString())
 
 		instance, err := authenticatorCode.Initialize(raw)
 		if err != nil {
-			return nil, errorsmod.Wrapf(err, "failed to initialize sub-authenticator (type = %s)", initData.Type)
+			return nil, errorsmod.Wrapf(err, "any_of.Initialize: failed to initialize sub-authenticator (type = %s)", initData.Type)
 		}
 		aoa.SubAuthenticators = append(aoa.SubAuthenticators, instance)
 	}
 
 	// If not all sub-authenticators are registered, return an error
 	if len(aoa.SubAuthenticators) != len(initDatas) {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "failed to initialize all sub-authenticators")
+		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "any_of.Initialize: failed to initialize all sub-authenticators")
 	}
 
 	return aoa, nil

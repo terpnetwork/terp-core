@@ -116,17 +116,15 @@ func onSubAuthenticatorsRemoved(ctx sdk.Context, account sdk.AccAddress, data []
 	// First: unmarshal into raw parts
 	var items []subAuthDataJSON
 	if err := json.Unmarshal(data, &items); err != nil {
-		return errorsmod.Wrapf(err, "failed to parse top-level JSON")
+		return errorsmod.Wrapf(err, "composite.onSubAuthRemoved: failed to parse top-level JSON")
 	}
 	// Now convert each item
 	var initDatas []sat.SubAuthenticatorInitData
 	for _, item := range items {
 		var config sat.AuthenticatorConfig
 		if err := UnmarshalAuthConfig(item.Config, &config); err != nil {
-			fmt.Printf("DEBUG: raw config JSON = %s\n", string(item.Config))
-			return errors.Wrap(err, "failed to unmarshal AuthenticatorConfig from JSON")
+			return errors.Wrap(err, "composite.onSubAuthRemoved: failed to unmarshal AuthenticatorConfig from JSON")
 		}
-		fmt.Printf("DEBUG: raw config JSON = %s\n", config.Data)
 
 		initDatas = append(initDatas, sat.SubAuthenticatorInitData{
 			Type:   item.Type,
@@ -148,7 +146,7 @@ func onSubAuthenticatorsRemoved(ctx sdk.Context, account sdk.AccAddress, data []
 		case *sat.AuthenticatorConfig_ValueString:
 			rawInitData = []byte(op.ValueString)
 		default:
-			return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "fatal error initializing allOf authenticator")
+			return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "fatal error removing allOf authenticator")
 		}
 		err := authenticatorCode.OnAuthenticatorRemoved(ctx, account, rawInitData, subId)
 		if err != nil {
@@ -225,6 +223,6 @@ func UnmarshalAuthConfig(raw json.RawMessage, dst *sat.AuthenticatorConfig) erro
 		return nil
 	}
 
-	// If we get here none of the expected one‑of fields were found.
-	return fmt.Errorf("AuthenticatorConfig missing required one‑of field (value_string/value_raw)")
+	// authenticator config data is empty.
+	return nil
 }

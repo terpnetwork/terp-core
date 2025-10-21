@@ -71,41 +71,6 @@ func (aoa AllOf) Initialize(config []byte) (Authenticator, error) {
 			Config: &config,
 		})
 	}
-	// case *sat.AuthenticatorConfig_ValueRaw:
-	// 	fmt.Printf("DEBUG: config.Data type = *sat.AuthenticatorConfig_ValueRaw\n")
-	// 	fmt.Printf("DEBUG: ValueRaw (hex) = %x\n", op.ValueRaw)
-	// 	fmt.Printf("DEBUG: ValueRaw (string) = %s\n", string(op.ValueRaw))
-
-	// 	if err := json.Unmarshal(op.ValueRaw, &initDatas); err != nil {
-	// 		fmt.Printf("DEBUG: JSON unmarshal error: %v\n", err)
-	// 		return nil, errorsmod.Wrap(err, "failed to parse sub-authenticators initialization data from raw ValueBytes")
-	// 	}
-
-	// 	fmt.Printf("DEBUG: Successfully unmarshaled ValueRaw -> initDatas: %+v\n", initDatas)
-
-	// case *sat.AuthenticatorConfig_ValueString:
-	// 	fmt.Printf("DEBUG: config.Data type = *sat.AuthenticatorConfig_ValueString\n")
-	// 	fmt.Printf("DEBUG: ValueString = %s\n", op.ValueString)
-
-	// 	rawBytes := []byte(op.ValueString)
-	// 	fmt.Printf("DEBUG: ValueString as bytes (hex) = %x\n", rawBytes)
-	// 	fmt.Printf("DEBUG: ValueString as bytes (string) = %s\n", string(rawBytes))
-
-	// 	if err := json.Unmarshal(rawBytes, &initDatas); err != nil {
-	// 		fmt.Printf("DEBUG: JSON unmarshal error: %v\n", err)
-	// 		return nil, errorsmod.Wrap(err, "failed to parse sub-authenticators initialization data from ValueString")
-	// 	}
-
-	// 	fmt.Printf("DEBUG: Successfully unmarshaled ValueString -> initDatas: %+v\n", initDatas)
-
-	// case nil:
-	// 	fmt.Printf("DEBUG: config.Data is nil\n")
-	// 	return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "config.Data is nil")
-
-	// default:
-	// 	fmt.Printf("DEBUG: config.Data is of unknown type: %T\n", op)
-	// 	return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "fatal error initializing allOf authenticator")
-	// }
 
 	if len(initDatas) <= 1 {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "allOf must have at least 2 sub-authenticators")
