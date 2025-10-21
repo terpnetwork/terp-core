@@ -19,7 +19,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
 
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	sat "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	"github.com/terpnetwork/terp-core/v5/app"
 	"github.com/terpnetwork/terp-core/v5/app/params"
@@ -139,7 +139,7 @@ func (s *BaseAuthenticatorSuite) GenSimpleTxWithSelectedAuthenticators(msgs []sd
 		return nil, fmt.Errorf("expected authtx.ExtensionOptionsTxBuilder, got %T", baseTxBuilder)
 	}
 	if len(selectedAuthenticators) > 0 {
-		value, err := types.NewAnyWithValue(&smartaccounttypes.TxExtension{
+		value, err := types.NewAnyWithValue(&sat.TxExtension{
 			SelectedAuthenticators: selectedAuthenticators,
 		})
 		if err != nil {

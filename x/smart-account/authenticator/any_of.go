@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	"cosmossdk.io/errors"
 	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	sat "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 type SignatureAssignment string
@@ -59,9 +61,24 @@ func (aoa AnyOf) StaticGas() uint64 {
 
 func (aoa AnyOf) Initialize(config []byte) (Authenticator, error) {
 	// Decode the initialization data for each sub-authenticator
-	var initDatas []SubAuthenticatorInitData
-	if err := json.Unmarshal(config, &initDatas); err != nil {
-		return nil, errorsmod.Wrap(err, "failed to parse sub-authenticators initialization data")
+	var initDatas []sat.SubAuthenticatorInitData
+	var items []subAuthDataJSON
+	if err := json.Unmarshal(config, &items); err != nil {
+		return nil, errorsmod.Wrapf(err, "failed to parse top-level JSON")
+	}
+
+	for _, item := range items {
+		var config sat.AuthenticatorConfig
+		if err := UnmarshalAuthConfig(item.Config, &config); err != nil {
+			fmt.Printf("DEBUG: raw config JSON = %s\n", string(item.Config))
+			return nil, errors.Wrap(err, "failed to unmarshal AuthenticatorConfig from JSON")
+		}
+		fmt.Printf("DEBUG: raw config JSON = %s\n", config.Data)
+
+		initDatas = append(initDatas, sat.SubAuthenticatorInitData{
+			Type:   item.Type,
+			Config: &config,
+		})
 	}
 
 	if len(initDatas) <= 1 {
@@ -71,7 +88,15 @@ func (aoa AnyOf) Initialize(config []byte) (Authenticator, error) {
 	// Call Initialize on each sub-authenticator with its appropriate data using AuthenticatorManager
 	for _, initData := range initDatas {
 		authenticatorCode := aoa.am.GetAuthenticatorByType(initData.Type)
-		instance, err := authenticatorCode.Initialize(initData.Config)
+		raw := initData.Config.GetValueRaw()
+		if len(raw) == 0 {
+			raw = []byte(initData.Config.GetValueString())
+		}
+		// transform data into bytes dependent on its type:
+		fmt.Printf("DEBUG: initData.Config.GetValueRaw() = %x\n", initData.Config.GetValueRaw())
+		fmt.Printf("DEBUG: initData.Config.GetValueString() = %x\n", initData.Config.GetValueString())
+
+		instance, err := authenticatorCode.Initialize(raw)
 		if err != nil {
 			return nil, errorsmod.Wrapf(err, "failed to initialize sub-authenticator (type = %s)", initData.Type)
 		}

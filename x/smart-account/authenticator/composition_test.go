@@ -18,7 +18,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
 	"github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	sat "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 type AggregatedAuthenticatorsTest struct {
@@ -65,7 +65,7 @@ func (s *AggregatedAuthenticatorsTest) SetupTest() {
 		Confirm:        testutils.Always,
 	}
 	s.spyAuth = testutils.NewSpyAuthenticator(
-		s.TerpApp.GetKVStoreKey()[smartaccounttypes.StoreKey],
+		s.TerpApp.GetKVStoreKey()[sat.StoreKey],
 	)
 
 	am.RegisterAuthenticator(s.AnyOfAuth)
@@ -185,11 +185,11 @@ func (s *AggregatedAuthenticatorsTest) TestAnyOf() {
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
 			// Convert the authenticators to InitializationData
-			initData := []authenticator.SubAuthenticatorInitData{}
+			initData := []sat.SubAuthenticatorInitData{}
 			for _, auth := range tc.authenticators {
-				initData = append(initData, authenticator.SubAuthenticatorInitData{
+				initData = append(initData, sat.SubAuthenticatorInitData{
 					Type:   auth.Type(),
-					Config: testData,
+					Config: &sat.AuthenticatorConfig{Data: &sat.AuthenticatorConfig_ValueRaw{ValueRaw: testData}},
 				})
 			}
 
@@ -326,11 +326,11 @@ func (s *AggregatedAuthenticatorsTest) TestAllOf() {
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
 			// Convert the authenticators to InitializationData
-			initData := []authenticator.SubAuthenticatorInitData{}
+			initData := []sat.SubAuthenticatorInitData{}
 			for _, auth := range tc.authenticators {
-				initData = append(initData, authenticator.SubAuthenticatorInitData{
+				initData = append(initData, sat.SubAuthenticatorInitData{
 					Type:   auth.Type(),
-					Config: testData,
+					Config: &sat.AuthenticatorConfig{Data: &sat.AuthenticatorConfig_ValueRaw{ValueRaw: testData}},
 				})
 			}
 
@@ -515,31 +515,31 @@ func (csa *CompositeSpyAuth) buildInitData() ([]byte, error) {
 		}
 		return json.Marshal(spyData)
 	} else if len(csa.anyOf) > 0 {
-		var initData []authenticator.SubAuthenticatorInitData
+		var initData []sat.SubAuthenticatorInitData
 		for _, subAuth := range csa.anyOf {
 			data, err := subAuth.buildInitData()
 			if err != nil {
 				return nil, err
 			}
 
-			initData = append(initData, authenticator.SubAuthenticatorInitData{
+			initData = append(initData, sat.SubAuthenticatorInitData{
 				Type:   subAuth.Type(),
-				Config: data,
+				Config: &sat.AuthenticatorConfig{Data: &sat.AuthenticatorConfig_ValueRaw{ValueRaw: data}},
 			})
 		}
 
 		return json.Marshal(initData)
 	} else if len(csa.allOf) > 0 {
-		var initData []authenticator.SubAuthenticatorInitData
+		var initData []sat.SubAuthenticatorInitData
 		for _, subAuth := range csa.allOf {
 			data, err := subAuth.buildInitData()
 			if err != nil {
 				return nil, err
 			}
 
-			initData = append(initData, authenticator.SubAuthenticatorInitData{
+			initData = append(initData, sat.SubAuthenticatorInitData{
 				Type:   subAuth.Type(),
-				Config: data,
+				Config: &sat.AuthenticatorConfig{Data: &sat.AuthenticatorConfig_ValueRaw{ValueRaw: data}},
 			})
 		}
 
@@ -824,16 +824,16 @@ func (s *AggregatedAuthenticatorsTest) TestAnyOfNotWritingFailedSubAuthState() {
 }
 
 func marshalAuth(ta testAuth, testData []byte) ([]byte, error) {
-	initData := []authenticator.SubAuthenticatorInitData{}
+	initData := []sat.SubAuthenticatorInitData{}
 
 	for _, sub := range ta.subAuths {
 		subData, err := marshalAuth(sub, testData)
 		if err != nil {
 			return nil, err
 		}
-		initData = append(initData, authenticator.SubAuthenticatorInitData{
+		initData = append(initData, sat.SubAuthenticatorInitData{
 			Type:   sub.authenticator.Type(),
-			Config: subData,
+			Config: &sat.AuthenticatorConfig{Data: &sat.AuthenticatorConfig_ValueRaw{ValueRaw: subData}},
 		})
 	}
 

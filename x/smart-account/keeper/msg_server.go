@@ -41,9 +41,18 @@ func (m msgServer) AddAuthenticator(
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "invalid sender address")
 	}
+	var rawData = []byte{}
+	switch op := msg.Config.Data.(type) {
+	case *types.AuthenticatorConfig_ValueRaw:
+		rawData = op.ValueRaw
+	case *types.AuthenticatorConfig_ValueString:
+		rawData = []byte(op.ValueString)
+	default:
+		return nil, errorsmod.Wrap(err, "invalid sender address")
+	}
 
 	// Finally, add the authenticator to the store.
-	id, err := m.Keeper.AddAuthenticator(ctx, sender, msg.AuthenticatorType, msg.Data)
+	id, err := m.Keeper.AddAuthenticator(ctx, sender, msg.AuthenticatorType, rawData)
 	if err != nil {
 		return nil, err
 	}

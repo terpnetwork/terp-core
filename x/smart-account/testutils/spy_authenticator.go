@@ -78,10 +78,7 @@ func (s SpyAuthenticator) StaticGas() uint64 {
 
 func (s SpyAuthenticator) Initialize(config []byte) (authenticator.Authenticator, error) {
 	var spyData SpyAuthenticatorData
-	err := json.Unmarshal(config, &spyData)
-	if err != nil {
-		return nil, err
-	}
+
 	s.Name = spyData.Name
 	s.Failure = spyData.Failure
 	return s, nil

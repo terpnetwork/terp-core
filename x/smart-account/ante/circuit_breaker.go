@@ -6,7 +6,7 @@ import (
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
 	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	sat "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 // CircuitBreakerDecorator routes transactions through appropriate ante handlers based on
@@ -53,7 +53,7 @@ func IsCircuitBreakActive(
 	ctx sdk.Context,
 	tx sdk.Tx,
 	smartAccountKeeper *smartaccountkeeper.Keeper,
-) (bool, smartaccounttypes.AuthenticatorTxOptions) {
+) (bool, sat.AuthenticatorTxOptions) {
 	isSmartAccountActive := smartAccountKeeper.GetIsSmartAccountActive(ctx)
 	// If the smart accounts are not active, the circuit breaker activates (i.e. return true).
 	if !isSmartAccountActive {
@@ -69,7 +69,7 @@ func IsCircuitBreakActive(
 func IsSelectedAuthenticatorTxExtensionMissing(
 	tx sdk.Tx,
 	smartAccountKeeper *smartaccountkeeper.Keeper,
-) (bool, smartaccounttypes.AuthenticatorTxOptions) {
+) (bool, sat.AuthenticatorTxOptions) {
 	extTx, ok := tx.(authante.HasExtensionOptionsTx)
 	if !ok {
 		return true, nil
