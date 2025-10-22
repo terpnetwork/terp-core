@@ -76,10 +76,8 @@ func onSubAuthenticatorsAdded(ctx sdk.Context, account sdk.AccAddress, data []by
 		// ★ NEW: custom one‑of JSON → protobuf mapper
 		// -------------------------------------------------
 		if err := UnmarshalAuthConfig(item.Config, &config); err != nil {
-			fmt.Printf("DEBUG: raw config JSON = %s\n", item.Config)
 			return errorsmod.Wrap(err, "failed to unmarshal AuthenticatorConfig from JSON")
 		}
-		fmt.Printf("DEBUG: raw config JSON = %s\n", config.Data)
 
 		initDatas = append(initDatas, sat.SubAuthenticatorInitData{
 			Type:   item.Type,
