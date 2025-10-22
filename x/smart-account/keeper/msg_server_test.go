@@ -28,7 +28,7 @@ func (s *KeeperTestSuite) TestMsgServer_AddAuthenticator() {
 	msg := &types.MsgAddAuthenticator{
 		Sender:            accAddress.String(),
 		AuthenticatorType: authenticator.SignatureVerification{}.Type(),
-		Data:              priv.PubKey().Bytes(),
+		Config:            &types.AuthenticatorConfig{Data: &types.AuthenticatorConfig_ValueRaw{ValueRaw: priv.PubKey().Bytes()}},
 	}
 
 	resp, err := msgServer.AddAuthenticator(ctx, msg)
@@ -64,7 +64,7 @@ func (s *KeeperTestSuite) TestMsgServer_AddAuthenticatorFail() {
 	msg := &types.MsgAddAuthenticator{
 		Sender:            accAddress.String(),
 		AuthenticatorType: authenticator.SignatureVerification{}.Type(),
-		Data:              priv.PubKey().Bytes(),
+		Config:            &types.AuthenticatorConfig{Data: &types.AuthenticatorConfig_ValueRaw{ValueRaw: priv.PubKey().Bytes()}},
 	}
 
 	msg.AuthenticatorType = "PassKeyAuthenticator"
@@ -86,7 +86,7 @@ func (s *KeeperTestSuite) TestMsgServer_RemoveAuthenticator() {
 	addMsg := &types.MsgAddAuthenticator{
 		Sender:            accAddress.String(),
 		AuthenticatorType: authenticator.SignatureVerification{}.Type(),
-		Data:              priv.PubKey().Bytes(),
+		Config:            &types.AuthenticatorConfig{Data: &types.AuthenticatorConfig_ValueRaw{ValueRaw: priv.PubKey().Bytes()}},
 	}
 	_, err := msgServer.AddAuthenticator(ctx, addMsg)
 	s.Require().NoError(err)
@@ -194,7 +194,7 @@ func (s *KeeperTestSuite) TestMsgServer_SmartAccountsNotActive() {
 	msg := &types.MsgAddAuthenticator{
 		Sender:            "",
 		AuthenticatorType: authenticator.SignatureVerification{}.Type(),
-		Data:              []byte(""),
+		Config:            &types.AuthenticatorConfig{Data: &types.AuthenticatorConfig_ValueRaw{ValueRaw: []byte("")}},
 	}
 
 	_, err := msgServer.AddAuthenticator(ctx, msg)

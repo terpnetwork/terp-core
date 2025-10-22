@@ -100,7 +100,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
 	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	sat "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	// cwhookskeeper "github.com/terpnetwork/terp-core/v5/x/cw-hooks/keeper"
 	// cwhookstypes "github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
@@ -277,8 +277,8 @@ func NewAppKeepers(
 
 	smartAccountKeeper := smartaccountkeeper.NewKeeper(
 		appCodec,
-		appKeepers.keys[smartaccounttypes.StoreKey],
-		authtypes.NewModuleAddress(govtypes.ModuleName), appKeepers.GetSubspace(smartaccounttypes.ModuleName),
+		appKeepers.keys[sat.StoreKey],
+		authtypes.NewModuleAddress(govtypes.ModuleName), appKeepers.GetSubspace(sat.ModuleName),
 		appKeepers.AuthenticatorManager,
 		*appKeepers.FeeGrantKeeper,
 	)
@@ -643,7 +643,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(globalfee.ModuleName)
 	paramsKeeper.Subspace(ibchookstypes.ModuleName)
 	paramsKeeper.Subspace(feesharetypes.ModuleName).WithKeyTable(feesharetypes.ParamKeyTable())
-	paramsKeeper.Subspace(smartaccounttypes.ModuleName).WithKeyTable(smartaccounttypes.ParamKeyTable())
+	paramsKeeper.Subspace(sat.ModuleName).WithKeyTable(sat.ParamKeyTable())
 	paramsKeeper.Subspace(wasmtypes.ModuleName)
 
 	return paramsKeeper

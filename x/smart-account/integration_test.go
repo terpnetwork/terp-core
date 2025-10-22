@@ -1,5 +1,6 @@
 package authenticator_test
 
+// TODO: AnyOfAuthenticator OnAuthenticator Removed Test
 import (
 	"encoding/json"
 	"fmt"
@@ -11,7 +12,7 @@ import (
 	moduletestutils "github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
 
 	"github.com/terpnetwork/terp-core/v5/app"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	sat "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -33,7 +34,6 @@ type AuthenticatorSuite struct {
 	coordinator *ibctesting.Coordinator
 
 	chainA         *terpibctesting.TestChain
-	app            *app.TerpApp
 	EncodingConfig params.EncodingConfig
 
 	PrivKeys []cryptotypes.PrivKey
@@ -275,7 +275,7 @@ func (s *AuthenticatorSuite) TestAuthenticatorState() {
 		Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1_000_000_000_000)),
 	}
 
-	stateful := moduletestutils.StatefulAuthenticator{KvStoreKey: s.App.GetKVStoreKey()[smartaccounttypes.StoreKey]}
+	stateful := moduletestutils.StatefulAuthenticator{KvStoreKey: s.App.GetKVStoreKey()[sat.StoreKey]}
 	s.App.AuthenticatorManager.RegisterAuthenticator(stateful)
 	_, err := s.App.SmartAccountKeeper.AddAuthenticator(s.chainA.GetContext(), s.Account.GetAddress(), "Stateful", []byte{})
 	s.Require().NoError(err, "Failed to add authenticator")
@@ -301,7 +301,7 @@ func (s *AuthenticatorSuite) TestAuthenticatorMultiMsg() {
 		Amount:      sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1_000)),
 	}
 
-	storeKey := s.App.GetKVStoreKey()[smartaccounttypes.StoreKey]
+	storeKey := s.App.GetKVStoreKey()[sat.StoreKey]
 	maxAmount := moduletestutils.MaxAmountAuthenticator{KvStoreKey: storeKey}
 	stateful := moduletestutils.StatefulAuthenticator{KvStoreKey: storeKey}
 
@@ -407,20 +407,21 @@ func (s *AuthenticatorSuite) TestCompositeAuthenticatorAnyOf() {
 	anyOf := authenticator.NewAnyOf(s.App.AuthenticatorManager)
 
 	// construct SubAuthenticatorInitData for each SigVerificationAuthenticator
-	initDataPrivKey1 := authenticator.SubAuthenticatorInitData{
+	initDataPrivKey1 := sat.SubAuthenticatorInitData{
 		Type:   "SignatureVerification",
-		Config: s.PrivKeys[1].PubKey().Bytes(),
+		Config: &sat.AuthenticatorConfig{Data: &sat.AuthenticatorConfig_ValueRaw{ValueRaw: s.PrivKeys[1].PubKey().Bytes()}},
 	}
-	initDataPrivKey2 := authenticator.SubAuthenticatorInitData{
+	initDataPrivKey2 := sat.SubAuthenticatorInitData{
 		Type:   "SignatureVerification",
-		Config: s.PrivKeys[2].PubKey().Bytes(),
+		Config: &sat.AuthenticatorConfig{Data: &sat.AuthenticatorConfig_ValueString{ValueString: s.PrivKeys[2].PubKey().String()}},
 	}
 
 	// 3. Serialize SigVerificationAuthenticator SubAuthenticatorInitData
-	compositeData, err := json.Marshal([]authenticator.SubAuthenticatorInitData{
+	compositeData, err := json.Marshal([]sat.SubAuthenticatorInitData{
 		initDataPrivKey1,
 		initDataPrivKey2,
 	})
+	s.Require().NoError(err)
 
 	// Set the authenticator to our account
 	_, err = s.App.SmartAccountKeeper.AddAuthenticator(s.chainA.GetContext(), s.Account.GetAddress(), anyOf.Type(), compositeData)
@@ -458,21 +459,20 @@ func (s *AuthenticatorSuite) TestCompositeAuthenticatorAllOf() {
 	allOf := authenticator.NewAllOf(s.App.AuthenticatorManager)
 
 	// set 2nd test suite key sig required for tx
-	initDataPrivKey1 := authenticator.SubAuthenticatorInitData{
+	initDataPrivKey1 := sat.SubAuthenticatorInitData{
 		Type:   "SignatureVerification",
-		Config: s.PrivKeys[1].PubKey().Bytes(),
+		Config: &sat.AuthenticatorConfig{Data: &sat.AuthenticatorConfig_ValueString{ValueString: s.PrivKeys[1].PubKey().String()}},
 	}
 
 	// set msgfilter data to include for adding an authenticator
-	initMessageFilter := authenticator.SubAuthenticatorInitData{
+	initMessageFilter := sat.SubAuthenticatorInitData{
 		Type: "MessageFilter",
-		Config: []byte(
-			fmt.Sprintf(`{"@type":"/cosmos.bank.v1beta1.MsgSend","amount": [{"denom": "%s", "amount": "50"}]}`,
-				sdk.DefaultBondDenom,
-			)),
+		Config: &sat.AuthenticatorConfig{Data: &sat.AuthenticatorConfig_ValueRaw{ValueRaw: fmt.Appendf(nil, `{"@type":"/cosmos.bank.v1beta1.MsgSend","amount": [{"denom": "%s", "amount": "50"}]}`,
+			sdk.DefaultBondDenom,
+		)}},
 	}
 
-	compositeData, err := json.Marshal([]authenticator.SubAuthenticatorInitData{
+	compositeData, err := json.Marshal([]sat.SubAuthenticatorInitData{
 		initDataPrivKey1,
 		initMessageFilter,
 	})
@@ -511,13 +511,13 @@ func (s *AuthenticatorSuite) TestCompositeAuthenticatorAllOf() {
 	err = s.App.SmartAccountKeeper.RemoveAuthenticator(s.chainA.GetContext(), s.Account.GetAddress(), allOfAuthId)
 	s.Require().NoError(err, "Failed to remove authenticator")
 
-	initDataPrivKey2 := authenticator.SubAuthenticatorInitData{
+	initDataPrivKey2 := sat.SubAuthenticatorInitData{
 		Type:   "SignatureVerification",
-		Config: s.PrivKeys[2].PubKey().Bytes(),
+		Config: &sat.AuthenticatorConfig{Data: &sat.AuthenticatorConfig_ValueRaw{ValueRaw: s.PrivKeys[2].PubKey().Bytes()}},
 	}
 
 	// Create an AllOf authenticator with 2 signature verification authenticators
-	compositeData, err = json.Marshal([]authenticator.SubAuthenticatorInitData{
+	compositeData, err = json.Marshal([]sat.SubAuthenticatorInitData{
 		initDataPrivKey1,
 		initDataPrivKey2,
 	})

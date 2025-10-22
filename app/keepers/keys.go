@@ -32,7 +32,7 @@ import (
 
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/types"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	sat "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	// cwhookstypes "github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
 	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
@@ -68,7 +68,7 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		feesharetypes.StoreKey,
 		globalfeetypes.StoreKey,
 		driptypes.StoreKey,
-		smartaccounttypes.StoreKey,
+		sat.StoreKey,
 		tokenfactorytypes.StoreKey,
 	)
 

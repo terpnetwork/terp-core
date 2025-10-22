@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	sat "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 )
 
 // EmitPubKeyDecoratorEvents emits the events that the SetPubKeyDecorator would emit. This is needed for backwards
@@ -51,7 +51,7 @@ func (spkd EmitPubKeyDecoratorEvents) AnteHandle(ctx sdk.Context, tx sdk.Tx, sim
 	for i, sig := range sigs {
 		events = append(events, sdk.NewEvent(sdk.EventTypeTx,
 			sdk.NewAttribute(sdk.AttributeKeyAccountSequence, fmt.Sprintf("%s/%d", signers[i], sig.Sequence)),
-			sdk.NewAttribute(smartaccounttypes.AttributeKeyAccountSequenceAuthenticator, fmt.Sprintf("%s/%d", signers[i], sig.Sequence)),
+			sdk.NewAttribute(sat.AttributeKeyAccountSequenceAuthenticator, fmt.Sprintf("%s/%d", signers[i], sig.Sequence)),
 		))
 
 		sigBzs, err := signatureDataToBz(sig.Data)
@@ -61,7 +61,7 @@ func (spkd EmitPubKeyDecoratorEvents) AnteHandle(ctx sdk.Context, tx sdk.Tx, sim
 		for _, sigBz := range sigBzs {
 			events = append(events, sdk.NewEvent(sdk.EventTypeTx,
 				sdk.NewAttribute(sdk.AttributeKeySignature, base64.StdEncoding.EncodeToString(sigBz)),
-				sdk.NewAttribute(smartaccounttypes.AttributeKeySignatureAuthenticator, base64.StdEncoding.EncodeToString(sigBz)),
+				sdk.NewAttribute(sat.AttributeKeySignatureAuthenticator, base64.StdEncoding.EncodeToString(sigBz)),
 			))
 		}
 	}

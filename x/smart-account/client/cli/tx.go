@@ -53,16 +53,18 @@ func BuildAddAuthenticatorMsg(
 	flags *pflag.FlagSet,
 ) (sdk.Msg, error) {
 	authenticatorType := args[0]
-	pubKeyEncoded := args[1]
+	authenticatorConfig := args[1]
 
-	pubKeyBytes, err := base64.StdEncoding.DecodeString(pubKeyEncoded)
+	authStringBytes, err := base64.StdEncoding.DecodeString(authenticatorConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	return &types.MsgAddAuthenticator{
 		AuthenticatorType: authenticatorType,
-		Data:              pubKeyBytes,
-		Sender:            clientCtx.GetFromAddress().String(),
+		Config: &types.AuthenticatorConfig{
+			Data: &types.AuthenticatorConfig_ValueRaw{ValueRaw: authStringBytes},
+		},
+		Sender: clientCtx.GetFromAddress().String(),
 	}, nil
 }
