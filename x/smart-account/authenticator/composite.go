@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"cosmossdk.io/errors"
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -15,8 +14,22 @@ import (
 
 // Custom struct that matches the JSON shape
 type subAuthDataJSON struct {
-	Type   string          `json:"type"`
-	Config json.RawMessage `json:"config"`
+	Type   string                  `json:"type"`
+	Config authenticatorConfigJSON `json:"config"`
+}
+
+// authenticatorConfigJSON mirrors the JSON shape of sat.AuthenticatorConfig
+// It handles both top-level and Data-wrapped oneof cases
+type authenticatorConfigJSON struct {
+	// Support for direct oneof fields
+	ValueString *string `json:"value_string,omitempty"`
+	ValueRaw    *string `json:"value_raw,omitempty"`
+
+	// Support for wrapped case: { "Data": { "value_string": ... } }
+	Data *struct {
+		ValueString *string `json:"value_string,omitempty"`
+		ValueRaw    *string `json:"value_raw,omitempty"`
+	} `json:"Data,omitempty"`
 }
 
 func subTrack(
@@ -63,8 +76,8 @@ func onSubAuthenticatorsAdded(ctx sdk.Context, account sdk.AccAddress, data []by
 		// ★ NEW: custom one‑of JSON → protobuf mapper
 		// -------------------------------------------------
 		if err := UnmarshalAuthConfig(item.Config, &config); err != nil {
-			fmt.Printf("DEBUG: raw config JSON = %s\n", string(item.Config))
-			return errors.Wrap(err, "failed to unmarshal AuthenticatorConfig from JSON")
+			fmt.Printf("DEBUG: raw config JSON = %s\n", item.Config)
+			return errorsmod.Wrap(err, "failed to unmarshal AuthenticatorConfig from JSON")
 		}
 		fmt.Printf("DEBUG: raw config JSON = %s\n", config.Data)
 
@@ -123,7 +136,7 @@ func onSubAuthenticatorsRemoved(ctx sdk.Context, account sdk.AccAddress, data []
 	for _, item := range items {
 		var config sat.AuthenticatorConfig
 		if err := UnmarshalAuthConfig(item.Config, &config); err != nil {
-			return errors.Wrap(err, "composite.onSubAuthRemoved: failed to unmarshal AuthenticatorConfig from JSON")
+			return errorsmod.Wrap(err, "composite.onSubAuthRemoved: failed to unmarshal AuthenticatorConfig from JSON")
 		}
 
 		initDatas = append(initDatas, sat.SubAuthenticatorInitData{
@@ -178,51 +191,33 @@ func compositeId(baseId string, subId int) string {
 //
 // NOTE: The function only touches the `Data` one‑of; all other generated
 // fields on AuthenticatorConfig are left untouched.
-func UnmarshalAuthConfig(raw json.RawMessage, dst *sat.AuthenticatorConfig) error {
-	// Step 1 – decode the incoming JSON into a generic map so we can
-	// inspect its keys without needing a concrete struct.
-	var generic map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &generic); err != nil {
-		return fmt.Errorf("invalid JSON for AuthenticatorConfig: %w", err)
+func UnmarshalAuthConfig(a authenticatorConfigJSON, dst *sat.AuthenticatorConfig) error {
+	// Define intermediate struct that mirrors the two possible layouts
+	// Determine which one-of is set: prefer Data-wrapped, then top-level
+	var valueString *string
+	var valueRaw *string
+
+	if a.Data != nil {
+		valueString = a.Data.ValueString
+		valueRaw = a.Data.ValueRaw
+	} else {
+		valueString = a.ValueString
+		valueRaw = a.ValueRaw
 	}
 
-	// Step 2 – if the payload contains a “Data” wrapper, descend into it.
-	if inner, ok := generic["Data"]; ok {
-		// Replace the map with the inner object for the one‑of detection.
-		if err := json.Unmarshal(inner, &generic); err != nil {
-			return fmt.Errorf("invalid nested Data object: %w", err)
-		}
-	}
-
-	// Step 3 – detect which one‑of field is present.
-	if v, ok := generic["value_string"]; ok {
-		// The protobuf‑JSON spec represents a plain string as a JSON string.
-		var str string
-		if err := json.Unmarshal(v, &str); err != nil {
-			return fmt.Errorf("value_string is not a JSON string: %w", err)
-		}
-		dst.Data = &sat.AuthenticatorConfig_ValueString{
-			ValueString: str,
-		}
-		return nil
-	}
-
-	if v, ok := generic["value_raw"]; ok {
-		// Protobuf‑JSON encodes bytes as a base‑64 string.
-		var b64 string
-		if err := json.Unmarshal(v, &b64); err != nil {
-			return fmt.Errorf("value_raw is not a JSON string: %w", err)
-		}
-		decoded, err := base64.StdEncoding.DecodeString(b64)
+	// Set the one-of field on the destination
+	switch {
+	case valueString != nil:
+		dst.Data = &sat.AuthenticatorConfig_ValueString{ValueString: *valueString}
+	case valueRaw != nil:
+		decoded, err := base64.StdEncoding.DecodeString(*valueRaw)
 		if err != nil {
 			return fmt.Errorf("value_raw is not valid base64: %w", err)
 		}
-		dst.Data = &sat.AuthenticatorConfig_ValueRaw{
-			ValueRaw: decoded,
-		}
-		return nil
+		dst.Data = &sat.AuthenticatorConfig_ValueRaw{ValueRaw: decoded}
+	default:
+		dst.Data = nil // no data provided — valid state
 	}
 
-	// authenticator config data is empty.
 	return nil
 }

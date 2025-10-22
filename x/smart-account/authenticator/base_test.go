@@ -22,7 +22,6 @@ import (
 	sat "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	"github.com/terpnetwork/terp-core/v5/app"
-	"github.com/terpnetwork/terp-core/v5/app/params"
 	appparams "github.com/terpnetwork/terp-core/v5/app/params"
 )
 
@@ -30,7 +29,7 @@ type BaseAuthenticatorSuite struct {
 	suite.Suite
 	TerpApp                      *app.TerpApp
 	Ctx                          sdk.Context
-	EncodingConfig               params.EncodingConfig
+	EncodingConfig               appparams.EncodingConfig
 	SigVerificationAuthenticator authenticator.SignatureVerification
 	TestKeys                     []string
 	TestAccAddress               []sdk.AccAddress

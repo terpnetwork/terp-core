@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"cosmossdk.io/errors"
 	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -61,7 +60,7 @@ func (aoa AnyOf) StaticGas() uint64 {
 
 func (aoa AnyOf) Initialize(config []byte) (Authenticator, error) {
 	// Decode the initialization data for each sub-authenticator
-	var initDatas []sat.SubAuthenticatorInitData
+	var count int
 	var items []subAuthDataJSON
 	if err := json.Unmarshal(config, &items); err != nil {
 		return nil, errorsmod.Wrapf(err, "any_of.Initialize: failed to parse top-level JSON")
@@ -70,37 +69,29 @@ func (aoa AnyOf) Initialize(config []byte) (Authenticator, error) {
 	for _, item := range items {
 		var config sat.AuthenticatorConfig
 		if err := UnmarshalAuthConfig(item.Config, &config); err != nil {
-			return nil, errors.Wrap(err, "any_of.Initialize: failed to unmarshal AuthenticatorConfig from JSON,index")
+			return nil, errorsmod.Wrap(err, "any_of.Initialize: failed to unmarshal AuthenticatorConfig from JSON,index")
 		}
-
-		initDatas = append(initDatas, sat.SubAuthenticatorInitData{
-			Type:   item.Type,
-			Config: &config,
-		})
+		authenticatorCode := aoa.am.GetAuthenticatorByType(item.Type)
+		// transform data into bytes dependent on its type:
+		raw := config.GetValueRaw()
+		if len(raw) == 0 {
+			raw = []byte(config.GetValueString())
+		}
+		// Call Initialize on sub-authenticator with its appropriate data using AuthenticatorManager
+		instance, err := authenticatorCode.Initialize(raw)
+		if err != nil {
+			return nil, errorsmod.Wrapf(err, "any_of.Initialize: failed to initialize sub-authenticator (type = %s)", item.Type)
+		}
+		aoa.SubAuthenticators = append(aoa.SubAuthenticators, instance)
+		count++
 	}
 
-	if len(initDatas) <= 1 {
+	if count <= 1 {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "anyOf must have at least 2 sub-authenticators")
 	}
 
-	// Call Initialize on each sub-authenticator with its appropriate data using AuthenticatorManager
-	for _, initData := range initDatas {
-		authenticatorCode := aoa.am.GetAuthenticatorByType(initData.Type)
-		// transform data into bytes dependent on its type:
-		raw := initData.Config.GetValueRaw()
-		if len(raw) == 0 {
-			raw = []byte(initData.Config.GetValueString())
-		}
-
-		instance, err := authenticatorCode.Initialize(raw)
-		if err != nil {
-			return nil, errorsmod.Wrapf(err, "any_of.Initialize: failed to initialize sub-authenticator (type = %s)", initData.Type)
-		}
-		aoa.SubAuthenticators = append(aoa.SubAuthenticators, instance)
-	}
-
 	// If not all sub-authenticators are registered, return an error
-	if len(aoa.SubAuthenticators) != len(initDatas) {
+	if len(aoa.SubAuthenticators) != count {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "any_of.Initialize: failed to initialize all sub-authenticators")
 	}
 
