@@ -2,7 +2,6 @@ package authenticator
 
 import (
 	"encoding/json"
-	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -60,7 +59,6 @@ func (aoa AllOf) Initialize(config []byte) (Authenticator, error) {
 	for _, item := range items {
 		var config sat.AuthenticatorConfig
 		if err := UnmarshalAuthConfig(item.Config, &config); err != nil {
-			fmt.Printf("DEBUG: raw config JSON = %s\n", item.Config)
 			return nil, errorsmod.Wrap(err, "failed to unmarshal AuthenticatorConfig from JSON")
 		}
 		count++
