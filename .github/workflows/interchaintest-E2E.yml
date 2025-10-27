@@ -46,7 +46,7 @@ jobs:
           outputs: type=docker,dest=${{ env.TAR_PATH }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.IMAGE_NAME }}
           path: ${{ env.TAR_PATH }}
