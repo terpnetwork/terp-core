@@ -5,9 +5,7 @@ CHAINID_A=test-1
 # setup test keys.
 VAL=val
 RELAYER=relayer
-DEL=del
 USER=user
-DELFILE="test-keys/$DEL.json"
 VALFILE="test-keys/$VAL.json"
 RELAYERFILE="test-keys/$RELAYER.json"
 USERFILE="test-keys/$USER.json"
@@ -75,10 +73,8 @@ mv $VAL1HOME/config/tmp.json $VAL1HOME/config/genesis.json
 
 yes | $BIND  --home $VAL1HOME keys add $VAL --output json > $VAL1HOME/$VALFILE 2>&1 &&
 yes | $BIND  --home $VAL1HOME keys add $USER --output json > $VAL1HOME/$USERFILE 2>&1 &&
-yes | $BIND  --home $VAL1HOME keys add $DEL --output json > $VAL1HOME/$DELFILE 2>&1 && 
 yes | $BIND  --home $VAL1HOME keys add $RELAYER  --output json > $VAL1HOME/$RELAYERFILE 2>&1 &&
 RELAYERADDR=$(jq -r '.address' $VAL1HOME/$RELAYERFILE)
-DEL1ADDR=$(jq -r '.address' $VAL1HOME/$DELFILE)
 VAL1A_ADDR=$(jq -r '.address'  $VAL1HOME/$VALFILE)
 USERAADDR=$(jq -r '.address' $VAL1HOME/$USERFILE)
 
@@ -86,7 +82,6 @@ USERAADDR=$(jq -r '.address' $VAL1HOME/$USERFILE)
 $BIND --home $VAL1HOME genesis add-genesis-account "$USERAADDR" $defaultCoins &&
 $BIND --home $VAL1HOME genesis add-genesis-account "$RELAYERADDR" $defaultCoins &&
 $BIND --home $VAL1HOME genesis add-genesis-account "$VAL1A_ADDR" $defaultCoins &&
-$BIND --home $VAL1HOME genesis add-genesis-account "$DEL1ADDR" $defaultCoins &&
 $BIND --home $VAL1HOME genesis gentx $VAL $delegate --chain-id $CHAINID_A &&
 $BIND genesis collect-gentxs --home $VAL1HOME &&
 
@@ -214,7 +209,7 @@ for WORD in $WORDS; do
     # Execute the proof verification message on the contract
     RESULT=$($BIND tx wasm execute "$ZK_COSMWASM_ADDR" "$MSG" \
         --home "$VAL1HOME" \
-        --from "$DEL" \
+        --from "$USER" \
         -y \
         --fees 400000uterp \
         --gas auto \
