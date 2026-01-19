@@ -8,7 +8,7 @@ __IMPORTANT:__ _Please DO NOT open public issues for security related matters, o
 
 ### Email
 
-All security issues should be reported via email to [terp.network@skiff.com](mailto:terp.network@skiff.com). Email is delivered to the Terp Network Foundation DAO.
+All security issues should be reported via email to [team.terp@protonmail.com](mailto:team.terp@protonmail.com). Email is delivered to the Terp Network Foundation DAO.
 
 Include the following details in the report:
 
