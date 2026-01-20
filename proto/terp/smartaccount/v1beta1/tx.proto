@@ -7,6 +7,7 @@ import "gogoproto/gogo.proto";
 
 option go_package = "github.com/terpnetwork/terp-core/x/smart-account/types";
 
+
 // Msg defines the Msg service.
 service Msg {
   option (cosmos.msg.v1.service) = true;
@@ -28,7 +29,27 @@ message MsgAddAuthenticator {
 
   string sender = 1;
   string authenticator_type = 2;
-  bytes data = 3;
+  // data is the initialization data for the authenticator.
+  // It must be set to exactly one of the following.
+  AuthenticatorConfig  config = 3;
+}
+
+
+// AuthenticatorData represents initialization data that can be passed as raw JSON or JSON string.
+message AuthenticatorConfig {
+  oneof data {
+    // value_string contains JSON as a string (e.g., "{\"threshold\":\"2\"}")
+    string value_string = 1;
+
+    // value_raw contains raw binary JSON (e.g., {"threshold":"2"})
+    bytes value_raw = 2;
+  }
+}
+ 
+
+message SubAuthenticatorInitData {
+ string type = 1;
+ AuthenticatorConfig config = 2;
 }
 
 // MsgAddAuthenticatorResponse defines the Msg/AddAuthenticator response type.

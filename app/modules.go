@@ -71,7 +71,7 @@ import (
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 
 	smartaccount "github.com/terpnetwork/terp-core/v5/x/smart-account"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	sat "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	groupmodule "github.com/cosmos/cosmos-sdk/x/group/module"
 )
@@ -212,7 +212,7 @@ func orderEndBlockers() []string {
 		globalfee.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
-		smartaccounttypes.ModuleName,
+		sat.ModuleName,
 		// cwhooks.ModuleName,
 		wasmtypes.ModuleName,
 	}
@@ -236,7 +236,7 @@ func orderInitBlockers() []string {
 		packetforwardtypes.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
-		smartaccounttypes.ModuleName,
+		sat.ModuleName,
 		// cwhooks.ModuleName,
 		wasmtypes.ModuleName,
 	}

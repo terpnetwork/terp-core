@@ -26,7 +26,7 @@ import (
 	"github.com/terpnetwork/terp-core/v5/app/params"
 	"github.com/terpnetwork/terp-core/v5/x/smart-account/post"
 	"github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	sat "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -250,7 +250,7 @@ func GenTx(
 		return nil, fmt.Errorf("expected authtx.ExtensionOptionsTxBuilder, got %T", baseTxBuilder)
 	}
 	if len(selectedAuthenticators) > 0 {
-		value, err := types.NewAnyWithValue(&smartaccounttypes.TxExtension{
+		value, err := types.NewAnyWithValue(&sat.TxExtension{
 			SelectedAuthenticators: selectedAuthenticators,
 		})
 		if err != nil {

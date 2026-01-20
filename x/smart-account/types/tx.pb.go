@@ -34,7 +34,9 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type MsgAddAuthenticator struct {
 	Sender            string `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty"`
 	AuthenticatorType string `protobuf:"bytes,2,opt,name=authenticator_type,json=authenticatorType,proto3" json:"authenticator_type,omitempty"`
-	Data              []byte `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	// data is the initialization data for the authenticator.
+	// It must be set to exactly one of the following.
+	Config *AuthenticatorConfig `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
 }
 
 func (m *MsgAddAuthenticator) Reset()         { *m = MsgAddAuthenticator{} }
@@ -84,9 +86,148 @@ func (m *MsgAddAuthenticator) GetAuthenticatorType() string {
 	return ""
 }
 
-func (m *MsgAddAuthenticator) GetData() []byte {
+func (m *MsgAddAuthenticator) GetConfig() *AuthenticatorConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+// AuthenticatorData represents initialization data that can be passed as raw JSON or JSON string.
+type AuthenticatorConfig struct {
+	// Types that are valid to be assigned to Data:
+	//
+	//	*AuthenticatorConfig_ValueString
+	//	*AuthenticatorConfig_ValueRaw
+	Data isAuthenticatorConfig_Data `protobuf_oneof:"data"`
+}
+
+func (m *AuthenticatorConfig) Reset()         { *m = AuthenticatorConfig{} }
+func (m *AuthenticatorConfig) String() string { return proto.CompactTextString(m) }
+func (*AuthenticatorConfig) ProtoMessage()    {}
+func (*AuthenticatorConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5ec1eaeaaf4cce55, []int{1}
+}
+func (m *AuthenticatorConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AuthenticatorConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AuthenticatorConfig.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AuthenticatorConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AuthenticatorConfig.Merge(m, src)
+}
+func (m *AuthenticatorConfig) XXX_Size() int {
+	return m.Size()
+}
+func (m *AuthenticatorConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_AuthenticatorConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AuthenticatorConfig proto.InternalMessageInfo
+
+type isAuthenticatorConfig_Data interface {
+	isAuthenticatorConfig_Data()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type AuthenticatorConfig_ValueString struct {
+	ValueString string `protobuf:"bytes,1,opt,name=value_string,json=valueString,proto3,oneof" json:"value_string,omitempty"`
+}
+type AuthenticatorConfig_ValueRaw struct {
+	ValueRaw []byte `protobuf:"bytes,2,opt,name=value_raw,json=valueRaw,proto3,oneof" json:"value_raw,omitempty"`
+}
+
+func (*AuthenticatorConfig_ValueString) isAuthenticatorConfig_Data() {}
+func (*AuthenticatorConfig_ValueRaw) isAuthenticatorConfig_Data()    {}
+
+func (m *AuthenticatorConfig) GetData() isAuthenticatorConfig_Data {
 	if m != nil {
 		return m.Data
+	}
+	return nil
+}
+
+func (m *AuthenticatorConfig) GetValueString() string {
+	if x, ok := m.GetData().(*AuthenticatorConfig_ValueString); ok {
+		return x.ValueString
+	}
+	return ""
+}
+
+func (m *AuthenticatorConfig) GetValueRaw() []byte {
+	if x, ok := m.GetData().(*AuthenticatorConfig_ValueRaw); ok {
+		return x.ValueRaw
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*AuthenticatorConfig) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*AuthenticatorConfig_ValueString)(nil),
+		(*AuthenticatorConfig_ValueRaw)(nil),
+	}
+}
+
+type SubAuthenticatorInitData struct {
+	Type   string               `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Config *AuthenticatorConfig `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
+}
+
+func (m *SubAuthenticatorInitData) Reset()         { *m = SubAuthenticatorInitData{} }
+func (m *SubAuthenticatorInitData) String() string { return proto.CompactTextString(m) }
+func (*SubAuthenticatorInitData) ProtoMessage()    {}
+func (*SubAuthenticatorInitData) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5ec1eaeaaf4cce55, []int{2}
+}
+func (m *SubAuthenticatorInitData) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SubAuthenticatorInitData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SubAuthenticatorInitData.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SubAuthenticatorInitData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubAuthenticatorInitData.Merge(m, src)
+}
+func (m *SubAuthenticatorInitData) XXX_Size() int {
+	return m.Size()
+}
+func (m *SubAuthenticatorInitData) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubAuthenticatorInitData.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubAuthenticatorInitData proto.InternalMessageInfo
+
+func (m *SubAuthenticatorInitData) GetType() string {
+	if m != nil {
+		return m.Type
+	}
+	return ""
+}
+
+func (m *SubAuthenticatorInitData) GetConfig() *AuthenticatorConfig {
+	if m != nil {
+		return m.Config
 	}
 	return nil
 }
@@ -100,7 +241,7 @@ func (m *MsgAddAuthenticatorResponse) Reset()         { *m = MsgAddAuthenticator
 func (m *MsgAddAuthenticatorResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgAddAuthenticatorResponse) ProtoMessage()    {}
 func (*MsgAddAuthenticatorResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5ec1eaeaaf4cce55, []int{1}
+	return fileDescriptor_5ec1eaeaaf4cce55, []int{3}
 }
 func (m *MsgAddAuthenticatorResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -147,7 +288,7 @@ func (m *MsgRemoveAuthenticator) Reset()         { *m = MsgRemoveAuthenticator{}
 func (m *MsgRemoveAuthenticator) String() string { return proto.CompactTextString(m) }
 func (*MsgRemoveAuthenticator) ProtoMessage()    {}
 func (*MsgRemoveAuthenticator) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5ec1eaeaaf4cce55, []int{2}
+	return fileDescriptor_5ec1eaeaaf4cce55, []int{4}
 }
 func (m *MsgRemoveAuthenticator) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -200,7 +341,7 @@ func (m *MsgRemoveAuthenticatorResponse) Reset()         { *m = MsgRemoveAuthent
 func (m *MsgRemoveAuthenticatorResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgRemoveAuthenticatorResponse) ProtoMessage()    {}
 func (*MsgRemoveAuthenticatorResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5ec1eaeaaf4cce55, []int{3}
+	return fileDescriptor_5ec1eaeaaf4cce55, []int{5}
 }
 func (m *MsgRemoveAuthenticatorResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -245,7 +386,7 @@ func (m *MsgSetActiveState) Reset()         { *m = MsgSetActiveState{} }
 func (m *MsgSetActiveState) String() string { return proto.CompactTextString(m) }
 func (*MsgSetActiveState) ProtoMessage()    {}
 func (*MsgSetActiveState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5ec1eaeaaf4cce55, []int{4}
+	return fileDescriptor_5ec1eaeaaf4cce55, []int{6}
 }
 func (m *MsgSetActiveState) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -295,7 +436,7 @@ func (m *MsgSetActiveStateResponse) Reset()         { *m = MsgSetActiveStateResp
 func (m *MsgSetActiveStateResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgSetActiveStateResponse) ProtoMessage()    {}
 func (*MsgSetActiveStateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5ec1eaeaaf4cce55, []int{5}
+	return fileDescriptor_5ec1eaeaaf4cce55, []int{7}
 }
 func (m *MsgSetActiveStateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -334,7 +475,7 @@ func (m *AgAuthData) Reset()         { *m = AgAuthData{} }
 func (m *AgAuthData) String() string { return proto.CompactTextString(m) }
 func (*AgAuthData) ProtoMessage()    {}
 func (*AgAuthData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5ec1eaeaaf4cce55, []int{6}
+	return fileDescriptor_5ec1eaeaaf4cce55, []int{8}
 }
 func (m *AgAuthData) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -385,7 +526,7 @@ func (m *TxExtension) Reset()         { *m = TxExtension{} }
 func (m *TxExtension) String() string { return proto.CompactTextString(m) }
 func (*TxExtension) ProtoMessage()    {}
 func (*TxExtension) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5ec1eaeaaf4cce55, []int{7}
+	return fileDescriptor_5ec1eaeaaf4cce55, []int{9}
 }
 func (m *TxExtension) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -440,7 +581,7 @@ func (m *BlsConfig) Reset()         { *m = BlsConfig{} }
 func (m *BlsConfig) String() string { return proto.CompactTextString(m) }
 func (*BlsConfig) ProtoMessage()    {}
 func (*BlsConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5ec1eaeaaf4cce55, []int{8}
+	return fileDescriptor_5ec1eaeaaf4cce55, []int{10}
 }
 func (m *BlsConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -485,6 +626,8 @@ func (m *BlsConfig) GetThreshold() uint64 {
 
 func init() {
 	proto.RegisterType((*MsgAddAuthenticator)(nil), "terp.smartaccount.v1beta1.MsgAddAuthenticator")
+	proto.RegisterType((*AuthenticatorConfig)(nil), "terp.smartaccount.v1beta1.AuthenticatorConfig")
+	proto.RegisterType((*SubAuthenticatorInitData)(nil), "terp.smartaccount.v1beta1.SubAuthenticatorInitData")
 	proto.RegisterType((*MsgAddAuthenticatorResponse)(nil), "terp.smartaccount.v1beta1.MsgAddAuthenticatorResponse")
 	proto.RegisterType((*MsgRemoveAuthenticator)(nil), "terp.smartaccount.v1beta1.MsgRemoveAuthenticator")
 	proto.RegisterType((*MsgRemoveAuthenticatorResponse)(nil), "terp.smartaccount.v1beta1.MsgRemoveAuthenticatorResponse")
@@ -500,45 +643,51 @@ func init() {
 }
 
 var fileDescriptor_5ec1eaeaaf4cce55 = []byte{
-	// 604 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xcf, 0x4e, 0xdb, 0x4e,
-	0x10, 0xc6, 0x84, 0x1f, 0x7f, 0x06, 0x84, 0x7e, 0x98, 0x2a, 0x04, 0x53, 0x59, 0xc8, 0x55, 0x2b,
-	0x84, 0x6a, 0x5b, 0x81, 0x0a, 0xd4, 0x9c, 0x1a, 0x68, 0x8f, 0x91, 0x2a, 0xc3, 0xa9, 0x17, 0xb4,
-	0xb1, 0xa7, 0x1b, 0x0b, 0xec, 0xb5, 0xbc, 0x9b, 0x90, 0xf4, 0x54, 0xb5, 0x3d, 0x54, 0x3d, 0xf5,
-	0x25, 0x7a, 0xcf, 0x63, 0xf4, 0xc8, 0xb1, 0xc7, 0x2a, 0x39, 0xe4, 0x35, 0x2a, 0x6f, 0xe2, 0x84,
-	0x24, 0x26, 0x22, 0x17, 0x7b, 0x66, 0xf7, 0x9b, 0x99, 0x6f, 0x66, 0xbf, 0x5d, 0x30, 0x04, 0xc6,
-	0x91, 0xcd, 0x03, 0x12, 0x0b, 0xe2, 0xba, 0xac, 0x1e, 0x0a, 0xbb, 0x51, 0xac, 0xa2, 0x20, 0x45,
-	0x5b, 0x34, 0xad, 0x28, 0x66, 0x82, 0xa9, 0xbb, 0x09, 0xc6, 0xba, 0x8f, 0xb1, 0x06, 0x18, 0x6d,
-	0xc7, 0x65, 0x3c, 0x60, 0xdc, 0x0e, 0x38, 0xb5, 0x1b, 0xc5, 0xe4, 0xd7, 0x8f, 0xd1, 0xb6, 0x48,
-	0xe0, 0x87, 0xcc, 0x96, 0xdf, 0xc1, 0xd2, 0x13, 0xca, 0x28, 0x93, 0xa6, 0x9d, 0x58, 0xfd, 0x55,
-	0xe3, 0x97, 0x02, 0xdb, 0x15, 0x4e, 0xcb, 0x9e, 0x57, 0xae, 0x8b, 0x1a, 0x86, 0xc2, 0x77, 0x89,
-	0x60, 0xb1, 0x9a, 0x87, 0x65, 0x8e, 0xa1, 0x87, 0x71, 0x41, 0xd9, 0x57, 0x0e, 0xd6, 0x9c, 0x81,
-	0xa7, 0x9a, 0xa0, 0x92, 0xfb, 0xc0, 0x2b, 0xd1, 0x8a, 0xb0, 0xb0, 0x28, 0x31, 0x5b, 0x63, 0x3b,
-	0x97, 0xad, 0x08, 0x55, 0x15, 0x96, 0x3c, 0x22, 0x48, 0x21, 0xb7, 0xaf, 0x1c, 0x6c, 0x38, 0xd2,
-	0x2e, 0x1d, 0x7f, 0xe9, 0xb5, 0x0f, 0x07, 0xf9, 0x7e, 0xf4, 0xda, 0x87, 0xcf, 0xa6, 0x67, 0x40,
-	0x3c, 0xcf, 0x1c, 0x4b, 0x66, 0x9c, 0xc2, 0x5e, 0x06, 0x4d, 0x07, 0x79, 0xc4, 0x42, 0x8e, 0x6a,
-	0x01, 0x56, 0x78, 0xdd, 0x75, 0x91, 0x73, 0xc9, 0x77, 0xd5, 0x49, 0x5d, 0xa3, 0x09, 0xf9, 0x0a,
-	0xa7, 0x0e, 0x06, 0xac, 0x81, 0x8f, 0x6b, 0x71, 0x13, 0x16, 0x7d, 0x4f, 0xb6, 0xb4, 0xe4, 0x2c,
-	0xfa, 0x5e, 0xe9, 0x64, 0x82, 0xef, 0x8b, 0x69, 0xbe, 0xb1, 0x4c, 0x3f, 0x41, 0xb9, 0x04, 0x7a,
-	0x76, 0xe5, 0x47, 0xb0, 0xbe, 0x85, 0xad, 0x0a, 0xa7, 0x17, 0x28, 0xca, 0xae, 0xf0, 0x1b, 0x78,
-	0x21, 0x88, 0xc0, 0x07, 0x09, 0xe7, 0x61, 0x99, 0x48, 0x98, 0x24, 0xbd, 0xea, 0x0c, 0xbc, 0xd2,
-	0xd1, 0x04, 0xf1, 0x0c, 0xb1, 0x71, 0x14, 0x66, 0x1f, 0x6d, 0xf2, 0xa4, 0x86, 0xb1, 0x07, 0xbb,
-	0x53, 0x85, 0x53, 0xbe, 0xc6, 0x3e, 0x40, 0x99, 0x26, 0xad, 0xbc, 0x25, 0x82, 0x0c, 0xcf, 0x56,
-	0x19, 0x9d, 0xad, 0xf1, 0x5d, 0x81, 0xf5, 0xcb, 0xe6, 0xbb, 0xa6, 0xc0, 0x90, 0xfb, 0x2c, 0x54,
-	0x4f, 0x61, 0x87, 0xe3, 0x0d, 0xba, 0x02, 0xbd, 0xab, 0xb1, 0xe9, 0x24, 0x1d, 0xe7, 0x0e, 0x96,
-	0x9c, 0x7c, 0xba, 0x3d, 0x36, 0x21, 0xae, 0xbe, 0x81, 0x55, 0x42, 0xa9, 0x8c, 0x91, 0x5d, 0xad,
-	0x1f, 0x3d, 0xb7, 0x1e, 0xbc, 0x07, 0xd6, 0x88, 0x95, 0xb3, 0x42, 0xa8, 0x74, 0x8c, 0x73, 0x58,
-	0x3b, 0xbb, 0xe1, 0xe7, 0x2c, 0xfc, 0xe8, 0xd3, 0x64, 0xd2, 0x51, 0xbd, 0x7a, 0x8d, 0xad, 0x7e,
-	0xdd, 0x0d, 0x27, 0x75, 0xd5, 0xa7, 0xb0, 0x26, 0x6a, 0x31, 0xf2, 0x1a, 0xbb, 0x49, 0x0f, 0x7d,
-	0xb4, 0x70, 0xf4, 0x2d, 0x07, 0xb9, 0x0a, 0xa7, 0xea, 0x27, 0xf8, 0x7f, 0xea, 0x8a, 0x58, 0x33,
-	0x08, 0x65, 0x68, 0x55, 0x3b, 0x99, 0x0f, 0x3f, 0x54, 0xc9, 0x57, 0x05, 0xb6, 0xb3, 0xf4, 0x5b,
-	0x9c, 0x9d, 0x2f, 0x23, 0x44, 0x7b, 0x3d, 0x77, 0xc8, 0x90, 0x85, 0x80, 0xcd, 0x09, 0x39, 0xbe,
-	0x9c, 0x9d, 0x6c, 0x1c, 0xad, 0xbd, 0x9a, 0x07, 0x9d, 0x56, 0xd5, 0xfe, 0xfb, 0xdc, 0x6b, 0x1f,
-	0x2a, 0x67, 0xef, 0x7f, 0x77, 0x74, 0xe5, 0xae, 0xa3, 0x2b, 0x7f, 0x3b, 0xba, 0xf2, 0xb3, 0xab,
-	0x2f, 0xdc, 0x75, 0xf5, 0x85, 0x3f, 0x5d, 0x7d, 0xe1, 0xc3, 0x09, 0xf5, 0x45, 0xad, 0x5e, 0xb5,
-	0x5c, 0x16, 0xd8, 0x49, 0x81, 0x10, 0xc5, 0x2d, 0x8b, 0xaf, 0xa5, 0x6d, 0xba, 0x2c, 0x46, 0xbb,
-	0xd9, 0x57, 0xbc, 0x99, 0x4a, 0x3e, 0x79, 0xb0, 0x78, 0x75, 0x59, 0x3e, 0x7f, 0xc7, 0xff, 0x02,
-	0x00, 0x00, 0xff, 0xff, 0x42, 0xa4, 0xcd, 0xf1, 0x81, 0x05, 0x00, 0x00,
+	// 695 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x55, 0x41, 0x4f, 0xdb, 0x4a,
+	0x10, 0x8e, 0x93, 0xbc, 0x90, 0x0c, 0x11, 0x7a, 0x2c, 0x4f, 0x21, 0x84, 0xf7, 0x22, 0x64, 0xf4,
+	0x2a, 0x84, 0x9a, 0x58, 0x81, 0x0a, 0xd4, 0x9c, 0x1a, 0x68, 0x2b, 0x7a, 0x88, 0x54, 0x6d, 0x38,
+	0xf5, 0x82, 0x36, 0xf6, 0x76, 0x63, 0x91, 0x78, 0x23, 0xef, 0x3a, 0x09, 0x3d, 0x55, 0x6d, 0x0f,
+	0x55, 0x4f, 0xfd, 0x29, 0xfc, 0x8c, 0x1e, 0x39, 0xb6, 0xb7, 0x0a, 0x0e, 0xfc, 0x8d, 0xca, 0x6b,
+	0x9b, 0xe2, 0xc4, 0x44, 0xa0, 0x5e, 0x92, 0x9d, 0xf1, 0x37, 0x33, 0xdf, 0xcc, 0x7c, 0x5e, 0x83,
+	0x2e, 0xa9, 0x3b, 0x34, 0xc4, 0x80, 0xb8, 0x92, 0x98, 0x26, 0xf7, 0x1c, 0x69, 0x8c, 0x1a, 0x5d,
+	0x2a, 0x49, 0xc3, 0x90, 0x93, 0xfa, 0xd0, 0xe5, 0x92, 0xa3, 0x35, 0x1f, 0x53, 0xbf, 0x8d, 0xa9,
+	0x87, 0x98, 0xca, 0xaa, 0xc9, 0xc5, 0x80, 0x0b, 0x63, 0x20, 0x98, 0x31, 0x6a, 0xf8, 0x7f, 0x41,
+	0x4c, 0x65, 0x99, 0x0c, 0x6c, 0x87, 0x1b, 0xea, 0x37, 0x74, 0xfd, 0xc3, 0x38, 0xe3, 0xea, 0x68,
+	0xf8, 0xa7, 0xc0, 0xab, 0xff, 0xd0, 0x60, 0xa5, 0x2d, 0x58, 0xcb, 0xb2, 0x5a, 0x9e, 0xec, 0x51,
+	0x47, 0xda, 0x26, 0x91, 0xdc, 0x45, 0x25, 0xc8, 0x09, 0xea, 0x58, 0xd4, 0x2d, 0x6b, 0x1b, 0xda,
+	0x56, 0x01, 0x87, 0x16, 0xaa, 0x01, 0x22, 0xb7, 0x81, 0x27, 0xf2, 0x6c, 0x48, 0xcb, 0x69, 0x85,
+	0x59, 0x8e, 0x3d, 0x39, 0x3e, 0x1b, 0x52, 0xf4, 0x12, 0x72, 0x26, 0x77, 0xde, 0xda, 0xac, 0x9c,
+	0xd9, 0xd0, 0xb6, 0x16, 0x77, 0xea, 0xf5, 0x3b, 0x9b, 0xa9, 0xc7, 0x08, 0x1c, 0xaa, 0x28, 0x1c,
+	0x46, 0x37, 0x77, 0x3f, 0x5c, 0x9f, 0x6f, 0x87, 0x1c, 0xbe, 0x5c, 0x9f, 0x6f, 0x6f, 0xce, 0xce,
+	0x8d, 0x58, 0x56, 0x2d, 0x46, 0x40, 0x27, 0xb0, 0x92, 0x90, 0x13, 0x6d, 0x42, 0x71, 0x44, 0xfa,
+	0x1e, 0x3d, 0x11, 0xd2, 0xb5, 0x1d, 0x16, 0x34, 0x78, 0x94, 0xc2, 0x8b, 0xca, 0xdb, 0x51, 0x4e,
+	0xf4, 0x1f, 0x14, 0x02, 0x90, 0x4b, 0xc6, 0xaa, 0xbd, 0xe2, 0x51, 0x0a, 0xe7, 0x95, 0x0b, 0x93,
+	0xf1, 0x41, 0x0e, 0xb2, 0x16, 0x91, 0x44, 0x1f, 0x41, 0xb9, 0xe3, 0x75, 0x63, 0x55, 0x5e, 0x39,
+	0xb6, 0x7c, 0x4e, 0x24, 0x41, 0x08, 0xb2, 0x6a, 0x38, 0xc1, 0x00, 0xd5, 0xf9, 0xd6, 0x3c, 0xd2,
+	0x7f, 0x32, 0x0f, 0x7d, 0x1f, 0xd6, 0x13, 0xb6, 0x86, 0xa9, 0x18, 0x72, 0x47, 0x50, 0x54, 0x86,
+	0x05, 0xe1, 0x99, 0x26, 0x15, 0x42, 0x55, 0xcf, 0xe3, 0xc8, 0xd4, 0x27, 0x50, 0x6a, 0x0b, 0x86,
+	0xe9, 0x80, 0x8f, 0xe8, 0xfd, 0x36, 0xbe, 0x04, 0x69, 0xdb, 0x52, 0x74, 0xb3, 0x38, 0x6d, 0x5b,
+	0xcd, 0xbd, 0xa9, 0x55, 0x3c, 0x9a, 0x5d, 0x85, 0xab, 0xd2, 0x4f, 0x6d, 0xa3, 0x09, 0xd5, 0xe4,
+	0xca, 0xf7, 0x60, 0x3d, 0x86, 0xe5, 0xb6, 0x60, 0x1d, 0x2a, 0x5b, 0xa6, 0xb4, 0x47, 0xb4, 0x23,
+	0x89, 0xa4, 0x77, 0x12, 0x2e, 0x41, 0x8e, 0x28, 0x98, 0x22, 0x9d, 0xc7, 0xa1, 0xd5, 0xdc, 0x99,
+	0x22, 0x9e, 0xf0, 0xee, 0x09, 0x2a, 0x6b, 0x01, 0xba, 0x26, 0xfc, 0x1a, 0xfa, 0x3a, 0xac, 0xcd,
+	0x14, 0x8e, 0xf8, 0xea, 0x1b, 0x00, 0x2d, 0xe6, 0xb7, 0x12, 0xad, 0xdb, 0x97, 0x84, 0x22, 0x53,
+	0xc4, 0x81, 0x3c, 0x3e, 0x6b, 0xb0, 0x78, 0x3c, 0x79, 0x31, 0x91, 0xd4, 0x11, 0x36, 0x77, 0xd0,
+	0x3e, 0xac, 0x0a, 0xda, 0xa7, 0xa6, 0xa4, 0xd6, 0x49, 0x6c, 0x3a, 0x7e, 0xc7, 0x99, 0xad, 0x2c,
+	0x2e, 0x45, 0x8f, 0x63, 0x13, 0x12, 0xe8, 0x19, 0xe4, 0x09, 0x63, 0x2a, 0x26, 0x54, 0xce, 0xff,
+	0xf3, 0x94, 0x73, 0xc3, 0x0a, 0x2f, 0x10, 0xa6, 0x0c, 0xfd, 0x10, 0x0a, 0x07, 0x7d, 0x11, 0xbe,
+	0x02, 0x65, 0x58, 0x18, 0x7a, 0xdd, 0x53, 0x7a, 0x16, 0xd4, 0x2d, 0xe2, 0xc8, 0x44, 0xff, 0x42,
+	0x41, 0xf6, 0x5c, 0x2a, 0x7a, 0xbc, 0x1f, 0x2d, 0xfd, 0xb7, 0x63, 0xe7, 0x53, 0x06, 0x32, 0x6d,
+	0xc1, 0xd0, 0x3b, 0xf8, 0x7b, 0xe6, 0xc6, 0x98, 0x27, 0xe5, 0x04, 0xad, 0x56, 0xf6, 0x1e, 0x86,
+	0xbf, 0x51, 0xc9, 0x47, 0x0d, 0x56, 0x92, 0xf4, 0xdb, 0x98, 0x9f, 0x2f, 0x21, 0xa4, 0xf2, 0xf4,
+	0xc1, 0x21, 0x37, 0x2c, 0x24, 0x2c, 0x4d, 0xc9, 0xf1, 0xf1, 0xfc, 0x64, 0x71, 0x74, 0xe5, 0xc9,
+	0x43, 0xd0, 0x51, 0xd5, 0xca, 0x5f, 0xef, 0xaf, 0xcf, 0xb7, 0xb5, 0x83, 0xd7, 0xdf, 0x2e, 0xab,
+	0xda, 0xc5, 0x65, 0x55, 0xfb, 0x79, 0x59, 0xd5, 0xbe, 0x5e, 0x55, 0x53, 0x17, 0x57, 0xd5, 0xd4,
+	0xf7, 0xab, 0x6a, 0xea, 0xcd, 0x1e, 0xb3, 0x65, 0xcf, 0xeb, 0xd6, 0x4d, 0x3e, 0x30, 0xfc, 0x02,
+	0x0e, 0x95, 0x63, 0xee, 0x9e, 0xaa, 0x73, 0xcd, 0xe4, 0x2e, 0x35, 0x26, 0x81, 0xe2, 0x6b, 0x91,
+	0xe4, 0xfd, 0x6b, 0x49, 0x74, 0x73, 0xea, 0x6b, 0xb0, 0xfb, 0x2b, 0x00, 0x00, 0xff, 0xff, 0xe6,
+	0xb2, 0xbc, 0x9c, 0x90, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -718,10 +867,15 @@ func (m *MsgAddAuthenticator) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.Data) > 0 {
-		i -= len(m.Data)
-		copy(dAtA[i:], m.Data)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Data)))
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTx(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x1a
 	}
@@ -736,6 +890,110 @@ func (m *MsgAddAuthenticator) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.Sender)
 		copy(dAtA[i:], m.Sender)
 		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AuthenticatorConfig) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AuthenticatorConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthenticatorConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Data != nil {
+		{
+			size := m.Data.Size()
+			i -= size
+			if _, err := m.Data.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AuthenticatorConfig_ValueString) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthenticatorConfig_ValueString) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.ValueString)
+	copy(dAtA[i:], m.ValueString)
+	i = encodeVarintTx(dAtA, i, uint64(len(m.ValueString)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+func (m *AuthenticatorConfig_ValueRaw) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthenticatorConfig_ValueRaw) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ValueRaw != nil {
+		i -= len(m.ValueRaw)
+		copy(dAtA[i:], m.ValueRaw)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ValueRaw)))
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+func (m *SubAuthenticatorInitData) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SubAuthenticatorInitData) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SubAuthenticatorInitData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTx(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Type) > 0 {
+		i -= len(m.Type)
+		copy(dAtA[i:], m.Type)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Type)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -969,20 +1227,20 @@ func (m *TxExtension) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x12
 	}
 	if len(m.SelectedAuthenticators) > 0 {
-		dAtA3 := make([]byte, len(m.SelectedAuthenticators)*10)
-		var j2 int
+		dAtA5 := make([]byte, len(m.SelectedAuthenticators)*10)
+		var j4 int
 		for _, num := range m.SelectedAuthenticators {
 			for num >= 1<<7 {
-				dAtA3[j2] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA5[j4] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j2++
+				j4++
 			}
-			dAtA3[j2] = uint8(num)
-			j2++
+			dAtA5[j4] = uint8(num)
+			j4++
 		}
-		i -= j2
-		copy(dAtA[i:], dAtA3[:j2])
-		i = encodeVarintTx(dAtA, i, uint64(j2))
+		i -= j4
+		copy(dAtA[i:], dAtA5[:j4])
+		i = encodeVarintTx(dAtA, i, uint64(j4))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1051,8 +1309,59 @@ func (m *MsgAddAuthenticator) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
-	l = len(m.Data)
+	if m.Config != nil {
+		l = m.Config.Size()
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *AuthenticatorConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Data != nil {
+		n += m.Data.Size()
+	}
+	return n
+}
+
+func (m *AuthenticatorConfig_ValueString) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ValueString)
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+func (m *AuthenticatorConfig_ValueRaw) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ValueRaw != nil {
+		l = len(m.ValueRaw)
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+func (m *SubAuthenticatorInitData) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Type)
 	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.Config != nil {
+		l = m.Config.Size()
 		n += 1 + l + sovTx(uint64(l))
 	}
 	return n
@@ -1275,7 +1584,125 @@ func (m *MsgAddAuthenticator) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Config == nil {
+				m.Config = &AuthenticatorConfig{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AuthenticatorConfig) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AuthenticatorConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AuthenticatorConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValueString", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Data = &AuthenticatorConfig_ValueString{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValueRaw", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -1302,9 +1729,126 @@ func (m *MsgAddAuthenticator) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Data = append(m.Data[:0], dAtA[iNdEx:postIndex]...)
-			if m.Data == nil {
-				m.Data = []byte{}
+			v := make([]byte, postIndex-iNdEx)
+			copy(v, dAtA[iNdEx:postIndex])
+			m.Data = &AuthenticatorConfig_ValueRaw{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SubAuthenticatorInitData) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SubAuthenticatorInitData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SubAuthenticatorInitData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Type = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Config == nil {
+				m.Config = &AuthenticatorConfig{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		default:
