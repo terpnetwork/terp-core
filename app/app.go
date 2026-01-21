@@ -277,6 +277,9 @@ func NewTerpApp(
 	}
 	app.homePath = homePath
 
+	// Enable Poseidon hashing for IAVL stores
+	bApp.CommitMultiStore().SetIAVLHashAlgorithm("poseidon")
+
 	// isolate data paths for appstate, wasmstate, & ibcwasmlcstate
 	wasmDir := filepath.Join(homePath, "wasm")
 	wasmConfig, err := wasm.ReadNodeConfig(appOpts)
