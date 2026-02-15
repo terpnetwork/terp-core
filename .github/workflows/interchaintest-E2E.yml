@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Go ${{ env.GO_VERSION }}
         uses: actions/setup-go@v6
@@ -46,7 +46,7 @@ jobs:
           outputs: type=docker,dest=${{ env.TAR_PATH }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.IMAGE_NAME }}
           path: ${{ env.TAR_PATH }}
@@ -76,10 +76,10 @@ jobs:
           cache-dependency-path: interchaintest/go.sum
 
       - name: checkout chain
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Download Tarball Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: ${{ env.IMAGE_NAME }}
           path: /tmp
