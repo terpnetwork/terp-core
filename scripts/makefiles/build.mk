@@ -75,7 +75,7 @@ build-reproducible-amd64: go.sum
 		-f Dockerfile .
 	$(DOCKER) rm -f terpbinary || true
 	$(DOCKER) create -ti --name terpbinary terp-core:local-amd64
-	$(DOCKER) cp terpbinary:/usr/bin/terpd $(BUILDDIR)/terpd-linux-amd64
+	$(DOCKER) cp terpbinary:/usr/local/bin/terpd $(BUILDDIR)/terpd-linux-amd64
 	$(DOCKER) rm -f terpbinary
 
 build-reproducible-arm64: go.sum
@@ -93,6 +93,6 @@ build-reproducible-arm64: go.sum
 		-f Dockerfile .
 	$(DOCKER) rm -f terpbinary || true
 	$(DOCKER) create -ti --name terpbinary terp-core:local-arm64
-	$(DOCKER) cp terpbinary:/usr/bin/terpd $(BUILDDIR)/terpd-linux-arm64
+	$(DOCKER) cp terpbinary:/usr/local/bin/terpd $(BUILDDIR)/terpd-linux-arm64
 	$(DOCKER) rm -f terpbinary
 
