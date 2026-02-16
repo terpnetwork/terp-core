@@ -7,10 +7,10 @@ include scripts/makefiles/e2e.mk
 include scripts/makefiles/format.mk
 include scripts/makefiles/tsh.mk
 # include scripts/makefiles/localnet.mk
-include scripts/makefiles/hl.mk
 include scripts/makefiles/lint.mk
 include scripts/makefiles/proto.mk
 include scripts/makefiles/tests.mk
+include scripts/makefiles/release.mk
 
 .DEFAULT_GOAL := help
 help:
@@ -23,7 +23,7 @@ help:
 	@echo "  make build                 Build terpd binary"
 	@echo "  make build-help            Show advanced available build commands"
 	@echo "  make deps                  Show available deps commands"
-	@echo "  make heighliner            Show available docker commands"
+	@echo "  make docker                Show available docker commands"
 	@echo "  make e2e                   Show available e2e commands"
 	@echo "  make lint                  Show available lint commands"
 	@echo "  make proto                 Show available proto commands"

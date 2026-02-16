@@ -6,7 +6,7 @@ tags=(
 
 echo "## Upgrade binaries"
 
-for tag in ${tags[@]}; do
+for tag in "${tags[@]}"; do
     echo
     echo "### ${tag}"
     echo

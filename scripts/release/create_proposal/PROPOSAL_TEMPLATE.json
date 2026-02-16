@@ -1,0 +1,11 @@
+{
+  "title": "Software Upgrade Proposal: ${UPGRADE_NAME}",
+  "description": "Upgrade the Terp Network to ${UPGRADE_NAME}. See full changelog at https://github.com/terpnetwork/terp-core/releases/tag/${UPGRADE_TAG}",
+  "type": "SoftwareUpgrade",
+  "plan": {
+    "name": "${UPGRADE_NAME}",
+    "height": "${UPGRADE_HEIGHT}",
+    "info": "${BINARIES_JSON}"
+  },
+  "deposit": "${DEPOSIT}uterp"
+}

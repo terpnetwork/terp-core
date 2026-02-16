@@ -1,35 +1,99 @@
 ---
-name: release binary
+name: Release Binaries
 
 on:
   release:
     types: [created]
 
+permissions:
+  contents: write
+
+env:
+  GO_VERSION: "1.22"
+
 jobs:
-  release-alpine-static:
-    permissions: write-all
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Determine Go version
+        id: go-version
+        run: echo "version=$(grep -E '^go [0-9]' go.mod | cut -d ' ' -f 2)" >> "$GITHUB_OUTPUT"
+
+      - name: Build binary via Docker
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          COMMIT="${GITHUB_SHA}"
+
+          docker buildx create --name terpbuilder --use || docker buildx use terpbuilder
+
+          docker buildx build \
+            --build-arg GO_VERSION=${{ steps.go-version.outputs.version }} \
+            --build-arg GIT_VERSION=${VERSION} \
+            --build-arg GIT_COMMIT=${COMMIT} \
+            --build-arg RUNNER_IMAGE=alpine:3.17 \
+            --platform linux/${{ matrix.arch }} \
+            -t terp-core:local-${{ matrix.arch }} \
+            --load \
+            -f Dockerfile .
+
+          docker rm -f terpbinary || true
+          docker create -ti --name terpbinary terp-core:local-${{ matrix.arch }}
+          mkdir -p build
+          docker cp terpbinary:/usr/local/bin/terpd build/terpd-linux-${{ matrix.arch }}
+          docker rm -f terpbinary
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terpd-linux-${{ matrix.arch }}
+          path: build/terpd-linux-${{ matrix.arch }}
+          retention-days: 1
+
+  release:
+    name: Create Release Artifacts
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
-        
-      - name: Docker compose
-        run: STAKE_TOKEN="uterp" TIMEOUT_COMMIT=500ms docker-compose up -d
+        uses: actions/checkout@v4
 
-      - name: Copy binary
-        run: docker cp terpd_node_1:/usr/bin/terpd ./terpd
-
-      - name: Save sha256 sum
-        run: sha256sum ./terpd > ./terpd_sha256.txt
-
-      - name: Release
-        uses: softprops/action-gh-release@v2        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
-          token: ${{ github.token }}
-          files: |
-            terpd
-            terpd_sha256.txt
+          path: build
+          merge-multiple: true
 
-      - name: Dump docker logs on failure
-        if: failure()
-        uses: jwalton/gh-docker-logs@v2
+      - name: Generate checksums
+        working-directory: build
+        run: |
+          sha256sum terpd-linux-amd64 terpd-linux-arm64 > sha256sum.txt
+          cat sha256sum.txt
+
+      - name: Create tarballs
+        working-directory: build
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          for arch in amd64 arm64; do
+            tar -czvf "terpd-${VERSION}-linux-${arch}.tar.gz" "terpd-linux-${arch}"
+            sha256sum "terpd-${VERSION}-linux-${arch}.tar.gz" >> sha256sum.txt
+          done
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            build/terpd-linux-amd64
+            build/terpd-linux-arm64
+            build/terpd-*-linux-*.tar.gz
+            build/sha256sum.txt

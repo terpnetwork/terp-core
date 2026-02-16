@@ -184,7 +184,7 @@ release:
 
     ````bash
     git clone https://github.com/terpnetwork/terp-core
-    cd osmosis && git checkout v{{ .Version }}
+    cd terp-core && git checkout v{{ .Version }}
     make install
     ````
 
