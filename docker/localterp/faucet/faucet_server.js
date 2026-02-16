@@ -4,7 +4,7 @@ const exec = require("child_process").exec;
 
 const FAUCET_WALLET_NAME = process.env.FAUCET_WALLET_NAME || "a";
 const FAUCET_AMOUNT = process.env.FAUCET_AMOUNT || "1000000000";
-const DENOM = process.env.DENOM || "uscrt";
+const DENOM = process.env.DENOM || "uterp";
 
 let faucet_address;
 
@@ -38,7 +38,7 @@ function execShellCommand(cmd) {
  * @returns result of executing the command.
  */
 async function send_command(src_key_name, src_address, dest_address, amount) {
-  const send_message = `terpd tx bank send ${src_address} ${dest_address} ${amount}${DENOM} --from ${src_key_name} --gas-prices 0.25uterp -y`;
+  const send_message = `terpd tx bank send ${src_address} ${dest_address} ${amount}${DENOM} --from ${src_key_name} --gas-prices 0.25uterp --keyring-backend test --output json -y`;
   console.log(`send_message: \n ${send_message}`);
 
   const result = await execShellCommand(send_message);
@@ -57,7 +57,7 @@ async function get_address(key_name) {
     return faucet_address;
   }
 
-  const list_keys = "terpd keys list";
+  const list_keys = "terpd keys list --output json --keyring-backend test";
   const result = await execShellCommand(list_keys);
 
   for (index in result) {

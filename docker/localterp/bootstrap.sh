@@ -3,8 +3,7 @@ set -x
 set -oe errexit
 
 ENABLE_FAUCET=${1:-"true"}
-
-custom_script_path=${POST_INIT_SCRIPT:-"/root/post_init.sh"}
+CUSTOM_SCRIPT_PATH=${POST_INIT_SCRIPT:-"/root/post_init.sh"}
 
 file=~/.terp/config/genesis.json
 if [ ! -e "$file" ]; then
@@ -35,11 +34,11 @@ if [ ! -e "$file" ]; then
     sed -E -i '/timeout_(propose|prevote|precommit|commit)/s/[0-9]+m?s/200ms/' ~/.terp/config/config.toml
   fi
 
-  if [ ! -e "$custom_script_path" ]; then
+  if [ ! -e "$CUSTOM_SCRIPT_PATH" ]; then
     echo "Custom script not found. Continuing..."
   else
     echo "Running custom post init script..."
-    bash "$custom_script_path"
+    bash "$CUSTOM_SCRIPT_PATH"
     echo "Done running custom script!"
   fi
 
@@ -81,7 +80,7 @@ if [ ! -e "$file" ]; then
   perl -i -pe 's/max_subscriptions_per_client.+/max_subscriptions_per_client = 50/' ~/.terp/config/config.toml
 fi
 
-setsid lcp --proxyUrl http://localhost:1316 --port 1317 --proxyPartial '' &
+setsid lcp --proxyUrl http://127.0.0.1:1316 --port 1317 --proxyPartial '' &
 
 if [ "${ENABLE_FAUCET}" = "true" ]; then
   # Setup faucet

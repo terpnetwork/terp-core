@@ -5,7 +5,7 @@ set -oe errexit
 LOG_LEVEL=${LOG_LEVEL:-"debug"}
 KEYRING=${KEYRING:-"test"}
 MONIKER=${MONIKER:-"banana"}
-custom_script_path=${POST_INIT_SCRIPT:-"/root/post_init.sh"}
+CUSTOM_SCRIPT_PATH=${POST_INIT_SCRIPT:-"/root/post_init.sh"}
  
 
 if [ -v ${TERP_RPC_IP} ]; then
@@ -48,9 +48,9 @@ if [ ! -e "$GENESIS_file" ]; then
     sed -E -i '/timeout_(propose|prevote|precommit|commit)/s/[0-9]+m?s/200ms/' ~/.terp/config/config.toml
   fi
 
-  if [ -e "$custom_script_path" ]; then
+  if [ -e "$CUSTOM_SCRIPT_PATH" ]; then
     echo "Running custom post init script..."
-    bash "$custom_script_path"
+    bash "$CUSTOM_SCRIPT_PATH"
     echo "Done running custom script!"
   fi
 

@@ -70,6 +70,7 @@ build-reproducible-amd64: go.sum
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg RUNNER_IMAGE=alpine:3.17 \
 		--platform linux/amd64 \
+		--target runtime \
 		-t terp-core:local-amd64 \
 		--load \
 		-f Dockerfile .
@@ -88,6 +89,7 @@ build-reproducible-arm64: go.sum
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg RUNNER_IMAGE=alpine:3.17 \
 		--platform linux/arm64 \
+		--target runtime \
 		-t terp-core:local-arm64 \
 		--load \
 		-f Dockerfile .
