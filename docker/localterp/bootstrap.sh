@@ -86,8 +86,6 @@ setsid lcp --proxyUrl http://localhost:1316 --port 1317 --proxyPartial '' &
 if [ "${ENABLE_FAUCET}" = "true" ]; then
   # Setup faucet
   setsid node faucet_server.js &
-  # Setup terpd
-  cp "$(which terpd)" "$(dirname "$(which terpd)")"/terpd
 fi
 
 if [ "${SLEEP}" = "true" ]; then
