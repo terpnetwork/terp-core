@@ -4,7 +4,7 @@ const exec = require("child_process").exec;
 
 const FAUCET_WALLET_NAME = process.env.FAUCET_WALLET_NAME || "a";
 const FAUCET_AMOUNT = process.env.FAUCET_AMOUNT || "1000000000";
-const DENOM = process.env.DENOM || "uterp";
+const DENOMS = (process.env.DENOMS || "uterp,uthiol").split(",");
 
 let faucet_address;
 
@@ -38,7 +38,8 @@ function execShellCommand(cmd) {
  * @returns result of executing the command.
  */
 async function send_command(src_key_name, src_address, dest_address, amount) {
-  const send_message = `terpd tx bank send ${src_address} ${dest_address} ${amount}${DENOM} --from ${src_key_name} --gas-prices 0.25uterp --keyring-backend test --output json -y`;
+  const coins = DENOMS.map((d) => `${amount}${d}`).join(",");
+  const send_message = `terpd tx bank send ${src_address} ${dest_address} ${coins} --from ${src_key_name} --gas-prices 0.25uterp --keyring-backend test --output json -y`;
   console.log(`send_message: \n ${send_message}`);
 
   const result = await execShellCommand(send_message);
@@ -99,6 +100,7 @@ server.on("request", async (req, res) => {
           JSON.stringify({
             faucet_address: faucet_address,
             amount: FAUCET_AMOUNT,
+            denoms: DENOMS,
           })
         );
         res.end();

@@ -27,11 +27,19 @@ if [ ! -e "$file" ]; then
     .app_state.gov.params.min_deposit[0].denom = "uterp" |
     .app_state.gov.params.expedited_min_deposit[0].denom = "uterp" |
     .app_state.mint.params.mint_denom = "uterp" |
-    .app_state.staking.params.bond_denom = "uterp"
+    .app_state.staking.params.bond_denom = "uterp" |
+    .consensus.params.block.max_bytes = "16777216" |
+    .consensus.params.block.max_gas = "-1"
   ' ~/.terp/config/genesis.json >~/.terp/config/genesis.json.tmp && mv ~/.terp/config/genesis.json{.tmp,}
 
   if [ "${fast_blocks}" = "true" ]; then
     sed -E -i '/timeout_(propose|prevote|precommit|commit)/s/[0-9]+m?s/200ms/' ~/.terp/config/config.toml
+  else
+    # Default: ~2s block times for local development
+    sed -E -i 's/timeout_propose = "[0-9]+m?s"/timeout_propose = "500ms"/' ~/.terp/config/config.toml
+    sed -E -i 's/timeout_prevote = "[0-9]+m?s"/timeout_prevote = "250ms"/' ~/.terp/config/config.toml
+    sed -E -i 's/timeout_precommit = "[0-9]+m?s"/timeout_precommit = "250ms"/' ~/.terp/config/config.toml
+    sed -E -i 's/timeout_commit = "[0-9]+m?s"/timeout_commit = "1s"/' ~/.terp/config/config.toml
   fi
 
   if [ ! -e "$CUSTOM_SCRIPT_PATH" ]; then
@@ -58,11 +66,11 @@ if [ ! -e "$file" ]; then
 
   ico=1000000000000000000
 
-  terpd genesis add-genesis-account validator ${ico}uterp
-  terpd genesis add-genesis-account a ${ico}uterp
-  terpd genesis add-genesis-account b ${ico}uterp
-  terpd genesis add-genesis-account c ${ico}uterp
-  terpd genesis add-genesis-account d ${ico}uterp
+  terpd genesis add-genesis-account validator ${ico}uterp,${ico}uthiol
+  terpd genesis add-genesis-account a ${ico}uterp,${ico}uthiol
+  terpd genesis add-genesis-account b ${ico}uterp,${ico}uthiol
+  terpd genesis add-genesis-account c ${ico}uterp,${ico}uthiol
+  terpd genesis add-genesis-account d ${ico}uterp,${ico}uthiol
   
   terpd genesis gentx validator ${ico::-1}uterp --chain-id "$chain_id"
 
@@ -90,5 +98,8 @@ fi
 if [ "${SLEEP}" = "true" ]; then
   sleep infinity
 fi
+
+# Allow large wasm uploads for local development (default 819200 = 800KB)
+export MAX_WASM_SIZE=${MAX_WASM_SIZE:-"16777216"}
 
 RUST_BACKTRACE=1 terpd start --rpc.laddr tcp://0.0.0.0:26657 --log_level "${LOG_LEVEL}"
