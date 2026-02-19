@@ -112,8 +112,6 @@ pub enum AuthenticatorSudoMsg {
 
 #### Rust library
 
-A [simple rust library](https://github.com/permissionlessweb/bs-nfts/tree/cosmwasm-std-v2/packages/btsg-auth) can be added to the dependencies of your contract to access type definitions used by this module.
-
 ## MessageFilter
 
 **The message filter authentications means that you can register to authenticate by default any specific message with a given pattern.**

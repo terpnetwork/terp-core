@@ -5,7 +5,7 @@ tsh-help:
 	@echo "  make tsh-[command]"
 	@echo ""
 	@echo "Available Commands:"
-	@echo "  tsh                	 View bitsong sh tests available to run"
+	@echo "  tsh                	 View terp sh tests available to run"
 	@echo "  tsh-all 			 	 Run all sh tests in repo"
 	@echo "  tsh-nfts 			 	 Run sh test for x/nft module"
 	@echo "  tsh-ibchook 			 Run sh test for ibc hook sanity"
