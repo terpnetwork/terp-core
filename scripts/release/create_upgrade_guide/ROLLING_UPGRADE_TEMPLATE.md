@@ -51,12 +51,12 @@ Restart the terpd daemon after replacing the binary.
 If you use Cosmovisor, place the new binary in the upgrades directory:
 
 ```sh
-mkdir -p ~/.terp/cosmovisor/upgrades/$UPGRADE_VERSION/bin
+mkdir -p ~/.terpd/cosmovisor/upgrades/$UPGRADE_VERSION/bin
 cd $HOME/terp-core
 git pull
 git checkout $UPGRADE_TAG
 make build
-cp build/terpd ~/.terp/cosmovisor/upgrades/$UPGRADE_VERSION/bin
+cp build/terpd ~/.terpd/cosmovisor/upgrades/$UPGRADE_VERSION/bin
 ```
 
 ## Verification

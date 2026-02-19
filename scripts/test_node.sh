@@ -14,7 +14,7 @@ export CHAIN_ID=${CHAIN_ID:-"local-1"}
 export MONIKER="localterp"
 export KEYALGO="secp256k1"
 export KEYRING=${KEYRING:-"test"}
-export HOME_DIR=$(eval echo "${HOME_DIR:-"~/.terp"}")
+export HOME_DIR=$(eval echo "${HOME_DIR:-"~/.terpd"}")
 export BINARY=${BINARY:-terpd}
 
 export CLEAN=${CLEAN:-"true"}
