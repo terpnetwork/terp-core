@@ -53,7 +53,7 @@ jobs:
           docker rm -f terpbinary
 
       - name: Upload binary artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: terpd-linux-${{ matrix.arch }}
           path: build/terpd-linux-${{ matrix.arch }}
