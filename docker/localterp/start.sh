@@ -2,7 +2,7 @@
 
 ENABLE_FAUCET=${1:-"true"}
 KEYRING=${KEYRING:-"test"}
-custom_script_path=${POST_INIT_SCRIPT:-"/root/post_init.sh"}
+CUSTOM_SCRIPT_PATH=${POST_INIT_SCRIPT:-"/root/post_init.sh"}
 LOG_LEVEL=trace
 
 init_bootstrap() {
@@ -34,14 +34,14 @@ init_bootstrap() {
 
       ico=1000000000000000000
 
-      terpd genesis add-genesis-account validator ${ico}uscrt
-      terpd genesis add-genesis-account a ${ico}uscrt
-      terpd genesis add-genesis-account b ${ico}uscrt
-      terpd genesis add-genesis-account c ${ico}uscrt
-      terpd genesis add-genesis-account d ${ico}uscrt
-      terpd genesis add-genesis-account z ${ico}uscrt
+      terpd genesis add-genesis-account validator ${ico}uterp
+      terpd genesis add-genesis-account a ${ico}uterp
+      terpd genesis add-genesis-account b ${ico}uterp
+      terpd genesis add-genesis-account c ${ico}uterp
+      terpd genesis add-genesis-account d ${ico}uterp
+      terpd genesis add-genesis-account z ${ico}uterp
 
-      terpd genesis gentx validator ${ico}uscrt --chain-id "$chain_id"
+      terpd genesis gentx validator ${ico}uterp --chain-id "$chain_id"
 
       terpd genesis collect-gentxs
       terpd genesis validate-genesis

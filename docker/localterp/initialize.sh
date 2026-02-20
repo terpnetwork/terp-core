@@ -5,7 +5,7 @@ set -oe errexit
 LOG_LEVEL=${LOG_LEVEL:-"debug"}
 KEYRING=${KEYRING:-"test"}
 MONIKER=${MONIKER:-"banana"}
-custom_script_path=${POST_INIT_SCRIPT:-"/root/post_init.sh"}
+CUSTOM_SCRIPT_PATH=${POST_INIT_SCRIPT:-"/root/post_init.sh"}
  
 
 if [ -v ${TERP_RPC_IP} ]; then
@@ -15,7 +15,7 @@ fi
 RPC_URL="${TERP_RPC_IP}:26657"
 FAUCET_URL="${TERP_RPC_IP}:5000"
 
-TERP_HOME=${TERPD_HOME:-$HOME/.terp}
+TERP_HOME=${TERPD_HOME:-$HOME/.terpd}
 
 GENESIS_file=${TERP_HOME}/config/genesis.json
 if [ ! -e "$GENESIS_file" ]; then
@@ -45,23 +45,23 @@ if [ ! -e "$GENESIS_file" ]; then
   mv "${TERP_HOME}"/config/genesis.json{.tmp,}
 
   if [ "${fast_blocks}" = "true" ]; then
-    sed -E -i '/timeout_(propose|prevote|precommit|commit)/s/[0-9]+m?s/200ms/' ~/.terp/config/config.toml
+    sed -E -i '/timeout_(propose|prevote|precommit|commit)/s/[0-9]+m?s/200ms/' ~/.terpd/config/config.toml
   fi
 
-  if [ -e "$custom_script_path" ]; then
+  if [ -e "$CUSTOM_SCRIPT_PATH" ]; then
     echo "Running custom post init script..."
-    bash "$custom_script_path"
+    bash "$CUSTOM_SCRIPT_PATH"
     echo "Done running custom script!"
   fi
 
   # Setup LCD
-  perl -i -pe 's;address = "tcp://0.0.0.0:1317";address = "tcp://0.0.0.0:1316";' ~/.terp/config/app.toml
-  perl -i -pe 's/enable-unsafe-cors = false/enable-unsafe-cors = true/' ~/.terp/config/app.toml
-  perl -i -pe 's/concurrency = false/concurrency = true/' ~/.terp/config/app.toml
+  perl -i -pe 's;address = "tcp://0.0.0.0:1317";address = "tcp://0.0.0.0:1316";' ~/.terpd/config/app.toml
+  perl -i -pe 's/enable-unsafe-cors = false/enable-unsafe-cors = true/' ~/.terpd/config/app.toml
+  perl -i -pe 's/concurrency = false/concurrency = true/' ~/.terpd/config/app.toml
 
   # Prevent max connections error
-  perl -i -pe 's/max_subscription_clients.+/max_subscription_clients = 100/' ~/.terp/config/config.toml
-  perl -i -pe 's/max_subscriptions_per_client.+/max_subscriptions_per_client = 50/' ~/.terp/config/config.toml
+  perl -i -pe 's/max_subscription_clients.+/max_subscription_clients = 100/' ~/.terpd/config/config.toml
+  perl -i -pe 's/max_subscriptions_per_client.+/max_subscriptions_per_client = 50/' ~/.terpd/config/config.toml
 fi
 
 # CORS bypass proxy [if missing, install via npm: npm install -g local-cors-proxy]

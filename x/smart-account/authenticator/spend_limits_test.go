@@ -198,9 +198,9 @@ func (s *SpendLimitAuthenticatorTest) TestSpendLimit() {
 }
 
 func (s *SpendLimitAuthenticatorTest) StoreContractCode(path string) uint64 {
-	btsgApp := s.TerpApp
-	govKeeper := wasmkeeper.NewGovPermissionKeeper(btsgApp.WasmKeeper)
-	creator := btsgApp.AccountKeeper.GetModuleAddress(govtypes.ModuleName)
+	terpApp := s.TerpApp
+	govKeeper := wasmkeeper.NewGovPermissionKeeper(terpApp.WasmKeeper)
+	creator := terpApp.AccountKeeper.GetModuleAddress(govtypes.ModuleName)
 
 	wasmCode, err := os.ReadFile(path)
 	s.Require().NoError(err)
@@ -211,9 +211,9 @@ func (s *SpendLimitAuthenticatorTest) StoreContractCode(path string) uint64 {
 }
 
 func (s *SpendLimitAuthenticatorTest) InstantiateContract(msg string, codeID uint64) sdk.AccAddress {
-	btsgApp := s.TerpApp
-	contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(btsgApp.WasmKeeper)
-	creator := btsgApp.AccountKeeper.GetModuleAddress(govtypes.ModuleName)
+	terpApp := s.TerpApp
+	contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(terpApp.WasmKeeper)
+	creator := terpApp.AccountKeeper.GetModuleAddress(govtypes.ModuleName)
 	addr, _, err := contractKeeper.Instantiate(s.Ctx, codeID, creator, creator, []byte(msg), "contract", nil)
 	s.Require().NoError(err)
 	return addr

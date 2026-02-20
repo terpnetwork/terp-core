@@ -450,9 +450,9 @@ func (s *CosmwasmAuthenticatorTest) TestCosignerContract() {
 }
 
 func (s *CosmwasmAuthenticatorTest) StoreContractCode(path string) uint64 {
-	btsgApp := s.TerpApp
-	govKeeper := wasmkeeper.NewGovPermissionKeeper(btsgApp.WasmKeeper)
-	creator := btsgApp.AccountKeeper.GetModuleAddress(govtypes.ModuleName)
+	terpApp := s.TerpApp
+	govKeeper := wasmkeeper.NewGovPermissionKeeper(terpApp.WasmKeeper)
+	creator := terpApp.AccountKeeper.GetModuleAddress(govtypes.ModuleName)
 
 	wasmCode, err := os.ReadFile(path)
 	s.Require().NoError(err)
@@ -463,9 +463,9 @@ func (s *CosmwasmAuthenticatorTest) StoreContractCode(path string) uint64 {
 }
 
 func (s *CosmwasmAuthenticatorTest) InstantiateContract(msg string, codeID uint64) sdk.AccAddress {
-	btsgApp := s.TerpApp
-	contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(btsgApp.WasmKeeper)
-	creator := btsgApp.AccountKeeper.GetModuleAddress(govtypes.ModuleName)
+	terpApp := s.TerpApp
+	contractKeeper := wasmkeeper.NewDefaultPermissionKeeper(terpApp.WasmKeeper)
+	creator := terpApp.AccountKeeper.GetModuleAddress(govtypes.ModuleName)
 	addr, _, err := contractKeeper.Instantiate(s.Ctx.WithBlockTime(time.Now()), codeID, creator, creator, []byte(msg), "contract", nil)
 	s.Require().NoError(err)
 	return addr
@@ -473,8 +473,8 @@ func (s *CosmwasmAuthenticatorTest) InstantiateContract(msg string, codeID uint6
 
 func (s *CosmwasmAuthenticatorTest) QueryContract(msg string, contractAddr sdk.AccAddress) []byte {
 	// Query the contract
-	btsgApp := s.TerpApp
-	res, err := btsgApp.WasmKeeper.QuerySmart(s.Ctx.WithBlockTime(time.Now()), contractAddr, []byte(msg))
+	terpApp := s.TerpApp
+	res, err := terpApp.WasmKeeper.QuerySmart(s.Ctx.WithBlockTime(time.Now()), contractAddr, []byte(msg))
 	s.Require().NoError(err)
 
 	return res
@@ -482,8 +482,8 @@ func (s *CosmwasmAuthenticatorTest) QueryContract(msg string, contractAddr sdk.A
 
 func (s *CosmwasmAuthenticatorTest) QueryLatestSudoCall(contractAddr sdk.AccAddress) authenticator.SudoMsg {
 	// Query the contract
-	btsgApp := s.TerpApp
-	res, err := btsgApp.WasmKeeper.QuerySmart(s.Ctx.WithBlockTime(time.Now()), contractAddr, []byte(`{"latest_sudo_call": {}}`))
+	terpApp := s.TerpApp
+	res, err := terpApp.WasmKeeper.QuerySmart(s.Ctx.WithBlockTime(time.Now()), contractAddr, []byte(`{"latest_sudo_call": {}}`))
 	s.Require().NoError(err)
 
 	// unmarshal the call as SudoMsg

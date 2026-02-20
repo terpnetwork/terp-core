@@ -42,9 +42,9 @@ func SetupTestingApp() (ibctesting.TestingApp, map[string]json.RawMessage) {
 	// - if exists,  delete & remke
 	// - if does not exists, create
 	dirName := fmt.Sprintf("/tmp/terp-test-%d", rand.Int())
-	btsgApp := app.SetupWithCustomHome(false, dirName)
+	terpApp := app.SetupWithCustomHome(false, dirName)
 	TestingDirectories = append(TestingDirectories, dirName)
-	return btsgApp, app.NewDefaultGenesisState()
+	return terpApp, app.NewDefaultGenesisState()
 }
 
 // Copied from ibctesting because it's private

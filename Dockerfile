@@ -1,4 +1,7 @@
-FROM golang:1.24-alpine AS go-builder
+ARG GO_VERSION=1.24
+ARG RUNNER_IMAGE=alpine:3.17
+
+FROM golang:${GO_VERSION}-alpine AS go-builder
 
 SHELL ["/bin/sh", "-ecuxo", "pipefail"]
 # this comes from standard alpine nightly file
@@ -36,7 +39,7 @@ RUN echo "Ensuring binary is statically linked ..." \
 # ---------------------------------------------------------
 # 1️⃣  Runtime image – this is normal terpd binary
 # ---------------------------------------------------------
-FROM alpine:3.17 AS runtime
+FROM ${RUNNER_IMAGE} AS runtime
 
 # Minimal set of runtime deps (ca‑certs is enough for HTTPS RPC)
 RUN apk add --no-cache ca-certificates
@@ -75,6 +78,9 @@ COPY docker/localterp/start.sh .
 COPY docker/localterp/faucet/faucet_server.js .
 
 RUN chmod +x *.sh
+
+# 1317=LCD proxy, 5000=faucet, 26656=P2P, 26657=RPC, 9090=GRPC
+EXPOSE 1317 5000 26656 26657 9090
 
 HEALTHCHECK --interval=5s --timeout=1s --retries=120 \
   CMD bash -c 'curl -sfm1 http://localhost:26657/status && \

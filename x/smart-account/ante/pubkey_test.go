@@ -80,21 +80,21 @@ func (s *AuthenticatorSetPubKeyAnteSuite) TearDownTest() {
 
 // TestSetPubKeyAnte verifies that the SetPubKey AnteDecorator functions correctly.
 func (s *AuthenticatorSetPubKeyAnteSuite) TestSetPubKeyAnte() {
-	btsgToken := "terp"
-	coins := sdk.Coins{sdk.NewInt64Coin(btsgToken, 2500)}
+	terpToken := "terp"
+	coins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Create test messages for signing
 	testMsg1 := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes(btsgToken, s.TestAccAddress[0]),
-		ToAddress:   sdk.MustBech32ifyAddressBytes(btsgToken, s.TestAccAddress[1]),
+		FromAddress: sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[0]),
+		ToAddress:   sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[1]),
 		Amount:      coins,
 	}
 	testMsg2 := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes(btsgToken, s.TestAccAddress[1]),
-		ToAddress:   sdk.MustBech32ifyAddressBytes(btsgToken, s.TestAccAddress[1]),
+		FromAddress: sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[1]),
+		ToAddress:   sdk.MustBech32ifyAddressBytes(terpToken, s.TestAccAddress[1]),
 		Amount:      coins,
 	}
-	feeCoins := sdk.Coins{sdk.NewInt64Coin(btsgToken, 2500)}
+	feeCoins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Generate a test transaction
 	tx, _ := GenTx(s.Ctx, s.EncodingConfig.TxConfig, []sdk.Msg{
@@ -119,17 +119,17 @@ func (s *AuthenticatorSetPubKeyAnteSuite) TestSetPubKeyAnte() {
 
 // TestSetPubKeyAnteWithSenderNotSigner verifies that SetPubKey AnteDecorator correctly handles a non-signer sender.
 func (s *AuthenticatorSetPubKeyAnteSuite) TestSetPubKeyAnteWithSenderNotSigner() {
-	btsgToken := "terp"
-	coins := sdk.Coins{sdk.NewInt64Coin(btsgToken, 2500)}
+	terpToken := "terp"
+	coins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 	testAcc3 := s.TestAccAddress[4]
 	testAcc2 := s.TestAccAddress[3]
 	// Create a test message with a sender that is not a signer
 	testMsg1 := &banktypes.MsgSend{
-		FromAddress: sdk.MustBech32ifyAddressBytes(btsgToken, testAcc3),
-		ToAddress:   sdk.MustBech32ifyAddressBytes(btsgToken, testAcc2),
+		FromAddress: sdk.MustBech32ifyAddressBytes(terpToken, testAcc3),
+		ToAddress:   sdk.MustBech32ifyAddressBytes(terpToken, testAcc2),
 		Amount:      coins,
 	}
-	feeCoins := sdk.Coins{sdk.NewInt64Coin(btsgToken, 2500)}
+	feeCoins := sdk.Coins{sdk.NewInt64Coin(terpToken, 2500)}
 
 	// Generate a test transaction
 	tx, _ := GenTx(s.Ctx, s.EncodingConfig.TxConfig, []sdk.Msg{

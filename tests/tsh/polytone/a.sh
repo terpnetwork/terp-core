@@ -51,7 +51,7 @@ echo "Creating $BIND instance for VAL: home=$VAL2HOME | chain-id=$CHAINID_B | p2
 trap 'pkill -f '"$BIND" EXIT
 
 defaultCoins="100000000000uterp"  # 100K
-delegate="1000000uterp" # 1btsg
+delegate="1000000uterp" # 1terp
 
 ####################################################################
 # A. CHAINS CONFIG

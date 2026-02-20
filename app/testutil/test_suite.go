@@ -32,7 +32,7 @@ var (
 type KeeperTestHelper struct {
 	suite.Suite
 
-	App         *app.TerpApp                    // Mock bitsong application
+	App         *app.TerpApp                    // Mock terp application
 	Ctx         sdk.Context                     // simulated context
 	QueryHelper *baseapp.QueryServiceTestHelper // GRPC query simulator
 	TestAccs    []sdk.AccAddress                // Test accounts
@@ -79,7 +79,7 @@ func (s *KeeperTestHelper) Setup() {
 }
 
 func (s *KeeperTestHelper) setupGeneral() {
-	s.setupGeneralCustomChainId("bitsong-2b")
+	s.setupGeneralCustomChainId("terp-2b")
 }
 
 func (s *KeeperTestHelper) setupGeneralCustomChainId(chainId string) {

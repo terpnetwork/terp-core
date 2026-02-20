@@ -131,7 +131,7 @@ const (
 
 // We pull these out so we can set them with LDFLAGS in the Makefile
 var (
-	NodeDir      = ".terp"
+	NodeDir      = ".terpd"
 	Bech32Prefix = "terp"
 
 	// If EnabledSpecificProposals is "", and this is "true", then enable all x/wasm proposals.
@@ -334,6 +334,8 @@ func NewTerpApp(
 		panic(err)
 	}
 
+	// Default to 16MB wasm size limit; override via MAX_WASM_SIZE env var
+	wasmtypes.MaxWasmSize = 16 * 1024 * 1024
 	if maxSize := os.Getenv("MAX_WASM_SIZE"); maxSize != "" {
 		// https://github.com/CosmWasm/wasmd#compile-time-parameters
 		val, _ := strconv.ParseInt(maxSize, 10, 32)
