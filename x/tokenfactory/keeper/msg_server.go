@@ -216,8 +216,8 @@ func (server msgServer) SetDenomMetadata(goCtx context.Context, msg *types.MsgSe
 }
 
 func (server msgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
-	if server.authority != req.Sender {
-		return nil, errors.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", server.authority, req.Sender)
+	if server.authority != req.Authority {
+		return nil, errors.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", server.authority, req.Authority)
 	}
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
