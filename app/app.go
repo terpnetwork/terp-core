@@ -466,12 +466,6 @@ func NewTerpApp(
 	if manager := app.SnapshotManager(); manager != nil {
 		err = manager.RegisterExtensions(
 			wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), app.WasmKeeper),
-		)
-		if err != nil {
-			panic(fmt.Errorf("failed to register snapshot extension: %s", err))
-		}
-		//  takes care of persisting the external state from wasm code when snapshot is created
-		err = manager.RegisterExtensions(
 			wasmlckeeper.NewWasmSnapshotter(app.CommitMultiStore(), app.IBCWasmClientKeeper),
 		)
 		if err != nil {
