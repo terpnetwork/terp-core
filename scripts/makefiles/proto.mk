@@ -30,7 +30,7 @@ SWAGGER_DIR=./swagger-proto
 proto-all: proto-format proto-gen-pulsar proto-gen-swagger
 
 proto-gen-pulsar:
-	@$(protoImage) sh ./scripts/get-pulsar.sh
+	@$(protoImage) sh ./scripts/gen-pulsar.sh
 
 proto-gen-swagger:
 	@$(protoImage) sh ./scripts/gen-swagger.sh
