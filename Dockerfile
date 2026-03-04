@@ -1,5 +1,6 @@
 ARG GO_VERSION=1.24
 ARG RUNNER_IMAGE=alpine:3.17
+ARG COSMWASM_VERSION
 
 FROM golang:${GO_VERSION}-alpine AS go-builder
 
@@ -20,10 +21,9 @@ ADD go.mod go.sum ./
 # Pull in the exact wasmvm lib that the Cosmos SDK wants
 # ---------------------------------------------------------
 RUN ARCH=$(uname -m) && \
-    WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}') && \
-    wget -q https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/libwasmvm_muslc.$ARCH.a \
+    wget -q https://github.com/CosmWasm/wasmvm/releases/download/$COSMWASM_VERSION/libwasmvm_muslc.$ARCH.a \
          -O /lib/libwasmvm_muslc.$ARCH.a && \
-    wget -q https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/checksums.txt -O /tmp/checksums.txt && \
+    wget -q https://github.com/CosmWasm/wasmvm/releases/download/$COSMWASM_VERSION/checksums.txt -O /tmp/checksums.txt && \
     sha256sum /lib/libwasmvm_muslc.$ARCH.a | grep $(grep libwasmvm_muslc.$ARCH /tmp/checksums.txt | cut -d' ' -f1)
 
 # ---------------------------------------------------------

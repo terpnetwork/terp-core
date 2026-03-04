@@ -1,118 +1,142 @@
 """
 Usage:
-This script generates a JSON object containing binary download URLs and their corresponding checksums 
-for a given release tag of terpnetwork/terp-core or from a provided checksum URL.
+This script generates a JSON object containing binary download URLs and their corresponding checksums
+for a given release tag of terpnetwork/terp-core or from a provided checksum file/URL.
 The binary JSON is compatible with cosmovisor and with the chain registry.
 
-You can run this script with the following commands:
+When --tag is provided, the script first checks build/sha256sum.txt locally (useful before
+the GitHub release exists), then falls back to fetching from GitHub.
 
-❯ python create_binaries_json.py --checksums_url https://github.com/terpnetwork/terp-core/releases/download/v4.2.0/sha256sum.txt
+❯ python create_binaries_json.py --tag v5.1.0
 
 Output:
 {
-    "binaries": {
-    "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/16.1.1/terpd-4.2.0-linux-arm64?checksum=<checksum>",
-    "darwin/arm64": "https://github.com/terpnetwork/terp-core/releases/download/16.1.1/terpd-4.2.0-darwin-arm64?checksum=<checksum>",
-    "darwin/amd64": "https://github.com/terpnetwork/terp-core/releases/download/16.1.1/terpd-4.2.0-darwin-amd64?checksum=<checksum>,
-    "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/16.1.1/terpd-4.2.0-linux-amd64?checksum=><checksum>"
-    }
+  "binaries": {
+    "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.0/terpd-5.1.0-linux-amd64.tar.gz?checksum=sha256:<checksum>",
+    "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.0/terpd-5.1.0-linux-arm64.tar.gz?checksum=sha256:<checksum>"
+  }
 }
 
-Expects a checksum in the form:
+Expects a checksum file in the form:
 
-<CHECKSUM>  terpd-<VERSION>-<OS>-<ARCH>[.tar.gz]
-<CHECKSUM>  terpd-<VERSION>-<OS>-<ARCH>[.tar.gz]
+<CHECKSUM>  terpd-<VERSION>-<OS>-<ARCH>.tar.gz
+<CHECKSUM>  terpd-<VERSION>-<OS>-<ARCH>.tar.gz
 ...
 
-Example:
+Example (build/sha256sum.txt after `make release-prep`):
 
-f838618633c1d42f593dc33d26b25842f5900961e987fc08570bb81a062e311d  terpd-4.2.0-linux-amd64
-fa6699a763487fe6699c8720a2a9be4e26a4f45aafaec87aa0c3aced4cbdd155  terpd-4.2.0-linux-amd64.tar.gz
-
-(From: https://github.com/terpnetwork/terp-core/releases/download/v16.1.1/sha256sum.txt)
-
-❯ python create_binaries_json.py --tag v16.1.1
-
-Output:
-{
-    "binaries": {
-    "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/16.1.1/terpd-4.2.0-linux-arm64?checksum=<checksum>",
-    "darwin/arm64": "https://github.com/terpnetwork/terp-core/releases/download/16.1.1/terpd-4.2.0-darwin-arm64?checksum=<checksum>",
-    "darwin/amd64": "https://github.com/terpnetwork/terp-core/releases/download/16.1.1/terpd-4.2.0-darwin-amd64?checksum=<checksum>",
-    "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/16.1.1/terpd-4.2.0-linux-amd64?checksum=><checksum>"
-    }
-}
-
-Expect a checksum to be present at: 
-https://github.com/terpnetwork/terp-core/releases/download/<TAG>/sha256sum.txt
+e3b0c44298fc1c149afbf4c8996fb924  terpd-linux-amd64
+a9f03741ac976173365198c0b10ff54f  terpd-linux-arm64
+f838618633c1d42f593dc33d26b25842  terpd-5.1.0-linux-amd64.tar.gz
+ac427205954409139f7c11252ee0e47e  terpd-5.1.0-linux-arm64.tar.gz
 """
 
+import os
 import requests
 import json
 import argparse
 import re
 import sys
 
+LOCAL_CHECKSUMS_PATH = "build/sha256sum.txt"
+
+
 def validate_tag(tag):
-    pattern = '^v[0-9]+.[0-9]+.[0-9]+$'
+    pattern = r'^v[0-9]+\.[0-9]+\.[0-9]+$'
     return bool(re.match(pattern, tag))
 
-def download_checksums(checksums_url):
 
-    response = requests.get(checksums_url)
+def read_local_checksums(path):
+    with open(path, "r") as f:
+        return f.read()
+
+
+def download_checksums(url):
+    response = requests.get(url)
     if response.status_code != 200:
-        raise ValueError(f"Failed to fetch sha256sum.txt. Status code: {response.status_code}")
+        raise ValueError(f"Failed to fetch sha256sum.txt from {url}. Status code: {response.status_code}")
     return response.text
 
-def checksums_to_binaries_json(checksums):
 
+def get_checksums(tag=None, checksums_url=None):
+    """
+    Resolution order when --tag is given:
+      1. build/sha256sum.txt (local, pre-publish)
+      2. GitHub release URL (post-publish)
+    When --checksums_url is given, fetch directly.
+    """
+    if checksums_url:
+        return download_checksums(checksums_url)
+
+    if os.path.exists(LOCAL_CHECKSUMS_PATH):
+        print(f"Using local checksums from {LOCAL_CHECKSUMS_PATH}", file=sys.stderr)
+        return read_local_checksums(LOCAL_CHECKSUMS_PATH)
+
+    github_url = f"https://github.com/terpnetwork/terp-core/releases/download/{tag}/sha256sum.txt"
+    print(f"Local {LOCAL_CHECKSUMS_PATH} not found, fetching from {github_url}", file=sys.stderr)
+    return download_checksums(github_url)
+
+
+def checksums_to_binaries_json(checksums, tag):
     binaries = {}
-    
-    # Parse the content and create the binaries dictionary 
+
     for line in checksums.splitlines():
-        checksum, filename = line.split('  ')
+        line = line.strip()
+        if not line:
+            continue
 
-        # exclude tar.gz files
-        if not filename.endswith('.tar.gz') and filename.startswith('terpd'):
-            try:
-                _, tag, platform, arch = filename.split('-')
-            except ValueError:
-                print(f"Error: Expected binary name in the form: terpd-X.Y.Z-platform-architecture, but got {filename}")
-                sys.exit(1)
-            _, tag, platform, arch,  = filename.split('-')
-            # exclude universal binaries and windows binaries
-            if arch == 'all' or platform == 'windows':
-                continue
-            binaries[f"{platform}/{arch}"] = f"https://github.com/terpnetwork/terp-core/releases/download/v{tag}/{filename}?checksum=sha256:{checksum}"
+        parts = line.split('  ', 1)
+        if len(parts) != 2:
+            continue
+        checksum, filename = parts
 
-    binaries_json = {
-        "binaries": binaries
-    }
+        # Only process versioned tarballs — these are what get uploaded to GitHub
+        if not filename.endswith('.tar.gz') or not filename.startswith('terpd-'):
+            continue
 
-    return json.dumps(binaries_json, indent=2)
+        # Strip extension and parse: terpd-VERSION-PLATFORM-ARCH
+        base = filename[:-len('.tar.gz')]
+        segments = base.split('-')
+        if len(segments) != 4:
+            print(f"Warning: skipping unexpected filename format: {filename}", file=sys.stderr)
+            continue
+
+        _, version, platform, arch = segments
+
+        if arch == 'all' or platform == 'windows':
+            continue
+
+        url = (
+            f"https://github.com/terpnetwork/terp-core/releases/download/{tag}"
+            f"/{filename}?checksum=sha256:{checksum}"
+        )
+        binaries[f"{platform}/{arch}"] = url
+
+    if not binaries:
+        print("Error: no matching tarball entries found in checksums file.", file=sys.stderr)
+        sys.exit(1)
+
+    return json.dumps({"binaries": binaries}, indent=2)
+
 
 def main():
-
-    parser = argparse.ArgumentParser(description="Create binaries json")
-    parser.add_argument('--tag', metavar='tag', type=str, help='the tag to use (e.g v16.1.1)')
-    parser.add_argument('--checksums_url', metavar='checksums_url', type=str, help='URL to the checksum')
-
+    parser = argparse.ArgumentParser(description="Generate cosmovisor-compatible binaries JSON")
+    parser.add_argument('--tag', type=str, help='Release tag (e.g. v5.1.0)')
+    parser.add_argument('--checksums_url', type=str, help='Direct URL to sha256sum.txt')
     args = parser.parse_args()
-    
-    # Validate the tag format
+
     if args.tag and not validate_tag(args.tag):
-        print("Error: The provided tag does not follow the 'vX.Y.Z' format.")
+        print("Error: tag must follow the 'vX.Y.Z' format.")
         sys.exit(1)
 
-    # Ensure that only one of --tag or --checksums_url is specified
     if not bool(args.tag) ^ bool(args.checksums_url):
-        parser.error("Only one of tag or --checksums_url must be specified")
-        sys.exit(1)
+        parser.error("Specify exactly one of --tag or --checksums_url")
 
-    checksums_url = args.checksums_url if args.checksums_url else f"https://github.com/terpnetwork/terp-core/releases/download/{args.tag}/sha256sum.txt"
-    checksums = download_checksums(checksums_url)
-    binaries_json = checksums_to_binaries_json(checksums)
+    tag = args.tag
+    checksums = get_checksums(tag=tag, checksums_url=args.checksums_url)
+    binaries_json = checksums_to_binaries_json(checksums, tag)
     print(binaries_json)
+
 
 if __name__ == "__main__":
     main()

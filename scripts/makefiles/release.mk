@@ -22,8 +22,8 @@ release-help:
 	@echo "  release-dry-run          Goreleaser dry run (no publish)"
 	@echo "  release-snapshot         Goreleaser snapshot build"
 	@echo "  create-binaries          Build reproducible binaries (linux amd64+arm64)"
-	@echo "  create-checksums         Generate build/sha256sum.txt"
-	@echo "  release-prep             Build binaries + tarballs + checksums via prep.sh"
+	@echo "  create-checksums         Generate build/sha256sum.txt for raw binaries only"
+	@echo "  release-prep             Create tarballs + unified sha256sum.txt (binaries + tarballs)"
 	@echo "  create-binaries-json     Generate cosmovisor-compatible binaries JSON"
 	@echo "  create-upgrade-guide     Generate upgrade guide (rolling or coordinated)"
 	@echo "  release-proposal         Submit governance upgrade proposal (stub)"
@@ -45,17 +45,15 @@ ifndef RELEASE_TAG
 	echo ""; \
 	echo "Starting release pipeline for $$tag ..."; \
 	echo ""; \
-	echo "Step 1/6: Building reproducible binaries..."; \
+	echo "Step 1/5: Building reproducible binaries..."; \
 	$(MAKE) create-binaries; \
-	echo "Step 2/6: Generating checksums..."; \
-	$(MAKE) create-checksums; \
-	echo "Step 3/6: Preparing release artifacts (tarballs + per-file checksums)..."; \
+	echo "Step 2/5: Preparing release artifacts (tarballs + checksums)..."; \
 	$(MAKE) release-prep RELEASE_TAG=$$tag; \
-	echo "Step 4/6: Generating cosmovisor binaries JSON..."; \
+	echo "Step 3/5: Generating cosmovisor binaries JSON..."; \
 	$(MAKE) create-binaries-json RELEASE_TAG=$$tag; \
-	echo "Step 5/6: Generating upgrade guide..."; \
+	echo "Step 4/5: Generating upgrade guide..."; \
 	$(MAKE) create-upgrade-guide; \
-	echo "Step 6/6: Publishing release to GitHub..."; \
+	echo "Step 5/5: Publishing release to GitHub..."; \
 	$(MAKE) release-publish; \
 	echo ""; \
 	echo "=== Release pipeline complete for $$tag ==="
@@ -63,17 +61,15 @@ else
 	@echo ""; \
 	echo "=== Terp-Core Release Pipeline for $(RELEASE_TAG) ==="; \
 	echo ""; \
-	echo "Step 1/6: Building reproducible binaries...";
+	echo "Step 1/5: Building reproducible binaries...";
 	$(MAKE) create-binaries
-	@echo "Step 2/6: Generating checksums...";
-	$(MAKE) create-checksums
-	@echo "Step 3/6: Preparing release artifacts (tarballs + per-file checksums)...";
+	@echo "Step 2/5: Preparing release artifacts (tarballs + checksums)...";
 	$(MAKE) release-prep RELEASE_TAG=$(RELEASE_TAG)
-	@echo "Step 4/6: Generating cosmovisor binaries JSON...";
+	@echo "Step 3/5: Generating cosmovisor binaries JSON...";
 	$(MAKE) create-binaries-json RELEASE_TAG=$(RELEASE_TAG)
-	@echo "Step 5/6: Generating upgrade guide...";
+	@echo "Step 4/5: Generating upgrade guide...";
 	$(MAKE) create-upgrade-guide
-	@echo "Step 6/6: Publishing release to GitHub...";
+	@echo "Step 5/5: Publishing release to GitHub...";
 	$(MAKE) release-publish
 	@echo ""; \
 	echo "=== Release pipeline complete for $(RELEASE_TAG) ==="
@@ -138,7 +134,7 @@ create-checksums:
 	{ echo "Error: binaries not found in $(BUILDDIR)/. Run 'make create-binaries' first."; exit 1; }
 	@echo "Checksums written to $(BUILDDIR)/sha256sum.txt"
 
-release-prep: create-binaries
+release-prep:
 	@./scripts/release/prep.sh $(if $(RELEASE_TAG),$(patsubst v%,%,$(RELEASE_TAG)))
 
 ###############################################################################

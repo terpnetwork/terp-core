@@ -1,41 +1,60 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# This script creates release artifacts from reproducible builds.
-# Run `make build-reproducible` first to generate the binaries.
+# Prepares all release artifacts from reproducible builds:
+#   - verifies raw binaries exist
+#   - checksums raw binaries
+#   - creates versioned tarballs
+#   - checksums tarballs
+#   - writes everything into a single build/sha256sum.txt
 #
-# Usage: ./scripts/prep-release.sh [VERSION]
-# If VERSION is not provided, it will be extracted from git tags.
+# Run `make create-binaries` first.
+#
+# Usage: ./scripts/release/prep.sh [VERSION]
+# VERSION defaults to the current git tag (v-prefix stripped).
 
 VERSION="${1:-$(git describe --tags 2>/dev/null | sed 's/^v//' || echo "unknown")}"
 BUILD_DIR="build"
+CHECKSUM_FILE="$BUILD_DIR/sha256sum.txt"
 
 echo "Preparing release artifacts for version: $VERSION"
+echo ""
 
-# Check if binaries exist
-if [[ ! -f "$BUILD_DIR/terpd-linux-amd64" ]] && [[ ! -f "$BUILD_DIR/terpd-linux-arm64" ]]; then
-    echo "Error: No binaries found in $BUILD_DIR/"
-    echo "Run 'make build-reproducible' first."
-    exit 1
-fi
-
-# Create tarballs and checksums
+# ------------------------------------------------------------------
+# Verify binaries
+# ------------------------------------------------------------------
 for arch in amd64 arm64; do
-    binary="$BUILD_DIR/terpd-linux-$arch"
-    if [[ -f "$binary" ]]; then
-        tarball="$BUILD_DIR/terpd-$VERSION-linux-$arch.tar.gz"
-        echo "Creating $tarball..."
-        tar -czvf "$tarball" -C "$BUILD_DIR" "terpd-linux-$arch"
-
-        echo "Generating checksum..."
-        sha256sum "$tarball" > "$tarball.sha256"
+    if [[ ! -f "$BUILD_DIR/terpd-linux-$arch" ]]; then
+        echo "Error: $BUILD_DIR/terpd-linux-$arch not found."
+        echo "Run 'make create-binaries' first."
+        exit 1
     fi
 done
 
-# Generate combined checksum file
-echo "Generating combined checksum file..."
-cat "$BUILD_DIR"/*.sha256 > "$BUILD_DIR/checksums.txt" 2>/dev/null || true
+# ------------------------------------------------------------------
+# Checksum raw binaries
+# ------------------------------------------------------------------
+echo "Checksumming raw binaries..."
+(cd "$BUILD_DIR" && sha256sum terpd-linux-amd64 terpd-linux-arm64 > sha256sum.txt)
 
+# ------------------------------------------------------------------
+# Create versioned tarballs and append their checksums
+# ------------------------------------------------------------------
+for arch in amd64 arm64; do
+    tarball="terpd-$VERSION-linux-$arch.tar.gz"
+    echo "Creating $BUILD_DIR/$tarball..."
+    tar -czf "$BUILD_DIR/$tarball" -C "$BUILD_DIR" "terpd-linux-$arch"
+
+    echo "Checksumming $tarball..."
+    (cd "$BUILD_DIR" && sha256sum "$tarball" >> sha256sum.txt)
+done
+
+# ------------------------------------------------------------------
+# Summary
+# ------------------------------------------------------------------
 echo ""
-echo "Release artifacts created in $BUILD_DIR/:"
-ls -la "$BUILD_DIR"/*.tar.gz "$BUILD_DIR"/*.sha256 2>/dev/null || echo "No artifacts found"
+echo "Artifacts in $BUILD_DIR/:"
+ls -lh "$BUILD_DIR"/*.tar.gz "$BUILD_DIR"/terpd-linux-* 2>/dev/null
+echo ""
+echo "Checksums written to $CHECKSUM_FILE:"
+cat "$CHECKSUM_FILE"

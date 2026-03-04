@@ -55,8 +55,8 @@ wasmd=$(go list -f '{{ .Dir }}' -m github.com/CosmWasm/wasmd)
 # Check if packet-forward-middleware exists in go.mod
 if go list -m github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10 &>/dev/null; then
   pfm=$(go list -f '{{ .Dir }}' -m "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10")
-elif go list -m github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 &>/dev/null; then
-  pfm=$(go list -f '{{ .Dir }}' -m "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8")
+elif go list -m github.com/cosmos/ibc-apps/middleware/packet-forward-middleware//v10 &>/dev/null; then
+  pfm=$(go list -f '{{ .Dir }}' -m "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware//v10")
 else
   echo "Warning: packet-forward-middleware not found in go.mod, skipping..."
   pfm=""
@@ -137,7 +137,6 @@ fi
 base_json=$(jq -n --arg version "$version" '{
   swagger: "2.0",
   info: { title: "Terp Network API", version: $version, description: "REST API for Terp Network blockchain" },
-  host: "localhost:1317",
   schemes: ["http", "https"],
   consumes: ["application/json"],
   produces: ["application/json"],
@@ -166,17 +165,17 @@ for file in "$all_dir"/*.json; do
   mv "$temp_file2" "$temp_file"
 done
 
-# Loop through all paths and methods to update any "operationId" by appending a random 5-character suffix.
-jq -r '.paths | to_entries[] | "\(.key) \(.value | keys[])"' "$temp_file" | while read -r path method; do
-  # Generate a simple random suffix using timestamp and process ID
-  suffix=$(printf "%05d" $((RANDOM % 100000)))
-  temp_file2=$(mktemp)
-  jq --arg path "$path" --arg method "$method" --arg suffix "$suffix" '
-    if (.paths[$path][$method] | has("operationId"))
-    then .paths[$path][$method].operationId |= (. + "_" + $suffix)
-    else . end' "$temp_file" > "$temp_file2"
-  mv "$temp_file2" "$temp_file"
-done
+# # Loop through all paths and methods to update any "operationId" by appending a random 5-character suffix.
+# jq -r '.paths | to_entries[] | "\(.key) \(.value | keys[])"' "$temp_file" | while read -r path method; do
+#   # Generate a simple random suffix using timestamp and process ID
+#   suffix=$(printf "%05d" $((RANDOM % 100000)))
+#   temp_file2=$(mktemp)
+#   jq --arg path "$path" --arg method "$method" --arg suffix "$suffix" '
+#     if (.paths[$path][$method] | has("operationId"))
+#     then .paths[$path][$method].operationId |= (. + "_" + $suffix)
+#     else . end' "$temp_file" > "$temp_file2"
+#   mv "$temp_file2" "$temp_file"
+# done
 
 # Save the final merged JSON to FINAL.json.
 jq . "$temp_file" > "$all_dir/FINAL.json"
@@ -198,10 +197,6 @@ else
   # Use swagger-merger to extend the $ref instances to their full value.
   run_swagger_merger --input "./tmp-swagger-gen/tmp_swagger.yaml" -o "./docs/static/swagger.yaml"
 fi
-
-# Copy to swagger directory for serving
-# mkdir -p ./swagger
-# cp ./docs/static/swagger.yaml ./swagger/swagger.yaml
 
 # Cleanup.
 rm -rf tmp-swagger-gen
