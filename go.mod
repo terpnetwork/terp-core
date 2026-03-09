@@ -41,7 +41,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	google.golang.org/genproto/googleapis/api v0.0.0-20251202230838-ff82c1b0f217
-	google.golang.org/grpc v1.79.1
+	google.golang.org/grpc v1.79.2
 	google.golang.org/protobuf v1.36.11
 )
 
