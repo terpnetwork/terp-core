@@ -4,6 +4,13 @@ go 1.24.3
 
 toolchain go1.24.7
 
+replace (
+	// zk-circuit flavored wasmvm included in fork
+	github.com/CosmWasm/wasmd => ../zk-wasmd
+	// zk-circuit flavored wasmvm
+	github.com/CosmWasm/wasmvm/v3 => ../zk-wasmvm
+)
+
 require (
 	cosmossdk.io/api v0.9.2
 	cosmossdk.io/client/v2 v2.0.0-beta.9
@@ -227,7 +234,7 @@ require (
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.5 // indirect
-	github.com/shamaton/msgpack/v2 v2.2.3 // indirect
+	github.com/shamaton/msgpack/v2 v2.4.0 // indirect
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect
