@@ -1,0 +1,77 @@
+syntax = "proto3";
+package terp.hashmerchant.v1;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "amino/amino.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "terp/hashmerchant/v1/types.proto";
+import "terp/hashmerchant/v1/genesis.proto";
+
+option go_package = "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types";
+
+// Msg defines the x/hashmerchant message service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // RegisterChain adds a foreign chain to the registry (governance-gated).
+  rpc RegisterChain(MsgRegisterChain) returns (MsgRegisterChainResponse) {
+    option (google.api.http).post = "/terp/hashmerchant/v1/tx/register_chain";
+  };
+
+  // RegisterContract registers a CosmWasm contract for sudo callbacks,
+  // requires an escrow deposit.
+  rpc RegisterContract(MsgRegisterContract) returns (MsgRegisterContractResponse) {
+    option (google.api.http).post = "/terp/hashmerchant/v1/tx/register_contract";
+  };
+
+  // RefillEscrow tops up the escrow for an already-registered contract.
+  rpc RefillEscrow(MsgRefillEscrow) returns (MsgRefillEscrowResponse) {
+    option (google.api.http).post = "/terp/hashmerchant/v1/tx/refill_escrow";
+  };
+
+  // UpdateParams updates module parameters (governance-gated).
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+}
+
+// MsgRegisterChain registers a new foreign chain for Merkle mirroring.
+// Only the module authority (governance) may call this.
+message MsgRegisterChain {
+  option (cosmos.msg.v1.signer) = "authority";
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  RegisteredChain chain = 2 [(gogoproto.nullable) = false];
+}
+message MsgRegisterChainResponse {}
+
+// MsgRegisterContract registers a CosmWasm contract to receive hash-root
+// sudo callbacks.  The sender must pay at least min_escrow_amount.
+message MsgRegisterContract {
+  option (cosmos.msg.v1.signer) = "sender";
+  string sender = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string contract_addr = 2;
+  string chain_uid = 3;
+  repeated string substore_keys = 4;
+  cosmos.base.v1beta1.Coin escrow = 5 [(gogoproto.nullable) = false];
+}
+message MsgRegisterContractResponse {}
+
+// MsgRefillEscrow adds tokens to an existing contract's escrow balance.
+message MsgRefillEscrow {
+  option (cosmos.msg.v1.signer) = "sender";
+  string sender = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string contract_addr = 2;
+  cosmos.base.v1beta1.Coin amount = 3 [(gogoproto.nullable) = false];
+}
+message MsgRefillEscrowResponse {}
+
+// MsgUpdateParams updates the module parameters.
+// Only the module authority (governance) may call this.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "terp/hashmerchant/MsgUpdateParams";
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+message MsgUpdateParamsResponse {}

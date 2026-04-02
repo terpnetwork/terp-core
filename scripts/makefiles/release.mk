@@ -3,7 +3,7 @@
 ###############################################################################
 
 GORELEASER_IMAGE := ghcr.io/goreleaser/goreleaser-cross:v$(GO_VERSION)
-COSMWASM_VERSION := $(shell go list -m github.com/CosmWasm/wasmvm/v3 | sed 's/.* //')
+COSMWASM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
 
 .PHONY: release release-help release-publish release-dry-run release-snapshot \
 	create-binaries create-checksums release-prep create-binaries-json \

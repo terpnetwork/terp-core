@@ -14,9 +14,11 @@ tsh-help:
 	@echo "  tsh-polytone 			 Run sh test for ibc + wasm sanity"
 	@echo "  tsh-staking-hooks 		 Run sh test for staking hook sanity"
 	@echo "  tsh-upgrade 		     Run sh test for upgrade proposal & performance sanity"
+	@echo "  tsh-zk 			 	 Run sh test for zk-wasmvm module (rick)"
+	@echo "  tsh-hashmerchant 		 Run sh test for hashmerchant vote extensions"
 
 tsh: tsh-help
-tsh-all: tsh-upgrade tsh-staking-hooks tsh-polytone tsh-aa tsh-pfm tsh-ibchook tsh-nfts
+tsh-all: tsh-upgrade tsh-staking-hooks tsh-polytone tsh-aa tsh-pfm tsh-ibchook tsh-nfts tsh-zk tsh-hashmerchant
 tsh-aa: 
 	cd tests/tsh/aa && sh a.sh
 tsh-ibchook: 
@@ -31,6 +33,10 @@ tsh-pfm:
 	cd tests/tsh/pfm && sh a.sh
 tsh-nfts: 
 	cd tests/tsh/nft && sh a.sh
+tsh-zk:
+	cd tests/tsh/zk-wasmvm && sh a.rick.sh
+tsh-hashmerchant:
+	cd tests/tsh/hashmerchant && sh a.sh
 
 
 # include simulations

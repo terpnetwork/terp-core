@@ -36,6 +36,7 @@ import (
 
 	// cwhookstypes "github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
 	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
+	hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
 )
 
 func (appKeepers *AppKeepers) GenerateKeys() {
@@ -70,6 +71,7 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		driptypes.StoreKey,
 		smartaccounttypes.StoreKey,
 		tokenfactorytypes.StoreKey,
+		hashmerchanttypes.StoreKey,
 	)
 
 	appKeepers.tkeys = storetypes.NewTransientStoreKeys(paramstypes.TStoreKey)

@@ -1,0 +1,89 @@
+syntax = "proto3";
+package terp.hashmerchant.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types";
+
+// MarketMode governs who may provide hash attestations.
+enum MarketMode {
+  MARKET_MODE_UNSPECIFIED = 0;
+  // Open: any validator may attest.
+  MARKET_MODE_OPEN = 1;
+  // Closed: only governance-whitelisted providers may attest.
+  MARKET_MODE_CLOSED = 2;
+}
+
+// RegisteredChain describes a foreign blockchain whose substore roots
+// validators will mirror via vote extensions.
+message RegisteredChain {
+  // chain_uid is the unique identifier (e.g. "cosmoshub-4", "ethereum-mainnet").
+  string chain_uid = 1;
+  // human-readable label
+  string name = 2;
+  // rpc_endpoints that validator runtimes may query
+  repeated string rpc_endpoints = 3;
+  // hash_algos this chain supports (e.g. "sha256", "keccak256", "poseidon")
+  repeated string hash_algos = 4;
+  // enabled toggles attestation acceptance
+  bool enabled = 5;
+}
+
+// RegisteredContract is a CosmWasm contract that has paid escrow to receive
+// sudo callbacks when new hash roots are confirmed.
+message RegisteredContract {
+  string contract_addr = 1;
+  string chain_uid = 2;
+  // substore_keys the contract is interested in (e.g. ["bank", "staking"])
+  repeated string substore_keys = 3;
+  bool enabled = 4;
+}
+
+// EscrowRecord tracks the escrow deposit for a registered contract.
+message EscrowRecord {
+  string contract_addr = 1;
+  cosmos.base.v1beta1.Coin amount = 2 [(gogoproto.nullable) = false];
+  // height through which the escrow is paid
+  uint64 paid_until_height = 3;
+  uint64 last_prune_height = 4;
+}
+
+// HashRoot is a confirmed foreign-chain state root stored on-chain after
+// reaching validator quorum via vote extensions.
+message HashRoot {
+  string chain_uid = 1;
+  string algo = 2;
+  uint64 height = 3;
+  bytes root = 4;
+  // number of validators that attested to this root
+  uint32 attestation_count = 5;
+  // block_time of the foreign chain (unix seconds)
+  int64 block_time = 6;
+}
+
+// HashPairTicket is the core on-chain primitive: a filterable, zk-optimised
+// pair of hashes linking an origin chain state to a destination representation.
+message HashPairTicket {
+  string project_id = 1;
+  bytes origin_hash = 2;
+  bytes destination_hash = 3;
+  string zk_circuit_id = 4;
+  uint64 destination_chain_id = 5;
+  uint64 expiry_block = 6;
+  bytes metadata = 7;
+}
+
+// VoteExtensionHashData is the payload validators include in their ABCI++
+// vote extensions.  It bundles a hash-pair ticket with the ICS-23 proof
+// material that the on-chain module uses for verification.
+message VoteExtensionHashData {
+  string runtime_id = 1;
+  string chain_uid = 2;
+  string algo = 3;
+  bytes root = 4;
+  uint64 foreign_height = 5;
+  int64 foreign_block_time = 6;
+  // ics23_proof is an optional ICS-23 commitment proof for the root
+  bytes ics23_proof = 7;
+}

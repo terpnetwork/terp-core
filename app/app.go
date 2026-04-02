@@ -103,6 +103,7 @@ import (
 	"github.com/terpnetwork/terp-core/v5/x/feeshare"
 	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 	"github.com/terpnetwork/terp-core/v5/x/globalfee"
+	"github.com/terpnetwork/terp-core/v5/x/hashmerchant"
 	"github.com/terpnetwork/terp-core/v5/x/tokenfactory"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 
@@ -115,6 +116,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/v5/app/upgrades"
 	v5 "github.com/terpnetwork/terp-core/v5/app/upgrades/v5"
+	v6 "github.com/terpnetwork/terp-core/v5/app/upgrades/v6"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
@@ -147,6 +149,7 @@ var (
 
 	Upgrades = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,v4_1.Upgrade,
 		v5.Upgrade,
+		v6.Upgrade,
 	}
 )
 
@@ -384,6 +387,7 @@ func NewTerpApp(
 		// cwhooks.NewAppModule(appCodec, app.CWHooksKeeper),
 		ibchooks.NewAppModule(*app.AccountKeeper),
 		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
+		hashmerchant.NewAppModule(app.HashMerchantKeeper),
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 	)
 
@@ -459,6 +463,12 @@ func NewTerpApp(
 	app.SetEndBlocker(app.EndBlocker)
 	app.SetPrecommiter(app.Precommitter)
 	app.SetPrepareCheckStater(app.PrepareCheckStater)
+
+	// ABCI++ vote extension handlers (hashmerchant)
+	app.SetExtendVoteHandler(app.HashMerchantKeeper.ExtendVoteHandler())
+	app.SetVerifyVoteExtensionHandler(app.HashMerchantKeeper.VerifyVoteExtensionHandler())
+	app.SetPrepareProposal(app.HashMerchantKeeper.PrepareProposalHandler())
+	app.SetProcessProposal(app.HashMerchantKeeper.ProcessProposalHandler())
 
 	// must be before Loading version
 	// requires the snapshot store to be created and registered as a BaseAppOption
@@ -549,7 +559,7 @@ func (app *TerpApp) PrepareCheckStater(ctx sdk.Context) {
 }
 
 // PreBlocker application updates before each begin block.
-func (app *TerpApp) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+func (app *TerpApp) PreBlocker(ctx sdk.Context, req *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
 	// Set gas meter to the free gas meter.
 	// This is because there is currently non-deterministic gas usage in the
 	// pre-blocker, e.g. due to hydration of in-memory data structures.
@@ -557,6 +567,11 @@ func (app *TerpApp) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*
 	// Note that we don't need to reset the gas meter after the pre-blocker
 	// because Go is pass by value.
 	ctx = ctx.WithGasMeter(storetypes.NewInfiniteGasMeter())
+
+	// Extract and process hashmerchant vote extensions injected by
+	// PrepareProposal before any module PreBlockers run.
+	app.HashMerchantKeeper.ProcessInjectedVoteExtension(ctx, req.Txs)
+
 	mm := app.ModuleManager()
 	return mm.PreBlock(ctx)
 }

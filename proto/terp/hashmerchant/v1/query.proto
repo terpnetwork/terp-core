@@ -1,0 +1,121 @@
+syntax = "proto3";
+package terp.hashmerchant.v1;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "terp/hashmerchant/v1/types.proto";
+import "terp/hashmerchant/v1/genesis.proto";
+
+option go_package = "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types";
+
+// Query defines the x/hashmerchant gRPC query service.
+service Query {
+
+  // Params returns module parameters.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/terp/hashmerchant/v1/params";
+  }
+
+  // RegisteredChain returns a single registered chain by UID.
+  rpc RegisteredChain(QueryRegisteredChainRequest) returns (QueryRegisteredChainResponse) {
+    option (google.api.http).get = "/terp/hashmerchant/v1/chain/{chain_uid}";
+  }
+
+  // RegisteredChains lists all registered chains.
+  rpc RegisteredChains(QueryRegisteredChainsRequest) returns (QueryRegisteredChainsResponse) {
+    option (google.api.http).get = "/terp/hashmerchant/v1/chains";
+  }
+
+  // RegisteredContract returns a single registered contract.
+  rpc RegisteredContract(QueryRegisteredContractRequest) returns (QueryRegisteredContractResponse) {
+    option (google.api.http).get = "/terp/hashmerchant/v1/contract/{contract_addr}";
+  }
+
+  // RegisteredContracts lists all registered contracts.
+  rpc RegisteredContracts(QueryRegisteredContractsRequest) returns (QueryRegisteredContractsResponse) {
+    option (google.api.http).get = "/terp/hashmerchant/v1/contracts";
+  }
+
+  // HashRoot returns the latest confirmed root for a chain + algorithm.
+  rpc HashRoot(QueryHashRootRequest) returns (QueryHashRootResponse) {
+    option (google.api.http).get = "/terp/hashmerchant/v1/root/{chain_uid}/{algo}";
+  }
+
+  // HashRoots lists all confirmed roots for a chain.
+  rpc HashRoots(QueryHashRootsRequest) returns (QueryHashRootsResponse) {
+    option (google.api.http).get = "/terp/hashmerchant/v1/roots/{chain_uid}";
+  }
+
+  // Escrow returns the escrow record for a contract.
+  rpc Escrow(QueryEscrowRequest) returns (QueryEscrowResponse) {
+    option (google.api.http).get = "/terp/hashmerchant/v1/escrow/{contract_addr}";
+  }
+}
+
+// --- Params ---
+message QueryParamsRequest {}
+message QueryParamsResponse {
+  Params params = 1 [(gogoproto.nullable) = false];
+}
+
+// --- RegisteredChain ---
+message QueryRegisteredChainRequest {
+  string chain_uid = 1;
+}
+message QueryRegisteredChainResponse {
+  RegisteredChain chain = 1 [(gogoproto.nullable) = false];
+}
+
+// --- RegisteredChains ---
+message QueryRegisteredChainsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+message QueryRegisteredChainsResponse {
+  repeated RegisteredChain chains = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// --- RegisteredContract ---
+message QueryRegisteredContractRequest {
+  string contract_addr = 1;
+}
+message QueryRegisteredContractResponse {
+  RegisteredContract contract = 1 [(gogoproto.nullable) = false];
+}
+
+// --- RegisteredContracts ---
+message QueryRegisteredContractsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+message QueryRegisteredContractsResponse {
+  repeated RegisteredContract contracts = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// --- HashRoot ---
+message QueryHashRootRequest {
+  string chain_uid = 1;
+  string algo = 2;
+}
+message QueryHashRootResponse {
+  HashRoot root = 1 [(gogoproto.nullable) = false];
+}
+
+// --- HashRoots ---
+message QueryHashRootsRequest {
+  string chain_uid = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+message QueryHashRootsResponse {
+  repeated HashRoot roots = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// --- Escrow ---
+message QueryEscrowRequest {
+  string contract_addr = 1;
+}
+message QueryEscrowResponse {
+  EscrowRecord escrow = 1 [(gogoproto.nullable) = false];
+}

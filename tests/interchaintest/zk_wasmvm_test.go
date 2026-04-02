@@ -29,7 +29,7 @@ func TestTerpZkCosmwasmVm(t *testing.T) {
 	user := interchaintest.GetAndFundTestUsers(t, ctx, "default", sdkmath.NewInt(10_000_000), terp, terp)[0]
 
 	// Upload & init contract + cirucit vk param binary
-	_, headstash := helpers.SetupContractWithVk(t, ctx, terp, user, "contracts/zk_wasmvm_test.wasm", "circuits/norick_vk.bin", false, `{}`)
+	_, headstash := helpers.SetupContractWithVk(t, ctx, terp, user, "contracts/zk_no_rick.wasm", "circuits/norick_vk.bin", false, `{}`)
 	msg := fmt.Sprintf(`{"proove":{"word_id": 0, "proof": "%s"}}`, base64.StdEncoding.EncodeToString(proofBytes))
 	// submit proof to contract, confirm valid
 	helpers.ExecuteMsgWithAmount(t, ctx, terp, user, headstash, "0", msg)

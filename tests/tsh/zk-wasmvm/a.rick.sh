@@ -3,7 +3,7 @@ BIND=terpd
 CHAINID_A=test-1
 
 # setup test keys.
-VAL=val
+VAL="val"
 RELAYER=relayer
 USER=user
 VALFILE="test-keys/$VAL.json"
@@ -13,7 +13,7 @@ USERFILE="test-keys/$USER.json"
 # file paths
 CHAINDIR=../data/polytone
 VAL1HOME=$CHAINDIR/$CHAINID_A/val1
-ZK_COSMWASM=../../interchaintest/contracts/zk_wasmvm_test.wasm
+ZK_COSMWASM=../../interchaintest/contracts/zk_no_rick.wasm
 ZK_VK=../../interchaintest/circuits/no_rick.bin
 PROOF_FILE="../../interchaintest/circuits/no_rick_proof.json"
 # Define the new ports for val1 on chain a
@@ -37,7 +37,7 @@ delegate="1000000uterp" # 1btsg
 # A. CHAINS CONFIG
 ####################################################################
 
-rm -rf $VAL1HOME $VAL2HOME 
+rm -rf $VAL1HOME 
 rm -rf $VAL1HOME/test-keys
 
 # initialize chains
@@ -108,7 +108,6 @@ echo "VAL1A_PID: $VAL1A_PID"
 sleep 3
 
 echo "RELAYERADDR: $RELAYERADDR"
-echo "DEL1ADDR: $DEL1ADDR"
 echo "VAL1A_ADDR: $VAL1A_ADDR"
 echo "USERAADDR: $USERAADDR"
 

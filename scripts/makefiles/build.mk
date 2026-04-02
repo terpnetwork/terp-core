@@ -69,6 +69,7 @@ build-reproducible-amd64: go.sum
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		--build-arg WASMVM_SOURCE=$(WASMVM_SOURCE) \
 		--build-arg RUNNER_IMAGE=alpine:3.17 \
 		--platform linux/amd64 \
 		--target runtime \
@@ -89,6 +90,7 @@ build-reproducible-arm64: go.sum
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		--build-arg WASMVM_SOURCE=$(WASMVM_SOURCE) \
 		--build-arg RUNNER_IMAGE=alpine:3.17 \
 		--platform linux/arm64 \
 		--target runtime \
