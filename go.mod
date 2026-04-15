@@ -4,13 +4,6 @@ go 1.24.3
 
 toolchain go1.24.7
 
-replace (
-	// zk-circuit flavored wasmvm included in fork
-	github.com/CosmWasm/wasmd => ../zk-wasmd
-	// zk-circuit flavored wasmvm
-	github.com/CosmWasm/wasmvm/v3 => ../zk-wasmvm
-)
-
 require (
 	cosmossdk.io/api v0.9.2
 	cosmossdk.io/client/v2 v2.0.0-beta.9
