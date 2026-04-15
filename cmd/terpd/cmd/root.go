@@ -43,7 +43,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
 	"github.com/terpnetwork/terp-core/v5/app"
@@ -150,7 +149,8 @@ func initAppConfig() (string, interface{}) {
 	type CustomAppConfig struct {
 		serverconfig.Config
 
-		Wasm wasmtypes.NodeConfig `mapstructure:"wasm"`
+		Wasm      wasmtypes.NodeConfig `mapstructure:"wasm"`
+		Bootstrap BootstrapConfig      `mapstructure:"bootstrap"`
 
 		// SidecarQueryServerConfig sqs.Config `mapstructure:"terp-sqs"`
 		// IndexerConfig indexer.Config `mapstructure:"terp-indexer"`
@@ -175,12 +175,14 @@ func initAppConfig() (string, interface{}) {
 	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
 
 	terpAppConfig := CustomAppConfig{
-		Config: *srvCfg,
-		Wasm:   wasmtypes.DefaultNodeConfig(),
+		Config:    *srvCfg,
+		Wasm:      wasmtypes.DefaultNodeConfig(),
+		Bootstrap: DefaultBootstrapConfig(),
 	}
 
 	customAppTemplate := serverconfig.DefaultConfigTemplate +
-		wasmtypes.DefaultConfigTemplate()
+		wasmtypes.DefaultConfigTemplate() +
+		BootstrapConfigTemplate
 
 	return customAppTemplate, terpAppConfig
 }
@@ -235,6 +237,8 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
 		AddGenesisIcaCmd(app.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
+		StatesyncCmd,
+		BootstrapCmd,
 		DebugCmd(),
 		ConfigCmd(),
 		pruning.Cmd(ac.newApp, app.DefaultNodeHome),
@@ -252,12 +256,9 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		txCommand(),
 		keys.Commands(),
 	)
-	// add rosetta
-	// rootCmd.AddCommand(rosettaCmd.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Marshaler))
 }
 
 func addModuleInitFlags(startCmd *cobra.Command) {
-	crisis.AddModuleInitFlags(startCmd)
 	wasm.AddModuleInitFlags(startCmd)
 }
 
