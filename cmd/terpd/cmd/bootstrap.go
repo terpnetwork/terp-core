@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -36,6 +37,29 @@ type BootstrapConfig struct {
 	Seeds           string `mapstructure:"seeds"`
 	PersistentPeers string `mapstructure:"persistent-peers"`
 	PrivateMode     bool   `mapstructure:"private-mode"`
+	Cosmovisor      bool   `mapstructure:"cosmovisor"`
+	Service         bool   `mapstructure:"service"`
+	Pruning         string `mapstructure:"pruning"`
+}
+
+// networkPreset holds known-good configuration for a specific network.
+type networkPreset struct {
+	ChainID    string
+	GenesisURL string
+	RPCs       string
+}
+
+var networkPresets = map[string]networkPreset{
+	"morocco-1": {
+		ChainID:    "morocco-1",
+		GenesisURL: "https://raw.githubusercontent.com/terpnetwork/mainnet/main/morocco-1/genesis.json",
+		RPCs:       "https://rpc.terp.network:443,https://rpc.terp.chaintools.tech:443",
+	},
+	"90u-4": {
+		ChainID:    "90u-4",
+		GenesisURL: "https://raw.githubusercontent.com/terpnetwork/test-net/master/90u-4/genesis.json",
+		RPCs:       "https://testnet-rpc.terp.network:443",
+	},
 }
 
 // DefaultBootstrapConfig returns sensible defaults for mainnet bootstrapping.
@@ -45,12 +69,15 @@ func DefaultBootstrapConfig() BootstrapConfig {
 		GenesisURL:      "https://raw.githubusercontent.com/terpnetwork/mainnet/main/morocco-1/genesis.json",
 		GenesisHash:     "",
 		SnapshotURL:     "",
-		StateSyncRPCs:   "https://rpc.terp.chaintools.tech:443",
+		StateSyncRPCs:   "https://rpc.terp.network:443,https://rpc.terp.chaintools.tech:443",
 		TrustOffset:     1000,
-		MaxRetries:      3,
+		MaxRetries:      6,
 		Seeds:           "",
 		PersistentPeers: "",
 		PrivateMode:     true,
+		Cosmovisor:      false,
+		Service:         false,
+		Pruning:         "",
 	}
 }
 
@@ -123,6 +150,7 @@ Direct usage:
 func init() {
 	BootstrapCmd.Flags().String("moniker", "", "node moniker (auto-generated if empty)")
 	BootstrapCmd.Flags().String("chain-id", "morocco-1", "chain ID")
+	BootstrapCmd.Flags().String("network", "", "preset network config: morocco-1 (mainnet) or 90u-4 (testnet)")
 	BootstrapCmd.Flags().String("sync-mode", "", "override sync mode: statesync or snapshot")
 	BootstrapCmd.Flags().String("genesis-url", "", "override genesis download URL")
 	BootstrapCmd.Flags().String("genesis-hash", "", "override expected genesis SHA256 hash")
@@ -133,6 +161,9 @@ func init() {
 	BootstrapCmd.Flags().String("bootstrap-seeds", "", "override seed nodes")
 	BootstrapCmd.Flags().String("bootstrap-peers", "", "override persistent peers")
 	BootstrapCmd.Flags().Bool("public", false, "public mode: enable PEX gossip and accept inbound peers (default is private)")
+	BootstrapCmd.Flags().Bool("cosmovisor", false, "install cosmovisor via 'go install' and initialize it")
+	BootstrapCmd.Flags().Bool("service", false, "create a systemd service (Linux only, works with --cosmovisor)")
+	BootstrapCmd.Flags().String("pruning", "", "pruning strategy: default, nothing, or everything")
 }
 
 func runBootstrap(cmd *cobra.Command, args []string) error {
@@ -152,6 +183,18 @@ func runBootstrap(cmd *cobra.Command, args []string) error {
 	serverCtx := server.GetServerContextFromCmd(cmd)
 	if serverCtx != nil && serverCtx.Viper != nil {
 		_ = serverCtx.Viper.UnmarshalKey("bootstrap", &bsCfg)
+	}
+
+	// Apply --network preset (overrides defaults before flag overrides)
+	if network, _ := cmd.Flags().GetString("network"); network != "" {
+		preset, ok := networkPresets[network]
+		if !ok {
+			return fmt.Errorf("unknown network %q (available: morocco-1, 90u-4)", network)
+		}
+		chainID = preset.ChainID
+		bsCfg.GenesisURL = preset.GenesisURL
+		bsCfg.StateSyncRPCs = preset.RPCs
+		fmt.Printf("Using network preset: %s\n", network)
 	}
 
 	// Override with flags (only when explicitly set)
@@ -181,9 +224,9 @@ func runBootstrap(cmd *cobra.Command, args []string) error {
 		if err := runInit(home, moniker, chainID); err != nil {
 			return err
 		}
-		fmt.Println("Init complete.\n")
+		fmt.Println("Init complete.")
 	} else {
-		fmt.Println("Node already initialized.\n")
+		fmt.Println("Node already initialized.")
 	}
 
 	// ──── Step 2: Genesis download + validation ────
@@ -239,16 +282,48 @@ func runBootstrap(cmd *cobra.Command, args []string) error {
 	// Write updated config.toml
 	configTomlPath := filepath.Join(home, "config", "config.toml")
 	cmtcfg.WriteConfigFile(configTomlPath, cmtCfg)
-	fmt.Println("config.toml updated.\n")
+	fmt.Println("config.toml updated.")
 
-	// ──── Step 5: Exec into terpd start ────
-	fmt.Println("Bootstrap complete. Starting node...")
+	// ──── Step 5: Apply pruning to app.toml ────
+	if bsCfg.Pruning != "" {
+		if err := applyPruningConfig(home, bsCfg.Pruning); err != nil {
+			return err
+		}
+	}
+
+	// ──── Step 6: Cosmovisor setup ────
 	binary, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to resolve executable path: %w", err)
 	}
 
+	if bsCfg.Cosmovisor {
+		if err := installCosmovisor(binary, home); err != nil {
+			return err
+		}
+	}
+
+	// ──── Step 7: Systemd service ────
+	if bsCfg.Service {
+		if err := createSystemdService(home, bsCfg.Cosmovisor); err != nil {
+			return err
+		}
+	}
+
+	// ──── Step 8: Exec into terpd start ────
+	fmt.Println("Bootstrap complete. Starting node...")
+
 	startArgs := []string{"terpd", "start", "--home", home}
+	if bsCfg.Cosmovisor {
+		cosmovisorBin, err := exec.LookPath("cosmovisor")
+		if err != nil {
+			fmt.Println("Warning: cosmovisor not found on PATH, falling back to terpd start")
+		} else {
+			startArgs = []string{"cosmovisor", "run", "start", "--home", home}
+			binary = cosmovisorBin
+		}
+	}
+
 	// syscall.Exec replaces current process — clean for Docker PID 1
 	return syscall.Exec(binary, startArgs, os.Environ())
 }
@@ -278,7 +353,12 @@ func configureStateSyncBootstrap(cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) e
 		fmt.Printf("  Peers found : %d\n", len(peers))
 
 		cmtCfg.StateSync.Enable = true
-		cmtCfg.StateSync.RPCServers = []string{rpc, rpc} // >=2 required by CometBFT
+		// CometBFT requires >=2 RPC servers; use two distinct ones when possible
+		if len(rpcs) >= 2 {
+			cmtCfg.StateSync.RPCServers = []string{rpcs[0], rpcs[1]}
+		} else {
+			cmtCfg.StateSync.RPCServers = []string{rpc, rpc}
+		}
 		cmtCfg.StateSync.TrustHeight = trustHeight
 		cmtCfg.StateSync.TrustHash = trustHash
 		cmtCfg.StateSync.TrustPeriod = 168 * time.Hour
@@ -293,7 +373,7 @@ func configureStateSyncBootstrap(cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) e
 			}
 		}
 
-		fmt.Println("State-sync configured.\n")
+		fmt.Println("State-sync configured.")
 		return nil
 	}
 
@@ -312,7 +392,7 @@ func configureSnapshotBootstrap(home string, cmtCfg *cmtcfg.Config, bsCfg Bootst
 	if err := downloadAndExtractTarball(bsCfg.SnapshotURL, dataDir); err != nil {
 		return fmt.Errorf("snapshot restore failed: %w", err)
 	}
-	fmt.Println("Snapshot extracted.\n")
+	fmt.Println("Snapshot extracted.")
 
 	// Disable state-sync — node will catch up from snapshot height via block-sync
 	cmtCfg.StateSync.Enable = false
@@ -515,6 +595,153 @@ func applyBootstrapFlagOverrides(cmd *cobra.Command, bsCfg *BootstrapConfig) {
 	if v, _ := cmd.Flags().GetString("bootstrap-peers"); v != "" {
 		bsCfg.PersistentPeers = v
 	}
+	if v, _ := cmd.Flags().GetBool("cosmovisor"); v {
+		bsCfg.Cosmovisor = true
+	}
+	if v, _ := cmd.Flags().GetBool("service"); v {
+		bsCfg.Service = true
+	}
+	if v, _ := cmd.Flags().GetString("pruning"); v != "" {
+		bsCfg.Pruning = v
+	}
+}
+
+// ──── Pruning configuration ────
+
+func applyPruningConfig(home, pruning string) error {
+	switch pruning {
+	case "default", "nothing", "everything":
+	default:
+		return fmt.Errorf("unknown pruning strategy %q (use: default, nothing, everything)", pruning)
+	}
+
+	appTomlPath := filepath.Join(home, "config", "app.toml")
+	data, err := os.ReadFile(appTomlPath)
+	if err != nil {
+		return fmt.Errorf("failed to read app.toml: %w", err)
+	}
+
+	content := string(data)
+	// Replace the pruning line in app.toml
+	lines := strings.Split(content, "\n")
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "pruning =") {
+			lines[i] = fmt.Sprintf("pruning = %q", pruning)
+			break
+		}
+	}
+
+	if err := os.WriteFile(appTomlPath, []byte(strings.Join(lines, "\n")), 0o644); err != nil {
+		return fmt.Errorf("failed to write app.toml: %w", err)
+	}
+	fmt.Printf("Pruning strategy set to %q in app.toml\n", pruning)
+	return nil
+}
+
+// ──── Cosmovisor installation ────
+
+func installCosmovisor(terpdBinary, home string) error {
+	// Check if go is available
+	goPath, err := exec.LookPath("go")
+	if err != nil {
+		return fmt.Errorf("cosmovisor requires Go on PATH: %w", err)
+	}
+	fmt.Printf("Found Go at %s\n", goPath)
+
+	// Install cosmovisor
+	fmt.Println("Installing cosmovisor...")
+	installCmd := exec.Command(goPath, "install", "cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@latest")
+	installCmd.Stdout = os.Stdout
+	installCmd.Stderr = os.Stderr
+	installCmd.Env = append(os.Environ(),
+		fmt.Sprintf("DAEMON_NAME=terpd"),
+		fmt.Sprintf("DAEMON_HOME=%s", home),
+	)
+	if err := installCmd.Run(); err != nil {
+		return fmt.Errorf("cosmovisor install failed: %w", err)
+	}
+
+	// Initialize cosmovisor
+	fmt.Println("Initializing cosmovisor...")
+	cosmovisorBin, err := exec.LookPath("cosmovisor")
+	if err != nil {
+		return fmt.Errorf("cosmovisor not found after install: %w", err)
+	}
+
+	initCmd := exec.Command(cosmovisorBin, "init", terpdBinary)
+	initCmd.Stdout = os.Stdout
+	initCmd.Stderr = os.Stderr
+	initCmd.Env = append(os.Environ(),
+		fmt.Sprintf("DAEMON_NAME=terpd"),
+		fmt.Sprintf("DAEMON_HOME=%s", home),
+	)
+	if err := initCmd.Run(); err != nil {
+		return fmt.Errorf("cosmovisor init failed: %w", err)
+	}
+
+	fmt.Println("Cosmovisor installed and initialized.")
+	return nil
+}
+
+// ──── Systemd service creation ────
+
+func createSystemdService(home string, cosmovisor bool) error {
+	if runtime.GOOS != "linux" {
+		fmt.Println("Warning: --service is only supported on Linux, skipping systemd setup.")
+		return nil
+	}
+
+	currentUser := os.Getenv("USER")
+	if currentUser == "" {
+		currentUser = "root"
+	}
+
+	var execStart, description string
+	if cosmovisor {
+		gopath := os.Getenv("GOPATH")
+		if gopath == "" {
+			gopath = filepath.Join(os.Getenv("HOME"), "go")
+		}
+		execStart = filepath.Join(gopath, "bin", "cosmovisor") + " run start --home " + home
+		description = "Terp Node (cosmovisor)"
+	} else {
+		binary, err := os.Executable()
+		if err != nil {
+			return fmt.Errorf("failed to resolve executable path: %w", err)
+		}
+		execStart = binary + " start --home " + home
+		description = "Terp Node"
+	}
+
+	unit := fmt.Sprintf(`[Unit]
+Description=%s
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=%s
+ExecStart=%s
+Restart=always
+RestartSec=3
+LimitNOFILE=65535
+Environment="DAEMON_NAME=terpd"
+Environment="DAEMON_HOME=%s"
+Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=false"
+Environment="DAEMON_RESTART_AFTER_UPGRADE=true"
+
+[Install]
+WantedBy=multi-user.target
+`, description, currentUser, execStart, home)
+
+	servicePath := "/etc/systemd/system/terpd.service"
+	if err := os.WriteFile(servicePath, []byte(unit), 0o644); err != nil {
+		return fmt.Errorf("failed to write systemd service (try running as root): %w", err)
+	}
+
+	fmt.Printf("Systemd service created at %s\n", servicePath)
+	fmt.Println("Enable with: sudo systemctl enable terpd && sudo systemctl start terpd")
+	return nil
 }
 
 func splitTrimmed(s, sep string) []string {

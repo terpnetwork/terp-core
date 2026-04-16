@@ -221,7 +221,7 @@ BaseApp is created to service the ABCI call.`,
 			}
 
 			fmt.Printf("ABCI ListSnapshots: %d snapshot(s) available\n", len(resp.Snapshots))
-			fmt.Println("(This is exactly what CometBFT peers see over P2P channel 0x60)\n")
+			fmt.Println("(This is exactly what CometBFT peers see over P2P channel 0x60)")
 
 			for i, s := range resp.Snapshots {
 				fmt.Printf("Snapshot #%d\n", i+1)

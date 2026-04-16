@@ -150,7 +150,8 @@ func initAppConfig() (string, interface{}) {
 	type CustomAppConfig struct {
 		serverconfig.Config
 
-		Wasm wasmtypes.NodeConfig `mapstructure:"wasm"`
+		Wasm      wasmtypes.NodeConfig `mapstructure:"wasm"`
+		Bootstrap BootstrapConfig      `mapstructure:"bootstrap"`
 
 		// SidecarQueryServerConfig sqs.Config `mapstructure:"terp-sqs"`
 		// IndexerConfig indexer.Config `mapstructure:"terp-indexer"`
@@ -175,12 +176,14 @@ func initAppConfig() (string, interface{}) {
 	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
 
 	terpAppConfig := CustomAppConfig{
-		Config: *srvCfg,
-		Wasm:   wasmtypes.DefaultNodeConfig(),
+		Config:    *srvCfg,
+		Wasm:      wasmtypes.DefaultNodeConfig(),
+		Bootstrap: DefaultBootstrapConfig(),
 	}
 
 	customAppTemplate := serverconfig.DefaultConfigTemplate +
-		wasmtypes.DefaultConfigTemplate()
+		wasmtypes.DefaultConfigTemplate() +
+		BootstrapConfigTemplate
 
 	return customAppTemplate, terpAppConfig
 }
@@ -235,6 +238,8 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
 		AddGenesisIcaCmd(app.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
+		StatesyncCmd,
+		BootstrapCmd,
 		DebugCmd(),
 		ConfigCmd(),
 		pruning.Cmd(ac.newApp, app.DefaultNodeHome),
