@@ -19,7 +19,7 @@ dist
 heighliner*
 tools-stamp
 docs/node_modules
-
+target
 # Data - ideally these don't exist
 baseapp/data/*
 client/lcd/keys/*

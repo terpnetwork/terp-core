@@ -65,7 +65,17 @@ EXPOSE 1317 26656 26657
 CMD ["/usr/local/bin/terpd"]
 
 # ---------------------------------------------------------
-# 2. Localterp bootstrap image
+# 2. O-Line deployment image — runtime + bootstrap tools
+# ---------------------------------------------------------
+FROM runtime AS oline
+RUN apk add --no-cache \
+    bash curl jq openssh openssl \
+    coreutils file pv lz4 zstd unzip wget \
+    nginx sed gawk
+EXPOSE 1317 26656 26657 9090 22 80
+
+# ---------------------------------------------------------
+# 3. Localterp bootstrap image
 # ---------------------------------------------------------
 FROM alpine:3.17 AS localterp
 RUN apk add --no-cache \

@@ -52,8 +52,8 @@ type networkPreset struct {
 var networkPresets = map[string]networkPreset{
 	"morocco-1": {
 		ChainID:    "morocco-1",
-		GenesisURL: "https://raw.githubusercontent.com/terpnetwork/mainnet/main/morocco-1/genesis.json",
-		RPCs:       "https://rpc.terp.network:443,https://rpc.terp.chaintools.tech:443",
+		GenesisURL: "https://raw.githubusercontent.com/terpnetwork/networks/refs/heads/main/mainnet/morocco-1/genesis.json",
+		RPCs:       "https://rpc.terp.chaintools.tech:443",
 	},
 	"90u-4": {
 		ChainID:    "90u-4",
@@ -66,10 +66,10 @@ var networkPresets = map[string]networkPreset{
 func DefaultBootstrapConfig() BootstrapConfig {
 	return BootstrapConfig{
 		SyncMode:        "statesync",
-		GenesisURL:      "https://raw.githubusercontent.com/terpnetwork/mainnet/main/morocco-1/genesis.json",
+		GenesisURL:      "https://raw.githubusercontent.com/terpnetwork/networks/refs/heads/main/mainnet/morocco-1/genesis.json",
 		GenesisHash:     "",
 		SnapshotURL:     "",
-		StateSyncRPCs:   "https://rpc.terp.network:443,https://rpc.terp.chaintools.tech:443",
+		StateSyncRPCs:   "https://rpc.terp.chaintools.tech:443",
 		TrustOffset:     1000,
 		MaxRetries:      6,
 		Seeds:           "",
@@ -164,6 +164,7 @@ func init() {
 	BootstrapCmd.Flags().Bool("cosmovisor", false, "install cosmovisor via 'go install' and initialize it")
 	BootstrapCmd.Flags().Bool("service", false, "create a systemd service (Linux only, works with --cosmovisor)")
 	BootstrapCmd.Flags().String("pruning", "", "pruning strategy: default, nothing, or everything")
+	BootstrapCmd.Flags().Bool("setup-only", false, "perform setup without starting the node")
 }
 
 func runBootstrap(cmd *cobra.Command, args []string) error {
@@ -311,6 +312,12 @@ func runBootstrap(cmd *cobra.Command, args []string) error {
 	}
 
 	// ──── Step 8: Exec into terpd start ────
+	setupOnly, _ := cmd.Flags().GetBool("setup-only")
+	if setupOnly {
+		fmt.Println("Bootstrap complete (setup-only). Node is ready to start.")
+		return nil
+	}
+
 	fmt.Println("Bootstrap complete. Starting node...")
 
 	startArgs := []string{"terpd", "start", "--home", home}
