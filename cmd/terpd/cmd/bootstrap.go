@@ -390,16 +390,22 @@ func configureStateSyncBootstrap(cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) e
 // ──── Snapshot configuration ────
 
 func configureSnapshotBootstrap(home string, cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) error {
-	if bsCfg.SnapshotURL == "" {
-		return fmt.Errorf("snapshot-url is required when sync-mode is 'snapshot'")
-	}
-
 	dataDir := filepath.Join(home, "data")
-	fmt.Printf("Downloading snapshot from %s\n", bsCfg.SnapshotURL)
-	if err := downloadAndExtractTarball(bsCfg.SnapshotURL, dataDir); err != nil {
-		return fmt.Errorf("snapshot restore failed: %w", err)
+
+	if bsCfg.SnapshotURL == "" {
+		// No URL — check if data dir already has content (SFTP delivery / pre-populated).
+		if entries, err := os.ReadDir(dataDir); err == nil && len(entries) > 0 {
+			fmt.Println("Snapshot data already present (SFTP/pre-populated). Skipping download.")
+		} else {
+			fmt.Println("No snapshot URL and no pre-existing data. Node will sync from genesis via block-sync.")
+		}
+	} else {
+		fmt.Printf("Downloading snapshot from %s\n", bsCfg.SnapshotURL)
+		if err := downloadAndExtractTarball(bsCfg.SnapshotURL, dataDir); err != nil {
+			return fmt.Errorf("snapshot restore failed: %w", err)
+		}
+		fmt.Println("Snapshot extracted.")
 	}
-	fmt.Println("Snapshot extracted.")
 
 	// Disable state-sync — node will catch up from snapshot height via block-sync
 	cmtCfg.StateSync.Enable = false
@@ -530,8 +536,57 @@ func downloadAndExtractTarball(url, destDir string) error {
 		return fmt.Errorf("HTTP %d from %s", resp.StatusCode, url)
 	}
 
-	// Stream directly into tar — supports .tar.gz
-	tarCmd := exec.Command("tar", "-xzf", "-", "-C", destDir)
+	// Detect compression from URL extension and stream-decompress into tar.
+	// Supports: .tar.lz4, .tar.zst, .tar.gz, .tar
+	var tarCmd *exec.Cmd
+	switch {
+	case strings.HasSuffix(url, ".tar.lz4"):
+		// lz4 -dc | tar xf - -C dest
+		lz4Cmd := exec.Command("lz4", "-dc")
+		lz4Cmd.Stdin = resp.Body
+		tarCmd = exec.Command("tar", "xf", "-", "-C", destDir)
+		pipe, err := lz4Cmd.StdoutPipe()
+		if err != nil {
+			return fmt.Errorf("lz4 pipe: %w", err)
+		}
+		tarCmd.Stdin = pipe
+		lz4Cmd.Stderr = os.Stderr
+		tarCmd.Stdout = os.Stdout
+		tarCmd.Stderr = os.Stderr
+		if err := lz4Cmd.Start(); err != nil {
+			return fmt.Errorf("lz4 start: %w", err)
+		}
+		if err := tarCmd.Run(); err != nil {
+			_ = lz4Cmd.Wait()
+			return fmt.Errorf("tar extract (lz4): %w", err)
+		}
+		return lz4Cmd.Wait()
+	case strings.HasSuffix(url, ".tar.zst"):
+		zstdCmd := exec.Command("zstd", "-dc")
+		zstdCmd.Stdin = resp.Body
+		tarCmd = exec.Command("tar", "xf", "-", "-C", destDir)
+		pipe, err := zstdCmd.StdoutPipe()
+		if err != nil {
+			return fmt.Errorf("zstd pipe: %w", err)
+		}
+		tarCmd.Stdin = pipe
+		zstdCmd.Stderr = os.Stderr
+		tarCmd.Stdout = os.Stdout
+		tarCmd.Stderr = os.Stderr
+		if err := zstdCmd.Start(); err != nil {
+			return fmt.Errorf("zstd start: %w", err)
+		}
+		if err := tarCmd.Run(); err != nil {
+			_ = zstdCmd.Wait()
+			return fmt.Errorf("tar extract (zstd): %w", err)
+		}
+		return zstdCmd.Wait()
+	case strings.HasSuffix(url, ".tar.gz") || strings.HasSuffix(url, ".tgz"):
+		tarCmd = exec.Command("tar", "-xzf", "-", "-C", destDir)
+	default:
+		// Plain tar
+		tarCmd = exec.Command("tar", "xf", "-", "-C", destDir)
+	}
 	tarCmd.Stdin = resp.Body
 	tarCmd.Stdout = os.Stdout
 	tarCmd.Stderr = os.Stderr
