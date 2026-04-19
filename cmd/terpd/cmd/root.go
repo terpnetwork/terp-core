@@ -239,6 +239,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		tmcli.NewCompletionCmd(rootCmd, true),
 		StatesyncCmd,
 		BootstrapCmd,
+		SnapshotCmd,
 		DebugCmd(),
 		ConfigCmd(),
 		pruning.Cmd(ac.newApp, app.DefaultNodeHome),
