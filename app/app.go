@@ -141,22 +141,16 @@ var (
 	// of "EnableAllProposals" (takes precedence over ProposalsEnabled)
 	// https://github.com/terpnetwork/terp-core/blob/02a54d33ff2c064f3539ae12d75d027d9c665f05/x/wasm/internal/types/proposal.go#L28-L34
 	EnableSpecificProposals = ""
-
 	// EmptyWasmOpts defines a type alias for a list of wasm options.
 	EmptyWasmOpts []wasmkeeper.Option
-
-	Upgrades = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,v4_1.Upgrade,
+	Upgrades      = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,v4_1.Upgrade,
 		v5.Upgrade,
 	}
 )
 
-// These constants are derived from the above variables.
-// These are the ones we will want to use in the code, based on
-// any overrides above
 var (
 	// DefaultNodeHome default home directories for terpd
 	DefaultNodeHome = os.ExpandEnv("$HOME/") + NodeDir
-
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address
 	Bech32PrefixAccAddr = Bech32Prefix
 	// Bech32PrefixAccPub defines the Bech32 prefix of an account's public key
@@ -304,17 +298,12 @@ func NewTerpApp(
 
 	clientKeeper := appKeepers.IBCKeeper.ClientKeeper
 	storeProvider := appKeepers.IBCKeeper.ClientKeeper.GetStoreProvider()
-
-	// Add tendermint & ibcWasm light client routes
 	tmLightClientModule := ibctm.NewLightClientModule(appCodec, storeProvider)
 	ibcWasmLightClientModule := ibcwlc.NewLightClientModule(*appKeepers.IBCWasmClientKeeper, storeProvider)
 	clientKeeper.AddRoute(ibctm.ModuleName, &tmLightClientModule)
 	clientKeeper.AddRoute(ibcwlctypes.ModuleName, ibcWasmLightClientModule)
-	// Setup keepers
 	app.AppKeepers = appKeepers
-
 	app.keys = app.GetKVStoreKey()
-
 	enabledSignModes := append(authtx.DefaultSignModes, sigtypes.SignMode_SIGN_MODE_TEXTUAL)
 	txConfigOpts := authtx.ConfigOptions{
 		EnabledSignModes:           enabledSignModes,
@@ -387,32 +376,20 @@ func NewTerpApp(
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 	)
 
-	// Upgrades from v0.50.x onwards happen in pre block
-	app.mm.SetOrderPreBlockers(upgradetypes.ModuleName, authtypes.ModuleName)
-
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
-	// NOTE: staking module is required if HistoricalEntries param > 0
+	app.mm.SetOrderPreBlockers(upgradetypes.ModuleName, authtypes.ModuleName)
 	app.mm.SetOrderBeginBlockers(orderBeginBlockers()...)
-
 	app.mm.SetOrderEndBlockers(orderEndBlockers()...)
-
 	app.mm.SetOrderInitGenesis(orderInitBlockers()...)
-
-	app.mm.RegisterInvariants(app.CrisisKeeper)
-
-	// upgrade handlers
 	app.configurator = module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
 	err = app.mm.RegisterServices(app.configurator)
 	if err != nil {
 		panic(err)
 	}
-	// initialize stores
 	app.MountKVStores(app.keys)
 	app.MountTransientStores(app.GetTransientStoreKey())
-
-	// register upgrade
 	app.setupUpgradeHandlers(app.configurator)
 
 	autocliv1.RegisterQueryServer(app.GRPCQueryRouter(), runtimeservices.NewAutoCLIQueryService(app.mm.Modules))

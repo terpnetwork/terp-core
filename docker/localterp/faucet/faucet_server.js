@@ -2,7 +2,7 @@ const http = require("http");
 const querystring = require("querystring");
 const exec = require("child_process").exec;
 
-const FAUCET_WALLET_NAME = process.env.FAUCET_WALLET_NAME || "a";
+const FAUCET_WALLET_NAME = process.env.FAUCET_WALLET_NAME || "faucet";
 const FAUCET_AMOUNT = process.env.FAUCET_AMOUNT || "1000000000";
 const DENOMS = (process.env.DENOMS || "uterp,uthiol").split(",");
 

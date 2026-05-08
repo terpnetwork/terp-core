@@ -1,5 +1,10 @@
 ARG GO_VERSION=1.24
 ARG RUNNER_IMAGE=alpine:3.17
+ 
+# WASMVM_SOURCE controls where the static wasmvm library comes from:
+#   "github" (default) — download libwasmvm_muslc from CosmWasm GitHub releases
+#   "local"            — use pre-built lib from build/wasmvm/ (for custom zk-wasmvm)
+ARG WASMVM_SOURCE=github
 
 FROM golang:${GO_VERSION}-alpine AS go-builder
 
@@ -16,8 +21,13 @@ WORKDIR /code
 # Pull in the go.mod file *first* so the layer can be cached
 ADD go.mod go.sum ./
 
+# Re-declare ARGs after FROM (Docker scoping rule)
+ARG WASMVM_SOURCE=github
+
 # ---------------------------------------------------------
-# Pull in the exact wasmvm lib that the Cosmos SDK wants
+# Pull in the wasmvm static library (github mode only).
+# In local mode the lib is staged in build/wasmvm/ and will
+# be copied after the full source COPY below.
 # ---------------------------------------------------------
 RUN ARCH=$(uname -m) && \
     WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}') && \
@@ -37,12 +47,12 @@ RUN echo "Ensuring binary is statically linked ..." \
   && (file /code/build/terpd | grep "statically linked")
 
 # ---------------------------------------------------------
-# 1️⃣  Runtime image – this is normal terpd binary
+# 1. Runtime image — standard (github wasmvm)
 # ---------------------------------------------------------
 FROM ${RUNNER_IMAGE} AS runtime
 
-# Minimal set of runtime deps (ca‑certs is enough for HTTPS RPC)
-RUN apk add --no-cache ca-certificates
+# Copy ca-certificates from builder (works on distroless, Alpine, and nonroot)
+COPY --from=go-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 COPY --from=go-builder /code/build/terpd /usr/local/bin/terpd
 
@@ -55,7 +65,17 @@ EXPOSE 1317 26656 26657
 CMD ["/usr/local/bin/terpd"]
 
 # ---------------------------------------------------------
-# 2️⃣  Localterp bootstrap image – binary + init scripts + tools
+# 2. O-Line deployment image — runtime + bootstrap tools
+# ---------------------------------------------------------
+FROM runtime AS oline
+RUN apk add --no-cache \
+    bash curl jq openssh openssl \
+    coreutils file pv lz4 zstd unzip wget \
+    nginx sed gawk
+EXPOSE 1317 26656 26657 9090 22 80
+
+# ---------------------------------------------------------
+# 3. Localterp bootstrap image
 # ---------------------------------------------------------
 FROM alpine:3.17 AS localterp
 RUN apk add --no-cache \
@@ -76,8 +96,14 @@ COPY docker/localterp/bootstrap.sh .
 COPY docker/localterp/initialize.sh .
 COPY docker/localterp/start.sh .
 COPY docker/localterp/faucet/faucet_server.js .
-
 RUN chmod +x *.sh
+
+# localterp key mnemonics
+ENV VALIDATOR_MNEMONIC="push certain add next grape invite tobacco bubble text romance again lava crater pill genius vital fresh guard great patch knee series era tonight"
+ENV ACCOUNT_A_MNEMONIC="grant rice replace explain federal release fix clever romance raise often wild taxi quarter soccer fiber love must tape steak together observe swap guitar"
+ENV ACCOUNT_B_MNEMONIC="jelly shadow frog dirt dragon use armed praise universe win jungle close inmate rain oil canvas beauty pioneer chef soccer icon dizzy thunder meadow"
+ENV ACCOUNT_C_MNEMONIC="chair love bleak wonder skirt permit say assist aunt credit roast size obtain minute throw sand usual age smart exact enough room shadow charge"
+ENV ACCOUNT_FAUCET_MNEMONIC="word twist toast cloth movie predict advance crumble escape whale sail such angry muffin balcony keen move employ cook valve hurt glimpse breeze brick"
 
 # 1317=LCD proxy, 5000=faucet, 26656=P2P, 26657=RPC, 9090=GRPC
 EXPOSE 1317 5000 26656 26657 9090

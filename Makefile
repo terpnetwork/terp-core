@@ -4,6 +4,7 @@
 include scripts/makefiles/build.mk
 include scripts/makefiles/docker.mk
 include scripts/makefiles/e2e.mk
+include scripts/makefiles/ict.mk
 include scripts/makefiles/format.mk
 include scripts/makefiles/tsh.mk
 # include scripts/makefiles/localnet.mk
@@ -25,6 +26,7 @@ help:
 	@echo "  make deps                  Show available deps commands"
 	@echo "  make docker                Show available docker commands"
 	@echo "  make e2e                   Show available e2e commands"
+	@echo "  make ict                   Show available ict-rs commands"
 	@echo "  make lint                  Show available lint commands"
 	@echo "  make proto                 Show available proto commands"
 	@echo "  make release               Show available release commands"
