@@ -26,6 +26,7 @@ import (
 	"github.com/cometbft/cometbft/crypto"
 	"github.com/cometbft/cometbft/libs/bytes"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
+	"github.com/cosmos/cosmos-sdk/client/snapshot"
 
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -239,10 +240,10 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		tmcli.NewCompletionCmd(rootCmd, true),
 		StatesyncCmd,
 		BootstrapCmd,
-		SnapshotCmd,
+		snapshot.Cmd(ac.newApp),
+		pruning.Cmd(ac.newApp, app.DefaultNodeHome),
 		DebugCmd(),
 		ConfigCmd(),
-		pruning.Cmd(ac.newApp, app.DefaultNodeHome),
 	)
 
 	server.AddTestnetCreatorCommand(rootCmd, ac.newTestnetApp, addModuleInitFlags)

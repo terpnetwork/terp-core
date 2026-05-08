@@ -96,8 +96,14 @@ COPY docker/localterp/bootstrap.sh .
 COPY docker/localterp/initialize.sh .
 COPY docker/localterp/start.sh .
 COPY docker/localterp/faucet/faucet_server.js .
-
 RUN chmod +x *.sh
+
+# localterp key mnemonics
+ENV VALIDATOR_MNEMONIC="push certain add next grape invite tobacco bubble text romance again lava crater pill genius vital fresh guard great patch knee series era tonight"
+ENV ACCOUNT_A_MNEMONIC="grant rice replace explain federal release fix clever romance raise often wild taxi quarter soccer fiber love must tape steak together observe swap guitar"
+ENV ACCOUNT_B_MNEMONIC="jelly shadow frog dirt dragon use armed praise universe win jungle close inmate rain oil canvas beauty pioneer chef soccer icon dizzy thunder meadow"
+ENV ACCOUNT_C_MNEMONIC="chair love bleak wonder skirt permit say assist aunt credit roast size obtain minute throw sand usual age smart exact enough room shadow charge"
+ENV ACCOUNT_FAUCET_MNEMONIC="word twist toast cloth movie predict advance crumble escape whale sail such angry muffin balcony keen move employ cook valve hurt glimpse breeze brick"
 
 # 1317=LCD proxy, 5000=faucet, 26656=P2P, 26657=RPC, 9090=GRPC
 EXPOSE 1317 5000 26656 26657 9090

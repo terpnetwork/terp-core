@@ -55,9 +55,9 @@ var networkPresets = map[string]networkPreset{
 		GenesisURL: "https://raw.githubusercontent.com/terpnetwork/networks/refs/heads/main/mainnet/morocco-1/genesis.json",
 		RPCs:       "https://rpc.terp.chaintools.tech:443",
 	},
-	"90u-4": {
-		ChainID:    "90u-4",
-		GenesisURL: "https://raw.githubusercontent.com/terpnetwork/test-net/master/90u-4/genesis.json",
+	"120u-1": {
+		ChainID:    "120u-1",
+		GenesisURL: "https://raw.githubusercontent.com/terpnetwork/networks/refs/heads/main/testnet/120u-1/genesis.json",
 		RPCs:       "https://testnet-rpc.terp.network:443",
 	},
 }
@@ -69,8 +69,8 @@ func DefaultBootstrapConfig() BootstrapConfig {
 		GenesisURL:      "https://raw.githubusercontent.com/terpnetwork/networks/refs/heads/main/mainnet/morocco-1/genesis.json",
 		GenesisHash:     "",
 		SnapshotURL:     "",
-		StateSyncRPCs:   "https://rpc.terp.chaintools.tech:443",
-		TrustOffset:     1000,
+		StateSyncRPCs:   "https://rpc.terp.network:443,https://rpc.terp.network:443",
+		TrustOffset:     100,
 		MaxRetries:      6,
 		Seeds:           "",
 		PersistentPeers: "",
@@ -100,21 +100,6 @@ genesis-hash = "{{ .Bootstrap.GenesisHash }}"
 
 # Snapshot tarball URL (used when sync-mode = "snapshot")
 snapshot-url = "{{ .Bootstrap.SnapshotURL }}"
-
-# State-sync RPC endpoints (comma-separated, tried in order on failure)
-statesync-rpcs = "{{ .Bootstrap.StateSyncRPCs }}"
-
-# Blocks behind latest for state-sync trust height
-trust-offset = {{ .Bootstrap.TrustOffset }}
-
-# Max RPC provider rotation retries before giving up
-max-retries = {{ .Bootstrap.MaxRetries }}
-
-# Seed nodes (comma-separated id@host:port)
-seeds = "{{ .Bootstrap.Seeds }}"
-
-# Persistent peers (comma-separated id@host:port)
-persistent-peers = "{{ .Bootstrap.PersistentPeers }}"
 
 # Private mode (default true): disables PEX gossip, rejects inbound peers,
 # only connects to configured persistent peers. Ideal for local state-sync
@@ -267,9 +252,9 @@ func runBootstrap(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case "snapshot":
-		if err := configureSnapshotBootstrap(home, cmtCfg, bsCfg); err != nil {
-			return err
-		}
+		// if err := configureSnapshotBootstrap(home, cmtCfg, bsCfg); err != nil {
+		// 	return err
+		// }
 	default:
 		return fmt.Errorf("unknown sync-mode: %q (use 'statesync' or 'snapshot')", bsCfg.SyncMode)
 	}
@@ -348,7 +333,7 @@ func configureStateSyncBootstrap(cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) e
 		rpc := rpcs[attempt%len(rpcs)]
 		fmt.Printf("Trying RPC %d/%d: %s\n", attempt+1, bsCfg.MaxRetries, rpc)
 
-		trustHeight, trustHash, peers, err := fetchStateSyncInfo(rpc, bsCfg.TrustOffset)
+		trustHeight, trustHash, err := fetchStateSyncInfo(rpc, bsCfg.TrustOffset)
 		if err != nil {
 			fmt.Printf("  Failed: %v\n", err)
 			lastErr = err
@@ -357,7 +342,6 @@ func configureStateSyncBootstrap(cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) e
 
 		fmt.Printf("  Trust height: %d\n", trustHeight)
 		fmt.Printf("  Trust hash  : %s\n", trustHash)
-		fmt.Printf("  Peers found : %d\n", len(peers))
 
 		cmtCfg.StateSync.Enable = true
 		// CometBFT requires >=2 RPC servers; use two distinct ones when possible
@@ -370,16 +354,6 @@ func configureStateSyncBootstrap(cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) e
 		cmtCfg.StateSync.TrustHash = trustHash
 		cmtCfg.StateSync.TrustPeriod = 168 * time.Hour
 
-		// Merge discovered peers with any already configured
-		if len(peers) > 0 {
-			discovered := strings.Join(peers, ",")
-			if cmtCfg.P2P.PersistentPeers != "" {
-				cmtCfg.P2P.PersistentPeers += "," + discovered
-			} else {
-				cmtCfg.P2P.PersistentPeers = discovered
-			}
-		}
-
 		fmt.Println("State-sync configured.")
 		return nil
 	}
@@ -387,53 +361,113 @@ func configureStateSyncBootstrap(cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) e
 	return fmt.Errorf("state-sync config failed after %d attempts: %w", bsCfg.MaxRetries, lastErr)
 }
 
-// ──── Snapshot configuration ────
+// // ──── Snapshot configuration ────
+// func configureSnapshotBootstrap(home string, cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) error {
+// 	dataDir := filepath.Join(home, "data")
+// 	rpcs := splitTrimmed(bsCfg.StateSyncRPCs, ",")
+// 	cmtCfg.StateSync.Enable = false
 
-func configureSnapshotBootstrap(home string, cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) error {
-	dataDir := filepath.Join(home, "data")
+// 	if bsCfg.SnapshotURL == "" {
+// 		// No URL — check if data dir already has content (SFTP delivery / pre-populated).
+// 		if entries, err := os.ReadDir(dataDir); err == nil && len(entries) > 0 {
+// 			fmt.Println("Snapshot data already present (SFTP/pre-populated). Skipping download.")
+// 		} else {
+// 			fmt.Println("No snapshot URL and no pre-existing data. Node will sync from genesis via block-sync.")
+// 		}
+// 	} else if isLocalPath(bsCfg.SnapshotURL) {
+// 		// Local file path — extract directly without downloading.
+// 		localPath := strings.TrimPrefix(bsCfg.SnapshotURL, "file://")
+// 		fmt.Printf("Restoring snapshot from local file: %s\n", localPath)
+// 		if _, err := os.Stat(localPath); err != nil {
+// 			return fmt.Errorf("snapshot file not found: %s", localPath)
+// 		}
+// 		inputFmt := detectFormat(localPath)
+// 		if err := extractToHome(localPath, inputFmt, home); err != nil {
+// 			return fmt.Errorf("snapshot restore failed: %w", err)
+// 		}
+// 		fmt.Println("Snapshot restored from local file.")
+// 	} else {
+// 		fmt.Printf("Downloading snapshot from %s\n", bsCfg.SnapshotURL)
+// 		if err := downloadAndExtractTarball(bsCfg.SnapshotURL, dataDir); err != nil {
+// 			return fmt.Errorf("snapshot restore failed: %w", err)
+// 		}
+// 		fmt.Println("Snapshot extracted.")
+// 	}
 
-	if bsCfg.SnapshotURL == "" {
-		// No URL — check if data dir already has content (SFTP delivery / pre-populated).
-		if entries, err := os.ReadDir(dataDir); err == nil && len(entries) > 0 {
-			fmt.Println("Snapshot data already present (SFTP/pre-populated). Skipping download.")
-		} else {
-			fmt.Println("No snapshot URL and no pre-existing data. Node will sync from genesis via block-sync.")
-		}
-	} else {
-		fmt.Printf("Downloading snapshot from %s\n", bsCfg.SnapshotURL)
-		if err := downloadAndExtractTarball(bsCfg.SnapshotURL, dataDir); err != nil {
-			return fmt.Errorf("snapshot restore failed: %w", err)
-		}
-		fmt.Println("Snapshot extracted.")
-	}
+// 	// Auto-detect sentry snapshot: if blockstore.db or state.db are missing
+// 	// but application.db exists, run bootstrap-state to reconstruct CometBFT
+// 	// state via light client verification.
+// 	appDB := filepath.Join(dataDir, "application.db")
+// 	blockDB := filepath.Join(dataDir, "blockstore.db")
+// 	stateDB := filepath.Join(dataDir, "state.db")
 
-	// Disable state-sync — node will catch up from snapshot height via block-sync
-	cmtCfg.StateSync.Enable = false
+// 	hasApp := fileExists(appDB)
+// 	hasBlock := fileExists(blockDB)
+// 	hasState := fileExists(stateDB)
 
-	// Still discover peers for block-sync connectivity
-	rpcs := splitTrimmed(bsCfg.StateSyncRPCs, ",")
-	if len(rpcs) > 0 && rpcs[0] != "" {
-		_, _, peers, err := fetchStateSyncInfo(rpcs[0], bsCfg.TrustOffset)
-		if err == nil && len(peers) > 0 {
-			discovered := strings.Join(peers, ",")
-			if cmtCfg.P2P.PersistentPeers != "" {
-				cmtCfg.P2P.PersistentPeers += "," + discovered
-			} else {
-				cmtCfg.P2P.PersistentPeers = discovered
-			}
-		}
-	}
+// 	if hasApp && (!hasBlock || !hasState) {
+// 		fmt.Println("Sentry snapshot detected (missing blockstore/state). Running bootstrap-state...")
 
-	return nil
+// 		if len(rpcs) == 0 || rpcs[0] == "" {
+// 			return fmt.Errorf("bootstrap-state requires statesync-rpcs to verify light client headers")
+// 		}
+
+// 		// Configure statesync RPC servers in config.toml for bootstrap-state
+// 		if len(rpcs) >= 2 {
+// 			cmtCfg.StateSync.RPCServers = []string{rpcs[0], rpcs[1]}
+// 		} else {
+// 			cmtCfg.StateSync.RPCServers = []string{rpcs[0], rpcs[0]}
+// 		}
+
+// 		// Fetch trust height and hash for bootstrap-state
+// 		trustHeight, trustHash, err := fetchStateSyncInfo(rpcs[0], bsCfg.TrustOffset)
+// 		if err != nil {
+// 			return fmt.Errorf("failed to fetch trust info for bootstrap-state: %w", err)
+// 		}
+// 		cmtCfg.StateSync.TrustHeight = trustHeight
+// 		cmtCfg.StateSync.TrustHash = trustHash
+// 		cmtCfg.StateSync.TrustPeriod = 24 * time.Hour
+
+// 		// Write config so bootstrap-state can read the RPC servers
+// 		configTomlPath := filepath.Join(home, "config", "config.toml")
+// 		cmtcfg.WriteConfigFile(configTomlPath, cmtCfg)
+
+// 		// Run bootstrap-state
+// 		binary, err := os.Executable()
+// 		if err != nil {
+// 			return fmt.Errorf("failed to resolve executable: %w", err)
+// 		}
+// 		bsCmd := exec.Command(binary, "comet", "bootstrap-state", "--home", home)
+// 		bsCmd.Stdout = os.Stdout
+// 		bsCmd.Stderr = os.Stderr
+// 		if err := bsCmd.Run(); err != nil {
+// 			return fmt.Errorf("bootstrap-state failed: %w", err)
+// 		}
+// 		fmt.Println("CometBFT state bootstrapped via light client.")
+// 	}
+
+// 	return nil
+// }
+
+// isLocalPath returns true if the string is a local file path (not an HTTP URL).
+func isLocalPath(s string) bool {
+	return strings.HasPrefix(s, "/") || strings.HasPrefix(s, "./") ||
+		strings.HasPrefix(s, "file://") || strings.HasPrefix(s, "~/")
+}
+
+// fileExists returns true if path exists and is a file or directory.
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // ──── RPC helpers ────
 
 // fetchStateSyncInfo queries an RPC for trust height, hash, and peer addresses.
-func fetchStateSyncInfo(rpcAddr string, trustOffset int64) (int64, string, []string, error) {
+func fetchStateSyncInfo(rpcAddr string, trustOffset int64) (int64, string, error) {
 	client, err := rpchttp.New(rpcAddr, "/websocket")
 	if err != nil {
-		return 0, "", nil, err
+		return 0, "", err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -441,7 +475,7 @@ func fetchStateSyncInfo(rpcAddr string, trustOffset int64) (int64, string, []str
 
 	status, err := client.Status(ctx)
 	if err != nil {
-		return 0, "", nil, fmt.Errorf("status: %w", err)
+		return 0, "", fmt.Errorf("status: %w", err)
 	}
 
 	latestHeight := status.SyncInfo.LatestBlockHeight
@@ -452,30 +486,11 @@ func fetchStateSyncInfo(rpcAddr string, trustOffset int64) (int64, string, []str
 
 	block, err := client.Block(ctx, &trustHeight)
 	if err != nil {
-		return 0, "", nil, fmt.Errorf("block at %d: %w", trustHeight, err)
+		return 0, "", fmt.Errorf("block at %d: %w", trustHeight, err)
 	}
 	trustHash := hex.EncodeToString(block.BlockID.Hash)
 
-	// Collect peers
-	var peers []string
-	rpcNodeID := string(status.NodeInfo.DefaultNodeID)
-	rpcHost := extractHost(rpcAddr) // reuse helper from statesync.go
-	if rpcHost != "" {
-		peers = append(peers, fmt.Sprintf("%s@%s:26656", rpcNodeID, rpcHost))
-	}
-
-	netInfo, err := client.NetInfo(ctx)
-	if err == nil {
-		for _, p := range netInfo.Peers {
-			port := "26656"
-			if parts := strings.Split(p.NodeInfo.ListenAddr, ":"); len(parts) > 1 {
-				port = parts[len(parts)-1]
-			}
-			peers = append(peers, fmt.Sprintf("%s@%s:%s", p.NodeInfo.DefaultNodeID, p.RemoteIP, port))
-		}
-	}
-
-	return trustHeight, trustHash, peers, nil
+	return trustHeight, trustHash, nil
 }
 
 // ──── File / download helpers ────
@@ -619,12 +634,12 @@ func loadCometConfig(home string) (*cmtcfg.Config, error) {
 // persistent peers, rejects all inbound connections, and never gossips.
 // Ideal for pulling a local state-sync without participating in the network.
 func applyPrivateMode(cfg *cmtcfg.Config) {
-	cfg.P2P.PexReactor = false         // no peer exchange gossip
-	cfg.P2P.MaxNumInboundPeers = 0     // reject all inbound connections
-	cfg.P2P.MaxNumOutboundPeers = 10   // only our configured peers
-	cfg.P2P.AddrBookStrict = false     // allow non-routable addrs (local testing)
-	cfg.P2P.Seeds = ""                 // no seeds — only persistent peers
-	cfg.Mempool.Broadcast = false      // don't broadcast txs to peers
+	cfg.P2P.PexReactor = false       // no peer exchange gossip
+	cfg.P2P.MaxNumInboundPeers = 0   // reject all inbound connections
+	cfg.P2P.MaxNumOutboundPeers = 10 // only our configured peers
+	cfg.P2P.AddrBookStrict = false   // allow non-routable addrs (local testing)
+	cfg.P2P.Seeds = ""               // no seeds — only persistent peers
+	cfg.Mempool.Broadcast = false    // don't broadcast txs to peers
 }
 
 // ──── Misc helpers ────
@@ -717,7 +732,7 @@ func installCosmovisor(terpdBinary, home string) error {
 	installCmd.Stdout = os.Stdout
 	installCmd.Stderr = os.Stderr
 	installCmd.Env = append(os.Environ(),
-		fmt.Sprintf("DAEMON_NAME=terpd"),
+		"DAEMON_NAME=terpd",
 		fmt.Sprintf("DAEMON_HOME=%s", home),
 	)
 	if err := installCmd.Run(); err != nil {
@@ -735,7 +750,7 @@ func installCosmovisor(terpdBinary, home string) error {
 	initCmd.Stdout = os.Stdout
 	initCmd.Stderr = os.Stderr
 	initCmd.Env = append(os.Environ(),
-		fmt.Sprintf("DAEMON_NAME=terpd"),
+		"DAEMON_NAME=terpd",
 		fmt.Sprintf("DAEMON_HOME=%s", home),
 	)
 	if err := initCmd.Run(); err != nil {

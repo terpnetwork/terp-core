@@ -39,7 +39,7 @@ if [ ! -e "$file" ]; then
     sed -E -i 's/timeout_propose = "[0-9]+m?s"/timeout_propose = "500ms"/' ~/.terpd/config/config.toml
     sed -E -i 's/timeout_prevote = "[0-9]+m?s"/timeout_prevote = "250ms"/' ~/.terpd/config/config.toml
     sed -E -i 's/timeout_precommit = "[0-9]+m?s"/timeout_precommit = "250ms"/' ~/.terpd/config/config.toml
-    sed -E -i 's/timeout_commit = "[0-9]+m?s"/timeout_commit = "1s"/' ~/.terpd/config/config.toml
+    sed -E -i 's/timeout_commit = "[0-9]+m?s"/timeout_commit = "2400ms"/' ~/.terpd/config/config.toml
   fi
 
   if [ ! -e "$CUSTOM_SCRIPT_PATH" ]; then
@@ -50,27 +50,27 @@ if [ ! -e "$file" ]; then
     echo "Done running custom script!"
   fi
 
-  v_mnemonic="push certain add next grape invite tobacco bubble text romance again lava crater pill genius vital fresh guard great patch knee series era tonight"
-  a_mnemonic="grant rice replace explain federal release fix clever romance raise often wild taxi quarter soccer fiber love must tape steak together observe swap guitar"
-  b_mnemonic="jelly shadow frog dirt dragon use armed praise universe win jungle close inmate rain oil canvas beauty pioneer chef soccer icon dizzy thunder meadow"
-  c_mnemonic="chair love bleak wonder skirt permit say assist aunt credit roast size obtain minute throw sand usual age smart exact enough room shadow charge"
-  d_mnemonic="word twist toast cloth movie predict advance crumble escape whale sail such angry muffin balcony keen move employ cook valve hurt glimpse breeze brick"
+  # Default mnemonics (used if environment variables are not provided)
+  echo "=== Setting up keys ==="
+  v_mnemonic="${VALIDATOR_MNEMONIC:-push certain add next grape invite tobacco bubble text romance again lava crater pill genius vital fresh guard great patch knee series era tonight}"
+  a_mnemonic="${ACCOUNT_A_MNEMONIC:-grant rice replace explain federal release fix clever romance raise often wild taxi quarter soccer fiber love must tape steak together observe swap guitar}"
+  b_mnemonic="${ACCOUNT_B_MNEMONIC:-jelly shadow frog dirt dragon use armed praise universe win jungle close inmate rain oil canvas beauty pioneer chef soccer icon dizzy thunder meadow}"
+  c_mnemonic="${ACCOUNT_C_MNEMONIC:-chair love bleak wonder skirt permit say assist aunt credit roast size obtain minute throw sand usual age smart exact enough room shadow charge}"
+  faucet_mnemonic="${ACCOUNT_FAUCET_MNEMONIC:-word twist toast cloth movie predict advance crumble escape whale sail such angry muffin balcony keen move employ cook valve hurt glimpse breeze brick}"
 
-  echo "$v_mnemonic" | terpd keys add validator --recover
-  echo "$a_mnemonic" | terpd keys add a --recover
-  echo "$b_mnemonic" | terpd keys add b --recover
-  echo "$c_mnemonic" | terpd keys add c --recover
-  echo "$d_mnemonic" | terpd keys add d --recover
-
+  echo "$v_mnemonic" | terpd keys add validator --recover --keyring-backend test || echo "Validator key already exists"
+  echo "$a_mnemonic" | terpd keys add a --recover --keyring-backend test || echo "Account a already exists"
+  echo "$b_mnemonic" | terpd keys add b --recover --keyring-backend test || echo "Account b already exists"
+  echo "$c_mnemonic" | terpd keys add c --recover --keyring-backend test || echo "Account c already exists"
+  echo "$faucet_mnemonic" | terpd keys add faucet --recover --keyring-backend test || echo "Account faucet already exists"
   terpd keys list --output json | jq
 
   ico=1000000000000000000
-
   terpd genesis add-genesis-account validator ${ico}uterp,${ico}uthiol
   terpd genesis add-genesis-account a ${ico}uterp,${ico}uthiol
   terpd genesis add-genesis-account b ${ico}uterp,${ico}uthiol
   terpd genesis add-genesis-account c ${ico}uterp,${ico}uthiol
-  terpd genesis add-genesis-account d ${ico}uterp,${ico}uthiol
+  terpd genesis add-genesis-account faucet ${ico}uterp,${ico}uthiol
   
   terpd genesis gentx validator ${ico::-1}uterp --chain-id "$chain_id"
 
