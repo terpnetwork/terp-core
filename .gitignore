@@ -7,7 +7,9 @@
 *.swn
 .vscode
 .idea
-
+crates/*
+websites/*
+tools/*
 # Build
 vendor
 build
