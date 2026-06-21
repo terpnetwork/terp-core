@@ -1,3 +1,4 @@
+// test with build:  make build && mv build/terpd $HOME/go/bin/terpd-testnet && terpd-testnet testnet create --faucet-key-name faucet  --faucet --home $HOME/.terpd-testnet --chain-id 120u-1
 package cmd
 
 import (
@@ -8,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
@@ -16,7 +18,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
 
 	"cosmossdk.io/math"
 	"github.com/terpnetwork/terp-core/v5/app"
@@ -44,6 +45,7 @@ type faucetServer struct {
 // runFaucetServer blocks, serving HTTP until ctx is cancelled.
 func runFaucetServer(cfg FaucetConfig) error {
 	encCfg := app.MakeEncodingConfig()
+	fmt.Printf("faucet cfg: %v\n", cfg)
 
 	kr, err := keyring.New("terpd", keyring.BackendTest, cfg.Home, nil, encCfg.Marshaler)
 	if err != nil {
@@ -67,7 +69,7 @@ func runFaucetServer(cfg FaucetConfig) error {
 	}
 
 	// Wait for local node to be ready
-	if err := waitForNode("tcp://localhost:26657", 120*time.Second); err != nil {
+	if err := waitForNode("tcp://localhost:36657", 120*time.Second); err != nil {
 		return fmt.Errorf("node not ready: %w", err)
 	}
 
@@ -114,6 +116,7 @@ func (fs *faucetServer) handleStatus(w http.ResponseWriter) {
 		"faucet_address": fs.fromAddr.String(),
 		"amount":         fs.cfg.Amount,
 		"denoms":         fs.cfg.Denoms,
+		"url":            "https://faucet.terp.network/faucet?address=terp1...",
 	})
 }
 
@@ -149,7 +152,7 @@ func (fs *faucetServer) sendTokens(ctx context.Context, toAddr sdk.AccAddress) (
 
 	msg := banktypes.NewMsgSend(fs.fromAddr, toAddr, coins)
 
-	rpcClient, err := rpchttp.New("tcp://localhost:26657", "/websocket")
+	rpcClient, err := rpchttp.New("tcp://localhost:36657", "/websocket")
 	if err != nil {
 		return "", fmt.Errorf("rpc client: %w", err)
 	}
@@ -172,7 +175,8 @@ func (fs *faucetServer) sendTokens(ctx context.Context, toAddr sdk.AccAddress) (
 		WithAccountRetriever(authtypes.AccountRetriever{}).
 		WithChainID(fs.cfg.ChainID).
 		WithGas(200000).
-		WithGasPrices("0.025uterp").
+		WithGasPrices("0.5uthiol").
+		WithGasAdjustment(1.3).
 		WithSignMode(signing.SignMode_SIGN_MODE_DIRECT)
 
 	// Fetch current account number + sequence

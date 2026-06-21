@@ -9,6 +9,8 @@ replace (
 	// github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.45.13-ics
 	github.com/ChainSafe/go-schnorrkel => github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 	github.com/ChainSafe/go-schnorrkel/1 => github.com/ChainSafe/go-schnorrkel v1.0.0
+	github.com/CosmWasm/wasmd => ../../crates/zk-wasmd
+	github.com/CosmWasm/wasmvm/v3 => ../../crates/zk-wasmvm
 	github.com/strangelove-ventures/interchaintest/v10 => github.com/burnt-labs/interchaintest/v10 v10.0.0-wasmvm3
 	// For this nested module, you always want to replace the parent reference with the current worktree.
 	github.com/terpnetwork/terp-core/v5 => ../../
@@ -201,7 +203,7 @@ require (
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.5 // indirect
-	github.com/shamaton/msgpack/v2 v2.2.3 // indirect
+	github.com/shamaton/msgpack/v2 v2.4.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/spf13/afero v1.15.0 // indirect

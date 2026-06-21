@@ -21,6 +21,7 @@ var testMnemonics = map[string]string{
 	"b":         "jelly shadow frog dirt dragon use armed praise universe win jungle close inmate rain oil canvas beauty pioneer chef soccer icon dizzy thunder meadow",
 	"c":         "chair love bleak wonder skirt permit say assist aunt credit roast size obtain minute throw sand usual age smart exact enough room shadow charge",
 	"d":         "word twist toast cloth movie predict advance crumble escape whale sail such angry muffin balcony keen move employ cook valve hurt glimpse breeze brick",
+	"faucet":    "derive story life enlist pony carbon digital bargain donate face shaft crop earth primary detail hidden damp soup dinner enrich write shadow thrive august",
 }
 
 // TestnetCmd returns the parent `testnet` command.
@@ -51,7 +52,7 @@ uses key "a" by default and sends tokens to any address via:
   GET /faucet?address=terp1...
   GET /status`,
 		Example: `  # Fresh testnet with faucet
-  terpd testnet create --chain-id zk-testnet-1 --faucet --fast-blocks
+  terpd testnet create --chain-id zk-testnet-1 --faucet 
 
   # From existing genesis
   terpd testnet create --chain-id zk-testnet-1 --genesis /path/to/genesis.json
@@ -69,7 +70,6 @@ uses key "a" by default and sends tokens to any address via:
 	cmd.Flags().String("faucet-amount", "1000000000", "Amount per faucet request (per denom)")
 	cmd.Flags().String("faucet-denoms", "uterp,uthiol", "Comma-separated denoms to send")
 	cmd.Flags().String("faucet-key-name", "a", "Keyring key name for faucet")
-	cmd.Flags().Bool("fast-blocks", false, "Set 200ms block timeouts")
 	cmd.Flags().String("home", app.DefaultNodeHome, "Node home directory")
 	cmd.Flags().String("log-level", "info", "Log level for the node")
 
@@ -81,7 +81,6 @@ func runTestnetCreate(cmd *cobra.Command, args []string) error {
 	chainID, _ := cmd.Flags().GetString("chain-id")
 	moniker, _ := cmd.Flags().GetString("moniker")
 	genesisPath, _ := cmd.Flags().GetString("genesis")
-	fastBlocks, _ := cmd.Flags().GetBool("fast-blocks")
 	faucetEnabled, _ := cmd.Flags().GetBool("faucet")
 	faucetPort, _ := cmd.Flags().GetInt("faucet-port")
 	faucetAmount, _ := cmd.Flags().GetString("faucet-amount")
@@ -93,7 +92,6 @@ func runTestnetCreate(cmd *cobra.Command, args []string) error {
 	fmt.Printf("  Home:        %s\n", home)
 	fmt.Printf("  Chain ID:    %s\n", chainID)
 	fmt.Printf("  Moniker:     %s\n", moniker)
-	fmt.Printf("  Fast blocks: %v\n", fastBlocks)
 	fmt.Printf("  Faucet:      %v\n", faucetEnabled)
 
 	// Step 1: Initialize chain or use provided genesis
@@ -109,16 +107,14 @@ func runTestnetCreate(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Step 2: Apply fast blocks if requested
-	if fastBlocks {
-		cmtCfg, err := loadCometConfig(home)
-		if err != nil {
-			return fmt.Errorf("load config: %w", err)
-		}
-		applyFastBlocks(cmtCfg)
-		cmtcfg.WriteConfigFile(filepath.Join(home, "config", "config.toml"), cmtCfg)
-		fmt.Println("  Applied fast block settings (200ms)")
+	// Step 2: Apply fast blocks
+	cmtCfg, err := loadCometConfig(home)
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
 	}
+	applyFastBlocks(cmtCfg)
+	cmtcfg.WriteConfigFile(filepath.Join(home, "config", "config.toml"), cmtCfg)
+	fmt.Println("  Applied fast block settings (2.4s)")
 
 	// Step 3: Apply testnet config tweaks (LCD, CORS, subscriptions)
 	if err := applyTestnetConfigTweaks(home); err != nil {
@@ -150,7 +146,6 @@ func runTestnetCreate(cmd *cobra.Command, args []string) error {
 	startArgs := []string{
 		"start",
 		"--home", home,
-		"--rpc.laddr", "tcp://0.0.0.0:26657",
 		"--log_level", logLevel,
 	}
 	rootCmd.SetArgs(startArgs)
@@ -183,8 +178,9 @@ func initFreshChain(home, chainID, moniker string) error {
 
 	// Add genesis accounts
 	ico := "1000000000000000000"
+	coins := ico + "uterp," + ico + "uthiol"
 	for name := range testMnemonics {
-		if err := addGenesisAccount(home, name, ico+"uterp"); err != nil {
+		if err := addGenesisAccount(home, name, coins); err != nil {
 			return fmt.Errorf("add genesis account %s: %w", name, err)
 		}
 	}
@@ -279,6 +275,16 @@ func modifyGenesis(genesisFile, chainID string) error {
 			params["mint_denom"] = "uterp"
 		}
 	}
+	// Mint: mint_denom = uterp
+	if mint, ok := appState["tokenfactory"].(map[string]interface{}); ok {
+		if params, ok := mint["params"].(map[string]interface{}); ok {
+			if createFee, ok := params["denom_creation_fee"].([]interface{}); ok && len(createFee) > 0 {
+				if dep, ok := createFee[0].(map[string]interface{}); ok {
+					dep["denom"] = "uterp"
+				}
+			}
+		}
+	}
 
 	// Gov: voting_period = 90s, denoms = uterp
 	if gov, ok := appState["gov"].(map[string]interface{}); ok {
@@ -314,17 +320,9 @@ func modifyGenesis(genesisFile, chainID string) error {
 	return os.WriteFile(genesisFile, out, 0644)
 }
 
-// applyFastBlocks sets all consensus timeouts to 200ms.
+// applyFastBlocks sets all consensus timeouts to 2.4s in nanoseconds
 func applyFastBlocks(cfg *cmtcfg.Config) {
-	d := 200 * cmtcfg.DefaultConfig().Consensus.TimeoutPropose / cmtcfg.DefaultConfig().Consensus.TimeoutPropose
-	_ = d
-	cfg.Consensus.TimeoutPropose = 200 * 1e6     // 200ms in nanoseconds
-	cfg.Consensus.TimeoutPrevote = 200 * 1e6
-	cfg.Consensus.TimeoutPrecommit = 200 * 1e6
-	cfg.Consensus.TimeoutCommit = 200 * 1e6
-	cfg.Consensus.TimeoutProposeDelta = 0
-	cfg.Consensus.TimeoutPrevoteDelta = 0
-	cfg.Consensus.TimeoutPrecommitDelta = 0
+	cfg.Consensus.TimeoutPropose = 2400 * 1e6 // 2.4s in nanoseconds
 }
 
 // applyTestnetConfigTweaks configures LCD, CORS, and subscription limits.
@@ -334,8 +332,9 @@ func applyTestnetConfigTweaks(home string) error {
 	if err != nil {
 		return err
 	}
-	cmtCfg.RPC.ListenAddress = "tcp://0.0.0.0:26657"
-	cmtCfg.P2P.ListenAddress = "tcp://0.0.0.0:26656"
+	cmtCfg.ProxyApp = "tcp://127.0.0.1:23658"
+	cmtCfg.RPC.ListenAddress = "tcp://0.0.0.0:36657"
+	cmtCfg.P2P.ListenAddress = "tcp://0.0.0.0:36656"
 	cmtCfg.RPC.MaxSubscriptionClients = 100
 	cmtCfg.RPC.MaxSubscriptionsPerClient = 50
 	cmtcfg.WriteConfigFile(filepath.Join(home, "config", "config.toml"), cmtCfg)
@@ -347,10 +346,14 @@ func applyTestnetConfigTweaks(home string) error {
 		return err
 	}
 	content := string(data)
+	content = strings.ReplaceAll(content, `minimum-gas-prices = "0stake"`, `minimum-gas-prices = "0.5uthiol"`)
+	content = strings.ReplaceAll(content, `query-gas-limit = "0"`, `query-gas-limit = "100000000"`)
 	content = strings.ReplaceAll(content, `enable-unsafe-cors = false`, `enable-unsafe-cors = true`)
 	content = strings.ReplaceAll(content, `enabled-unsafe-cors = false`, `enabled-unsafe-cors = true`)
 	// Bind API to all interfaces
-	content = strings.ReplaceAll(content, `address = "tcp://localhost:1317"`, `address = "tcp://0.0.0.0:1317"`)
+	content = strings.ReplaceAll(content, `address = "tcp://localhost:1317"`, `address = "tcp://0.0.0.0:1617"`)
+	content = strings.ReplaceAll(content, `address = "tcp://localhost:1317"`, `address = "tcp://0.0.0.0:1617"`)
+	content = strings.ReplaceAll(content, `address = "localhost:9090"`, `address = "0.0.0.0:9390"`)
 	return os.WriteFile(appCfgPath, []byte(content), 0644)
 }
 
@@ -375,6 +378,7 @@ func addGenesisAccount(home, name, coins string) error {
 	if err != nil {
 		return err
 	}
+	println("home: {}", home)
 	out, err := exec.Command(binary, "keys", "show", name, "-a",
 		"--home", home, "--keyring-backend", "test").Output()
 	if err != nil {

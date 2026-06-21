@@ -55,9 +55,9 @@ var networkPresets = map[string]networkPreset{
 		GenesisURL: "https://raw.githubusercontent.com/terpnetwork/networks/refs/heads/main/mainnet/morocco-1/genesis.json",
 		RPCs:       "https://rpc.terp.chaintools.tech:443",
 	},
-	"90u-4": {
-		ChainID:    "90u-4",
-		GenesisURL: "https://raw.githubusercontent.com/terpnetwork/test-net/master/90u-4/genesis.json",
+	"120u-1": {
+		ChainID:    "120u-1",
+		GenesisURL: "https://raw.githubusercontent.com/terpnetwork/networks/refs/heads/main/testnet/120u-1/genesis.json",
 		RPCs:       "https://testnet-rpc.terp.network:443",
 	},
 }
@@ -66,10 +66,10 @@ var networkPresets = map[string]networkPreset{
 func DefaultBootstrapConfig() BootstrapConfig {
 	return BootstrapConfig{
 		SyncMode:        "statesync",
-		GenesisURL:      "https://raw.githubusercontent.com/terpnetwork/networks/refs/heads/main/mainnet/morocco-1/genesis.json",
+		GenesisURL:      "https://raw.githubusercontent.com/terpnetwork/networks/refs/heads/main/testnet/120u-1/genesis.json",
 		GenesisHash:     "",
 		SnapshotURL:     "",
-		StateSyncRPCs:   "https://rpc.terp.chaintools.tech:443",
+		StateSyncRPCs:   "https://testnet-rpc.terp.network:443,https://testnet-rpc.terp.network:443",
 		TrustOffset:     1000,
 		MaxRetries:      6,
 		Seeds:           "",
@@ -150,7 +150,7 @@ Direct usage:
 func init() {
 	BootstrapCmd.Flags().String("moniker", "", "node moniker (auto-generated if empty)")
 	BootstrapCmd.Flags().String("chain-id", "morocco-1", "chain ID")
-	BootstrapCmd.Flags().String("network", "", "preset network config: morocco-1 (mainnet) or 90u-4 (testnet)")
+	BootstrapCmd.Flags().String("network", "", "preset network config: morocco-1 (mainnet) or 120u-1 (testnet)")
 	BootstrapCmd.Flags().String("sync-mode", "", "override sync mode: statesync or snapshot")
 	BootstrapCmd.Flags().String("genesis-url", "", "override genesis download URL")
 	BootstrapCmd.Flags().String("genesis-hash", "", "override expected genesis SHA256 hash")
@@ -190,7 +190,7 @@ func runBootstrap(cmd *cobra.Command, args []string) error {
 	if network, _ := cmd.Flags().GetString("network"); network != "" {
 		preset, ok := networkPresets[network]
 		if !ok {
-			return fmt.Errorf("unknown network %q (available: morocco-1, 90u-4)", network)
+			return fmt.Errorf("unknown network %q (available: morocco-1, 120u-1)", network)
 		}
 		chainID = preset.ChainID
 		bsCfg.GenesisURL = preset.GenesisURL

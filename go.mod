@@ -6,9 +6,9 @@ toolchain go1.24.7
 
 replace (
 	// zk-circuit flavored wasmvm included in fork
-	github.com/CosmWasm/wasmd => ../zk-wasmd
+	github.com/CosmWasm/wasmd => ./crates/zk-wasmd
 	// zk-circuit flavored wasmvm
-	github.com/CosmWasm/wasmvm/v3 => ../zk-wasmvm
+	github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
 )
 
 require (
@@ -172,7 +172,7 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/linxGnu/grocksdb v1.9.8 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
+	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d
 	github.com/tidwall/btree v1.7.0 // indirect
 )
 
