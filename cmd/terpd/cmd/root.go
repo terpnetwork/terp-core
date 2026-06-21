@@ -10,6 +10,7 @@ import (
 	wasmcli "github.com/CosmWasm/wasmd/x/wasm/client/cli"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	ibcwccli "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/client/cli"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
@@ -288,6 +289,7 @@ func queryCommand() *cobra.Command {
 		rpc.ValidatorCommand(),
 		authcmd.QueryTxsByEventsCmd(),
 		authcmd.QueryTxCmd(),
+		ibcwccli.GetQueryCmd(),
 	)
 
 	app.ModuleBasics.AddQueryCommands(cmd)
@@ -316,6 +318,7 @@ func txCommand() *cobra.Command {
 		authcmd.GetBroadcastCommand(),
 		authcmd.GetEncodeCommand(),
 		authcmd.GetDecodeCommand(),
+		ibcwccli.NewTxCmd(),
 		// authcmd.GetAuxToFeeCommand(),
 	)
 
