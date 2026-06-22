@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/x/feegrant"
 	nftkeeper "cosmossdk.io/x/nft/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -19,24 +20,18 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
+	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/types"
+	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
 	icacontrollertypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/types"
 	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
-
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
+	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
 	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 	globalfeetypes "github.com/terpnetwork/terp-core/v5/x/globalfee/types"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
-
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
-
-	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/types"
-	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
-
-	// cwhookstypes "github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
-	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
 	hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 )
 
 func (appKeepers *AppKeepers) GenerateKeys() {

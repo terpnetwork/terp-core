@@ -66,6 +66,7 @@ import (
 	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
 	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
+	ap "github.com/terpnetwork/terp-core/v5/app/params"
 
 	smartaccount "github.com/terpnetwork/terp-core/v5/x/smart-account"
 
@@ -98,6 +99,7 @@ import (
 
 	"github.com/spf13/cast"
 
+	terpabci "github.com/terpnetwork/terp-core/v5/app/abci"
 	"github.com/terpnetwork/terp-core/v5/app/keepers"
 	"github.com/terpnetwork/terp-core/v5/docs"
 	"github.com/terpnetwork/terp-core/v5/x/feeshare"
@@ -127,14 +129,10 @@ import (
 	// _ "github.com/cosmos/cosmos-sdk/client/docs/statik" // statik for swagger UI support
 )
 
-const (
-	appName = "TerpApp"
-)
-
 // We pull these out so we can set them with LDFLAGS in the Makefile
 var (
-	NodeDir      = ".terpd"
-	Bech32Prefix = "terp"
+	NodeDir      = ap.DefaultNodeHomeDir
+	Bech32Prefix = ap.AccountAddressPrefix
 
 	// If EnabledSpecificProposals is "", and this is "true", then enable all x/wasm proposals.
 	// If EnabledSpecificProposals is "", and this is not "true", then disable all x/wasm proposals.
@@ -151,6 +149,15 @@ var (
 		v5.Upgrade,
 		v6.Upgrade,
 	}
+)
+
+// Account specific Bech32 prefixes.
+var (
+	AccountPubKeyPrefix    = ap.AccountAddressPrefix + "pub"
+	ValidatorAddressPrefix = ap.AccountAddressPrefix + "valoper"
+	ValidatorPubKeyPrefix  = ap.AccountAddressPrefix + "valoperpub"
+	ConsNodeAddressPrefix  = ap.AccountAddressPrefix + "valcons"
+	ConsNodePubKeyPrefix   = ap.AccountAddressPrefix + "valconspub"
 )
 
 // These constants are derived from the above variables.
@@ -173,6 +180,46 @@ var (
 	// Bech32PrefixConsPub defines the Bech32 prefix of a consensus node public key
 	Bech32PrefixConsPub = Bech32Prefix + sdk.PrefixValidator + sdk.PrefixConsensus + sdk.PrefixPublic
 )
+
+func init() {
+	SetAddressPrefixes()
+	RegisterDenoms()
+}
+
+// RegisterDenoms registers token denoms.
+func RegisterDenoms() {
+	err := sdk.RegisterDenom(ap.HumanCoinUnit, math.LegacyOneDec())
+	if err != nil {
+		panic(err)
+	}
+	err = sdk.RegisterDenom(ap.BaseCoinUnit, math.LegacyNewDecWithPrec(1, ap.TerpExponent))
+	if err != nil {
+		panic(err)
+	}
+}
+
+var encodingConfig ap.EncodingConfig = MakeEncodingConfig()
+
+func GetEncodingConfig() ap.EncodingConfig {
+	return encodingConfig
+}
+
+// SetAddressConfig sets Terp's address configuration.
+func SetAddressConfig() {
+	config := sdk.GetConfig()
+	config.SetBech32PrefixForAccount(ap.AccountAddressPrefix, AccountPubKeyPrefix)
+	config.SetBech32PrefixForValidator(ValidatorAddressPrefix, ValidatorPubKeyPrefix)
+	config.SetBech32PrefixForConsensusNode(ConsNodeAddressPrefix, ConsNodePubKeyPrefix)
+	config.Seal()
+}
+
+// MakeEncodingConfig creates an EncodingConfig for testing
+func MakeEncodingConfig() ap.EncodingConfig {
+	encodingConfig := ap.MakeEncodingConfig()
+	ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	return encodingConfig
+}
 
 func init() {
 	SetAddressPrefixes()
@@ -212,7 +259,7 @@ func GetWasmOpts(appOpts servertypes.AppOptions) []wasmkeeper.Option {
 	}
 
 	// default wasm gas configuration.
-	wasmOpts = append(wasmOpts, wasmkeeper.WithGasRegister(NewTerpWasmGasRegister()))
+	wasmOpts = append(wasmOpts, wasmkeeper.WithGasRegister(keepers.NewTerpWasmGasRegister()))
 
 	return wasmOpts
 }
@@ -258,12 +305,11 @@ func NewTerpApp(
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *TerpApp {
 	encodingConfig := MakeEncodingConfig()
-
 	appCodec, legacyAmino := encodingConfig.Marshaler, encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
 	txConfig := encodingConfig.TxConfig
 
-	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseAppOptions...)
+	bApp := baseapp.NewBaseApp(ap.AppName, logger, db, txConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
@@ -383,8 +429,8 @@ func NewTerpApp(
 		ibc.NewAppModule(app.IBCKeeper),
 		transfer.NewAppModule(*app.TransferKeeper),
 		ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper),
+		ibcwlc.NewAppModule(*app.IBCWasmClientKeeper),
 		packetforward.NewAppModule(app.PacketForwardKeeper, app.GetSubspace(packetforwardtypes.ModuleName)),
-		// cwhooks.NewAppModule(appCodec, app.CWHooksKeeper),
 		ibchooks.NewAppModule(*app.AccountKeeper),
 		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
 		hashmerchant.NewAppModule(app.HashMerchantKeeper),
@@ -403,8 +449,6 @@ func NewTerpApp(
 	app.mm.SetOrderEndBlockers(orderEndBlockers()...)
 
 	app.mm.SetOrderInitGenesis(orderInitBlockers()...)
-
-	app.mm.RegisterInvariants(app.CrisisKeeper)
 
 	// upgrade handlers
 	app.configurator = module.NewConfigurator(appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
@@ -426,8 +470,8 @@ func NewTerpApp(
 	}
 	reflectionv1.RegisterReflectionServiceServer(app.GRPCQueryRouter(), reflectionSvc)
 
-	anteHandler, err := NewAnteHandler(
-		HandlerOptions{
+	anteHandler, err := terpabci.NewAnteHandler(
+		terpabci.HandlerOptions{
 			HandlerOptions: ante.HandlerOptions{
 				AccountKeeper:   app.AccountKeeper,
 				BankKeeper:      app.BankKeeper,
@@ -522,7 +566,7 @@ func GetDefaultBypassFeeMessages() []string {
 }
 
 func (app *TerpApp) setPostHandler() {
-	postHandler := NewPostHandler(app.appCodec, app.SmartAccountKeeper, app.AccountKeeper, encodingConfig.TxConfig.SignModeHandler())
+	postHandler := terpabci.NewPostHandler(app.appCodec, app.SmartAccountKeeper, app.AccountKeeper, encodingConfig.TxConfig.SignModeHandler())
 	app.SetPostHandler(postHandler)
 }
 

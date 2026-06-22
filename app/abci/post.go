@@ -1,4 +1,4 @@
-package app
+package abci
 
 import (
 	txsigning "cosmossdk.io/x/tx/signing"

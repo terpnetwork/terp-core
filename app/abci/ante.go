@@ -1,4 +1,4 @@
-package app
+package abci
 
 import (
 	corestoretypes "cosmossdk.io/core/store"

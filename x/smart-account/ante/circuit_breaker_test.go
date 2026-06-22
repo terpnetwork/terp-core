@@ -18,6 +18,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/v5/app"
 	"github.com/terpnetwork/terp-core/v5/app/params"
+	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
 	"github.com/terpnetwork/terp-core/v5/x/smart-account/ante"
 )
 
@@ -53,7 +54,7 @@ func (s *AuthenticatorCircuitBreakerAnteSuite) SetupTest() {
 
 	// Initialize the Osmosis application
 	s.HomeDir = fmt.Sprintf("%d", rand.Int())
-	s.TerpApp = app.Setup(false)
+	s.TerpApp = testutils.Setup(false)
 
 	s.Ctx = s.TerpApp.NewContextLegacy(false, tmproto.Header{})
 

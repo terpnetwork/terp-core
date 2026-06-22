@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v5/app/testutils"
 	"github.com/terpnetwork/terp-core/v5/x/feeshare"
 	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
@@ -28,7 +29,7 @@ func TestGenesisTestSuite(t *testing.T) {
 }
 
 func (s *GenesisTestSuite) SetupTest() {
-	app := app.Setup(false)
+	app := testutils.Setup(false)
 	ctx := app.BaseApp.NewContext(false)
 
 	s.app = app

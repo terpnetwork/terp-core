@@ -24,6 +24,7 @@ import (
 	"github.com/terpnetwork/terp-core/v5/app"
 	"github.com/terpnetwork/terp-core/v5/app/params"
 	appparams "github.com/terpnetwork/terp-core/v5/app/params"
+	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
 )
 
 type BaseAuthenticatorSuite struct {
@@ -46,7 +47,7 @@ func (s *BaseAuthenticatorSuite) SetupKeys() {
 		"49006a359803f0602a7ec521df88bf5527579da79112bb71f285dd3e7d438033",
 	}
 	s.HomeDir = fmt.Sprintf("%d", rand.Int())
-	s.TerpApp = app.SetupWithCustomHome(false, s.HomeDir)
+	s.TerpApp = testutils.SetupWithCustomHome(false, s.HomeDir)
 	s.EncodingConfig = app.MakeEncodingConfig()
 	s.Ctx = s.TerpApp.NewContextLegacy(false, tmproto.Header{})
 	s.Ctx = s.Ctx.WithGasMeter(storetypes.NewGasMeter(1_000_000))

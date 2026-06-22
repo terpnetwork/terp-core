@@ -20,6 +20,7 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v5/app/testutils"
 
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	ibctesting "github.com/cosmos/ibc-go/v10/testing"
@@ -42,7 +43,7 @@ func SetupTestingApp() (ibctesting.TestingApp, map[string]json.RawMessage) {
 	// - if exists,  delete & remke
 	// - if does not exists, create
 	dirName := fmt.Sprintf("/tmp/terp-test-%d", rand.Int())
-	terpApp := app.SetupWithCustomHome(false, dirName)
+	terpApp := testutils.SetupWithCustomHome(false, dirName)
 	TestingDirectories = append(TestingDirectories, dirName)
 	return terpApp, app.NewDefaultGenesisState()
 }

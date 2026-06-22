@@ -32,7 +32,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/v5/app"
 	"github.com/terpnetwork/terp-core/v5/app/params"
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutil"
+	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
 	"github.com/terpnetwork/terp-core/v5/x/smart-account/ante"
 	moduletestutils "github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
 )

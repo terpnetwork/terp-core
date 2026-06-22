@@ -24,8 +24,11 @@ import (
 
 	"github.com/terpnetwork/terp-core/v5/app"
 	"github.com/terpnetwork/terp-core/v5/app/params"
+	terptestutils "github.com/terpnetwork/terp-core/v5/app/testutils"
 	"github.com/terpnetwork/terp-core/v5/x/smart-account/post"
+
 	"github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
+
 	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	"github.com/stretchr/testify/suite"
@@ -57,7 +60,7 @@ func (s *AuthenticatorPostSuite) SetupTest() {
 	s.EncodingConfig = app.MakeEncodingConfig()
 
 	s.HomeDir = fmt.Sprintf("%d", rand.Int())
-	s.TerpApp = app.SetupWithCustomHome(false, s.HomeDir)
+	s.TerpApp = terptestutils.SetupWithCustomHome(false, s.HomeDir)
 
 	s.Ctx = s.TerpApp.NewContextLegacy(false, tmproto.Header{})
 	// Set up test accounts

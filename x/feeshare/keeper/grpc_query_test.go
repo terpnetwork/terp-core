@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	"github.com/terpnetwork/terp-core/v5/app/testutil/nullify"
+	"github.com/terpnetwork/terp-core/v5/app/testutils/nullify"
 	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )
 

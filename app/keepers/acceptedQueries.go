@@ -8,12 +8,29 @@ import (
 	ibcconnectiontypes "github.com/cosmos/ibc-go/v10/modules/core/03-connection/types"
 	ibcchanneltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
 
+	storetypes "cosmossdk.io/store/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
+
+// QuerierWrapper is a local wrapper around BaseApp that exports only the Queryable interface.
+// This is used to pass the baseApp to Async ICQ without exposing all methods
+type QuerierWrapper struct {
+	querier storetypes.Queryable
+}
+
+var _ storetypes.Queryable = QuerierWrapper{}
+
+func NewQuerierWrapper(querier storetypes.Queryable) QuerierWrapper {
+	return QuerierWrapper{querier: querier}
+}
+
+func (q QuerierWrapper) Query(req *storetypes.RequestQuery) (*storetypes.ResponseQuery, error) {
+	return q.querier.Query(req)
+}
 
 func AcceptedQueries() map[string]func() proto.Message {
 	return map[string]func() proto.Message{

@@ -1,4 +1,4 @@
-package app
+package testutils
 
 import (
 	"encoding/json"
@@ -25,6 +25,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	terp "github.com/terpnetwork/terp-core/v5/app"
 
 	"github.com/cosmos/cosmos-sdk/client"
 
@@ -69,7 +70,7 @@ var DefaultConsensusParams = &tmproto.ConsensusParams{
 }
 
 // Setup initializes a new TerpApp
-func Setup(isCheckTx bool) *TerpApp {
+func Setup(isCheckTx bool) *terp.TerpApp {
 	dir, _ := os.MkdirTemp("", fmt.Sprintf("terp-test-%d-*", rand.Int()))
 	return SetupWithCustomHome(isCheckTx, dir)
 }
@@ -77,13 +78,13 @@ func Setup(isCheckTx bool) *TerpApp {
 var defaultGenesisStatebytes = []byte{}
 
 // SetupWithCustomHome initializes a new TerpApp with a custom home directory
-func SetupWithCustomHome(isCheckTx bool, dir string) *TerpApp {
+func SetupWithCustomHome(isCheckTx bool, dir string) *terp.TerpApp {
 	return SetupWithCustomHomeAndChainId(isCheckTx, dir, "terp-2b")
 }
 
-func SetupWithCustomHomeAndChainId(isCheckTx bool, dir, chainId string) *TerpApp {
+func SetupWithCustomHomeAndChainId(isCheckTx bool, dir, chainId string) *terp.TerpApp {
 	db := cosmosdb.NewMemDB()
-	app := NewTerpApp(log.NewNopLogger(), db, nil, true, dir, simtestutil.EmptyAppOptions{}, EmptyWasmOpts, baseapp.SetChainID(chainId))
+	app := terp.NewTerpApp(log.NewNopLogger(), db, nil, true, dir, simtestutil.EmptyAppOptions{}, terp.EmptyWasmOpts, baseapp.SetChainID(chainId))
 	if !isCheckTx {
 		if len(defaultGenesisStatebytes) == 0 {
 			var err error
@@ -166,12 +167,12 @@ func CreateTestPubKeys(numPubKeys int) []cryptotypes.PubKey {
 	return simtestutil.CreateTestPubKeys(numPubKeys)
 }
 
-func CheckBalance(t *testing.T, app *TerpApp, addr sdk.AccAddress, balances sdk.Coins) {
+func CheckBalance(t *testing.T, app *terp.TerpApp, addr sdk.AccAddress, balances sdk.Coins) {
 	ctxCheck := app.BaseApp.NewContext(true)
 	require.True(t, balances.Equal(app.BankKeeper.GetAllBalances(ctxCheck, addr)))
 }
 
-func GenesisStateWithValSet(app *TerpApp) GenesisState {
+func GenesisStateWithValSet(app *terp.TerpApp) terp.GenesisState {
 	privVal := mock.NewPV()
 	pubKey, _ := privVal.GetPubKey()
 	validator := cmttypes.NewValidator(pubKey, 1)
@@ -184,7 +185,7 @@ func GenesisStateWithValSet(app *TerpApp) GenesisState {
 
 	//////////////////////
 	balances := []banktypes.Balance{}
-	genesisState := NewDefaultGenesisState()
+	genesisState := terp.NewDefaultGenesisState()
 	genAccs := []authtypes.GenesisAccount{acc}
 	authGenesis := authtypes.NewGenesisState(authtypes.DefaultParams(), genAccs)
 	genesisState[authtypes.ModuleName] = app.AppCodec().MustMarshalJSON(authGenesis)

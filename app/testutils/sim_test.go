@@ -1,4 +1,4 @@
-package app
+package testutils
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	"github.com/stretchr/testify/require"
+	"github.com/terpnetwork/terp-core/v5/app"
 
 	"cosmossdk.io/log"
 
@@ -99,38 +100,38 @@ func TestFullAppSimulation(t *testing.T) {
 	}()
 
 	appOptions := make(simtestutil.AppOptionsMap, 0)
-	appOptions[flags.FlagHome] = DefaultNodeHome
+	appOptions[flags.FlagHome] = app.DefaultNodeHome
 	appOptions[server.FlagInvCheckPeriod] = simcli.FlagPeriodValue
 
 	var emptyWasmOption []wasmkeeper.Option
-	app := NewTerpApp(
+	terpapp := app.NewTerpApp(
 		logger,
 		db,
 		nil,
 		true,
-		DefaultNodeHome,
+		app.DefaultNodeHome,
 		appOptions,
 		emptyWasmOption,
 		fauxMerkleModeOpt,
 		baseapp.SetChainID(SimAppChainID),
 	)
-	require.Equal(t, "terp", app.Name())
+	require.Equal(t, "terp", terpapp.Name())
 
 	// run randomized simulation
 	_, simParams, simErr := simulation.SimulateFromSeed(
 		t,
 		os.Stdout,
-		app.BaseApp,
-		simtestutil.AppStateFn(app.appCodec, app.SimulationManager(), NewDefaultGenesisState()),
+		terpapp.BaseApp,
+		simtestutil.AppStateFn(terpapp.AppCodec(), terpapp.SimulationManager(), app.NewDefaultGenesisState()),
 		simtypes.RandomAccounts, // Replace with own random account function if using keys other than secp256k1
-		simtestutil.SimulationOperations(app, app.AppCodec(), config),
-		app.ModuleAccountAddrs(),
+		simtestutil.SimulationOperations(terpapp, terpapp.AppCodec(), config),
+		terpapp.ModuleAccountAddrs(),
 		config,
-		app.AppCodec(),
+		terpapp.AppCodec(),
 	)
 
 	// export state and simParams before the simulation error is checked
-	err = simtestutil.CheckExportSimulation(app, config, simParams)
+	err = simtestutil.CheckExportSimulation(terpapp, config, simParams)
 	require.NoError(t, err)
 	require.NoError(t, simErr)
 

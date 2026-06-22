@@ -14,7 +14,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
-	appparams "github.com/terpnetwork/terp-core/v5/app/params"
+	ap "github.com/terpnetwork/terp-core/v5/app/params"
 	"github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 )
 
@@ -60,32 +60,32 @@ func WeightedOperations(
 
 	simstate.AppParams.GetOrGenerate(OpWeightMsgCreateDenom, &weightMsgCreateDenom, nil,
 		func(_ *rand.Rand) {
-			weightMsgCreateDenom = appparams.DefaultWeightMsgCreateDenom
+			weightMsgCreateDenom = ap.DefaultWeightMsgCreateDenom
 		},
 	)
 	simstate.AppParams.GetOrGenerate(OpWeightMsgMint, &weightMsgMint, nil,
 		func(_ *rand.Rand) {
-			weightMsgMint = appparams.DefaultWeightMsgMint
+			weightMsgMint = ap.DefaultWeightMsgMint
 		},
 	)
 	simstate.AppParams.GetOrGenerate(OpWeightMsgBurn, &weightMsgBurn, nil,
 		func(_ *rand.Rand) {
-			weightMsgBurn = appparams.DefaultWeightMsgBurn
+			weightMsgBurn = ap.DefaultWeightMsgBurn
 		},
 	)
 	simstate.AppParams.GetOrGenerate(OpWeightMsgChangeAdmin, &weightMsgChangeAdmin, nil,
 		func(_ *rand.Rand) {
-			weightMsgChangeAdmin = appparams.DefaultWeightMsgChangeAdmin
+			weightMsgChangeAdmin = ap.DefaultWeightMsgChangeAdmin
 		},
 	)
 	simstate.AppParams.GetOrGenerate(OpWeightMsgSetDenomMetadata, &weightMsgSetDenomMetadata, nil,
 		func(_ *rand.Rand) {
-			weightMsgSetDenomMetadata = appparams.DefaultWeightMsgSetDenomMetadata
+			weightMsgSetDenomMetadata = ap.DefaultWeightMsgSetDenomMetadata
 		},
 	)
 	simstate.AppParams.GetOrGenerate(OpWeightMsgForceTransfer, &weightMsgForceTransfer, nil,
 		func(_ *rand.Rand) {
-			weightMsgForceTransfer = appparams.DefaultWeightMsgForceTransfer
+			weightMsgForceTransfer = ap.DefaultWeightMsgForceTransfer
 		},
 	)
 
@@ -401,7 +401,7 @@ func BuildOperationInput(
 	return simulation.OperationInput{
 		R:     r,
 		App:   app,
-		TxGen: appparams.MakeEncodingConfig().TxConfig,
+		TxGen: ap.MakeEncodingConfig().TxConfig,
 		Cdc:   nil,
 		Msg:   msg,
 		// MsgType:         msg.Type(),

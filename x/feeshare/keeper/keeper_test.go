@@ -13,7 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutil"
+	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
 	"github.com/terpnetwork/terp-core/v5/x/feeshare/keeper"
 	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 )

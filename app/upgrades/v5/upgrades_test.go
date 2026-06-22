@@ -11,7 +11,7 @@ import (
 	"cosmossdk.io/core/header"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutil"
+	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
 	v5 "github.com/terpnetwork/terp-core/v5/app/upgrades/v5"
 
 	"cosmossdk.io/x/upgrade"
