@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.2
 // - protoc             (unknown)
-// source: terp/feeshare/v1/tx.proto
+// source: terp/hashmerchant/v1/tx.proto
 
-package feesharev1
+package hashmerchantv1
 
 import (
 	context "context"
@@ -19,26 +19,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_RegisterFeeShare_FullMethodName = "/terp.feeshare.v1.Msg/RegisterFeeShare"
-	Msg_UpdateFeeShare_FullMethodName   = "/terp.feeshare.v1.Msg/UpdateFeeShare"
-	Msg_CancelFeeShare_FullMethodName   = "/terp.feeshare.v1.Msg/CancelFeeShare"
-	Msg_UpdateParams_FullMethodName     = "/terp.feeshare.v1.Msg/UpdateParams"
+	Msg_RegisterChain_FullMethodName    = "/terp.hashmerchant.v1.Msg/RegisterChain"
+	Msg_RegisterContract_FullMethodName = "/terp.hashmerchant.v1.Msg/RegisterContract"
+	Msg_RefillEscrow_FullMethodName     = "/terp.hashmerchant.v1.Msg/RefillEscrow"
+	Msg_UpdateParams_FullMethodName     = "/terp.hashmerchant.v1.Msg/UpdateParams"
 )
 
 // MsgClient is the client API for Msg service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// Msg defines the fees Msg service.
+// Msg defines the x/hashmerchant message service.
 type MsgClient interface {
-	// RegisterFeeShare registers a new contract for receiving transaction fees
-	RegisterFeeShare(ctx context.Context, in *MsgRegisterFeeShare, opts ...grpc.CallOption) (*MsgRegisterFeeShareResponse, error)
-	// UpdateFeeShare updates the withdrawer address of a FeeShare
-	UpdateFeeShare(ctx context.Context, in *MsgUpdateFeeShare, opts ...grpc.CallOption) (*MsgUpdateFeeShareResponse, error)
-	// CancelFeeShare cancels a contract's fee registration and further receival
-	// of transaction fees
-	CancelFeeShare(ctx context.Context, in *MsgCancelFeeShare, opts ...grpc.CallOption) (*MsgCancelFeeShareResponse, error)
-	// Update the params of the module through gov v1 type.
+	// RegisterChain adds a foreign chain to the registry (governance-gated).
+	RegisterChain(ctx context.Context, in *MsgRegisterChain, opts ...grpc.CallOption) (*MsgRegisterChainResponse, error)
+	// RegisterContract registers a CosmWasm contract for sudo callbacks,
+	// requires an escrow deposit.
+	RegisterContract(ctx context.Context, in *MsgRegisterContract, opts ...grpc.CallOption) (*MsgRegisterContractResponse, error)
+	// RefillEscrow tops up the escrow for an already-registered contract.
+	RefillEscrow(ctx context.Context, in *MsgRefillEscrow, opts ...grpc.CallOption) (*MsgRefillEscrowResponse, error)
+	// UpdateParams updates module parameters (governance-gated).
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 }
 
@@ -50,30 +50,30 @@ func NewMsgClient(cc grpc.ClientConnInterface) MsgClient {
 	return &msgClient{cc}
 }
 
-func (c *msgClient) RegisterFeeShare(ctx context.Context, in *MsgRegisterFeeShare, opts ...grpc.CallOption) (*MsgRegisterFeeShareResponse, error) {
+func (c *msgClient) RegisterChain(ctx context.Context, in *MsgRegisterChain, opts ...grpc.CallOption) (*MsgRegisterChainResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgRegisterFeeShareResponse)
-	err := c.cc.Invoke(ctx, Msg_RegisterFeeShare_FullMethodName, in, out, cOpts...)
+	out := new(MsgRegisterChainResponse)
+	err := c.cc.Invoke(ctx, Msg_RegisterChain_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *msgClient) UpdateFeeShare(ctx context.Context, in *MsgUpdateFeeShare, opts ...grpc.CallOption) (*MsgUpdateFeeShareResponse, error) {
+func (c *msgClient) RegisterContract(ctx context.Context, in *MsgRegisterContract, opts ...grpc.CallOption) (*MsgRegisterContractResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgUpdateFeeShareResponse)
-	err := c.cc.Invoke(ctx, Msg_UpdateFeeShare_FullMethodName, in, out, cOpts...)
+	out := new(MsgRegisterContractResponse)
+	err := c.cc.Invoke(ctx, Msg_RegisterContract_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *msgClient) CancelFeeShare(ctx context.Context, in *MsgCancelFeeShare, opts ...grpc.CallOption) (*MsgCancelFeeShareResponse, error) {
+func (c *msgClient) RefillEscrow(ctx context.Context, in *MsgRefillEscrow, opts ...grpc.CallOption) (*MsgRefillEscrowResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCancelFeeShareResponse)
-	err := c.cc.Invoke(ctx, Msg_CancelFeeShare_FullMethodName, in, out, cOpts...)
+	out := new(MsgRefillEscrowResponse)
+	err := c.cc.Invoke(ctx, Msg_RefillEscrow_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,16 +94,16 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility.
 //
-// Msg defines the fees Msg service.
+// Msg defines the x/hashmerchant message service.
 type MsgServer interface {
-	// RegisterFeeShare registers a new contract for receiving transaction fees
-	RegisterFeeShare(context.Context, *MsgRegisterFeeShare) (*MsgRegisterFeeShareResponse, error)
-	// UpdateFeeShare updates the withdrawer address of a FeeShare
-	UpdateFeeShare(context.Context, *MsgUpdateFeeShare) (*MsgUpdateFeeShareResponse, error)
-	// CancelFeeShare cancels a contract's fee registration and further receival
-	// of transaction fees
-	CancelFeeShare(context.Context, *MsgCancelFeeShare) (*MsgCancelFeeShareResponse, error)
-	// Update the params of the module through gov v1 type.
+	// RegisterChain adds a foreign chain to the registry (governance-gated).
+	RegisterChain(context.Context, *MsgRegisterChain) (*MsgRegisterChainResponse, error)
+	// RegisterContract registers a CosmWasm contract for sudo callbacks,
+	// requires an escrow deposit.
+	RegisterContract(context.Context, *MsgRegisterContract) (*MsgRegisterContractResponse, error)
+	// RefillEscrow tops up the escrow for an already-registered contract.
+	RefillEscrow(context.Context, *MsgRefillEscrow) (*MsgRefillEscrowResponse, error)
+	// UpdateParams updates module parameters (governance-gated).
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
@@ -115,14 +115,14 @@ type MsgServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMsgServer struct{}
 
-func (UnimplementedMsgServer) RegisterFeeShare(context.Context, *MsgRegisterFeeShare) (*MsgRegisterFeeShareResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method RegisterFeeShare not implemented")
+func (UnimplementedMsgServer) RegisterChain(context.Context, *MsgRegisterChain) (*MsgRegisterChainResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegisterChain not implemented")
 }
-func (UnimplementedMsgServer) UpdateFeeShare(context.Context, *MsgUpdateFeeShare) (*MsgUpdateFeeShareResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateFeeShare not implemented")
+func (UnimplementedMsgServer) RegisterContract(context.Context, *MsgRegisterContract) (*MsgRegisterContractResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegisterContract not implemented")
 }
-func (UnimplementedMsgServer) CancelFeeShare(context.Context, *MsgCancelFeeShare) (*MsgCancelFeeShareResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CancelFeeShare not implemented")
+func (UnimplementedMsgServer) RefillEscrow(context.Context, *MsgRefillEscrow) (*MsgRefillEscrowResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RefillEscrow not implemented")
 }
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateParams not implemented")
@@ -148,56 +148,56 @@ func RegisterMsgServer(s grpc.ServiceRegistrar, srv MsgServer) {
 	s.RegisterService(&Msg_ServiceDesc, srv)
 }
 
-func _Msg_RegisterFeeShare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgRegisterFeeShare)
+func _Msg_RegisterChain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRegisterChain)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).RegisterFeeShare(ctx, in)
+		return srv.(MsgServer).RegisterChain(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_RegisterFeeShare_FullMethodName,
+		FullMethod: Msg_RegisterChain_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).RegisterFeeShare(ctx, req.(*MsgRegisterFeeShare))
+		return srv.(MsgServer).RegisterChain(ctx, req.(*MsgRegisterChain))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_UpdateFeeShare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgUpdateFeeShare)
+func _Msg_RegisterContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRegisterContract)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).UpdateFeeShare(ctx, in)
+		return srv.(MsgServer).RegisterContract(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_UpdateFeeShare_FullMethodName,
+		FullMethod: Msg_RegisterContract_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).UpdateFeeShare(ctx, req.(*MsgUpdateFeeShare))
+		return srv.(MsgServer).RegisterContract(ctx, req.(*MsgRegisterContract))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_CancelFeeShare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCancelFeeShare)
+func _Msg_RefillEscrow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRefillEscrow)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).CancelFeeShare(ctx, in)
+		return srv.(MsgServer).RefillEscrow(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_CancelFeeShare_FullMethodName,
+		FullMethod: Msg_RefillEscrow_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CancelFeeShare(ctx, req.(*MsgCancelFeeShare))
+		return srv.(MsgServer).RefillEscrow(ctx, req.(*MsgRefillEscrow))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -224,20 +224,20 @@ func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(in
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Msg_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "terp.feeshare.v1.Msg",
+	ServiceName: "terp.hashmerchant.v1.Msg",
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "RegisterFeeShare",
-			Handler:    _Msg_RegisterFeeShare_Handler,
+			MethodName: "RegisterChain",
+			Handler:    _Msg_RegisterChain_Handler,
 		},
 		{
-			MethodName: "UpdateFeeShare",
-			Handler:    _Msg_UpdateFeeShare_Handler,
+			MethodName: "RegisterContract",
+			Handler:    _Msg_RegisterContract_Handler,
 		},
 		{
-			MethodName: "CancelFeeShare",
-			Handler:    _Msg_CancelFeeShare_Handler,
+			MethodName: "RefillEscrow",
+			Handler:    _Msg_RefillEscrow_Handler,
 		},
 		{
 			MethodName: "UpdateParams",
@@ -245,5 +245,5 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "terp/feeshare/v1/tx.proto",
+	Metadata: "terp/hashmerchant/v1/tx.proto",
 }

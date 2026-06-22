@@ -9,3 +9,10 @@ build/zk-deps/zk-wasmvm/libwasmvm/target/
 # Git directories
 .git
 build/zk-deps/**/.git
+
+# Dependencies
+**/node_modules
+**/target
+vendor/
+crates/
+websites/

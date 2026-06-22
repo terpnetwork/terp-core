@@ -30,10 +30,10 @@ SWAGGER_DIR=./swagger-proto
 proto-all: proto-format proto-gen-pulsar proto-gen-swagger
 
 proto-gen-pulsar:
-	@$(protoImage) sh ./scripts/gen-pulsar.sh
+	@$(protoImage) bash ./scripts/gen-pulsar.sh
 
 proto-gen-swagger:
-	@$(protoImage) sh ./scripts/gen-swagger.sh
+	@$(protoImage) bash ./scripts/gen-swagger.sh
 
 proto-lint:
 	@$(protoImage) buf lint --error-format=json

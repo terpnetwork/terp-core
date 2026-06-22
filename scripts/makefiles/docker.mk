@@ -19,7 +19,7 @@ RUNNER_BASE_IMAGE_NONROOT := gcr.io/distroless/static-debian11:nonroot
 # are staged into build/ so the Dockerfile can COPY them.
 # ---------------------------------------------------------------------------
 
-WASMVM_LIB ?=
+WASMVM_LIB :=./crates/zk-wasmvm/internal/api/libwasmvm_muslc.aarch64.a
 
 # Upstream version for GitHub download URL (auto-detected from go.mod).
 COSMWASM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
@@ -28,8 +28,8 @@ COSMWASM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v 
 _WASMVM_SOURCE = $(if $(WASMVM_LIB),local,github)
 
 # Sibling repo paths for staging Go source (only used when WASMVM_LIB is set).
-ZK_WASMVM_DIR ?= ../zk-wasmvm
-ZK_WASMD_DIR  ?= ../zk-wasmd
+ZK_WASMVM_DIR ?= ./crates/zk-wasmvm
+ZK_WASMD_DIR  ?= ./crates/zk-wasmd
 
 .PHONY: docker docker-help docker-build docker-build-distroless docker-build-alpine \
 	docker-build-nonroot docker-build-localnet docker-localterp docker-clean \

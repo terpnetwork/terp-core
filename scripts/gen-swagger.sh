@@ -51,6 +51,7 @@ mkdir -p tmp-swagger-gen
 # Get dependency directories
 cosmos_sdk_dir=$(go list -f '{{ .Dir }}' -m github.com/cosmos/cosmos-sdk)
 wasmd=$(go list -f '{{ .Dir }}' -m github.com/CosmWasm/wasmd)
+# ibc-go=$(go list -f '{{ .Dir }}' -m github.com/cosmos/ibc-go/v10)
 
 # Check if packet-forward-middleware exists in go.mod
 if go list -m github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10 &>/dev/null; then
@@ -66,9 +67,9 @@ cd proto
 
 # Find proto directories including dependencies
 if [ -n "$pfm" ]; then
-  proto_dirs=$(find ./ "$cosmos_sdk_dir"/proto "$wasmd"/proto "$pfm"/proto -path -prune -o -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
+  proto_dirs=$(find ./ "$cosmos_sdk_dir"/proto "$wasmd"/proto "/home/returniflost/go/pkg/mod/github.com/cosmos/ibc-go/v10@v10.5.0/proto" "$pfm"/proto -path -prune -o -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
 else
-  proto_dirs=$(find ./ "$cosmos_sdk_dir"/proto "$wasmd"/proto -path -prune -o -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
+  proto_dirs=$(find ./ "$cosmos_sdk_dir"/proto "$wasmd"/proto "/home/returniflost/go/pkg/mod/github.com/cosmos/ibc-go/v10@v10.5.0/proto" -path -prune -o -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
 fi
 
 for dir in $proto_dirs; do
@@ -96,6 +97,17 @@ if [ -f "./tmp-swagger-gen/cosmos/autocli/v1/query.swagger.json" ]; then
   rm -rf ./tmp-swagger-gen/cosmos/autocli/v1/query.swagger.json
 fi
 
+# Fix IBC circular definitions
+if [ -f "./tmp-swagger-gen/ibc/core/connection/v1/connection.swagger.json" ]; then
+  jq 'del(.definitions["ibc.core.connection.v1.Version"].properties.features.items["$ref"])' ./tmp-swagger-gen/ibc/core/connection/v1/connection.swagger.json > ./tmp-swagger-gen/ibc/core/connection/v1/fixed_connection.swagger.json
+  rm -rf ./tmp-swagger-gen/ibc/core/connection/v1/connection.swagger.json
+fi
+
+if [ -f "./tmp-swagger-gen/ibc/core/channel/v1/channel.swagger.json" ]; then
+  jq 'del(.definitions["ibc.core.channel.v1.Packet"].properties.data.items["$ref"])' ./tmp-swagger-gen/ibc/core/channel/v1/channel.swagger.json > ./tmp-swagger-gen/ibc/core/channel/v1/fixed_channel.swagger.json
+  rm -rf ./tmp-swagger-gen/ibc/core/channel/v1/channel.swagger.json
+fi
+
 # Delete cosmos/mint path since terp may use its own module
 rm -rf ./tmp-swagger-gen/cosmos/mint
 
@@ -110,6 +122,7 @@ for f in $files; do
     *router*) cp "$f" ./tmp-swagger-gen/_all/pfm-$counter.json ;;
     *cosmwasm*) cp "$f" ./tmp-swagger-gen/_all/cosmwasm-$counter.json ;;
     *terp*) cp "$f" ./tmp-swagger-gen/_all/terp-$counter.json ;;
+    *ibc*) cp "$f" ./tmp-swagger-gen/_all/ibc-$counter.json ;;
     *cosmos*) cp "$f" ./tmp-swagger-gen/_all/cosmos-$counter.json ;;
     *) cp "$f" ./tmp-swagger-gen/_all/other-$counter.json ;;
   esac
@@ -137,6 +150,7 @@ fi
 base_json=$(jq -n --arg version "$version" '{
   swagger: "2.0",
   info: { title: "Terp Network API", version: $version, description: "REST API for Terp Network blockchain" },
+  host: "api.terp.network",
   schemes: ["http", "https"],
   consumes: ["application/json"],
   produces: ["application/json"],

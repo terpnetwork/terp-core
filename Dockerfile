@@ -4,7 +4,7 @@ ARG COSMWASM_VERSION
 # WASMVM_SOURCE controls where the static wasmvm library comes from:
 #   "github" (default) — download libwasmvm_muslc from CosmWasm GitHub releases
 #   "local"            — use pre-built lib from build/wasmvm/ (for custom zk-wasmvm)
-ARG WASMVM_SOURCE=github
+ARG WASMVM_SOURCE=local
 
 FROM golang:${GO_VERSION}-alpine AS go-builder
 
@@ -60,8 +60,8 @@ RUN ARCH=$(uname -m) && \
       fi && \
       cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a /lib/libwasmvm_muslc.$ARCH.a && \
       # --- go.mod: rewrite local replace paths to staged copies -------------- \
-      sed -i 's|=> \.\./zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
-      sed -i 's|=> \.\./zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod; \
+      sed -i 's|=> \./crates/zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
+      sed -i 's|=> \./crates/zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod; \
     else \
       echo "==> Stripping local replace directives for standard build" && \
       # --- go.mod: remove the zk-local replace block so go uses upstream ----- \
