@@ -151,7 +151,7 @@ func simulationModules(
 		feeshare.NewAppModule(app.FeeShareKeeper, *app.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
 		drip.NewAppModule(app.DripKeeper, *app.AccountKeeper),
 		globalfee.NewAppModule(appCodec, app.GlobalFeeKeeper, bondDenom),
-		wasmlc.NewAppModule(*app.IBCWasmClientKeeper),
+		// wasmlc.NewAppModule(*app.IBCWasmClientKeeper),
 		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
 	}
 }
