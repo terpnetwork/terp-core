@@ -71,7 +71,7 @@ build-reproducible-amd64: go.sum
 		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
 		--build-arg WASMVM_SOURCE=$(WASMVM_SOURCE) \
 		--build-arg RUNNER_IMAGE=alpine:3.17 \
-		--platform PLATFORM=linux/amd64 \
+		--platform linux/amd64 \
 		--target runtime \
 		-t terp-core:local-amd64 \
 		--load \
