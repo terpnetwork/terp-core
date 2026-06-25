@@ -9,6 +9,11 @@ replace (
 	github.com/CosmWasm/wasmd => ./crates/zk-wasmd
 	// zk-circuit flavored wasmvm
 	github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
+
+	// temporary replace until upstream release of ibc-hooks for v10
+	github.com/cosmos/cosmos-sdk => github.com/permissionlessweb/cosmos-sdk v0.53.4-pfm-migrate
+	github.com/cosmos/ibc-apps/modules/ibc-hooks/v10 => github.com/permissionlessweb/ibc-apps/modules/ibc-hooks/v10 v10.1.1
+	github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10 => github.com/permissionlessweb/ibc-go/modules/light-clients/08-wasm/v10 v10.0.0-20250829182455-85668e331d2f
 )
 
 require (
@@ -270,10 +275,6 @@ require (
 
 replace (
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
-	// temporary replace until upstream release of ibc-hooks for v10
-	github.com/cosmos/cosmos-sdk => github.com/permissionlessweb/cosmos-sdk v0.53.4-pfm-migrate
-	github.com/cosmos/ibc-apps/modules/ibc-hooks/v10 => github.com/permissionlessweb/ibc-apps/modules/ibc-hooks/v10 v10.1.1
-	github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10 => github.com/permissionlessweb/ibc-go/modules/light-clients/08-wasm/v10 v10.0.0-20250829182455-85668e331d2f
 	// dgrijalva/jwt-go is deprecated and doesn't receive security updates.
 	// See: https://github.com/cosmos/cosmos-sdk/issues/13134
 	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v4 v4.4.2
