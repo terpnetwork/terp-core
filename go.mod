@@ -5,10 +5,10 @@ go 1.24.3
 toolchain go1.24.7
 
 replace (
-	// zk-circuit flavored wasmvm included in fork
-	github.com/CosmWasm/wasmd => ./crates/zk-wasmd
-	// zk-circuit flavored wasmvm
-	github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
+	// // zk-circuit flavored wasmvm included in fork
+	// github.com/CosmWasm/wasmd => ./crates/zk-wasmd
+	// // zk-circuit flavored wasmvm
+	// github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
 
 	// temporary replace until upstream release of ibc-hooks for v10
 	github.com/cosmos/cosmos-sdk => github.com/permissionlessweb/cosmos-sdk v0.53.4-pfm-migrate
