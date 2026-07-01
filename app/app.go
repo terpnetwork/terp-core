@@ -14,7 +14,8 @@ import (
 	"time"
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
-	"cosmossdk.io/api/cosmos/crypto/ed25519"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -105,7 +106,6 @@ import (
 	"github.com/terpnetwork/terp-core/v5/x/feeshare"
 	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 	"github.com/terpnetwork/terp-core/v5/x/globalfee"
-	"github.com/terpnetwork/terp-core/v5/x/hashmerchant"
 	"github.com/terpnetwork/terp-core/v5/x/tokenfactory"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 
@@ -433,7 +433,7 @@ func NewTerpApp(
 		packetforward.NewAppModule(app.PacketForwardKeeper, app.GetSubspace(packetforwardtypes.ModuleName)),
 		ibchooks.NewAppModule(*app.AccountKeeper),
 		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
-		hashmerchant.NewAppModule(app.HashMerchantKeeper),
+		// hashmerchant.NewAppModule(app.HashMerchantKeeper),
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 	)
 
@@ -509,10 +509,10 @@ func NewTerpApp(
 	app.SetPrepareCheckStater(app.PrepareCheckStater)
 
 	// ABCI++ vote extension handlers (hashmerchant)
-	app.SetExtendVoteHandler(app.HashMerchantKeeper.ExtendVoteHandler())
-	app.SetVerifyVoteExtensionHandler(app.HashMerchantKeeper.VerifyVoteExtensionHandler())
-	app.SetPrepareProposal(app.HashMerchantKeeper.PrepareProposalHandler())
-	app.SetProcessProposal(app.HashMerchantKeeper.ProcessProposalHandler())
+	// app.SetExtendVoteHandler(app.HashMerchantKeeper.ExtendVoteHandler())
+	// app.SetVerifyVoteExtensionHandler(app.HashMerchantKeeper.VerifyVoteExtensionHandler())
+	// app.SetPrepareProposal(app.HashMerchantKeeper.PrepareProposalHandler())
+	// app.SetProcessProposal(app.HashMerchantKeeper.ProcessProposalHandler())
 
 	// must be before Loading version
 	// requires the snapshot store to be created and registered as a BaseAppOption
@@ -614,7 +614,7 @@ func (app *TerpApp) PreBlocker(ctx sdk.Context, req *abci.RequestFinalizeBlock) 
 
 	// Extract and process hashmerchant vote extensions injected by
 	// PrepareProposal before any module PreBlockers run.
-	app.HashMerchantKeeper.ProcessInjectedVoteExtension(ctx, req.Txs)
+	// app.HashMerchantKeeper.ProcessInjectedVoteExtension(ctx, req.Txs)
 
 	mm := app.ModuleManager()
 	return mm.PreBlock(ctx)
@@ -825,7 +825,7 @@ func RegisterSwaggerAPI(_ client.Context, apiSvr *api.Server) error {
 
 // source: https://github.com/osmosis-labs/osmosis/blob/7b1a78d397b632247fe83f51867f319adf3a858c/app/app.go#L786
 // one-liner: cd ../terp-snapshots && terpd comet unsafe-reset-all && cp ~/.terpd/data/priv_validator_state.json ~/.terpd/priv_validator_state.json && lz4 -c -d <terp-snapshot>.tar.lz4 | tar -x -C $HOME/.terpd && cp ~/.terpd/priv_validator_state.json ~/.terpd/data/priv_validator_state.json && cd ../go-terp && make install && terpd in-place-testnet test1 terp1mt3wj088jvurp3vlh2yfar6vqrqp0llnsj8lar terpvaloper1qxw4fjged2xve8ez7nu779tm8ejw92rv0vcuqr
-func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey crypto.PubKey, newOperatorAddress, upgradeToTrigger, retainValAddr string) *TerpApp { // newValsPower []testnetserver.ValidatorInfo
+func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey crypto.PubKey, newOperatorAddress, upgradeToTrigger string) *TerpApp {
 
 	ctx := app.BaseApp.NewUncachedContext(true, cmtproto.Header{})
 	pubkey := &ed25519.PubKey{Key: newValPubKey.Bytes()}
@@ -833,24 +833,6 @@ func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-
-	// STAKING
-	brokeValAddr, err := sdk.ValAddressFromBech32(retainValAddr)
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-	retainedValidator, err := app.StakingKeeper.GetValidator(ctx, brokeValAddr)
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-	fmt.Printf("retainedValidator: %v\n", retainedValidator)
-
-	retainedValDels, err := app.StakingKeeper.GetValidatorDelegations(ctx, brokeValAddr)
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-	fmt.Printf("retainedValDels: %v\n", retainedValDels)
-
 	// Create Validator struct for our new validator.
 	_, bz, err := bech32.DecodeAndConvert(newOperatorAddress)
 	if err != nil {
@@ -922,16 +904,8 @@ func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-	// Add retainedValidator to power and last validators store
-	err = app.StakingKeeper.SetValidator(ctx, retainedValidator)
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
+
 	err = app.StakingKeeper.SetValidatorByConsAddr(ctx, newVal)
-	if err != nil {
-		tmos.Exit(err.Error())
-	}
-	err = app.StakingKeeper.SetValidatorByConsAddr(ctx, retainedValidator)
 	if err != nil {
 		tmos.Exit(err.Error())
 	}

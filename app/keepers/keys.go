@@ -29,7 +29,6 @@ import (
 	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
 	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 	globalfeetypes "github.com/terpnetwork/terp-core/v5/x/globalfee/types"
-	hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
 	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 )
@@ -66,7 +65,7 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		driptypes.StoreKey,
 		smartaccounttypes.StoreKey,
 		tokenfactorytypes.StoreKey,
-		hashmerchanttypes.StoreKey,
+		// hashmerchanttypes.StoreKey,
 	)
 
 	appKeepers.tkeys = storetypes.NewTransientStoreKeys(paramstypes.TStoreKey)

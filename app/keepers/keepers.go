@@ -107,9 +107,7 @@ import (
 
 	tokenfactorykeeper "github.com/terpnetwork/terp-core/v5/x/tokenfactory/keeper"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
-
-	hashmerchantkeeper "github.com/terpnetwork/terp-core/v5/x/hashmerchant/keeper"
-	hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
+	// hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
 	// terpwasm "github.com/terpnetwork/terp-core/v5/internal/wasm"
 )
 
@@ -132,7 +130,7 @@ var maccPerms = map[string][]string{
 	globalfee.ModuleName:           nil,
 	wasmtypes.ModuleName:           {authtypes.Burner},
 	tokenfactorytypes.ModuleName:   {authtypes.Minter, authtypes.Burner},
-	hashmerchanttypes.ModuleName:   nil,
+	// hashmerchanttypes.ModuleName:   nil,
 }
 
 type AppKeepers struct {
@@ -175,8 +173,8 @@ type AppKeepers struct {
 	WasmKeeper           *wasmkeeper.Keeper
 	IBCWasmClientKeeper  *ibcwlckeeper.Keeper
 
-	DripKeeper         dripkeeper.Keeper
-	HashMerchantKeeper *hashmerchantkeeper.Keeper
+	DripKeeper dripkeeper.Keeper
+	// HashMerchantKeeper *hashmerchantkeeper.Keeper
 
 	// Middleware wrapper
 	Ics20WasmHooks   *ibchooks.WasmHooks
@@ -595,18 +593,18 @@ func NewAppKeepers(
 		govModAddress,
 	)
 
-	hmConfig := hashmerchantkeeper.ReadConfig(appOpts)
-	hmKeeper := hashmerchantkeeper.NewKeeper(
-		appCodec,
-		appKeepers.keys[hashmerchanttypes.StoreKey],
-		govModAddress,
-		appKeepers.AccountKeeper,
-		appKeepers.BankKeeper,
-		appKeepers.StakingKeeper,
-		appKeepers.WasmKeeper,
-		hmConfig,
-	)
-	appKeepers.HashMerchantKeeper = &hmKeeper
+	// hmConfig := hashmerchantkeeper.ReadConfig(appOpts)
+	// hmKeeper := hashmerchantkeeper.NewKeeper(
+	// 	appCodec,
+	// 	appKeepers.keys[hashmerchanttypes.StoreKey],
+	// 	govModAddress,
+	// 	appKeepers.AccountKeeper,
+	// 	appKeepers.BankKeeper,
+	// 	appKeepers.StakingKeeper,
+	// 	appKeepers.WasmKeeper,
+	// 	hmConfig,
+	// )
+	// appKeepers.HashMerchantKeeper = &hmKeeper
 
 	// Set legacy router for backwards compatibility with gov v1beta1
 	appKeepers.GovKeeper.SetLegacyRouter(govRouter)

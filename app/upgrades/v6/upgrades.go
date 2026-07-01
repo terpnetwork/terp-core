@@ -9,7 +9,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/terpnetwork/terp-core/v5/app/keepers"
 	"github.com/terpnetwork/terp-core/v5/app/upgrades"
-	hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
 	tftypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 )
 
@@ -33,17 +32,11 @@ func CreateV6UpgradeHandler(
 		// Set default tokenfactory params explicity
 		keepers.TokenFactoryKeeper.SetParams(ctx, tftypes.DefaultParams())
 
-		// Set default hashmerchant params explicitly
-		if err := keepers.HashMerchantKeeper.SetParams(ctx, hashmerchanttypes.DefaultParams()); err != nil {
-			return nil, err
-		}
-
 		// set terp foundation dao with access to upload circuits for now.
 		wasmParams := keepers.WasmKeeper.GetParams(ctx)
 		wasmParams.CircuitUploadAccess = wasmtypes.AccessTypeAnyOfAddresses.With(sdk.MustAccAddressFromBech32("terp14w2qva6dx6wcsmq5fvplh7cr7nvptejznyvpe5hp5mtyqhxxjamsz3kw2w"))
 		keepers.WasmKeeper.SetParams(ctx, wasmParams)
-
-		logger.Info("v6 upgrade complete — x/hashmerchant module added")
+		logger.Info("v6 upgrade complete — x/hashmerchant module added, ")
 		return migrations, nil
 	}
 }
