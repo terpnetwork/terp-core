@@ -87,7 +87,7 @@ func init() {
 
 type snapshotTier struct {
 	name       string
-	pruning    string // "nothing", "default", "everything"
+	pruning    string   // "nothing", "default", "everything"
 	excludeDBs []string // DB dirs to exclude from archive (e.g. blockstore.db, state.db)
 }
 
@@ -325,77 +325,6 @@ func processPrunedTier(binary, input, inputFmt, output, outputFmt string,
 	return nil
 }
 
-// extractToHome decompresses a snapshot archive into a terpd home directory.
-func extractToHome(input, inputFmt, home string) error {
-	var cmd *exec.Cmd
-	switch inputFmt {
-	case "lz4":
-		cmd = exec.Command("sh", "-c",
-			fmt.Sprintf("lz4 -dc %s | tar xf - -C %s", input, home))
-	case "zst", "zstd":
-		cmd = exec.Command("sh", "-c",
-			fmt.Sprintf("zstd -dc %s | tar xf - -C %s", input, home))
-	case "gz", "gzip":
-		cmd = exec.Command("sh", "-c",
-			fmt.Sprintf("tar xzf %s -C %s", input, home))
-	case "tar":
-		cmd = exec.Command("tar", "xf", input, "-C", home)
-	default:
-		return fmt.Errorf("unknown input format: %s", inputFmt)
-	}
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("%w\n%s", err, string(out))
-	}
-	return nil
-}
-
-// detectFormat guesses compression from file extension.
-func detectFormat(path string) string {
-	switch {
-	case strings.HasSuffix(path, ".tar.lz4"):
-		return "lz4"
-	case strings.HasSuffix(path, ".tar.zst"), strings.HasSuffix(path, ".tar.zstd"):
-		return "zst"
-	case strings.HasSuffix(path, ".tar.gz"), strings.HasSuffix(path, ".tgz"):
-		return "gz"
-	case strings.HasSuffix(path, ".tar"):
-		return "tar"
-	default:
-		return "lz4" // assume lz4 as default
-	}
-}
-
-func decompressCmd(format, input string) *exec.Cmd {
-	switch format {
-	case "lz4":
-		return exec.Command("lz4", "-dc", input)
-	case "zst", "zstd":
-		return exec.Command("zstd", "-dc", input)
-	case "gz", "gzip":
-		return exec.Command("gzip", "-dc", input)
-	case "tar":
-		return exec.Command("cat", input)
-	default:
-		return nil
-	}
-}
-
-func compressCmd(format string) *exec.Cmd {
-	switch format {
-	case "lz4":
-		return exec.Command("lz4", "-c")
-	case "zst", "zstd":
-		return exec.Command("zstd", "-c", "-T0", "-3")
-	case "gz", "gzip":
-		return exec.Command("gzip", "-c")
-	case "tar", "none":
-		return exec.Command("cat")
-	default:
-		return nil
-	}
-}
-
 // compactAllLevelDBs walks a directory for LevelDB instances (*.db dirs)
 // and runs a full CompactRange on each to rewrite SST files without tombstones.
 func compactAllLevelDBs(dataDir string) error {
@@ -436,5 +365,3 @@ func compactAllLevelDBs(dataDir string) error {
 	}
 	return lastErr
 }
-
-

@@ -8,15 +8,13 @@ build-help:
 	@echo "  make build-[command]"
 	@echo ""
 	@echo "Available Commands:"
-	@echo "  all                              Build all targets"
-	@echo "  check-version                    Check Go version"
-	@echo "  dev-build                        Build development version"
-	@echo "  dev-install                      Install development build"
-	@echo "  linux                            Build for Linux"
-	@echo "  windows                          Build for Windows"
-	@echo "  reproducible                     Build reproducible binaries"
-	@echo "  reproducible-amd64               Build reproducible amd64 binary"
-	@echo "  reproducible-arm64               Build reproducible arm64 binary"
+	@echo "  build-check-version                    Check Go version"
+	@echo "  build                        Build development version"
+	@echo "  install                      Install development build"
+	@echo "  build-linux                            Build for Linux"
+	@echo "  build-reproducible                     Build reproducible binaries"
+	@echo "  build-reproducible-amd64               Build reproducible amd64 binary"
+	@echo "  build-reproducible-arm64               Build reproducible arm64 binary"
 
 build-check-version:
 	@echo "Go version: $(GO_MAJOR_VERSION).$(GO_MINOR_VERSION)"
@@ -33,12 +31,6 @@ build-check-version:
 
 install: build-check-version go.sum
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/terpd
-
-all: install
-	@echo "--> project root: go mod tidy"	
-	@go mod tidy	
-	@echo "--> project root: linting --fix"	
-	@GOGC=1 golangci-lint run --fix --timeout=8m
 
 build-linux: go.sum
 	LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
