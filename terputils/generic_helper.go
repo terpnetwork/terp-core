@@ -7,7 +7,7 @@ import "reflect"
 // and then a pointer to it.
 func MakeNew[T any]() T {
 	var v T
-	if typ := reflect.TypeOf(v); typ.Kind() == reflect.Ptr {
+	if typ := reflect.TypeOf(v); typ.Kind() == reflect.Pointer {
 		elem := typ.Elem()
 		//nolint:forcetypeassert
 		return reflect.New(elem).Interface().(T) // must use reflect
