@@ -34,7 +34,7 @@ tsh-pfm:
 tsh-nfts: 
 	cd tests/tsh/nft && sh a.sh
 tsh-zk:
-	cd tests/tsh/zk-wasmvm && sh a.rick.sh
+	cd tests/tsh/zk && sh a.rick.sh
 tsh-hashmerchant:
 	cd tests/tsh/hashmerchant && sh a.sh
 

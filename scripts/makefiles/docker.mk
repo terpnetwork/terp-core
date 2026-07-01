@@ -7,88 +7,105 @@ RUNNER_BASE_IMAGE_ALPINE := alpine:3.17
 RUNNER_BASE_IMAGE_NONROOT := gcr.io/distroless/static-debian11:nonroot
 
 # ---------------------------------------------------------------------------
-# WASMVM_LIB — optional path to a pre-built libwasmvm_muslc .a file.
+# WASMVM support — platform agnostic
 #
-# Standard build (download from CosmWasm GitHub releases):
-#   make docker-build
-#
-# Local build (use your own pre-built static lib):
-#   make docker-build WASMVM_LIB=../zk-wasmvm/internal/api/libwasmvm_muslc.aarch64.a
-#
-# When WASMVM_LIB is set, the lib + Go source for zk-wasmvm and zk-wasmd
-# are staged into build/ so the Dockerfile can COPY them.
+# All musl static libs are staged into build/wasmvm/ for verification
+# and multi-arch Docker builds.
 # ---------------------------------------------------------------------------
 
-WASMVM_LIB :=./crates/zk-wasmvm/internal/api/libwasmvm_muslc.aarch64.a
-
-# Upstream version for GitHub download URL (auto-detected from go.mod).
-COSMWASM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
-
-# Derived source mode: local when WASMVM_LIB is set, github otherwise.
-_WASMVM_SOURCE = $(if $(WASMVM_LIB),local,github)
-
-# Sibling repo paths for staging Go source (only used when WASMVM_LIB is set).
+# Sibling repo paths (for local zk development)
 ZK_WASMVM_DIR ?= ./crates/zk-wasmvm
 ZK_WASMD_DIR  ?= ./crates/zk-wasmd
+
+COSMWASM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
+_HOST_ARCH := $(shell uname -m | sed 's/arm64/aarch64/; s/x86_64/x86_64/')
 
 .PHONY: docker docker-help docker-build docker-build-distroless docker-build-alpine \
 	docker-build-nonroot docker-build-localnet docker-localterp docker-clean \
 	build-zk-local build-zk-local-localnet _docker-stage-zk-lib \
 	docker-build-zk docker-build-zk-localnet docker-stage-zk docker-clean-zk \
-	_docker-stage
+	_docker-stage _docker-stage-all-libs wasmvm-download-libs wasmvm-build-libs
 
 docker-help:
 	@echo "docker subcommands"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make docker-build                                         # GitHub wasmvm"
-	@echo "  make docker-build WASMVM_LIB=path/to/libwasmvm_muslc.a    # local wasmvm"
+	@echo "  make docker-build                          # GitHub wasmvm (multi-lib)"
+	@echo "  make docker-build WASMVM_SOURCE=local     # local zk-wasmvm"
 	@echo ""
 	@echo "Available Commands:"
-	@echo "  docker-build                Build Docker image (distroless runtime)"
+	@echo "  docker-build                Build Docker image (distroless)"
 	@echo "  docker-build-alpine         Build alpine Docker image"
 	@echo "  docker-build-nonroot        Build nonroot Docker image"
 	@echo "  docker-build-localnet       Build localterp dev image"
-	@echo "  docker-localterp            Alias for docker-build-localnet"
-	@echo "  build-zk-local              Build with ../zk-wasmvm (auto-detect lib)"
-	@echo "  build-zk-local-localnet     Build localterp with ../zk-wasmvm"
-	@echo "  docker-clean                Remove staged wasmvm dependencies"
+	@echo "  build-zk-local              Build with local ../zk-wasmvm (all libs)"
+	@echo "  wasmvm-download-libs        Download official libs into build/wasmvm/"
+	@echo "  wasmvm-build-libs           Build libs locally (if you have zk-wasmvm)"
+	@echo "  docker-clean                Clean staged artifacts"
 	@echo ""
 	@echo "Current config:"
-	@echo "  WASMVM_LIB       = $(or $(WASMVM_LIB),(unset — will download from GitHub))"
 	@echo "  COSMWASM_VERSION = $(COSMWASM_VERSION)"
-	@echo "  WASMVM_SOURCE    = $(_WASMVM_SOURCE)"
+	@echo "  Build dir libs: build/wasmvm/"
+
 docker: docker-help
 
 # ---------------------------------------------------------
-# Stage local wasmvm lib + Go source (no-op when WASMVM_LIB is unset)
+# Stage ALL wasmvm libs + zk source (platform agnostic)
 # ---------------------------------------------------------
 
+_docker-stage-all-libs:
+	@echo "==> Staging all wasmvm libraries to build/wasmvm/ ..."
+	@mkdir -p build/wasmvm
+	# Copy any pre-existing libs from zk-wasmvm
+	@find $(ZK_WASMVM_DIR) -name 'libwasmvm_muslc.*.a' -exec cp {} build/wasmvm/ \; 2>/dev/null || true
+	# Also support artifacts/ dir convention
+	@find $(ZK_WASMVM_DIR)/libwasmvm/artifacts -name 'libwasmvm_muslc.*.a' -exec cp {} build/wasmvm/ \; 2>/dev/null || true
+	@echo "Staged libs:"
+	@ls -lh build/wasmvm/ 2>/dev/null || echo "  (none)"
+
 _docker-stage:
+	$(MAKE) _docker-stage-all-libs
 ifdef WASMVM_LIB
-	@echo "==> Staging local wasmvm lib: $(WASMVM_LIB)"
-	@mkdir -p build/wasmvm build/zk-deps/zk-wasmvm build/zk-deps/zk-wasmd
-	@cp $(WASMVM_LIB) build/wasmvm/
-	@echo "==> Staging zk-wasmvm Go source (excluding target/ and .git/) ..."
-	@rsync -a --delete \
-		--exclude='libwasmvm/target/' \
-		--exclude='.git/' \
-		$(ZK_WASMVM_DIR)/ build/zk-deps/zk-wasmvm/
-	@echo "==> Staging zk-wasmd Go source ..."
-	@rsync -a --delete \
-		--exclude='.git/' \
-		$(ZK_WASMD_DIR)/ build/zk-deps/zk-wasmd/
-	@echo "==> Staged:"
-	@ls -lh build/wasmvm/
+	@echo "==> Additional single lib override: $(WASMVM_LIB)"
+	@cp $(WASMVM_LIB) build/wasmvm/ 2>/dev/null || true
 endif
+	@echo "==> Staging zk-wasmvm / zk-wasmd Go source ..."
+	@mkdir -p build/zk-deps/zk-wasmvm build/zk-deps/zk-wasmd
+	@rsync -a --delete \
+		--exclude='target/' \
+		--exclude='.git/' \
+		--exclude='**/libwasmvm/target/' \
+		$(ZK_WASMVM_DIR)/ build/zk-deps/zk-wasmvm/ 2>/dev/null || true
+	@rsync -a --delete \
+		--exclude='.git/' \
+		$(ZK_WASMD_DIR)/ build/zk-deps/zk-wasmd/ 2>/dev/null || true
 
 docker-clean:
-	@echo "==> Removing staged wasmvm dependencies ..."
+	@echo "==> Removing staged wasmvm + zk artifacts ..."
 	rm -rf build/zk-deps build/wasmvm
 	@echo "Done."
 
 # ---------------------------------------------------------
-# Build targets — all respect WASMVM_LIB
+# Convenience: Download / Build libs
+# ---------------------------------------------------------
+
+wasmvm-download-libs:
+	@echo "==> Downloading official wasmvm musl libs for verification..."
+	@mkdir -p build/wasmvm
+	@for arch in x86_64 aarch64; do \
+		url="https://github.com/CosmWasm/wasmvm/releases/download/$(COSMWASM_VERSION)/libwasmvm_muslc.$$arch.a"; \
+		echo "  $$arch -> $$url"; \
+		curl -L -f -o build/wasmvm/libwasmvm_muslc.$$arch.a $$url || echo "  Warning: Failed $$arch"; \
+	done
+	@ls -lh build/wasmvm/
+
+wasmvm-build-libs:
+	@echo "==> Building wasmvm libs locally (requires zk-wasmvm setup)..."
+	@cd $(ZK_WASMVM_DIR) && make build-wasmvm-alpine || echo "Build command may vary"
+	$(MAKE) _docker-stage-all-libs
+
+# ---------------------------------------------------------
+# Build targets — respect multi-lib staging
 # ---------------------------------------------------------
 
 docker-build: _docker-stage
@@ -100,7 +117,7 @@ docker-build: _docker-stage
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
-		--build-arg WASMVM_SOURCE=$(_WASMVM_SOURCE) \
+		--build-arg WASMVM_SOURCE=local \
 		-f Dockerfile .
 
 docker-build-distroless: docker-build
@@ -114,7 +131,7 @@ docker-build-alpine: _docker-stage
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
-		--build-arg WASMVM_SOURCE=$(_WASMVM_SOURCE) \
+		--build-arg WASMVM_SOURCE=local \
 		-f Dockerfile .
 
 docker-build-nonroot: _docker-stage
@@ -126,32 +143,21 @@ docker-build-nonroot: _docker-stage
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
-		--build-arg WASMVM_SOURCE=$(_WASMVM_SOURCE) \
+		--build-arg WASMVM_SOURCE=local \
 		-f Dockerfile .
 
 docker-build-localnet: _docker-stage
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--target localterp \
 		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
-		--build-arg WASMVM_SOURCE=$(_WASMVM_SOURCE) \
+		--build-arg WASMVM_SOURCE=local \
 		-t terpnetwork/terp-core:localterp --load .
 
 docker-localterp: docker-build-localnet
 
 # ---------------------------------------------------------
-# Local zk-wasmvm convenience targets
-#
-# Auto-resolve WASMVM_LIB from ../zk-wasmvm so you can just run:
-#   make build-zk-local
+# Local zk-wasmvm targets
 # ---------------------------------------------------------
-
-# Map macOS arm64 → aarch64 to match CosmWasm lib naming convention.
-_HOST_ARCH := $(shell uname -m | sed 's/arm64/aarch64/')
-
-# Check internal/api first, then libwasmvm/artifacts as fallback.
-_ZK_DEFAULT_LIB = $(firstword \
-	$(wildcard $(ZK_WASMVM_DIR)/internal/api/libwasmvm_muslc.$(_HOST_ARCH).a) \
-	$(wildcard $(ZK_WASMVM_DIR)/libwasmvm/artifacts/libwasmvm_muslc.$(_HOST_ARCH).a))
 
 build-zk-local: _docker-stage-zk-lib
 	@DOCKER_BUILDKIT=1 docker build \
@@ -170,16 +176,13 @@ build-zk-local-localnet: _docker-stage-zk-lib
 		--build-arg WASMVM_SOURCE=local \
 		-t terpnetwork/terp-core:localterp-zk --load .
 
-# Stage the auto-resolved lib + Go source for zk builds.
 _docker-stage-zk-lib:
-	@if [ -z "$(_ZK_DEFAULT_LIB)" ]; then \
-		echo "ERROR: libwasmvm_muslc.$(_HOST_ARCH).a not found in $(ZK_WASMVM_DIR)."; \
-		echo "Build it first:  just build-wasmvm-alpine"; \
-		exit 1; \
+	@if [ ! -d "$(ZK_WASMVM_DIR)" ]; then \
+		echo "ERROR: zk-wasmvm not found at $(ZK_WASMVM_DIR)"; exit 1; \
 	fi
-	$(MAKE) _docker-stage WASMVM_LIB=$(_ZK_DEFAULT_LIB)
+	$(MAKE) _docker-stage
 
-# Backwards-compat aliases
+# Backwards compatibility
 docker-build-zk: build-zk-local
 docker-build-zk-localnet: build-zk-local-localnet
 docker-stage-zk: _docker-stage

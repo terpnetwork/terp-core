@@ -1,7 +1,5 @@
 package interchaintest
 
-// notice: upgrade v4 will return error, as headstash accounts in v3 upgrade do not have balance during ictests.
-
 import (
 	"context"
 	"strconv"
@@ -25,13 +23,16 @@ import (
 const (
 	haltHeightDelta    = uint64(9) // will propose upgrade this many blocks in the future
 	blocksAfterUpgrade = uint64(7)
+	CURRENTVERSION     = "v5.1.0"
+	UPGRADEVERSION     = "v6.0.0"
+	UPGRADENAME        = "v6"
 )
 
 func TestBasicTerpUpgrade(t *testing.T) {
 	repo, version := GetDockerImageInfo()
-	startVersion := "v4.2.2"
-	upgradeName := "v5"
-	CosmosChainUpgradeTest(t, "terp", startVersion, version, repo, upgradeName)
+
+	UPGRADENAME := "v6"
+	CosmosChainUpgradeTest(t, "terp", CURRENTVERSION, version, repo, UPGRADENAME)
 }
 
 func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBranchVersion, upgradeRepo, upgradeName string) {
@@ -56,7 +57,7 @@ func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBran
 		{
 			Name:          "terp",
 			ChainName:     "terpnetwork",
-			Version:       "v4.2.2",
+			Version:       initialVersion,
 			NumValidators: &numVals,
 			NumFullNodes:  &numNodes,
 		},
@@ -163,7 +164,7 @@ func UpgradeNodes(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, 
 func SubmitUpgradeProposal(t *testing.T, ctx context.Context, chain *cosmos.CosmosChain, user ibc.Wallet, upgradeName string, haltHeight uint64) uint64 {
 	proposal := cosmos.SoftwareUpgradeProposal{
 		Deposit:     "500000000" + chain.Config().Denom, // greater than min deposit
-		Title:       "Chain Upgrade 1",
+		Title:       "Chain Upgrade: " + upgradeName,
 		Name:        upgradeName,
 		Description: "First chain software upgrade",
 		Height:      int64(haltHeight),

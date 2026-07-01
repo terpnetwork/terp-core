@@ -48,6 +48,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/v5/app"
 	"github.com/terpnetwork/terp-core/v5/app/params"
+	testnetserver "github.com/terpnetwork/terp-core/v5/server"
 )
 
 // NewRootCmd creates a new root command for terpd. It is called once in the
@@ -247,7 +248,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		pruning.Cmd(ac.newApp, app.DefaultNodeHome),
 	)
 
-	server.AddTestnetCreatorCommand(rootCmd, ac.newTestnetApp, addModuleInitFlags)
+	testnetserver.AddTestnetCreatorCommand(rootCmd, ac.newTestnetApp, addModuleInitFlags)
 	server.AddCommands(rootCmd, app.DefaultNodeHome, ac.newApp, ac.appExport, addModuleInitFlags)
 	wasmcli.ExtendUnsafeResetAllCmd(rootCmd)
 
@@ -488,5 +489,5 @@ func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, traceStore
 	// fmt.Printf("newValsPower: %v\n", newValsPower)
 
 	// Make modifications to the normal TerpApp required to run the network locally
-	return app.InitTerpAppForTestnet(terpApp, newValAddr, newValPubKey, newOperatorAddress, upgradeToTrigger, newOperatorAddress) // newValsPower
+	return app.InitTerpAppForTestnet(terpApp, newValAddr, newValPubKey, newOperatorAddress, upgradeToTrigger)
 }

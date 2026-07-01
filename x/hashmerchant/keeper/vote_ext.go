@@ -312,6 +312,7 @@ func (k Keeper) dispatchSudoCallbacks(ctx sdk.Context, root types.HashRoot) {
 // ---------------------------------------------------------------------------
 
 func (k Keeper) pruneExpiredEscrows(ctx sdk.Context, currentHeight uint64) {
+	// TODO: improve storage layout so its O(1) for the set of  n addresses where n is num of expired contrsctsout of total set of contracts t registered to module, avoiding O(t) or )(n).
 	var toDisable []string
 	k.IterateEscrowRecords(ctx, func(r types.EscrowRecord) bool {
 		if r.PaidUntilHeight < currentHeight {
@@ -329,4 +330,3 @@ func (k Keeper) pruneExpiredEscrows(ctx sdk.Context, currentHeight uint64) {
 		k.Logger(ctx).Info("disabled contract (escrow expired)", "contract", addr)
 	}
 }
-

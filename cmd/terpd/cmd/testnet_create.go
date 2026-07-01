@@ -323,6 +323,7 @@ func modifyGenesis(genesisFile, chainID string) error {
 // applyFastBlocks sets all consensus timeouts to 2.4s in nanoseconds
 func applyFastBlocks(cfg *cmtcfg.Config) {
 	cfg.Consensus.TimeoutPropose = 2400 * 1e6 // 2.4s in nanoseconds
+	cfg.Consensus.TimeoutCommit = 2400 * 1e6  // 2.4s in nanoseconds
 }
 
 // applyTestnetConfigTweaks configures LCD, CORS, and subscription limits.

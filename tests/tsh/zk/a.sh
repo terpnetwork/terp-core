@@ -1,5 +1,5 @@
 #!/bin/bash
-BIND=terpd
+BIND=terpd-testnet
 CHAINID_A=test-1
 
 # setup test keys.
@@ -13,9 +13,9 @@ USERFILE="test-keys/$USER.json"
 # file paths
 CHAINDIR=../data/polytone
 VAL1HOME=$CHAINDIR/$CHAINID_A/val1
-ZK_COSMWASM=../../interchaintest/contracts/zk_no_rick.wasm
-ZK_VK=../../interchaintest/circuits/no_rick.bin
-PROOF_FILE="../../interchaintest/circuits/no_rick_proof.json"
+ZK_COSMWASM=../../../../../artifacts/cw_norick.wasm
+ZK_VK=../../../../../artifacts/norick_vk.bin
+/Users/returniflost/abstract/terp-core/tests/interchaintest/circuits/norick_vk.bin
 # Define the new ports for val1 on chain a
 VAL1_API_PORT=1317
 VAL1_GRPC_PORT=9090
@@ -30,6 +30,8 @@ trap 'pkill -f '"$BIND" EXIT
 
 defaultCoins="100000000000uterp"  # 100K
 delegate="1000000uterp" # 1btsg
+
+
 
 
 
@@ -91,6 +93,8 @@ sed -i.bak -e "s/^proxy_app *=.*/proxy_app = \"tcp:\/\/127.0.0.1:$VAL1_PROXY_APP
 sed -i.bak "/^\[rpc\]/,/^\[/ s/laddr.*/laddr = \"tcp:\/\/127.0.0.1:$VAL1_RPC_PORT\"/" $VAL1HOME/config/config.toml &&
 sed -i.bak "/^\[rpc\]/,/^\[/ s/address.*/address = \"tcp:\/\/127.0.0.1:$VAL1_RPC_PORT\"/" $VAL1HOME/config/config.toml &&
 sed -i.bak "/^\[p2p\]/,/^\[/ s/laddr.*/laddr = \"tcp:\/\/0.0.0.0:$VAL1_P2P_PORT\"/" $VAL1HOME/config/config.toml &&
+sed -i.bak "/^\[p2p\]/,/^\[/ s/^persistent_peers */persistent_peers = \"\"/" $VAL1HOME/config/config.toml &&
+sed -i.bak "/^\[p2p\]/,/^\[/ s/unconditional_peer_ids.*/unconditional_peer_ids = \"\"/" $VAL1HOME/config/config.toml &&
 sed -i.bak -e "s/^grpc_laddr *=.*/grpc_laddr = \"\"/g" $VAL1HOME/config/config.toml &&
 sed -i.bak -e "s/^pprof_laddr *=.*/pprof_laddr = \"localhost:6060\"/g" $VAL1HOME/config/config.toml &&
 sed -i.bak "/^\[consensus\]/,/^\[/ s/^[[:space:]]*timeout_commit[[:space:]]*=.*/timeout_commit = \"1s\"/" "$VAL1HOME/config/config.toml"
@@ -118,30 +122,12 @@ echo "USERAADDR: $USERAADDR"
 # this can be done by simply `cargo run` in the same directory as this file.
 
 ####################################################################
-# A. UPLOAD WASM 
+# A. UPLOAD WASM & CIRCUIT
 ####################################################################
 $BIND tx wasm headstash --home $VAL1HOME $ZK_COSMWASM $ZK_VK --from $USER --chain-id $CHAINID_A --gas auto --gas-adjustment 1.4 --gas auto --fees 400000uterp -y 
-sleep 2
+sleep 3
 $BIND tx wasm i 1 '{}' --from $USER --home $VAL1HOME --chain-id $CHAINID_A --no-admin --label="note contract chain2" --fees 400000uterp --gas auto --gas-adjustment 1.3 -y
 
-# ## CONFIRM CHECKSUMS 
-# echo "Computing local checksums..."
-# WASM_CHECKSUM=$(sha256sum "$ZK_COSMWASM" | awk '{print $1}')
-# CIRCUIT_CHECKSUM=$(sha256sum "$ZK_VK" | awk '{print $1}')
-# ONCHAIN_WASM_CHECKSUM=$($BIND query wasm code-info 1 --home $VAL1HOME --output json | jq -r '.checksum // empty')
-# ONCHAIN_CIRCUIT_CHECKSUM=$($BIND query wasm circuit-info 1 --home $VAL1HOME --output json | jq -r '.checksum // empty')
-# [ "$WASM_CHECKSUM" = "$ONCHAIN_WASM_CHECKSUM" ] && echo "✅ WASM checksums match!" || {
-#     echo "❌ WASM checksums DO NOT match!"
-#     echo "   Local: $WASM_CHECKSUM"
-#     echo "   On-chain: $ONCHAIN_WASM_CHECKSUM"
-#     exit 1
-# }
-# [ "$CIRCUIT_CHECKSUM" = "$ONCHAIN_CIRCUIT_CHECKSUM" ] && echo "✅ Circuit checksums match!" || {
-#     echo "❌ Circuit checksums DO NOT match!"
-#     echo "   Local: $CIRCUIT_CHECKSUM"
-#     echo "   On-chain: $ONCHAIN_CIRCUIT_CHECKSUM"
-#     exit 1
-# }
 ####################################################################
 # C. PROOF VERIFICATION
 ####################################################################

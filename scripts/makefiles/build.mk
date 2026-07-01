@@ -1,7 +1,6 @@
 ###############################################################################
 ###                            Build & Install                              ###
 ###############################################################################
-
 build-help:
 	@echo "build subcommands"
 	@echo ""
@@ -57,6 +56,14 @@ build-dev-build:
 # Cross-building for arm64 from amd64 (or vice-versa) takes
 # a lot of time due to QEMU virtualization but it's the only way (afaik)
 # to get a statically linked binary with CosmWasm
+WASMVM_SOURCE := local
+
+define extract_binary
+	$(DOCKER) rm -f terpbinary 2>/dev/null || true
+	$(DOCKER) create -ti --name terpbinary $(1)
+	$(DOCKER) cp terpbinary:/usr/local/bin/terpd $(2)
+	$(DOCKER) rm -f terpbinary
+endef
 
 build-reproducible: build-reproducible-amd64 build-reproducible-arm64
 
@@ -64,6 +71,7 @@ build-reproducible-amd64: go.sum
 	mkdir -p $(BUILDDIR)
 	$(DOCKER) buildx create --name terpbuilder || true
 	$(DOCKER) buildx use terpbuilder
+
 	$(DOCKER) buildx build \
 		--build-arg GO_VERSION=$(GO_VERSION) \
 		--build-arg GIT_VERSION=$(VERSION) \
@@ -76,10 +84,8 @@ build-reproducible-amd64: go.sum
 		-t terp-core:local-amd64 \
 		--load \
 		-f Dockerfile .
-	$(DOCKER) rm -f terpbinary || true
-	$(DOCKER) create -ti --name terpbinary terp-core:local-amd64
-	$(DOCKER) cp terpbinary:/usr/local/bin/terpd $(BUILDDIR)/terpd-linux-amd64
-	$(DOCKER) rm -f terpbinary
+
+	$(call extract_binary,terp-core:local-amd64,$(BUILDDIR)/terpd-linux-amd64)
 
 build-reproducible-arm64: go.sum
 	mkdir -p $(BUILDDIR)
@@ -97,8 +103,4 @@ build-reproducible-arm64: go.sum
 		-t terp-core:local-arm64 \
 		--load \
 		-f Dockerfile .
-	$(DOCKER) rm -f terpbinary || true
-	$(DOCKER) create -ti --name terpbinary terp-core:local-arm64
-	$(DOCKER) cp terpbinary:/usr/local/bin/terpd $(BUILDDIR)/terpd-linux-arm64
-	$(DOCKER) rm -f terpbinary
-
+	$(call extract_binary,terp-core:local-arm64,$(BUILDDIR)/terpd-linux-arm64)
