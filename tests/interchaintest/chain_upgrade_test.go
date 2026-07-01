@@ -30,8 +30,6 @@ const (
 
 func TestBasicTerpUpgrade(t *testing.T) {
 	repo, version := GetDockerImageInfo()
-
-	UPGRADENAME := "v6"
 	CosmosChainUpgradeTest(t, "terp", CURRENTVERSION, version, repo, UPGRADENAME)
 }
 
@@ -48,7 +46,7 @@ func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBran
 	chains := interchaintest.CreateChainsWithChainSpecs(t, []*interchaintest.ChainSpec{
 		{
 			Name:          chainName,
-			ChainName:     chainName,
+			ChainName:     "terpnetwork",
 			Version:       initialVersion,
 			ChainConfig:   terpCfg,
 			NumValidators: &numVals,

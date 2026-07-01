@@ -311,20 +311,20 @@ func NewPolytoneSuite(t *testing.T) Suite {
 func (s *Suite) SetupChain(chain *SuiteChain) {
 	user := chain.User
 	cc := chain.Cosmos
-	noteId, err := cc.StoreContract(s.ctx, user.KeyName(), "contracts/polytone_note.wasm")
+	noteId, err := cc.StoreContract(s.ctx, user.KeyName(), "../../artifacts/polytone_note.wasm")
 	if err != nil {
 		s.t.Fatal(err)
 	}
-	voiceId, err := cc.StoreContract(s.ctx, user.KeyName(), "contracts/polytone_voice.wasm")
+	voiceId, err := cc.StoreContract(s.ctx, user.KeyName(), "../../artifacts/polytone_voice.wasm")
 	if err != nil {
 		s.t.Fatal(err)
 	}
-	proxyId, err := cc.StoreContract(s.ctx, user.KeyName(), "contracts/polytone_proxy.wasm")
+	proxyId, err := cc.StoreContract(s.ctx, user.KeyName(), "../../artifacts/polytone_proxy.wasm")
 	if err != nil {
 		s.t.Fatal(err)
 	}
 
-	testerId, err := cc.StoreContract(s.ctx, user.KeyName(), "contracts/polytone_tester.wasm")
+	testerId, err := cc.StoreContract(s.ctx, user.KeyName(), "../../artifacts/polytone_tester.wasm")
 	if err != nil {
 		s.t.Fatal(err)
 	}

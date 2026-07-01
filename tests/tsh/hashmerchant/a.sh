@@ -19,7 +19,7 @@ USER=user
 # Paths
 CHAINDIR=../data/hashmerchant
 VALHOME=$CHAINDIR/$CHAINID/val1
-WASM_FILE="$SCRIPT_DIR/contracts/hashmerchant_test.wasm"
+WASM_FILE="$SCRIPT_DIR/../../artifacts/hashmerchant_test.wasm"
 
 # Ports
 ANVIL_PORT=18545

@@ -87,7 +87,7 @@ VAL1_PID=$!
 echo "VAL1_PID: $VAL1_PID"
 sleep 7
 
-LARGE_WASM_PATH="../../../interchaintest/contracts/terp721_account.wasm"
+LARGE_WASM_PATH="../../../../../artifacts/terp721_account.wasm"
 
 ####################################################################
 # B. PRE-UPGRADE CHECKS (both actions must fail)
