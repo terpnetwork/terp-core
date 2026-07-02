@@ -71,7 +71,7 @@ fi
 # A. CHAINS CONFIG
 ####################################################################
 
-rm -rf $VAL1HOME 
+rm -rf $VAL1HOME/ 
 rm -rf $VAL1HOME/test-keys
 
 # initialize chains

@@ -445,9 +445,7 @@ func NewTerpApp(
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
 	app.mm.SetOrderBeginBlockers(orderBeginBlockers()...)
-
 	app.mm.SetOrderEndBlockers(orderEndBlockers()...)
-
 	app.mm.SetOrderInitGenesis(orderInitBlockers()...)
 
 	// upgrade handlers

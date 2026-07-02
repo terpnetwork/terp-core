@@ -62,7 +62,6 @@ func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBran
 	})
 
 	client, network := interchaintest.DockerSetup(t)
-	// chains := CreateThisBranchChain(t, numVals, numNodes)
 	chain, counterpartyChain := chains[0].(*cosmos.CosmosChain), chains[1].(*cosmos.CosmosChain)
 
 	const (
@@ -106,6 +105,7 @@ func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBran
 	require.NoError(t, err, "error fetching height before submit upgrade proposal")
 
 	haltHeight := uint64(height) + haltHeightDelta
+	// TODO: wire in support for invoking actions PRIOR to submitting upgrade
 	propId := SubmitUpgradeProposal(t, ctx, chain, chainUser, upgradeName, haltHeight)
 
 	chain.VoteOnProposalAllValidators(ctx, propId, "yes")
@@ -117,6 +117,7 @@ func CosmosChainUpgradeTest(t *testing.T, chainName, initialVersion, upgradeBran
 	UpgradeNodes(t, ctx, chain, client, haltHeight, upgradeRepo, upgradeBranchVersion)
 
 	// test IBC conformance after chain upgrade on same path
+	// TODO: wire in support for invoking actions AFTER to submitting upgrade
 	conformance.TestChainPair(t, ctx, client, network, chain, counterpartyChain, rf, rep, r, path)
 }
 

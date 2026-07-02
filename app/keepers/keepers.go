@@ -652,7 +652,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName).WithKeyTable(ibctransfertypes.ParamKeyTable())
 	paramsKeeper.Subspace(ibcexported.ModuleName).WithKeyTable(keytable)
-	paramsKeeper.Subspace(tokenfactorytypes.ModuleName)
+	paramsKeeper.Subspace(tokenfactorytypes.ModuleName).WithKeyTable(tokenfactorytypes.ParamKeyTable())
 	paramsKeeper.Subspace(icahosttypes.SubModuleName).WithKeyTable(icahosttypes.ParamKeyTable())
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName).WithKeyTable(icacontrollertypes.ParamKeyTable())
 	paramsKeeper.Subspace(packetforwardtypes.ModuleName)

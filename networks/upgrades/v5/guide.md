@@ -6,7 +6,7 @@
 | Upgrade Version | [`v5`](https://github.com/terpnetwork/terp-core/releases/tag/v5.0.0)                                                  |
 | Upgrade Height  | [`14170662`](https://ping.pub/terp/block/14170662)                                                    |
 
-The target block for this upgrade is `14170662`, which is expected to arrive at 11:00UTC Monday, September 30th ~ 1 PM UTC [Go Playground](hthttps://go.dev/play/p/cyxyYqhGtRp)
+The target block for this upgrade is `14170662`, which is expected to arrive at 11:00UTC Monday, September 30th ~ 1 PM UTC [Go Playground](https://go.dev/play/p/cyxyYqhGtRp)
 
 ## PRE-UPGRADE-SCRIPT
 
