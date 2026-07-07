@@ -3,21 +3,15 @@
 BIND=terpd
 CHAINID=test-1
 UPGRADE_VERSION=v6
-
 OLD_TAG=v5.1.0
 NEW_TAG=v6.0.0-rc
 OLD_RELEASE_GIT=https://github.com/terpnetwork/terp-core
 NEW_RELEASE_GIT=https://github.com/terpnetwork/terp-core
 OLD_RELEASE_PATH=../../../../../terp-core
-# relative to old release
-# NEW_RELEASE_PATH=../abstract/terp-core
+NEW_RELEASE_PATH=../../../
 SNAPSHOT_PATH=../../../../../terp-snapshot-consensus-stall.tar.lz4
-
-# file paths
 CHAINDIR=./data
 VAL1HOME=$CHAINDIR/$CHAINID/val1
- 
-# Define the new ports for val1 on chain a
 VAL1_API_PORT=1317
 VAL1_GRPC_PORT=9090
 VAL1_GRPC_WEB_PORT=9091
@@ -30,9 +24,9 @@ echo "Creating $BIND instance for VAL1: home=$VAL1HOME | chain-id=$CHAINID | p2p
 trap 'pkill -f '"$BIND" EXIT
 
 (
-    # todo: awareness git or local path
+    # todo: awareness git or local path. right now tested with clone of this verison without v6 registered to upgradestore.
     echo "Starting repository clone and build..."
-    cd $OLD_RELEASE_PATH &&
+    cd $NEW_RELEASE_PATH &&
     make install 
     echo "✅ Repository clone and build completed"
 ) &
@@ -101,7 +95,6 @@ VAL1=$(jq -r '.name' $CHAINDIR/"$CHAINID"/val1/test-keys/val.json)
 VAL1ADDR=$(jq -r '.address' $CHAINDIR/"$CHAINID"/val1/test-keys/val.json)
 USERADDR=$(jq -r '.address'  $CHAINDIR/"$CHAINID"/val1/test-keys/user.json)
 
-
 # app & config modiifications
 sed -i.bak -e "s/^proxy_app *=.*/proxy_app = \"tcp:\/\/127.0.0.1:$VAL1_PROXY_APP_PORT\"/g" $VAL1HOME/config/config.toml &&
 sed -i.bak "/^\[rpc\]/,/^\[/ s/laddr.*/laddr = \"tcp:\/\/127.0.0.1:$VAL1_RPC_PORT\"/" $VAL1HOME/config/config.toml &&
@@ -114,47 +107,19 @@ sed -i.bak -e "s/^pprof_laddr *=.*/pprof_laddr = \"localhost:6060\"/g" $VAL1HOME
 # shorten block times a bit
 sed -i.bak "/^\[consensus\]/,/^\[/ s/^[[:space:]]*timeout_commit[[:space:]]*=.*/timeout_commit = \"1s\"/" "$VAL1HOME/config/config.toml"
 
-
-
- 
 # app.toml
 sed -i.bak "/^\[api\]/,/^\[/ s/minimum-gas-prices.*/minimum-gas-prices = \"0.0uterp\"/" $VAL1HOME/config/app.toml &&
 sed -i.bak "/^\[api\]/,/^\[/ s/address.*/address = \"tcp:\/\/0.0.0.0:$VAL1_API_PORT\"/" $VAL1HOME/config/app.toml &&
 sed -i.bak "/^\[grpc\]/,/^\[/ s/address.*/address = \"localhost:$VAL1_GRPC_PORT\"/" $VAL1HOME/config/app.toml &&
 sed -i.bak "/^\[grpc-web\]/,/^\[/ s/address.*/address = \"localhost:$VAL1_GRPC_WEB_PORT\"/" $VAL1HOME/config/app.toml &&
  
-
-
-echo "creating testnet-from-export"
 # create testnet-from-export
-$BIND in-place-testnet "$CHAINID" "$VAL1ADDR" --trigger-testnet-upgrade $UPGRADE_VERSION  --home $VAL1HOME --skip-confirmation & 
+$BIND in-place-testnet "$CHAINID" "$VAL1ADDR" --trigger-testnet-upgrade $UPGRADE_VERSION  --home $VAL1HOME --skip-confirmation --wasm.skip_wasmvm_version_check & 
 INPLACE_TESTNET=$!
 echo "INPLACE_TESTNET: $INPLACE_TESTNET"
-sleep 900
-
-# ####################################################################
-# # 0. UPGRADING
-# ####################################################################
-# pkill -f $BIND
-# # Clone the repository if it doesn't exist
-# # # Change into the latest versions directory
-# make install &&
-
-# # Start terp
-# echo "Running upgradehandler to ensure upgrade with live state is okay!..."
-# $BIND start --home $VAL1HOME & 
-# VAL1_PID=$!
-# echo "VAL1_PID: $VAL1_PID"
-# sleep 7
-
-# # TODO: run basic test suite ensuring functionality post upgrade
-
-# if kill -0 $VAL1_PID 2>/dev/null; then
-#     echo "SUCCESS: Node started successfully without panic"
-#     kill $VAL1_PID 2>/dev/null
-#     wait $VAL1_PID 2>/dev/null
-#     exit 0
-# else
-#     echo "FAILED: Node process died (likely panicked)"
-#     exit 1
-# fi
+remaining=900
+while [ $remaining -gt 0 ]; do
+    echo "INPLACE_TESTNET: $INPLACE_TESTNET ($remaining seconds left)"
+    sleep 1
+    ((remaining--))
+done

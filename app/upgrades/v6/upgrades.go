@@ -4,7 +4,6 @@ import (
 	"context"
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/terpnetwork/terp-core/v5/app/keepers"
@@ -33,13 +32,13 @@ func CreateV6UpgradeHandler(
 		keepers.TokenFactoryKeeper.SetParams(ctx, tftypes.DefaultParams())
 
 		// patch broken delegations due to old bug in staking hooks, resyncing x/distr & x/staking data
-		CustomV022PatchLogic(ctx, keepers, false)
+		CustomV6PatchMethod(ctx, keepers, false)
 
 		// set terp foundation dao with access to upload circuits for now.
-		wasmParams := keepers.WasmKeeper.GetParams(ctx)
-		wasmParams.CircuitUploadAccess = wasmtypes.AccessTypeAnyOfAddresses.With(sdk.MustAccAddressFromBech32("terp14w2qva6dx6wcsmq5fvplh7cr7nvptejznyvpe5hp5mtyqhxxjamsz3kw2w"))
-		keepers.WasmKeeper.SetParams(ctx, wasmParams)
-		logger.Info("v6 upgrade complete — x/hashmerchant module added, ")
+		// wasmParams := keepers.WasmKeeper.GetParams(ctx)
+		// wasmParams.CircuitUploadAccess = wasmtypes.AccessTypeAnyOfAddresses.With(sdk.MustAccAddressFromBech32("terp14w2qva6dx6wcsmq5fvplh7cr7nvptejznyvpe5hp5mtyqhxxjamsz3kw2w"))
+		// keepers.WasmKeeper.SetParams(ctx, wasmParams)
+		logger.Info("v6 upgrade complete")
 		return migrations, nil
 	}
 }

@@ -179,7 +179,7 @@ fi
 
 echo "Running Upgrade"
 trap 'pkill -f 'BINARY EXIT
-BINARY start --home $HOME_DIR &
+BINARY start --home $HOME_DIR --wasm.skip_wasmvm_version_check &
 sleep 6
 BINARY q tokenfactory params --home $HOME_DIR 
 BINARY tx tokenfactory create-denom  hthththt --from "$KEY2" --gas auto --gas-adjustment 1.2 --fees 1000$DENOM --chain-id $CHAIN_ID --home $HOME_DIR --keyring-backend $KEYRING -y
@@ -188,9 +188,7 @@ BINARY tx tokenfactory create-denom  hthththt --from "$KEY2" --gas auto --gas-ad
   for contract in "${POLYTONE_CONTRACTS[@]}"; do
     echo "Uploading $contract WASM file..."
     # get tx hash 
-    $BIND tx wasm upload --home $VAL2HOME ./bins/$contract --from $USER --chain-id $CHAINID_B --gas auto --gas-adjustment 1.4 --gas auto --fees 400000uterp -y 
-    $BIND tx wasm upload --home $VAL1HOME ./bins/$contract --from $DEL  --chain-id $CHAINID_A --gas auto --gas-adjustment 1.4 --gas auto --fees 400000uterp -y 
-    sleep 2
+    BINARY tx wasm upload ../../../artifacts/$contract --home $HOME_DIR  --from $KEY --chain-id $CHAIN_ID --gas auto --gas-adjustment 1.4 --gas auto --fees 400000uterp -y 
+    sleep 1.5
     echo "Uploaded $contract WASM file successfully."
-    sleep 4
 done

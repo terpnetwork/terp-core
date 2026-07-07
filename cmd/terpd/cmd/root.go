@@ -449,7 +449,6 @@ func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, traceStore
 	if !ok {
 		panic("app created from newApp is not of type terpApp")
 	}
-
 	newValAddr, ok := appOpts.Get(server.KeyNewValAddr).(bytes.HexBytes)
 	if !ok {
 		panic("newValAddr is not of type bytes.HexBytes")
@@ -466,28 +465,6 @@ func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, traceStore
 	if !ok {
 		panic("upgradeToTrigger is not of type string")
 	}
-
-	// if !ok {
-	// 	panic("cannot parse broken validators strings")
-	// }
-
-	// brokenVals := strings.Split(brokenValidators, ",")
-	// fmt.Printf("brokenVals: %v\n", brokenVals)
-
-	// get the json file to additional vals powers
-	// newValsPowerJson, ok := appOpts.Get(testnetserver.KeyNewValsPowerJson).(string)
-	// if !ok {
-	// 	panic(fmt.Errorf("expected path to new validators json %s", testnetserver.KeyNewValsPowerJson))
-	// }
-
-	//  parse json to get list of validators
-	// [{"val":  "terp1val...", "num_dels": , "num_tokens": ,"jailed": }]
-	// newValsPower, err := testnetserver.ParseValidatorInfos(newValsPowerJson)
-	// if err != nil {
-	// 	panic(fmt.Errorf("error parsing validator infos %v ", err))
-	// }
-	// fmt.Printf("newValsPower: %v\n", newValsPower)
-
 	// Make modifications to the normal TerpApp required to run the network locally
 	return app.InitTerpAppForTestnet(terpApp, newValAddr, newValPubKey, newOperatorAddress, upgradeToTrigger)
 }

@@ -15,7 +15,7 @@ import (
 )
 
 // / Fetches all validators from x/staking, and query rewards for each of their delegations.
-func CustomV022PatchLogic(ctx sdk.Context, k *keepers.AppKeepers, simulated bool) error {
+func CustomV6PatchMethod(ctx sdk.Context, k *keepers.AppKeepers, simulated bool) error {
 
 	err := CustomValPatch(ctx, k, simulated)
 	if err != nil {
