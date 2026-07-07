@@ -32,6 +32,9 @@ func CreateV6UpgradeHandler(
 		// Set default tokenfactory params explicity
 		keepers.TokenFactoryKeeper.SetParams(ctx, tftypes.DefaultParams())
 
+		// patch broken delegations due to old bug in staking hooks, resyncing x/distr & x/staking data
+		CustomV022PatchLogic(ctx, keepers, false)
+
 		// set terp foundation dao with access to upload circuits for now.
 		wasmParams := keepers.WasmKeeper.GetParams(ctx)
 		wasmParams.CircuitUploadAccess = wasmtypes.AccessTypeAnyOfAddresses.With(sdk.MustAccAddressFromBech32("terp14w2qva6dx6wcsmq5fvplh7cr7nvptejznyvpe5hp5mtyqhxxjamsz3kw2w"))

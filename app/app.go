@@ -328,12 +328,13 @@ func NewTerpApp(
 
 	// isolate data paths for appstate, wasmstate, & ibcwasmlcstate
 	wasmDir := filepath.Join(homePath, "wasm")
+	ibcwasmDir := filepath.Join(homePath, "ibc_08-wasm")
 	wasmConfig, err := wasm.ReadNodeConfig(appOpts)
 	if err != nil {
 		panic("error while reading wasm config: " + err.Error())
 	}
 	ibcWasmConfig := wasmlctypes.WasmConfig{
-		DataDir:               filepath.Join(homePath, "ibc_08-wasm"),
+		DataDir:               ibcwasmDir,
 		SupportedCapabilities: append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0"),
 		ContractDebugMode:     false,
 	}
@@ -824,7 +825,6 @@ func RegisterSwaggerAPI(_ client.Context, apiSvr *api.Server) error {
 // source: https://github.com/osmosis-labs/osmosis/blob/7b1a78d397b632247fe83f51867f319adf3a858c/app/app.go#L786
 // one-liner: cd ../terp-snapshots && terpd comet unsafe-reset-all && cp ~/.terpd/data/priv_validator_state.json ~/.terpd/priv_validator_state.json && lz4 -c -d <terp-snapshot>.tar.lz4 | tar -x -C $HOME/.terpd && cp ~/.terpd/priv_validator_state.json ~/.terpd/data/priv_validator_state.json && cd ../go-terp && make install && terpd in-place-testnet test1 terp1mt3wj088jvurp3vlh2yfar6vqrqp0llnsj8lar terpvaloper1qxw4fjged2xve8ez7nu779tm8ejw92rv0vcuqr
 func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey crypto.PubKey, newOperatorAddress, upgradeToTrigger string) *TerpApp {
-
 	ctx := app.BaseApp.NewUncachedContext(true, cmtproto.Header{})
 	pubkey := &ed25519.PubKey{Key: newValPubKey.Bytes()}
 	pubkeyAny, err := types.NewAnyWithValue(pubkey)
@@ -978,14 +978,6 @@ func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey
 	if err != nil {
 		tmos.Exit(err.Error())
 	}
-
-	// BANK
-	//
-
-	// Fund edgenet faucet
-
-	// UPGRADE
-	//
 
 	if upgradeToTrigger != "" {
 		upgradePlan := upgradetypes.Plan{
