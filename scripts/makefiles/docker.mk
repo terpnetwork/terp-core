@@ -30,8 +30,8 @@ docker-help:
 	@echo "docker subcommands"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make docker-build                          # GitHub wasmvm (multi-lib)"
-	@echo "  make docker-build WASMVM_SOURCE=local     # local zk-wasmvm"
+	@echo "  make docker-build                          	   # GitHub wasmvm (multi-lib)"
+	@echo "  make docker-build WASMVM_SOURCE=local||github     # local zk-wasmvm"
 	@echo ""
 	@echo "Available Commands:"
 	@echo "  docker-build                Build Docker image (distroless)"
@@ -117,7 +117,7 @@ docker-build: _docker-stage
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
-		--build-arg WASMVM_SOURCE=local \
+		--build-arg WASMVM_SOURCE=${WASMVM_SOURCE} \
 		-f Dockerfile .
 
 docker-build-distroless: docker-build

@@ -48,7 +48,7 @@ build-dev-build:
 # Cross-building for arm64 from amd64 (or vice-versa) takes
 # a lot of time due to QEMU virtualization but it's the only way (afaik)
 # to get a statically linked binary with CosmWasm
-WASMVM_SOURCE := local
+WASMVM_SOURCE := github
 
 define extract_binary
 	$(DOCKER) rm -f terpbinary 2>/dev/null || true

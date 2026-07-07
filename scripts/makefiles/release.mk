@@ -130,7 +130,7 @@ create-binaries:
 create-checksums:
 	@mkdir -p $(BUILDDIR)
 	@cd $(BUILDDIR) && \
-	sha256sum terpd-linux-amd64 terpd-linux-arm64 > sha256sum.txt 2>/dev/null || \
+	sha256sum terpd-linux-amd64 terpd-linux-arm64 terpd-debian-arm64 > sha256sum.txt 2>/dev/null || \
 	{ echo "Error: binaries not found in $(BUILDDIR)/. Run 'make create-binaries' first."; exit 1; }
 	@echo "Checksums written to $(BUILDDIR)/sha256sum.txt"
 
