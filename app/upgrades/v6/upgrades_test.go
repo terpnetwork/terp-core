@@ -85,6 +85,13 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 			fmt.Printf("valAddr: %v\n", valAddr)
 			_, err = s.App.DistrKeeper.WithdrawDelegationRewards(s.Ctx, delAddr, valAddr)
 			s.Require().NoError(err)
+			var ii int64
+			err = s.App.StakingKeeper.IterateValidators(s.Ctx, func(i int64, val stakingtypes.ValidatorI) (stop bool) {
+				ii = i
+				return false
+			})
+			s.Require().Equal(int64(1), ii)
+			s.Require().NoError(err)
 		}
 	}
 

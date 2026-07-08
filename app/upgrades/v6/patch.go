@@ -54,7 +54,7 @@ func CustomValPatch(sdkCtx sdk.Context, k *keepers.AppKeepers, simulated bool) e
 		/* patch all delegators rewards */
 		for _, del := range dels {
 			if del.GetShares().LTE(math.LegacyZeroDec()) {
-				// remove from store
+				// remove any 0 delegation from store
 				err = k.StakingKeeper.RemoveDelegation(sdkCtx, stakingtypes.NewDelegation(del.GetDelegatorAddr(), del.GetValidatorAddr(), del.GetShares()))
 				condJSON.ZeroSharesDelegation = append(condJSON.ZeroSharesDelegation, ZeroSharesDelegation{
 					OperatorAddress:  del.ValidatorAddress,

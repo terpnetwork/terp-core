@@ -23,6 +23,8 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	v6 "github.com/terpnetwork/terp-core/v5/app/upgrades/v6"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 )
 
 // ExportAppStateAndValidators exports the state of the application for a genesis
@@ -30,6 +32,7 @@ import (
 func (app *TerpApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedAddrs []string, modulesToExport []string) (servertypes.ExportedApp, error) {
 	// as if they could withdraw from the start of the next block
 	ctx := app.NewContext(true)
+	// test soundness of export
 
 	// We export at last height + 1, because that's the height at which
 	// Tendermint will start InitChain.
@@ -37,13 +40,20 @@ func (app *TerpApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedA
 	if forZeroHeight {
 		height = 0
 		app.prepForZeroHeightGenesis(ctx, jailAllowedAddrs)
+	} else {
+		v6.CustomV6PatchMethod(ctx, &app.AppKeepers, false)
 	}
+
+	app.TokenFactoryKeeper.SetParams(ctx, tokenfactorytypes.DefaultParams())
 
 	genState, _ := app.mm.ExportGenesisForModules(ctx, app.appCodec, modulesToExport)
 	appState, err := json.MarshalIndent(genState, "", "  ")
 	if err != nil {
 		return servertypes.ExportedApp{}, err
 	}
+
+	// assert invariants
+	app.CrisisKeeper.AssertInvariants(ctx)
 
 	validators, err := staking.WriteValidators(ctx, app.StakingKeeper)
 	return servertypes.ExportedApp{
@@ -76,19 +86,20 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 		allowedAddrsMap[addr] = true
 	}
 
+	v6.CustomV6PatchMethod(ctx, &app.AppKeepers, false)
 	/* Just to be safe, assert the invariants on current state. */
 	app.CrisisKeeper.AssertInvariants(ctx)
 
 	/* Handle fee distribution state. */
 
 	// withdraw all validator commission
-	err := app.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
-		_, _ = app.DistrKeeper.WithdrawValidatorCommission(ctx, sdk.ValAddress(val.GetOperator()))
-		return false
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	// err := app.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
+	// 	_, _ = app.DistrKeeper.WithdrawValidatorCommission(ctx, sdk.ValAddress(val.GetOperator()))
+	// 	return false
+	// })
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	// withdraw all delegator rewards
 	dels, _ := app.StakingKeeper.GetAllDelegations(ctx)
@@ -115,38 +126,38 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 	height := ctx.BlockHeight()
 	ctx = ctx.WithBlockHeight(0)
 
-	// reinitialize all validators
-	app.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
-		// donate any unwithdrawn outstanding reward fraction tokens to the community pool
-		scraps, _ := app.DistrKeeper.GetValidatorOutstandingRewardsCoins(ctx, sdk.ValAddress(val.GetOperator()))
-		feePool, _ := app.DistrKeeper.FeePool.Get(ctx)
-		feePool.CommunityPool = feePool.CommunityPool.Add(scraps...)
-		app.DistrKeeper.FeePool.Set(ctx, feePool)
+	// // reinitialize all validators
+	// app.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
+	// 	// donate any unwithdrawn outstanding reward fraction tokens to the community pool
+	// 	scraps, _ := app.DistrKeeper.GetValidatorOutstandingRewardsCoins(ctx, sdk.ValAddress(val.GetOperator()))
+	// 	feePool, _ := app.DistrKeeper.FeePool.Get(ctx)
+	// 	feePool.CommunityPool = feePool.CommunityPool.Add(scraps...)
+	// 	app.DistrKeeper.FeePool.Set(ctx, feePool)
 
-		if err := app.DistrKeeper.Hooks().AfterValidatorCreated(ctx, sdk.ValAddress(val.GetOperator())); err != nil {
-			panic(err)
-		}
-		return false
-	})
+	// 	if err := app.DistrKeeper.Hooks().AfterValidatorCreated(ctx, sdk.ValAddress(val.GetOperator())); err != nil {
+	// 		panic(err)
+	// 	}
+	// 	return false
+	// })
 
-	// reinitialize all delegations
-	for _, del := range dels {
-		valAddr, err := sdk.ValAddressFromBech32(del.ValidatorAddress)
-		if err != nil {
-			panic(err)
-		}
-		delAddr := sdk.MustAccAddressFromBech32(del.DelegatorAddress)
+	// // reinitialize all delegations
+	// for _, del := range dels {
+	// 	valAddr, err := sdk.ValAddressFromBech32(del.ValidatorAddress)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	delAddr := sdk.MustAccAddressFromBech32(del.DelegatorAddress)
 
-		if err := app.DistrKeeper.Hooks().BeforeDelegationCreated(ctx, delAddr, valAddr); err != nil {
-			// never called as BeforeDelegationCreated always returns nil
-			panic(fmt.Errorf("error while incrementing period: %w", err))
-		}
+	// 	if err := app.DistrKeeper.Hooks().BeforeDelegationCreated(ctx, delAddr, valAddr); err != nil {
+	// 		// never called as BeforeDelegationCreated always returns nil
+	// 		panic(fmt.Errorf("error while incrementing period: %w", err))
+	// 	}
 
-		if err := app.DistrKeeper.Hooks().AfterDelegationModified(ctx, delAddr, valAddr); err != nil {
-			// never called as AfterDelegationModified always returns nil
-			panic(fmt.Errorf("error while creating a new delegation period record: %w", err))
-		}
-	}
+	// 	if err := app.DistrKeeper.Hooks().AfterDelegationModified(ctx, delAddr, valAddr); err != nil {
+	// 		// never called as AfterDelegationModified always returns nil
+	// 		panic(fmt.Errorf("error while creating a new delegation period record: %w", err))
+	// 	}
+	// }
 
 	// reset context height
 	ctx = ctx.WithBlockHeight(height)
@@ -198,7 +209,7 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 		return
 	}
 
-	_, err = app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
+	_, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
