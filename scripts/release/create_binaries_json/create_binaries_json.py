@@ -13,7 +13,8 @@ Output:
 {
   "binaries": {
     "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.0/terpd-5.1.0-linux-amd64.tar.gz?checksum=sha256:<checksum>",
-    "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.0/terpd-5.1.0-linux-arm64.tar.gz?checksum=sha256:<checksum>"
+    "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.0/terpd-5.1.0-linux-arm64.tar.gz?checksum=sha256:<checksum>",
+    "darwin/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.0/terpd-5.1.0-darwin-arm64.tar.gz?checksum=sha256:<checksum>",
   }
 }
 

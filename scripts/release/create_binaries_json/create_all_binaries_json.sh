@@ -1,8 +1,6 @@
 #!/bin/bash
 
-tags=(
-    "v4.2.0" 
-)
+tags=("v5.2.0")
 
 echo "## Upgrade binaries"
 

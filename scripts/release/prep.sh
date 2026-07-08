@@ -35,7 +35,7 @@ done
 # Checksum raw binaries
 # ------------------------------------------------------------------
 echo "Checksumming raw binaries..."
-(cd "$BUILD_DIR" && sha256sum terpd-linux-amd64 terpd-linux-arm64 > sha256sum.txt)
+(cd "$BUILD_DIR" && sha256sum terpd-linux-amd64 terpd-linux-arm64 terpd-darwin-arm64 > sha256sum.txt)
 
 # ------------------------------------------------------------------
 # Create versioned tarballs and append their checksums
@@ -48,6 +48,9 @@ for arch in amd64 arm64; do
     echo "Checksumming $tarball..."
     (cd "$BUILD_DIR" && sha256sum "$tarball" >> sha256sum.txt)
 done
+
+tar -czf "$BUILD_DIR/terpd-darwin-arm64.tar.gz" -C "$BUILD_DIR" "terpd-darwin-arm64"
+(cd "$BUILD_DIR" && sha256sum "terpd-darwin-arm64.tar.gz" >> sha256sum.txt)
 
 # ------------------------------------------------------------------
 # Summary

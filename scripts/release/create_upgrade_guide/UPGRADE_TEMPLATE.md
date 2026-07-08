@@ -6,33 +6,6 @@
 - **$UPGRADE_VERSION Upgrade Block Height**: $UPGRADE_BLOCK
 - **$UPGRADE_VERSION Upgrade Countdown**: [Block Countdown](https://testnet.itrocket.net/terp/block/$UPGRADE_BLOCK)
 
-## Hardware Requirements
-
-### Memory Specifications
-
-Although this upgrade is not expected to be resource-intensive, a minimum of 64GB of RAM is advised. If you cannot meet this requirement, setting up a swap space is recommended.
-
-#### Configuring Swap Space
-
-*Execute these commands to set up a 32GB swap space*:
-
-```sh
-sudo swapoff -a
-sudo fallocate -l 32G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
-```
-
-*To ensure the swap space persists after reboot*:
-
-```sh
-sudo cp /etc/fstab /etc/fstab.bak
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-```
-
-For an in-depth guide on swap configuration, please refer to [this tutorial](https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-20-04).
-
 ---
 
 ## Cosmovisor Configuration
@@ -50,7 +23,7 @@ Documentation for Cosmovisor can be found [here](https://docs.cosmos.network/mai
 *Run these commands to install and configure Cosmovisor*:
 
 ```sh
-go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@v1.0.0
+go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@latest
 mkdir -p ~/.terpd
 mkdir -p ~/.terpd/cosmovisor
 mkdir -p ~/.terpd/cosmovisor/genesis
