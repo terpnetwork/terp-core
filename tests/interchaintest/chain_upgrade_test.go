@@ -25,7 +25,7 @@ const (
 	blocksAfterUpgrade = uint64(7)
 	CURRENTVERSION     = "v5.1.0"
 	UPGRADEVERSION     = "v6.0.0"
-	UPGRADENAME        = "v6"
+	UPGRADENAME        = "v520"
 )
 
 func TestBasicTerpUpgrade(t *testing.T) {

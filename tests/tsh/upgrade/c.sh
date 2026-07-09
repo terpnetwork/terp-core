@@ -1,10 +1,10 @@
 #!/bin/bash
-echo "performing v6 upgrade"
+echo "performing v520 upgrade"
 
 # ####################################################################
 # # A. START
 # ####################################################################
-# export UPGRADE_VERSION_TITLE=${UPGRADE_VERSION_TITLE:-"v6"}
+# export UPGRADE_VERSION_TITLE=${UPGRADE_VERSION_TITLE:-"v520"}
 # export KEY="terp1"
 # export KEY2="terp2"
 # export TFDENOM="skeret"
