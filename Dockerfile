@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.24
+ARG GO_VERSION=1.25
 ARG RUNNER_IMAGE=alpine:3.17
 
 # WASMVM_SOURCE controls where the static wasmvm library comes from:
