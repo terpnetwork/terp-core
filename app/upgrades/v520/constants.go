@@ -13,7 +13,7 @@ const (
 	reset  = "\033[0m"
 )
 
-const UpgradeName = "v6"
+const UpgradeName = "v520"
 
 var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
