@@ -87,7 +87,7 @@ VAL1_PID=$!
 echo "VAL1_PID: $VAL1_PID"
 sleep 7
 
-LARGE_WASM_PATH="../../../interchaintest/contracts/terp721_account.wasm"
+LARGE_WASM_PATH="../../../../../artifacts/terp721_account.wasm"
 
 ####################################################################
 # B. PRE-UPGRADE CHECKS (both actions must fail)
@@ -103,48 +103,6 @@ else
   echo "PRE-UPGRADE CHECK: wasm store result may need inspection"
 fi
 sleep 2
-
-# # pre-upgrade: large multi-send rejected (250 outputs exceeds max_gas=7.1M block gas limit)
-# echo "PRE-UPGRADE: generating large multi-send to exceed block gas (should fail)..."
-# # Generate 250 unique valid bech32 terp addresses by encoding incrementing
-# # 20-byte payloads (0x000...0001 through 0x000...00FA) with proper checksums.
-# MULTISEND_RECIPIENTS=$(python3 - <<'PYEOF'
-# C = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
-# G = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3]
-
-# def pm(v):
-#     c = 1
-#     for d in v:
-#         b = c >> 25; c = (c & 0x1ffffff) << 5 ^ d
-#         for i in range(5): c ^= G[i] if (b >> i) & 1 else 0
-#     return c
-
-# def b32(data):
-#     a = b = 0; r = []
-#     for v in data:
-#         a = ((a << 8) | v) & 0xffffffff; b += 8
-#         while b >= 5: b -= 5; r.append((a >> b) & 31)
-#     if b: r.append((a << (5 - b)) & 31)
-#     return r
-
-# def terp_addr(n):
-#     hrp = 'terp'
-#     w = b32(n.to_bytes(20, 'big'))
-#     ex = [ord(c) >> 5 for c in hrp] + [0] + [ord(c) & 31 for c in hrp]
-#     ck = [(pm(ex + w + [0]*6) ^ 1) >> (5*(5-i)) & 31 for i in range(6)]
-#     return hrp + '1' + ''.join(C[d] for d in w + ck)
-
-# print(' '.join(terp_addr(i) for i in range(1, 251)))
-# PYEOF
-# )
-# MULTISEND_PRE=$($BIND tx bank multi-send "$VAL1" "$MULTISEND_RECIPIENTS" "1uterp" --gas auto --gas-adjustment 1.5 --fees="20000000uterp" --chain-id=$CHAINID --home=$VAL1HOME -y 2>&1) || true
-# echo "$MULTISEND_PRE"
-# if echo "$MULTISEND_PRE" | grep -qiE "out of gas|gas limit|exceed|too large|error"; then
-#   echo "PRE-UPGRADE CHECK PASSED: large multi-send rejected as expected"
-# else
-#   echo "PRE-UPGRADE CHECK: multi-send result may need inspection"
-# fi
-# sleep 4
 
 ####################################################################
 # C. UPGRADE
@@ -224,18 +182,6 @@ else
   echo "ERROR: wasm code not found post-upgrade"
   exit 1
 fi
-
-# # post-upgrade: large multi-send, should succeed (max_gas raised to 50M)
-# echo "POST-UPGRADE: attempting large multi-send (should succeed)..."
-# MULTISEND_POST=$($BIND tx bank multi-send "$VAL1" $MULTISEND_RECIPIENTS "1uterp" --gas auto --gas-adjustment 1.5 --fees="20000000uterp" --chain-id=$CHAINID --home=$VAL1HOME -y 2>&1)
-# echo "$MULTISEND_POST"
-# sleep 6
-# if echo "$MULTISEND_POST" | grep -qiE "txhash|\"code\":0|raw_log"; then
-#   echo "POST-UPGRADE CHECK PASSED: large multi-send succeeded"
-# else
-#   echo "ERROR: large multi-send failed post-upgrade"
-#   exit 1
-# fi
 
 echo "UPGRADE APPLIED SUCCESSFULLY"
 pkill -f $BIND

@@ -10,19 +10,19 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	appparams "github.com/terpnetwork/terp-core/v5/app/params"
+	"github.com/terpnetwork/terp-core/v5/app"
 	"github.com/terpnetwork/terp-core/v5/x/globalfee"
 	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
 )
 
 func (s *KeeperTestSuite) TestDefaultGenesis() {
-	encCfg := appparams.MakeEncodingConfig()
+	encCfg := app.MakeEncodingConfig()
 	gotJSON := globalfee.AppModuleBasic{}.DefaultGenesis(encCfg.Marshaler)
 	assert.JSONEq(s.T(), `{"params":{"minimum_gas_prices":[]}}`, string(gotJSON), string(gotJSON))
 }
 
 func (s *KeeperTestSuite) TestValidateGenesis() {
-	encCfg := appparams.MakeEncodingConfig()
+	encCfg := app.MakeEncodingConfig()
 	specs := map[string]struct {
 		src    string
 		expErr bool

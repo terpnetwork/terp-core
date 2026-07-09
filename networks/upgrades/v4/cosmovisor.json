@@ -1,0 +1,6 @@
+{
+    "binaries": {
+        "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v4.0.0/terpd-v4.0.0-linux-arm64?checksum=sha256:c921760810ba2f34d65afb09a75cdc54c6e44f1a6d0701c8cfffb5c58df6e34b",
+        "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v4.0.0/terpd-v4.0.0-linux-amd64?checksum=sha256:13786ae6b26340611d7baf05854b348d2e0954a509c1a8db4992d2fb204c08c7"
+    }
+}

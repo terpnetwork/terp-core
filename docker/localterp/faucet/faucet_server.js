@@ -2,9 +2,11 @@ const http = require("http");
 const querystring = require("querystring");
 const exec = require("child_process").exec;
 
+const TERPD = process.env.TERPD || "terpd-testnet";
 const FAUCET_WALLET_NAME = process.env.FAUCET_WALLET_NAME || "a";
 const FAUCET_AMOUNT = process.env.FAUCET_AMOUNT || "1000000000";
 const DENOMS = (process.env.DENOMS || "uterp,uthiol").split(",");
+const RPC_NODE = (process.env.RPC_NODE || "https://testnet-rpc.terp.network:443");
 
 let faucet_address;
 
@@ -39,7 +41,7 @@ function execShellCommand(cmd) {
  */
 async function send_command(src_key_name, src_address, dest_address, amount) {
   const coins = DENOMS.map((d) => `${amount}${d}`).join(",");
-  const send_message = `terpd tx bank send ${src_address} ${dest_address} ${coins} --from ${src_key_name} --gas-prices 0.25uterp --keyring-backend test --output json -y`;
+  const send_message = `${TERPD} tx bank send ${src_address} ${dest_address} ${coins} --from ${src_key_name} --node ${RPC_NODE} --gas-prices 0.25uterp --keyring-backend test --chain-id ${CHAIN_ID} --output json -y `;
   console.log(`send_message: \n ${send_message}`);
 
   const result = await execShellCommand(send_message);
@@ -58,7 +60,7 @@ async function get_address(key_name) {
     return faucet_address;
   }
 
-  const list_keys = "terpd keys list --output json --keyring-backend test";
+  const list_keys = `${TERPD} keys list --output json --keyring-backend test`;
   const result = await execShellCommand(list_keys);
 
   for (index in result) {

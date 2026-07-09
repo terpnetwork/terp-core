@@ -10,6 +10,7 @@ import (
 	wasmcli "github.com/CosmWasm/wasmd/x/wasm/client/cli"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	ibcwccli "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/client/cli"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
@@ -43,11 +44,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
 	"github.com/terpnetwork/terp-core/v5/app"
 	"github.com/terpnetwork/terp-core/v5/app/params"
+	testnetserver "github.com/terpnetwork/terp-core/v5/server"
 )
 
 // NewRootCmd creates a new root command for terpd. It is called once in the
@@ -150,7 +151,8 @@ func initAppConfig() (string, interface{}) {
 	type CustomAppConfig struct {
 		serverconfig.Config
 
-		Wasm wasmtypes.NodeConfig `mapstructure:"wasm"`
+		Wasm      wasmtypes.NodeConfig `mapstructure:"wasm"`
+		Bootstrap BootstrapConfig      `mapstructure:"bootstrap"`
 
 		// SidecarQueryServerConfig sqs.Config `mapstructure:"terp-sqs"`
 		// IndexerConfig indexer.Config `mapstructure:"terp-indexer"`
@@ -175,12 +177,14 @@ func initAppConfig() (string, interface{}) {
 	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
 
 	terpAppConfig := CustomAppConfig{
-		Config: *srvCfg,
-		Wasm:   wasmtypes.DefaultNodeConfig(),
+		Config:    *srvCfg,
+		Wasm:      wasmtypes.DefaultNodeConfig(),
+		Bootstrap: DefaultBootstrapConfig(),
 	}
 
 	customAppTemplate := serverconfig.DefaultConfigTemplate +
-		wasmtypes.DefaultConfigTemplate()
+		wasmtypes.DefaultConfigTemplate() +
+		BootstrapConfigTemplate
 
 	return customAppTemplate, terpAppConfig
 }
@@ -233,14 +237,17 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(app.ModuleBasics, app.DefaultNodeHome),
-		AddGenesisIcaCmd(app.DefaultNodeHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
+		StatesyncCmd,
+		BootstrapCmd,
+		TestnetCmd(),
+		SnapshotCmd,
 		DebugCmd(),
 		ConfigCmd(),
 		pruning.Cmd(ac.newApp, app.DefaultNodeHome),
 	)
 
-	server.AddTestnetCreatorCommand(rootCmd, ac.newTestnetApp, addModuleInitFlags)
+	testnetserver.AddTestnetCreatorCommand(rootCmd, ac.newTestnetApp, addModuleInitFlags)
 	server.AddCommands(rootCmd, app.DefaultNodeHome, ac.newApp, ac.appExport, addModuleInitFlags)
 	wasmcli.ExtendUnsafeResetAllCmd(rootCmd)
 
@@ -252,12 +259,9 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		txCommand(),
 		keys.Commands(),
 	)
-	// add rosetta
-	// rootCmd.AddCommand(rosettaCmd.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Marshaler))
 }
 
 func addModuleInitFlags(startCmd *cobra.Command) {
-	crisis.AddModuleInitFlags(startCmd)
 	wasm.AddModuleInitFlags(startCmd)
 }
 
@@ -313,7 +317,8 @@ func txCommand() *cobra.Command {
 		authcmd.GetBroadcastCommand(),
 		authcmd.GetEncodeCommand(),
 		authcmd.GetDecodeCommand(),
-		// authcmd.GetAuxToFeeCommand(),
+		ibcwccli.NewTxCmd(),
+		NewReleaseProposalCmd(),
 	)
 
 	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
@@ -443,7 +448,6 @@ func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, traceStore
 	if !ok {
 		panic("app created from newApp is not of type terpApp")
 	}
-
 	newValAddr, ok := appOpts.Get(server.KeyNewValAddr).(bytes.HexBytes)
 	if !ok {
 		panic("newValAddr is not of type bytes.HexBytes")
@@ -460,28 +464,6 @@ func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, traceStore
 	if !ok {
 		panic("upgradeToTrigger is not of type string")
 	}
-
-	// if !ok {
-	// 	panic("cannot parse broken validators strings")
-	// }
-
-	// brokenVals := strings.Split(brokenValidators, ",")
-	// fmt.Printf("brokenVals: %v\n", brokenVals)
-
-	// get the json file to additional vals powers
-	// newValsPowerJson, ok := appOpts.Get(testnetserver.KeyNewValsPowerJson).(string)
-	// if !ok {
-	// 	panic(fmt.Errorf("expected path to new validators json %s", testnetserver.KeyNewValsPowerJson))
-	// }
-
-	//  parse json to get list of validators
-	// [{"val":  "terp1val...", "num_dels": , "num_tokens": ,"jailed": }]
-	// newValsPower, err := testnetserver.ParseValidatorInfos(newValsPowerJson)
-	// if err != nil {
-	// 	panic(fmt.Errorf("error parsing validator infos %v ", err))
-	// }
-	// fmt.Printf("newValsPower: %v\n", newValsPower)
-
 	// Make modifications to the normal TerpApp required to run the network locally
-	return app.InitTerpAppForTestnet(terpApp, newValAddr, newValPubKey, newOperatorAddress, upgradeToTrigger, newOperatorAddress) // newValsPower
+	return app.InitTerpAppForTestnet(terpApp, newValAddr, newValPubKey, newOperatorAddress, upgradeToTrigger)
 }

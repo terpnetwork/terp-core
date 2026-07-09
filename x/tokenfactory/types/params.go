@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/terpnetwork/terp-core/v5/app/params"
 )
 
 func NewParams(denomCreationFee sdk.Coins) Params {
@@ -15,7 +16,7 @@ func NewParams(denomCreationFee sdk.Coins) Params {
 // default tokenfactory module parameters.
 func DefaultParams() Params {
 	return Params{
-		DenomCreationFee:        sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 10_000_000)),
+		DenomCreationFee:        sdk.NewCoins(sdk.NewInt64Coin(params.DefaultBondDenom, 10_000_000)),
 		DenomCreationGasConsume: 2_000_000,
 	}
 }

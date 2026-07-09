@@ -10,8 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/terpnetwork/terp-core/v5/app"
-	ap "github.com/terpnetwork/terp-core/v5/app/params"
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutil"
+	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
 	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
 )
 
@@ -41,7 +40,7 @@ func (s *KeeperTestSuite) SetupTest(isCheckTx bool) {
 		s.FundAcc(acc,
 			sdk.NewCoins(
 				sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(10000000000)),
-				sdk.NewCoin(ap.BaseCoinUnit, math.NewInt(100000000000000000)), // Needed for pool creation fee
+				sdk.NewCoin("uterp", math.NewInt(100000000000000000)), // Needed for pool creation fee
 				sdk.NewCoin("uion", math.NewInt(10000000)),
 				sdk.NewCoin("atom", math.NewInt(10000000)),
 				sdk.NewCoin("ust", math.NewInt(10000000)),

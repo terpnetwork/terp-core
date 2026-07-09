@@ -15,10 +15,12 @@ given feedback to improve stability.
 
 ## Quick Start
 
+ensure you have installed the minimum depenencies for building from source
 ```sh
 ## requires go installed
 make install
 # run `terpd version` to confirm installation was successful
+
 ```
 
 ## Testing
@@ -49,13 +51,14 @@ make proto-swagger
 make proto-pulsar
 ```
 
-### Dev server
+### Dev server, Faucet
 
 A dockerized development server is available for use, including accounts with balances, a testnet-faucet for seeding new accounts with balances. To compile and spin-up and instance, [read more here](./docker/README.md).
 
 ### Networks
 
 **A comprehensive list of current and historical networks** can be found [here](https://github.com/terpnetwork/networks). This includes our genesis files, upgrade information, and more.
+
 
 ## Contributors
 

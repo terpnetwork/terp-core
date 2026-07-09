@@ -1,0 +1,38 @@
+syntax = "proto3";
+package terp.hashmerchant.v1;
+
+import "gogoproto/gogo.proto";
+import "terp/hashmerchant/v1/types.proto";
+
+option go_package = "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types";
+
+// Params defines the configurable parameters of x/hashmerchant.
+message Params {
+  // quorum_fraction is the minimum fraction of voting power required to accept
+  // a hash root (e.g. "0.667").
+  string quorum_fraction = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+  // prune_interval is the number of blocks between automatic pruning runs.
+  uint64 prune_interval = 2;
+  // escrow_denom is the token denom required for contract escrow payments.
+  string escrow_denom = 3;
+  // min_escrow_amount is the minimum escrow deposit per registration period.
+  string min_escrow_amount = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  // market_mode selects open or closed attestation market.
+  MarketMode market_mode = 5;
+}
+
+// GenesisState defines the x/hashmerchant module genesis.
+message GenesisState {
+  Params params = 1 [(gogoproto.nullable) = false];
+  repeated RegisteredChain registered_chains = 2 [(gogoproto.nullable) = false];
+  repeated RegisteredContract registered_contracts = 3 [(gogoproto.nullable) = false];
+  repeated EscrowRecord escrow_records = 4 [(gogoproto.nullable) = false];
+  repeated HashRoot hash_roots = 5 [(gogoproto.nullable) = false];
+  uint64 prune_epoch = 6;
+}

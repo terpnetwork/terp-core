@@ -27,7 +27,6 @@ type TerpCustomClient struct {
 	Fees       string `mapstructure:"fees" json:"fees"`
 	FeeGranter string `mapstructure:"fee-granter" json:"fee-granter"`
 	FeePayer   string `mapstructure:"fee-payer" json:"fee-payer"`
-
 	Note string `mapstructure:"note" json:"note"`
 }
 

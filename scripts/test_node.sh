@@ -70,8 +70,8 @@ from_scratch () {
   # Custom Modules  
 
   # Allocate genesis accounts
-  BINARY genesis add-genesis-account $KEY 10000000uterpx,1000utest --keyring-backend $KEYRING
-  BINARY genesis add-genesis-account $KEY2 1000000uterpx,1000utest --keyring-backend $KEYRING
+  BINARY genesis add-genesis-account $KEY 10000000uterpx,1000uthiolx --keyring-backend $KEYRING
+  BINARY genesis add-genesis-account $KEY2 1000000uterpx,1000uthiolx --keyring-backend $KEYRING
 
   BINARY genesis gentx $KEY 1000000uterpx --keyring-backend $KEYRING --chain-id $CHAIN_ID
 
@@ -91,28 +91,25 @@ fi
 echo "Starting node..."
 
 # Opens the RPC endpoint to outside connections
-sed -i 's/laddr = "tcp:\/\/127.0.0.1:26657"/c\laddr = "tcp:\/\/0.0.0.0:'$RPC'"/g' $HOME_DIR/config/config.toml
-sed -i 's/cors_allowed_origins = \[\]/cors_allowed_origins = \["\*"\]/g' $HOME_DIR/config/config.toml
+sed -i.bak -e 's/laddr = "tcp:\/\/127.0.0.1:26657"/c\laddr = "tcp:\/\/0.0.0.0:'$RPC'"/g' $HOME_DIR/config/config.toml
+sed -i.bak -e 's/cors_allowed_origins = \[\]/cors_allowed_origins = \["\*"\]/g' $HOME_DIR/config/config.toml
 
 # REST endpoint
-sed -i 's/address = "tcp:\/\/localhost:1317"/address = "tcp:\/\/0.0.0.0:'$REST'"/g' $HOME_DIR/config/app.toml
-sed -i 's/enable = false/enable = true/g' $HOME_DIR/config/app.toml
+sed -i.bak -e 's/address = "tcp:\/\/localhost:1317"/address = "tcp:\/\/0.0.0.0:'$REST'"/g' $HOME_DIR/config/app.toml
+sed -i.bak -e 's/enable = false/enable = true/g' $HOME_DIR/config/app.toml
 
 # replace pprof_laddr = "localhost:6060" binding
-sed -i 's/pprof_laddr = "localhost:6060"/pprof_laddr = "localhost:'$PROFF_LADDER'"/g' $HOME_DIR/config/config.toml
+sed -i.bak -e 's/pprof_laddr = "localhost:6060"/pprof_laddr = "localhost:'$PROFF_LADDER'"/g' $HOME_DIR/config/config.toml
 
 # change p2p addr laddr = "tcp://0.0.0.0:26656"
-sed -i 's/laddr = "tcp:\/\/0.0.0.0:26656"/laddr = "tcp:\/\/0.0.0.0:'$P2P'"/g' $HOME_DIR/config/config.toml
+sed -i.bak -e 's/laddr = "tcp:\/\/0.0.0.0:26656"/laddr = "tcp:\/\/0.0.0.0:'$P2P'"/g' $HOME_DIR/config/config.toml
 
 # GRPC
-sed -i 's/address = "localhost:9090"/address = "0.0.0.0:'$GRPC'"/g' $HOME_DIR/config/app.toml
-sed -i 's/address = "localhost:9091"/address = "0.0.0.0:'$GRPC_WEB'"/g' $HOME_DIR/config/app.toml
-
-# Rosetta Api
-sed -i 's/address = ":8080"/address = "0.0.0.0:'$ROSETTA'"/g' $HOME_DIR/config/app.toml
+sed -i.bak -e 's/address = "localhost:9090"/address = "0.0.0.0:'$GRPC'"/g' $HOME_DIR/config/app.toml
+sed -i.bak -e 's/address = "localhost:9091"/address = "0.0.0.0:'$GRPC_WEB'"/g' $HOME_DIR/config/app.toml
 
 # faster blocks
-sed -i 's/timeout_commit = "5s"/timeout_commit = "'$TIMEOUT_COMMIT'"/g' $HOME_DIR/config/config.toml
+sed -i.bak -e 's/timeout_commit = "5s"/timeout_commit = "'$TIMEOUT_COMMIT'"/g' $HOME_DIR/config/config.toml
 
 # Start the node with 0 gas fees
-BINARY start --pruning=nothing  --minimum-gas-prices=0uterpx --rpc.laddr="tcp://0.0.0.0:$RPC"
+BINARY start --pruning=nothing  --minimum-gas-prices=0uterpx --rpc.laddr="tcp://0.0.0.0:$RPC" --wasm.skip_wasmvm_version_check 

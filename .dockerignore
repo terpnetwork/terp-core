@@ -1,4 +1,18 @@
- banner.png
+banner.png
 # Test directories - ignore all target and data directories
 tests/**/target/
 tests/**/data/
+
+# Rust build artifacts in staged zk-deps (if present)
+build/zk-deps/zk-wasmvm/libwasmvm/target/
+
+# Git directories
+.git
+build/zk-deps/**/.git
+
+# Dependencies
+**/node_modules
+**/target
+vendor/
+crates/
+websites/

@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/terpnetwork/terp-core/v5/app/params"
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutil"
+	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
 )
 
 type AuthenticatorSuite struct {

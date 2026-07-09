@@ -1,0 +1,304 @@
+[submodule "crates/abstract"]
+	path = crates/abstract
+	url = https://github.com/permissionlessweb/abstract
+	branch = mvp
+
+[submodule "crates/abstract-account"]
+	path = crates/abstract-account
+	url = https://github.com/burnt-labs/abstract-account/
+	branch = main
+
+[submodule "crates/abstract-cw-plus"]
+	path = crates/abstract-cw-plus
+	url = https://github.com/permissionlessweb/abstract-cw-plus
+	branch = cw3
+
+[submodule "crates/basecoin-rs"]
+	path = crates/basecoin-rs
+	url = https://github.com/permissionlessweb/basecoin-rs
+	branch = main
+
+[submodule "crates/blst"]
+	path = crates/blst
+	url = https://github.com/permissionlessweb/blst
+	branch = master
+
+[submodule "crates/clone-cw-multi-test"]
+	path = crates/clone-cw-multi-test
+	url = https://github.com/permissionlessweb/cw-multi-test-fork
+	branch = cw3/adapt_for_local_execution
+
+[submodule "crates/cnidarium"]
+	path = crates/cnidarium
+	url = https://github.com/permissionlessweb/cnidarium
+	branch = main
+
+[submodule "crates/commonware-abci"]
+	path = crates/commonware-abci
+	url = https://github.com/permissionlessweb/commonware-abci
+	branch = main
+
+[submodule "crates/core-cosmwasm"]
+	path = crates/core-cosmwasm
+	url = https://github.com/permissionlessweb/core-cosmwasm
+	branch = main
+
+[submodule "crates/cosmos-rust"]
+	path = crates/cosmos-rust
+	url = https://github.com/permissionlessweb/cosmos-rust
+	branch = main
+
+[submodule "crates/cosmwasm"]
+	path = crates/cosmwasm
+	url = https://github.com/permissionlessweb/cosmwasm.git
+	branch = mvp-fix
+
+[submodule "crates/cw-asset"]
+	path = crates/cw-asset
+	url = https://github.com/permissionlessweb/cw-asset
+	branch = zk-mvp
+
+[submodule "crates/cw-headstash"]
+	path = crates/cw-headstash
+	url = https://github.com/permissionlessweb/cw-headstash
+	branch = feat/halo2
+
+[submodule "crates/cw-ibc-demo"]
+	path = crates/cw-ibc-demo
+	url = https://github.com/permissionlessweb/cw-ibc-demo
+	branch = cosmwasm3
+
+[submodule "crates/cw-ica-controller"]
+	path = crates/cw-ica-controller
+	url = https://github.com/permissionlessweb/cw-ica-controller
+	branch = zk-mvp
+
+[submodule "crates/cw-infuser"]
+	path = crates/cw-infuser
+	url = https://github.com/permissionlessweb/cw-infuser
+	branch = cw-svg
+
+[submodule "crates/cw-minus"]
+	path = crates/cw-minus
+	url = https://github.com/permissionlessweb/cw-minus
+	branch = main
+
+[submodule "crates/cw-multi-test"]
+	path = crates/cw-multi-test
+	url = https://github.com/permissionlessweb/cw-multi-test.git
+	branch = zk-mvp
+
+[submodule "crates/cw-multi-test-fork"]
+	path = crates/cw-multi-test-fork
+	url = https://github.com/permissionlessweb/cw-multi-test-fork
+	branch = zk-mvp
+
+[submodule "crates/cw-nfts"]
+	path = crates/cw-nfts
+	url = https://github.com/permissionlessweb/cw-nfts
+	branch = cw3
+
+[submodule "crates/cw-orchestrator"]
+	path = crates/cw-orchestrator
+	url = https://github.com/permissionlessweb/cw-orchestrator
+	branch = cw3
+
+[submodule "crates/cw-packages"]
+	path = crates/cw-packages
+	url = https://github.com/permissionlessweb/cw-packages
+	branch = feat/cw3
+
+[submodule "crates/cw-plus"]
+	path = crates/cw-plus
+	url = https://github.com/permissionlessweb/cw-plus
+	branch = main
+
+[submodule "crates/cw-plus-plus"]
+	path = crates/cw-plus-plus
+	url = https://github.com/permissionlessweb/cw-plus-plus.git
+	branch = feat/mvp
+
+[submodule "crates/cw-storage-plus"]
+	path = crates/cw-storage-plus
+	url = https://github.com/permissionlessweb/cw-storage-plus/
+	branch = main
+
+[submodule "crates/dao-contracts"]
+	path = crates/dao-contracts
+	url = https://github.com/permissionlessweb/dao-contracts
+	branch = feat/calander
+
+[submodule "crates/halo2-axiom"]
+	path = crates/halo2-axiom
+	url = https://github.com/permissionlessweb/halo2-axiom
+	branch = mvp
+
+[submodule "crates/headstash"]
+	path = crates/headstash
+	url = https://github.com/hard-nett/airdrop/
+	branch = zk-mvp
+
+[submodule "crates/hermes"]
+	path = crates/hermes
+	url = https://github.com/permissionlessweb/hermes
+	branch = master
+
+[submodule "crates/ibc-middleware"]
+	path = crates/ibc-middleware
+	url = https://github.com/permissionlessweb/ibc-middleware
+	branch = main
+
+[submodule "crates/ibc-proto-rs"]
+	path = crates/ibc-proto-rs
+	url = https://github.com/permissionlessweb/ibc-proto-rs
+	branch = main
+
+[submodule "crates/ibc-rs"]
+	path = crates/ibc-rs
+	url = https://github.com/permissionlessweb/ibc-rs
+	branch = main
+
+[submodule "crates/ibc-types"]
+	path = crates/ibc-types
+	url = https://github.com/permissionlessweb/ibc-types
+	branch = main
+
+[submodule "crates/ics23"]
+	path = crates/ics23
+	url = https://github.com/permissionlessweb/ics23
+	branch = stable
+
+[submodule "crates/ict-rs"]
+	path = crates/ict-rs
+	url = https://github.com/permissionlessweb/ict-rs
+	branch = main
+
+[submodule "crates/interchaintest"]
+	path = crates/interchaintest
+	url = https://github.com/noble-assets/interchaintest
+	branch = luca/fix-deps
+
+[submodule "crates/jmt"]
+	path = crates/jmt
+	url = https://github.com/permissionlessweb/jmt
+	branch = main
+
+[submodule "crates/namada"]
+	path = crates/namada
+	url = https://github.com/permissionlessweb/namada
+	branch = main
+
+[submodule "crates/neutron-std"]
+	path = crates/neutron-std
+	url = https://github.com/permissionlessweb/neutron-std
+	branch = zk-mvp
+
+[submodule "crates/neutron-test-tube"]
+	path = crates/neutron-test-tube
+	url = https://github.com/permissionlessweb/neutron-test-tube
+	branch = dev
+
+[submodule "crates/osmosis-rust"]
+	path = crates/osmosis-rust
+	url = https://github.com/permissionlessweb/osmosis-rust
+	branch = cw3
+
+[submodule "crates/osmosis-test-tube"]
+	path = crates/osmosis-test-tube
+	url = https://github.com/permissionlessweb/osmosis-test-tube
+	branch = cw3
+
+[submodule "crates/pbjson"]
+	path = crates/pbjson
+	url = https://github.com/permissionlessweb/pbjson
+	branch = main
+
+[submodule "crates/penumbra"]
+	path = crates/penumbra
+	url = https://github.com/permissionlessweb/penumbra/
+	branch = main
+
+[submodule "crates/polytone"]
+	path = crates/polytone
+	url = https://github.com/permissionlessweb/polytone
+	branch = bump/cw3
+
+[submodule "crates/polytone-evm"]
+	path = crates/polytone-evm
+	url = https://github.com/permissionlessweb/polytone
+	branch = evm/zk-mvp
+
+[submodule "crates/proxy-accounts"]
+	path = crates/proxy-accounts
+	url = https://github.com/MegaRockLabs/proxy-accounts
+	branch = zk-mvp
+
+[submodule "crates/shitstrap"]
+	path = crates/shitstrap
+	url = https://github.com/hard-nett/shitstrap
+	branch = main
+
+[submodule "crates/smart-account-auth"]
+	path = crates/smart-account-auth
+	url = https://github.com/permissionlessweb/smart-account-auth
+	branch = main
+
+[submodule "crates/sparse-merkle-tree"]
+	path = crates/sparse-merkle-tree
+	url = https://github.com/permissionlessweb/sparse-merkle-tree
+	branch = main
+
+[submodule "crates/tendermint-rs"]
+	path = crates/tendermint-rs
+	url = https://github.com/permissionlessweb/tendermint-rs
+	branch = main
+
+[submodule "crates/terp-account-billboards"]
+	path = crates/terp-account-billboards
+	url = https://github.com/permissionlessweb/terp-account-billboards
+	branch = main
+
+[submodule "crates/terp-rs"]
+	path = crates/terp-rs
+	url = https://github.com/permissionlessweb/terp-rs.git
+	branch = feat/zk-wasmvm
+
+[submodule "crates/token-bindings"]
+	path = crates/token-bindings
+	url = https://github.com/permissionlessweb/token-bindings
+	branch = mvp
+
+[submodule "crates/tower-abci"]
+	path = crates/tower-abci
+	url = https://github.com/permissionlessweb/tower-abci
+	branch = main
+
+[submodule "crates/wynd-lsd"]
+	path = crates/wynd-lsd
+	url = https://github.com/abstractsdk/wynd-lsd
+	branch = cw3
+
+[submodule "crates/wynddex"]
+	path = crates/wynddex
+	url = https://github.com/permissionlessweb/wynddex
+	branch = mvp
+
+[submodule "crates/xion-account"]
+	path = crates/xion-account
+	url = https://github.com/permissionlessweb/contracts
+	branch = cw3
+
+[submodule "crates/zk-wasmd"]
+	path = crates/zk-wasmd
+	url = https://github.com/permissionlessweb/wasmd
+	branch = mvp
+
+[submodule "crates/zk-wasmd.bak"]
+	path = crates/zk-wasmd.bak
+	url = https://github.com/permissionlessweb/wasmd
+	branch = mvp
+
+[submodule "crates/zk-wasmvm"]
+	path = crates/zk-wasmvm
+	url = https://github.com/permissionlessweb/wasmvm
+	branch = mvp

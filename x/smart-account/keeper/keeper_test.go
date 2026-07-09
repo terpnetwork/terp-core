@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/stretchr/testify/suite"
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutil"
+	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
 	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
 	moduletestutils "github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
 )

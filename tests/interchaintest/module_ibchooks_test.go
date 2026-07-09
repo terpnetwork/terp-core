@@ -129,7 +129,7 @@ func TestTerpIBCHooks(t *testing.T) {
 		},
 	)
 
-	_, contractAddr := helpers.SetupContract(t, ctx, terp2, terp2User.KeyName(), "contracts/ibchooks_counter.wasm", false, `{"count":0}`)
+	_, contractAddr := helpers.SetupContract(t, ctx, terp2, terp2User.KeyName(), "../../artifacts/ibchooks_counter.wasm", false, `{"count":0}`)
 
 	// do an ibc transfer through the memo to the other chain.
 	transfer := ibc.WalletAmount{

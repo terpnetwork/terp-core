@@ -15,7 +15,6 @@ import (
 	ibc "github.com/cosmos/ibc-go/v10/modules/core"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
-	appparams "github.com/terpnetwork/terp-core/v5/app/params"
 
 	"cosmossdk.io/x/evidence"
 	evidencetypes "cosmossdk.io/x/evidence/types"
@@ -52,6 +51,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	appparams "github.com/terpnetwork/terp-core/v5/app/params"
 	"github.com/terpnetwork/terp-core/v5/x/feeshare"
 	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 	"github.com/terpnetwork/terp-core/v5/x/globalfee"
@@ -59,6 +59,8 @@ import (
 
 	"github.com/terpnetwork/terp-core/v5/x/drip"
 	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
+
+	// hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
 
 	"github.com/cosmos/cosmos-sdk/x/group"
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
@@ -74,6 +76,9 @@ import (
 	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
 	groupmodule "github.com/cosmos/cosmos-sdk/x/group/module"
+
+	wasmlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10"
+	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
 )
 
 // ModuleBasics defines the module BasicManager is in charge of setting up basic,
@@ -103,6 +108,7 @@ var ModuleBasics = module.NewBasicManager(
 	// non sdk modules
 	wasm.AppModuleBasic{},
 	ibc.AppModuleBasic{},
+	wasmlc.AppModuleBasic{},
 	ibctm.AppModuleBasic{},
 	transfer.AppModuleBasic{},
 	ica.AppModuleBasic{},
@@ -113,6 +119,7 @@ var ModuleBasics = module.NewBasicManager(
 	drip.AppModuleBasic{},
 	tokenfactory.AppModuleBasic{},
 	smartaccount.AppModuleBasic{},
+	// hashmerchant.AppModuleBasic{},
 	// cwhooks.AppModuleBasic{},
 )
 
@@ -143,7 +150,8 @@ func simulationModules(
 		feeshare.NewAppModule(app.FeeShareKeeper, *app.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
 		drip.NewAppModule(app.DripKeeper, *app.AccountKeeper),
 		globalfee.NewAppModule(appCodec, app.GlobalFeeKeeper, bondDenom),
-		// smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
+		// wasmlc.NewAppModule(*app.IBCWasmClientKeeper),
+		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
 	}
 }
 
@@ -178,7 +186,9 @@ func orderBeginBlockers() []string {
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		// cwhooks.ModuleName,
+		// hashmerchanttypes.ModuleName,
 		wasmtypes.ModuleName,
+		wasmlctypes.ModuleName,
 	}
 }
 
@@ -213,8 +223,10 @@ func orderEndBlockers() []string {
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		smartaccounttypes.ModuleName,
+		// hashmerchanttypes.ModuleName,
 		// cwhooks.ModuleName,
 		wasmtypes.ModuleName,
+		wasmlctypes.ModuleName,
 	}
 }
 
@@ -237,8 +249,10 @@ func orderInitBlockers() []string {
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		smartaccounttypes.ModuleName,
+		// hashmerchanttypes.ModuleName,
 		// cwhooks.ModuleName,
 		wasmtypes.ModuleName,
+		wasmlctypes.ModuleName,
 	}
 }
 

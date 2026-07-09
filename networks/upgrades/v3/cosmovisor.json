@@ -1,0 +1,6 @@
+{
+    "binaries": {
+        "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v3-pigeonfall/terpd-v3.0.0-pigeonfall-arm64?checksum=sha256:0e19a38b6b52359556ce6bcc49508a64ce7f9a26881735f5f57c3a42d6d54442",
+        "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v3-pigeonfall/terpd-v3.0.0-pigeonfall-amd64?checksum=sha256:241b9fd31e01c263abd685dcb8e8564cf26c1bcb88b7dbd8fed90c1782f83aab"
+    }
+}

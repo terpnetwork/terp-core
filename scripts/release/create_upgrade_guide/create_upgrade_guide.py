@@ -33,12 +33,13 @@ TEMPLATES = {
 
 
 def validate_tag(tag):
-    pattern = '^v[0-9]+.[0-9]+.[0-9]+$'
+    pattern = r'^v[0-9]+\.[0-9]+\.[0-9]+$'
     return bool(re.match(pattern, tag))
 
 
 def validate_version(version):
-    pattern = '^v\d+$'
+    # accepts vX (major) or vX.Y (minor)
+    pattern = r'^v\d+(\.\d+)?$'
     return bool(re.match(pattern, version))
 
 

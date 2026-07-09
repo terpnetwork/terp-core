@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	apptesting "github.com/terpnetwork/terp-core/v5/app/testutil"
+	apptesting "github.com/terpnetwork/terp-core/v5/app/testutils"
 	drip "github.com/terpnetwork/terp-core/v5/x/drip"
 	"github.com/terpnetwork/terp-core/v5/x/drip/types"
 )
