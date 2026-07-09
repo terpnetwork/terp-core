@@ -49,6 +49,7 @@ build-dev-build:
 # a lot of time due to QEMU virtualization but it's the only way (afaik)
 # to get a statically linked binary with CosmWasm
 WASMVM_SOURCE := github
+COSMWASM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
 
 define extract_binary
 	$(DOCKER) rm -f terpbinary 2>/dev/null || true
