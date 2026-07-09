@@ -1,7 +1,7 @@
 # Mainnet Upgrade Guide: From Version v5 to v520
 
 ## Overview
-- **v520 Upgrade Countdown**: [Block Countdown](https://testnet.ping.pub/terp/block/TBD)
+- **v520 Upgrade Countdown**: [Block Countdown](https://explorer.chaintools.tech/terp/block/21725359)
 ---
 
 ### Upgrading to v520
