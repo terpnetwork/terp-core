@@ -1,8 +1,6 @@
 module github.com/terpnetwork/terp-core/tests/interchaintest
 
-go 1.24.5
-
-toolchain go1.24.7
+go 1.25
 
 replace (
 	// interchaintest supports ICS features so we need this for now
