@@ -4,7 +4,7 @@ ARG COSMWASM_VERSION
 # WASMVM_SOURCE controls where the static wasmvm library comes from:
 #   "github" (default) — download libwasmvm_muslc from CosmWasm GitHub releases
 #   "local"            — use pre-built lib from build/wasmvm/ (for custom zk-wasmvm)
-ARG WASMVM_SOURCE=local
+ARG WASMVM_SOURCE=github
 
 FROM golang:${GO_VERSION}-alpine AS go-builder
 

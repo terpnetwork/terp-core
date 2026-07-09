@@ -131,7 +131,7 @@ docker-build-alpine: _docker-stage
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
-		--build-arg WASMVM_SOURCE=local \
+		--build-arg WASMVM_SOURCE=${WASMVM_SOURCE} \
 		-f Dockerfile .
 
 docker-build-nonroot: _docker-stage
@@ -143,14 +143,14 @@ docker-build-nonroot: _docker-stage
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
-		--build-arg WASMVM_SOURCE=local \
+		--build-arg WASMVM_SOURCE=${WASMVM_SOURCE} \
 		-f Dockerfile .
 
 docker-build-localnet: _docker-stage
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--target localterp \
 		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
-		--build-arg WASMVM_SOURCE=local \
+		--build-arg WASMVM_SOURCE=${WASMVM_SOURCE} \
 		-t terpnetwork/terp-core:localterp --load .
 
 docker-localterp: docker-build-localnet
@@ -167,13 +167,13 @@ build-zk-local: _docker-stage-zk-lib
 		--build-arg RUNNER_IMAGE=$(RUNNER_BASE_IMAGE_ALPINE) \
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
-		--build-arg WASMVM_SOURCE=local \
+		--build-arg WASMVM_SOURCE=${WASMVM_SOURCE} \
 		-f Dockerfile .
 
 build-zk-local-localnet: _docker-stage-zk-lib
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--target localterp \
-		--build-arg WASMVM_SOURCE=local \
+		--build-arg WASMVM_SOURCE=${WASMVM_SOURCE} \
 		-t terpnetwork/terp-core:localterp-zk --load .
 
 _docker-stage-zk-lib:
