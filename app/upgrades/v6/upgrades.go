@@ -34,11 +34,64 @@ func CreateV6UpgradeHandler(
 		// patch broken delegations due to old bug in staking hooks, resyncing x/distr & x/staking data
 		CustomV6PatchMethod(ctx, keepers, false)
 
-		// set terp foundation dao with access to upload circuits for now.
-		// wasmParams := keepers.WasmKeeper.GetParams(ctx)
-		// wasmParams.CircuitUploadAccess = wasmtypes.AccessTypeAnyOfAddresses.With(sdk.MustAccAddressFromBech32("terp14w2qva6dx6wcsmq5fvplh7cr7nvptejznyvpe5hp5mtyqhxxjamsz3kw2w"))
-		// keepers.WasmKeeper.SetParams(ctx, wasmParams)
-		logger.Info("v6 upgrade complete")
+		logger.Info("\n\n" +
+			green + "                                                                                \n" +
+			"  Camphene is a pine-fresh minor terpene found most concentrated in evergreen trees.    \n" +
+			" 																		 				 \n" +
+			" 																						 \n" +
+			"  								░░░░                                                     \n" +
+			"  								▒░░░░▒                                                   \n" +
+			"  								░░░▒▓                                                    \n" +
+			"  								░░░░                                                     \n" +
+			"  								▒░░░█                                                    \n" +
+			"  								░░░▒                                                     \n" +
+			"  							█▓▓░▒▓                                                       \n" +
+			"  						▓▓▓▒▒▒▓▓█                                                        \n" +
+			"  						▓▓▒▒▒▒▒▒▒▓█                                                      \n" +
+			"  			░░░▒   ▒░░▓▓▓▒▒▒░░░▒▒▓▓█                     ░░░                             \n" +
+			"  			▒░░░░░░░░░░░▓▓▓▒▒▒▒▒▒▒▓██                    ░░░░░                           \n" +
+			"  			▓░░░▒▓▓▓▓▓▓▓██▓▓▓▓▓▓▓▓██▓█                   ▒░░░                            \n" +
+			"  			██          █████████▓▒▓█                  ░░░▒                              \n" +
+			"  							█▓▒▓██▓▒▓█                 ▒░░                               \n" +
+			"  							▓▓▒▓██▓▒▓▓              █▓▓▒█                                \n" +
+			"  								█▓▒▓███▒▒▓██         █▓▓▒▒▒▓▓█                           \n" +
+			"  								█▓▒▓▓▒▒▒▒▒▓▓█      █▓▒▒▒░▒▒▒▓                            \n" +
+			"  								▓▓▒▒░░░▒▒▓▓▓▒▒▒v6.0.0▒▒▒▒▒░░░▒▒▓█                        \n" +
+			"  								▓▓▒▒░░░▒▒▓▓▓▓██████▓▓▒▒▒▓▓▒▒▓▓▓           ▒░░░           \n" +
+			"  								█▓▓▒▒▒▒▒▓▓█       ███▓▓▓███▓▓▒▒▒▓▓  ██▓▓▓▓░░░░░  ▒░░░    \n" +
+			"  									██▓▓▓▓███        █▓▓█        █▓▓▒▓█▓▓▒▒▓█▒░░░░░░░░░░ \n" +
+			"  									▓░▒█▓░▒       ███▓█            ██▓▓▒▒▓██▓▓▓▒░░▒▒▓▒▒  \n" +
+			"  									▓▒░▓▓░░░░░░▓▓█▓▓▓▓▓▓█           ██▓▓▒▒░░▒▒▒▓         \n" +
+			"  									▓░▒█ ▓▒▒▒░░▓▓▓▒▒░░▒▒▓█           ██▓▓▒▒▒▒▓▓█         \n" +
+			"  								█▒▒▓         █▓▒▒░░▒▒▓▓░░░░░░       ██▓▓▓▓██             \n" +
+			"  				░░░▒               ▓▒▒▓         ██▓▓▒▒▓▓██▓▒▒░░░       ▓▒▒▓              \n" +
+			"  	▒▒           ░░▒▒▓           ███▒░▓             ▓▒██                ▓▒▒              \n" +
+			"  	░░░░░▒▓       █▓▓▓█          █▓▓▓▒▓▓▓██        █▓▓                 █▒▒▓              \n" +
+			"  	▒░░░▒░░░░▒▓█▓▓▓▒▓▓▓█        █▓▒▒▒▒▒▒▒▓██         █▒▓                 ▓▒▒▓            \n" +
+			"  		▒░░░▒▓▒▒▒▒▒▒▓▓▓▓▓▒▒▒▒▒▓▓▒▒░░░▒▒▓██        █▓▓▓                █▒░▓               \n" +
+			"  			█▓▒▒░░░▒▒▓▓▓▓▓▓▓███▓▒▒▓▓▓▒▓▓▓▒▓▓▓████▓▓▓▓▓██            ██▓▒▒▓               \n" +
+			"  				▓▓▒▒▒▒▒▓▓█        █▓▓▓▓█▓▓█ █▓▓▓▓▓▓▓▒▒▒▒▒▓▓█         ██▓▓▒▒▓▓▓           \n" +
+			"  				█▓▓▓▓▓██           █▓▓█         █▓▒▒░░░▒▒▒▒▒▒▒▓▓▓▓▓█▓▓▒▒▒▒▒▒▓▓           \n" +
+			"  				▓▒▓▓            ███████        █▓▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓█▓▓▒▒░░░▒▒▓█           \n" +
+			"  				░░░░░▓█       █▓▓▓▓▓▓▓▓██   █▓▒░░░░░▓▓▓█          ██▓▒▒▒▓▒▒▓▓▒▒          \n" +
+			"  				▒░░░░░░░░░░░░▓▓▓▓▒▒▒▒▒▒▓▓▓░░░░░░░░░░░█              ██▓▓▓▒▒▓█▒░░░░░▒     \n" +
+			"  					░░░░░▓▒▒▒░░░░▒▒▒▒▒▒░░░▒▒▒▓▒░▒▒▓  ▓▒░░                   ▓▒░▒   ▓░░░  \n" +
+			"  				▒░░░▒          █▓▒▒▒░░▒▒▒▓▓█     ▒▒░░▒    D-Camphene      ▓▒▒▓           \n" +
+			"  			░░▒▓          █▓▓▒▒▒▒▒▒▓▓█      ░░░░░                   █▒░░░░               \n" +
+			"  									█▓▓▓▓▓▓██        ▒░▒                    █▒░░░░       \n" +
+			"  								█▒▒▓▓                                                    \n" +
+			"  									░░░▒                                                 \n" +
+			"  									░░░░                                                 \n" +
+			"  									░░░░                                                 \n" +
+			"  									░░░░                                                 \n" +
+			"  								░░░░░█                                                   \n" +
+			"  								░░░░░▓                                                   \n" +
+			"  									▒░▒       v6 upgrade complete!                       \n" +
+			"  																		                 \n" +
+			" When combined with other phytochemicals, camphene packs a punch of medicinal benefits,  \n" +
+			" against cardiovascular disease, fungal and viral infections, and apoptosis, or cell death in cancer cells.  \n" +
+			"" + reset + "\n\n",
+		)
 		return migrations, nil
 	}
 }

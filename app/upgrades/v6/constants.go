@@ -6,6 +6,13 @@ import (
 	"github.com/terpnetwork/terp-core/v5/app/upgrades"
 )
 
+const (
+	green  = "\033[32m"
+	yellow = "\033[33m"
+	red    = "\033[31m"
+	reset  = "\033[0m"
+)
+
 const UpgradeName = "v6"
 
 var Upgrade = upgrades.Upgrade{
