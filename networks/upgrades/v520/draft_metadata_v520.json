@@ -1,0 +1,10 @@
+{
+ "title": "V520 - D-Camphene",
+ "authors": [
+  "returniflost"
+ ],
+ "summary": "bug fixes and tuning",
+ "details": "sets default tokenfactory params, wires in ibcwasm codec, fixes old drift of x/distr module appstate from x/staking's",
+ "proposal_forum_url": "https://discord.terp.network",
+ "vote_option_context": "yes,no,abstain,veto"
+}

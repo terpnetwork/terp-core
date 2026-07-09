@@ -1,23 +1,23 @@
-# Mainnet Upgrade Guide: From Version v5 to v6
+# Mainnet Upgrade Guide: From Version v5 to v520
 
 ## Overview
-- **v6 Upgrade Countdown**: [Block Countdown](https://testnet.ping.pub/terp/block/TBD)
+- **v520 Upgrade Countdown**: [Block Countdown](https://testnet.ping.pub/terp/block/TBD)
 ---
 
-### Upgrading to v6
+### Upgrading to v520
 
 *To prepare for the upgrade, execute these commands*:
 
 ```sh
-mkdir -p ~/.terpd/cosmovisor/upgrades/v6/bin
+mkdir -p ~/.terpd/cosmovisor/upgrades/v520/bin
 cd $HOME/terp-core
 git pull
-git checkout v6.0.0
+git checkout v5.2.0
 make build
-cp build/terpd ~/.terpd/cosmovisor/upgrades/v6/bin
+cp build/terpd ~/.terpd/cosmovisor/upgrades/v520/bin
 ```
 
-At the designated block height, Cosmovisor will automatically upgrade to version v6.
+At the designated block height, Cosmovisor will automatically upgrade to version v520.
 
 ---
 
@@ -32,7 +32,7 @@ Follow these steps if you opt for a manual upgrade:
 ```sh
 cd $HOME/terp-core
 git pull
-git checkout v6.0.0
+git checkout v5.2.0
 make install
 ```
 
@@ -64,8 +64,8 @@ mkdir -p ~/.terpd/cosmovisor/genesis
 mkdir -p ~/.terpd/cosmovisor/genesis/bin
 mkdir -p ~/.terpd/cosmovisor/upgrades
 cp $GOPATH/bin/terpd ~/.terpd/cosmovisor/genesis/bin
-mkdir -p ~/.terpd/cosmovisor/upgrades/v6/bin
-cp $GOPATH/bin/terpd ~/.terpd/cosmovisor/upgrades/v6/bin
+mkdir -p ~/.terpd/cosmovisor/upgrades/v520/bin
+cp $GOPATH/bin/terpd ~/.terpd/cosmovisor/upgrades/v520/bin
 ```
 
 *Add these lines to your profile to set up environment variables*:
@@ -81,20 +81,20 @@ echo "export UNSAFE_SKIP_BACKUP=true" >> ~/.profile
 source ~/.profile
 ```
 
-### Upgrading to v6
+### Upgrading to v520
 
 *To prepare for the upgrade, execute these commands*:
 
 ```sh
-mkdir -p ~/.terpd/cosmovisor/upgrades/v6/bin
+mkdir -p ~/.terpd/cosmovisor/upgrades/v520/bin
 cd $HOME/terp-core
 git pull
-git checkout v6.0.0
+git checkout v5.2.0
 make build
-cp build/terpd ~/.terpd/cosmovisor/upgrades/v6/bin
+cp build/terpd ~/.terpd/cosmovisor/upgrades/v520/bin
 ```
 
-At the designated block height, Cosmovisor will automatically upgrade to version v6.
+At the designated block height, Cosmovisor will automatically upgrade to version v520.
 
 ---
 
@@ -109,7 +109,7 @@ Follow these steps if you opt for a manual upgrade:
 ```sh
 cd $HOME/terp-core
 git pull
-git checkout v6.0.0
+git checkout v5.2.0
 make install
 ```
 
