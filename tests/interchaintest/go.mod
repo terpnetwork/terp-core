@@ -7,8 +7,8 @@ replace (
 	// github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.45.13-ics
 	github.com/ChainSafe/go-schnorrkel => github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 	github.com/ChainSafe/go-schnorrkel/1 => github.com/ChainSafe/go-schnorrkel v1.0.0
-	github.com/CosmWasm/wasmd => ../../crates/zk-wasmd
-	github.com/CosmWasm/wasmvm/v3 => ../../crates/zk-wasmvm
+	// github.com/CosmWasm/wasmd => ../../crates/zk-wasmd
+	// github.com/CosmWasm/wasmvm/v3 => ../../crates/zk-wasmvm
 	github.com/strangelove-ventures/interchaintest/v10 => github.com/burnt-labs/interchaintest/v10 v10.0.0-wasmvm3
 	// For this nested module, you always want to replace the parent reference with the current worktree.
 	github.com/terpnetwork/terp-core/v5 => ../../
