@@ -17,7 +17,7 @@ RUNNER_BASE_IMAGE_NONROOT := gcr.io/distroless/static-debian11:nonroot
 ZK_WASMVM_DIR ?= ./crates/zk-wasmvm
 ZK_WASMD_DIR  ?= ./crates/zk-wasmd
 
-COSMWASM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
+WASMVM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
 _HOST_ARCH := $(shell uname -m | sed 's/arm64/aarch64/; s/x86_64/x86_64/')
 
 .PHONY: docker docker-help docker-build docker-build-distroless docker-build-alpine \
@@ -44,7 +44,7 @@ docker-help:
 	@echo "  docker-clean                Clean staged artifacts"
 	@echo ""
 	@echo "Current config:"
-	@echo "  COSMWASM_VERSION = $(COSMWASM_VERSION)"
+	@echo "  WASMVM_VERSION = $(WASMVM_VERSION)"
 	@echo "  Build dir libs: build/wasmvm/"
 
 docker: docker-help
@@ -93,7 +93,7 @@ wasmvm-download-libs:
 	@echo "==> Downloading official wasmvm musl libs for verification..."
 	@mkdir -p build/wasmvm
 	@for arch in x86_64 aarch64; do \
-		url="https://github.com/CosmWasm/wasmvm/releases/download/$(COSMWASM_VERSION)/libwasmvm_muslc.$$arch.a"; \
+		url="https://github.com/CosmWasm/wasmvm/releases/download/$(WASMVM_VERSION)/libwasmvm_muslc.$$arch.a"; \
 		echo "  $$arch -> $$url"; \
 		curl -L -f -o build/wasmvm/libwasmvm_muslc.$$arch.a $$url || echo "  Warning: Failed $$arch"; \
 	done
@@ -116,7 +116,7 @@ docker-build: _docker-stage
 		--build-arg RUNNER_IMAGE=$(RUNNER_BASE_IMAGE_DISTROLESS) \
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
-		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		--build-arg WASMVM_VERSION=$(WASMVM_VERSION) \
 		--build-arg WASMVM_SOURCE=${WASMVM_SOURCE} \
 		-f Dockerfile .
 
@@ -130,7 +130,7 @@ docker-build-alpine: _docker-stage
 		--build-arg RUNNER_IMAGE=$(RUNNER_BASE_IMAGE_ALPINE) \
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
-		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		--build-arg WASMVM_VERSION=$(WASMVM_VERSION) \
 		--build-arg WASMVM_SOURCE=${WASMVM_SOURCE} \
 		-f Dockerfile .
 
@@ -142,14 +142,14 @@ docker-build-nonroot: _docker-stage
 		--build-arg RUNNER_IMAGE=$(RUNNER_BASE_IMAGE_NONROOT) \
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
-		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		--build-arg WASMVM_VERSION=$(WASMVM_VERSION) \
 		--build-arg WASMVM_SOURCE=${WASMVM_SOURCE} \
 		-f Dockerfile .
 
 docker-build-localnet: _docker-stage
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--target localterp \
-		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		--build-arg WASMVM_VERSION=$(WASMVM_VERSION) \
 		--build-arg WASMVM_SOURCE=${WASMVM_SOURCE} \
 		-t terpnetwork/terp-core:localterp --load .
 

@@ -1,6 +1,6 @@
 ARG GO_VERSION=1.24
 ARG RUNNER_IMAGE=alpine:3.17
-ARG COSMWASM_VERSION
+
 # WASMVM_SOURCE controls where the static wasmvm library comes from:
 #   "github" (default) — download libwasmvm_muslc from CosmWasm GitHub releases
 #   "local"            — use pre-built lib from build/wasmvm/ (for custom zk-wasmvm)
@@ -23,7 +23,6 @@ ADD go.mod go.sum ./
 
 # Re-declare ARGs after FROM (Docker scoping rule)
 ARG WASMVM_SOURCE
-ARG COSMWASM_VERSION
 
 # ---------------------------------------------------------
 # Pull in the wasmvm static library (github mode only).
@@ -31,11 +30,12 @@ ARG COSMWASM_VERSION
 # be copied after the full source COPY below.
 # ---------------------------------------------------------
 RUN if [ "$WASMVM_SOURCE" = "github" ]; then \
+      WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}') && \
       ARCH=$(uname -m) && \
-      echo "==> Downloading wasmvm $COSMWASM_VERSION from GitHub ($ARCH)" && \
-      wget -q https://github.com/CosmWasm/wasmvm/releases/download/$COSMWASM_VERSION/libwasmvm_muslc.$ARCH.a \
+      echo "==> Downloading wasmvm $WASMVM_VERSION from GitHub ($ARCH)" && \
+      wget -q https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/libwasmvm_muslc.$ARCH.a \
            -O /lib/libwasmvm_muslc.$ARCH.a && \
-      wget -q https://github.com/CosmWasm/wasmvm/releases/download/$COSMWASM_VERSION/checksums.txt -O /tmp/checksums.txt && \
+      wget -q https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/checksums.txt -O /tmp/checksums.txt && \
       sha256sum /lib/libwasmvm_muslc.$ARCH.a | grep $(grep libwasmvm_muslc.$ARCH /tmp/checksums.txt | cut -d' ' -f1); \
     else \
       echo "==> Skipping GitHub download (WASMVM_SOURCE=$WASMVM_SOURCE)"; \

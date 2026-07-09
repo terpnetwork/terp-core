@@ -3,7 +3,7 @@
 ###############################################################################
 
 GORELEASER_IMAGE := ghcr.io/goreleaser/goreleaser-cross:v$(GO_VERSION)
-COSMWASM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
+WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}')
 
 .PHONY: release release-help release-publish release-dry-run release-snapshot \
 	create-binaries create-checksums release-prep create-binaries-json \
@@ -86,7 +86,7 @@ endif
 	docker run \
 		--rm \
 		-e GITHUB_TOKEN=$(GITHUB_TOKEN) \
-		-e COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		-e WASMVM_VERSION=$(WASMVM_VERSION) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/terpd \
 		-w /go/src/terpd \
@@ -97,7 +97,7 @@ endif
 release-dry-run:
 	docker run \
 		--rm \
-		-e COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		-e WASMVM_VERSION=$(WASMVM_VERSION) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/terpd \
 		-w /go/src/terpd \
@@ -109,7 +109,7 @@ release-dry-run:
 release-snapshot:
 	docker run \
 		--rm \
-		-e COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		-e WASMVM_VERSION=$(WASMVM_VERSION) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/terpd \
 		-w /go/src/terpd \

@@ -49,7 +49,7 @@ build-dev-build:
 # a lot of time due to QEMU virtualization but it's the only way (afaik)
 # to get a statically linked binary with CosmWasm
 WASMVM_SOURCE := github
-COSMWASM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
+WASMVM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
 
 define extract_binary
 	$(DOCKER) rm -f terpbinary 2>/dev/null || true
@@ -69,7 +69,7 @@ build-reproducible-amd64: go.sum
 		--build-arg GO_VERSION=$(GO_VERSION) \
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
-		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		--build-arg WASMVM_VERSION=$(WASMVM_VERSION) \
 		--build-arg WASMVM_SOURCE=$(WASMVM_SOURCE) \
 		--build-arg RUNNER_IMAGE=alpine:3.17 \
 		--platform linux/amd64 \
@@ -88,7 +88,7 @@ build-reproducible-arm64: go.sum
 		--build-arg GO_VERSION=$(GO_VERSION) \
 		--build-arg GIT_VERSION=$(VERSION) \
 		--build-arg GIT_COMMIT=$(COMMIT) \
-		--build-arg COSMWASM_VERSION=$(COSMWASM_VERSION) \
+		--build-arg WASMVM_VERSION=$(WASMVM_VERSION) \
 		--build-arg WASMVM_SOURCE=$(WASMVM_SOURCE) \
 		--build-arg RUNNER_IMAGE=alpine:3.17 \
 		--platform linux/arm64 \
