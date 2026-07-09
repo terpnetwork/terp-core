@@ -1,4 +1,4 @@
-package v6
+package v520
 
 import (
 	store "cosmossdk.io/store/types"
@@ -17,7 +17,7 @@ const UpgradeName = "v6"
 
 var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
-	CreateUpgradeHandler: CreateV6UpgradeHandler,
+	CreateUpgradeHandler: CreateV520UpgradeHandler,
 	StoreUpgrades: store.StoreUpgrades{
 		Added: []string{},
 	},

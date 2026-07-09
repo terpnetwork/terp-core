@@ -1,4 +1,4 @@
-package v6
+package v520
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	tftypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 )
 
-func CreateV6UpgradeHandler(
+func CreateV520UpgradeHandler(
 	mm *module.Manager,
 	configurator module.Configurator,
 	_ upgrades.BaseAppParamManager,
@@ -56,7 +56,7 @@ func CreateV6UpgradeHandler(
 			"  							▓▓▒▓██▓▒▓▓              █▓▓▒█                                \n" +
 			"  								█▓▒▓███▒▒▓██         █▓▓▒▒▒▓▓█                           \n" +
 			"  								█▓▒▓▓▒▒▒▒▒▓▓█      █▓▒▒▒░▒▒▒▓                            \n" +
-			"  								▓▓▒▒░░░▒▒▓▓▓▒▒▒v6.0.0▒▒▒▒▒░░░▒▒▓█                        \n" +
+			"  								▓▓▒▒░░░▒▒▓▓▓▒▒▒v5.2.0▒▒▒▒▒░░░▒▒▓█                        \n" +
 			"  								▓▓▒▒░░░▒▒▓▓▓▓██████▓▓▒▒▒▓▓▒▒▓▓▓           ▒░░░           \n" +
 			"  								█▓▓▒▒▒▒▒▓▓█       ███▓▓▓███▓▓▒▒▒▓▓  ██▓▓▓▓░░░░░  ▒░░░    \n" +
 			"  									██▓▓▓▓███        █▓▓█        █▓▓▒▓█▓▓▒▒▓█▒░░░░░░░░░░ \n" +

@@ -111,7 +111,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/v5/app/upgrades"
 	v5 "github.com/terpnetwork/terp-core/v5/app/upgrades/v5"
-	v6 "github.com/terpnetwork/terp-core/v5/app/upgrades/v6"
+	v520 "github.com/terpnetwork/terp-core/v5/app/upgrades/v520"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
@@ -140,7 +140,7 @@ var (
 
 	Upgrades = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,v4_1.Upgrade,
 		v5.Upgrade,
-		v6.Upgrade,
+		v520.Upgrade,
 	}
 )
 

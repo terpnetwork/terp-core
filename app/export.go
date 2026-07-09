@@ -23,7 +23,7 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	v6 "github.com/terpnetwork/terp-core/v5/app/upgrades/v6"
+	v520 "github.com/terpnetwork/terp-core/v5/app/upgrades/v520"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 )
 
@@ -41,7 +41,7 @@ func (app *TerpApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedA
 		height = 0
 		app.prepForZeroHeightGenesis(ctx, jailAllowedAddrs)
 	} else {
-		v6.CustomV6PatchMethod(ctx, &app.AppKeepers, false)
+		v520.CustomV6PatchMethod(ctx, &app.AppKeepers, false)
 	}
 
 	app.TokenFactoryKeeper.SetParams(ctx, tokenfactorytypes.DefaultParams())
@@ -86,7 +86,7 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 		allowedAddrsMap[addr] = true
 	}
 
-	v6.CustomV6PatchMethod(ctx, &app.AppKeepers, false)
+	v520.CustomV6PatchMethod(ctx, &app.AppKeepers, false)
 	/* Just to be safe, assert the invariants on current state. */
 	app.CrisisKeeper.AssertInvariants(ctx)
 

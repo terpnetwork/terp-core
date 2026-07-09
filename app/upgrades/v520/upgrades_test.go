@@ -1,4 +1,4 @@
-package v6_test
+package v520_test
 
 import (
 	"fmt"
