@@ -1,7 +1,7 @@
 {
     "binaries": {
-        "linux/arm64": "https://s3.terp.network/releases/terpd/v5.2.0/terpd-linux-arm64?checksum=sha256:",
-        "linux/amd64": "https://s3.terp.network/releases/terpd/v5.2.0/terpd-linux-amd64?checksum=sha256:",
-        "darwin/arm64": "https://s3.terp.network/releases/terpd/v5.2.0/terpd-darwin-arm64?checksum=sha256:"
+        "linux/arm64": "https://s3.terp.network/releases/terpd/v5.2.0/terpd-linux-arm64?checksum=sha256:dfa1d31269137e81cd73ad48f53c2cefdaaa9e383362ae60e93dda05aff5e9bb",
+        "linux/amd64": "https://s3.terp.network/releases/terpd/v5.2.0/terpd-linux-amd64?checksum=sha256:32d873481fd52db61063a0b236c492dd1608df2a2c26530196b457919082ef33",
+        "darwin/arm64": "https://s3.terp.network/releases/terpd/v5.2.0/terpd-darwin-arm64?checksum=sha256:6863f4fe5ccac4dde25c7b6123b6adbeb693a55192e8e600040d030c2b2be7cb"
     }
 }
