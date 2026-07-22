@@ -102,12 +102,13 @@ import (
 	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
 	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 
-	// cwhookskeeper "github.com/terpnetwork/terp-core/v5/x/cw-hooks/keeper"
-	// cwhookstypes "github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
+	cwhookskeeper "github.com/terpnetwork/terp-core/v5/x/cw-hooks/keeper"
+	cwhookstypes "github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
 
 	tokenfactorykeeper "github.com/terpnetwork/terp-core/v5/x/tokenfactory/keeper"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
-	// hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
+	hashmerchantkeeper "github.com/terpnetwork/terp-core/v5/x/hashmerchant/keeper"
+	hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
 	// terpwasm "github.com/terpnetwork/terp-core/v5/internal/wasm"
 )
 
@@ -130,7 +131,7 @@ var maccPerms = map[string][]string{
 	globalfee.ModuleName:           nil,
 	wasmtypes.ModuleName:           {authtypes.Burner},
 	tokenfactorytypes.ModuleName:   {authtypes.Minter, authtypes.Burner},
-	// hashmerchanttypes.ModuleName:   nil,
+	hashmerchanttypes.ModuleName:   nil,
 }
 
 type AppKeepers struct {
@@ -174,7 +175,8 @@ type AppKeepers struct {
 	IBCWasmClientKeeper  *ibcwlckeeper.Keeper
 
 	DripKeeper dripkeeper.Keeper
-	// HashMerchantKeeper *hashmerchantkeeper.Keeper
+	HashMerchantKeeper *hashmerchantkeeper.Keeper
+	CwHooksKeeper      *cwhookskeeper.Keeper
 
 	// Middleware wrapper
 	Ics20WasmHooks   *ibchooks.WasmHooks
@@ -336,14 +338,6 @@ func NewAppKeepers(
 		govModAddress,
 	)
 
-	// register the staking hooks
-	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
-	stakingKeeper.SetHooks(
-		stakingtypes.NewMultiStakingHooks(appKeepers.DistrKeeper.Hooks(),
-			appKeepers.SlashingKeeper.Hooks(),
-			// appKeepers.CWHooksKeeper.StakingHooks(),
-		),
-	)
 	appKeepers.StakingKeeper = stakingKeeper
 
 	appKeepers.IBCKeeper = ibckeeper.NewKeeper(
@@ -515,7 +509,7 @@ func NewAppKeepers(
 			}),
 	)
 
-	wasmCapabilities := append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0")
+	wasmCapabilities := append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0", "bn254", "hash-blake")
 	// create wasmvm to use for both x/wasm and wasm-light-client
 	wasmVm, err := wasmvm.NewVM(wasmDir, wasmCapabilities, 32, wasmConfig.ContractDebugMode, wasmConfig.MemoryCacheSize)
 	if err != nil {
@@ -593,18 +587,40 @@ func NewAppKeepers(
 		govModAddress,
 	)
 
-	// hmConfig := hashmerchantkeeper.ReadConfig(appOpts)
-	// hmKeeper := hashmerchantkeeper.NewKeeper(
-	// 	appCodec,
-	// 	appKeepers.keys[hashmerchanttypes.StoreKey],
-	// 	govModAddress,
-	// 	appKeepers.AccountKeeper,
-	// 	appKeepers.BankKeeper,
-	// 	appKeepers.StakingKeeper,
-	// 	appKeepers.WasmKeeper,
-	// 	hmConfig,
-	// )
-	// appKeepers.HashMerchantKeeper = &hmKeeper
+	hmConfig := hashmerchantkeeper.ReadConfig(appOpts)
+	hmKeeper := hashmerchantkeeper.NewKeeper(
+		appCodec,
+		appKeepers.keys[hashmerchanttypes.StoreKey],
+		govModAddress,
+		appKeepers.AccountKeeper,
+		appKeepers.BankKeeper,
+		appKeepers.StakingKeeper,
+		appKeepers.WasmKeeper,
+		hmConfig,
+	)
+	appKeepers.HashMerchantKeeper = &hmKeeper
+
+	// Initialize cw-hooks keeper (requires wasm keeper + contract keeper)
+	cwHooksKeeper := cwhookskeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(appKeepers.keys[cwhookstypes.StoreKey]),
+		*stakingKeeper,
+		*appKeepers.GovKeeper,
+		*appKeepers.WasmKeeper,
+		*appKeepers.ContractKeeper,
+		govModAddress,
+	)
+	appKeepers.CwHooksKeeper = &cwHooksKeeper
+
+	// Register staking hooks — must be AFTER the cw-hooks keeper is initialized
+	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
+	stakingKeeper.SetHooks(
+		stakingtypes.NewMultiStakingHooks(
+			appKeepers.DistrKeeper.Hooks(),
+			appKeepers.SlashingKeeper.Hooks(),
+			appKeepers.CwHooksKeeper.StakingHooks(),
+		),
+	)
 
 	// Set legacy router for backwards compatibility with gov v1beta1
 	appKeepers.GovKeeper.SetLegacyRouter(govRouter)

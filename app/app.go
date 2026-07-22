@@ -66,6 +66,8 @@ import (
 
 	smartaccount "github.com/terpnetwork/terp-core/v5/x/smart-account"
 
+	cwhooksmodule "github.com/terpnetwork/terp-core/v5/x/cw-hooks/module"
+
 	"github.com/cosmos/cosmos-sdk/server/api"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	txmodule "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
@@ -99,6 +101,7 @@ import (
 	"github.com/terpnetwork/terp-core/v5/x/feeshare"
 	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 	"github.com/terpnetwork/terp-core/v5/x/globalfee"
+	"github.com/terpnetwork/terp-core/v5/x/hashmerchant"
 	"github.com/terpnetwork/terp-core/v5/x/tokenfactory"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
 
@@ -327,7 +330,7 @@ func NewTerpApp(
 	}
 	ibcWasmConfig := wasmlctypes.WasmConfig{
 		DataDir:               ibcwasmDir,
-		SupportedCapabilities: append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0"),
+		SupportedCapabilities: append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0", "bn254", "hash-blake"),
 		ContractDebugMode:     false,
 	}
 
@@ -426,7 +429,8 @@ func NewTerpApp(
 		packetforward.NewAppModule(app.PacketForwardKeeper, app.GetSubspace(packetforwardtypes.ModuleName)),
 		ibchooks.NewAppModule(*app.AccountKeeper),
 		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
-		// hashmerchant.NewAppModule(app.HashMerchantKeeper),
+		hashmerchant.NewAppModule(app.HashMerchantKeeper),
+		cwhooksmodule.NewAppModule(appCodec, *app.CwHooksKeeper),
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 	)
 
@@ -500,10 +504,10 @@ func NewTerpApp(
 	app.SetPrepareCheckStater(app.PrepareCheckStater)
 
 	// ABCI++ vote extension handlers (hashmerchant)
-	// app.SetExtendVoteHandler(app.HashMerchantKeeper.ExtendVoteHandler())
-	// app.SetVerifyVoteExtensionHandler(app.HashMerchantKeeper.VerifyVoteExtensionHandler())
-	// app.SetPrepareProposal(app.HashMerchantKeeper.PrepareProposalHandler())
-	// app.SetProcessProposal(app.HashMerchantKeeper.ProcessProposalHandler())
+	app.SetExtendVoteHandler(app.HashMerchantKeeper.ExtendVoteHandler())
+	app.SetVerifyVoteExtensionHandler(app.HashMerchantKeeper.VerifyVoteExtensionHandler())
+	app.SetPrepareProposal(app.HashMerchantKeeper.PrepareProposalHandler())
+	app.SetProcessProposal(app.HashMerchantKeeper.ProcessProposalHandler())
 
 	// must be before Loading version
 	// requires the snapshot store to be created and registered as a BaseAppOption
@@ -605,7 +609,7 @@ func (app *TerpApp) PreBlocker(ctx sdk.Context, req *abci.RequestFinalizeBlock) 
 
 	// Extract and process hashmerchant vote extensions injected by
 	// PrepareProposal before any module PreBlockers run.
-	// app.HashMerchantKeeper.ProcessInjectedVoteExtension(ctx, req.Txs)
+	app.HashMerchantKeeper.ProcessInjectedVoteExtension(ctx, req.Txs)
 
 	mm := app.ModuleManager()
 	return mm.PreBlock(ctx)

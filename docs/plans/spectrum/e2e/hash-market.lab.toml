@@ -1,0 +1,8 @@
+# Lab config for corridor local stack — ve off, mint/notes/notify host
+# Used by docker-compose.corridor-lab.yml (data_dir = container path).
+# Host path: use hash-market.lab.host.toml or corridor-lab-host.sh generated config.
+bind = "0.0.0.0:9090"
+chain_id = "corridor-lab-1"
+data_dir = "/var/lib/hash-market"
+ve_enabled = false
+cors_allow_origin = "*"

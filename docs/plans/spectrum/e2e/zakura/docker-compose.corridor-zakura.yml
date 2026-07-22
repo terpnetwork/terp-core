@@ -1,0 +1,44 @@
+# Single Zakura regtest node for Private Bridge corridor (D6).
+# Prefer this over full 4-node zakura-regtest-e2e when only dest/RPC health is needed.
+#
+# Host-built binary bind-mounted (no in-container compile):
+#   cd crates/zakura && cargo build -p zakura --bin zakurad
+#   export ZAKURAD_BIN=$(pwd)/target/debug/zakurad   # Linux; macOS Docker needs Linux binary
+#   docker compose -f docs/plans/spectrum/e2e/zakura/docker-compose.corridor-zakura.yml up -d
+#
+# Or: bash docs/plans/spectrum/e2e/zakura/zakura-local.sh up
+#
+# RPC: http://127.0.0.1:18232  (host network)
+# Join corridor lab: optional external network (see README).
+
+name: corridor-zakura-local
+
+services:
+  zakura:
+    image: debian:trixie-slim
+    container_name: corridor-zakura
+    network_mode: host
+    restart: "no"
+    stop_grace_period: 5s
+    tmpfs:
+      - /tmp
+    entrypoint:
+      [
+        "/usr/local/bin/zakurad",
+        "--config",
+        "/etc/zakura/node-corridor.toml",
+        "start",
+      ]
+    volumes:
+      - ${ZAKURAD_BIN:?set ZAKURAD_BIN to host-built zakurad}:/usr/local/bin/zakurad:ro
+      - ./node-corridor.toml:/etc/zakura/node-corridor.toml:ro
+    # Alias for future bridge networks (host mode ignores this; document only)
+    # networks: [corridor-lab]
+    healthcheck:
+      # host network: probe from inside container via python/curl if present —
+      # debian slim may lack curl; e2e script uses host-side RPC wait.
+      test: ["CMD-SHELL", "test -x /usr/local/bin/zakurad"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
