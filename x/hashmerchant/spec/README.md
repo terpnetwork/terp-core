@@ -36,3 +36,10 @@ Foreign-chain roots are optionally **re-hashed into Pallas-curve-compatible repr
 7. **[Events](07_events.md)**
 8. **[Parameters](08_parameters.md)**
 9. **[Example: Token Ownership Proof](09_example_token_ownership.md)**
+10. **[Multi-Source Oracle Aggregation](10_multi_source_oracle.md)** — modular sources, Model A/B, aggregate-v1 target, implementation gaps
+
+### Operator / test handoffs (repo docs)
+
+- Support install façade: `tools/hashmerchant-support/`
+- NFT minter + price-sync: `docs/bootstrap/hashmerchant-nft-oracle-minter-handoff.md`
+- ICT bootstrap e2e (fresh Ubuntu / hash-market runtime): `docs/bootstrap/hashmerchant-ict-bootstrap-e2e-handoff.md`

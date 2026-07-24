@@ -55,6 +55,200 @@ func (MarketMode) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_fe086f74134e6aac, []int{0}
 }
 
+// OracleSourceKind identifies a modular data-source type (Skip-Connect-style).
+type OracleSourceKind int32
+
+const (
+	OracleSourceKind_ORACLE_SOURCE_KIND_UNSPECIFIED OracleSourceKind = 0
+	OracleSourceKind_ORACLE_SOURCE_KIND_POSTGRES    OracleSourceKind = 1
+	OracleSourceKind_ORACLE_SOURCE_KIND_BITCOIN_RPC OracleSourceKind = 2
+	OracleSourceKind_ORACLE_SOURCE_KIND_ZCASH_RPC   OracleSourceKind = 3
+	OracleSourceKind_ORACLE_SOURCE_KIND_HTTP        OracleSourceKind = 4
+	OracleSourceKind_ORACLE_SOURCE_KIND_CUSTOM      OracleSourceKind = 5
+)
+
+var OracleSourceKind_name = map[int32]string{
+	0: "ORACLE_SOURCE_KIND_UNSPECIFIED",
+	1: "ORACLE_SOURCE_KIND_POSTGRES",
+	2: "ORACLE_SOURCE_KIND_BITCOIN_RPC",
+	3: "ORACLE_SOURCE_KIND_ZCASH_RPC",
+	4: "ORACLE_SOURCE_KIND_HTTP",
+	5: "ORACLE_SOURCE_KIND_CUSTOM",
+}
+
+var OracleSourceKind_value = map[string]int32{
+	"ORACLE_SOURCE_KIND_UNSPECIFIED": 0,
+	"ORACLE_SOURCE_KIND_POSTGRES":    1,
+	"ORACLE_SOURCE_KIND_BITCOIN_RPC": 2,
+	"ORACLE_SOURCE_KIND_ZCASH_RPC":   3,
+	"ORACLE_SOURCE_KIND_HTTP":        4,
+	"ORACLE_SOURCE_KIND_CUSTOM":      5,
+}
+
+func (x OracleSourceKind) String() string {
+	return proto.EnumName(OracleSourceKind_name, int32(x))
+}
+
+func (OracleSourceKind) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_fe086f74134e6aac, []int{1}
+}
+
+// CustodyAuthenticator limits signing surface area per source (Penumbra-style).
+// Only attestations whose domain matches `scope` and verify under `pubkey` are accepted.
+type CustodyAuthenticator struct {
+	// ed25519 or secp256k1 public key bytes
+	Pubkey []byte `protobuf:"bytes,1,opt,name=pubkey,proto3" json:"pubkey,omitempty"`
+	// signing algorithm: "ed25519" | "secp256k1"
+	Algorithm string `protobuf:"bytes,2,opt,name=algorithm,proto3" json:"algorithm,omitempty"`
+	// allowed attestation scope, e.g. "merkle_root", "price_feed"
+	Scope string `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
+}
+
+func (m *CustodyAuthenticator) Reset()         { *m = CustodyAuthenticator{} }
+func (m *CustodyAuthenticator) String() string { return proto.CompactTextString(m) }
+func (*CustodyAuthenticator) ProtoMessage()    {}
+func (*CustodyAuthenticator) Descriptor() ([]byte, []int) {
+	return fileDescriptor_fe086f74134e6aac, []int{0}
+}
+func (m *CustodyAuthenticator) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CustodyAuthenticator) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CustodyAuthenticator.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CustodyAuthenticator) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CustodyAuthenticator.Merge(m, src)
+}
+func (m *CustodyAuthenticator) XXX_Size() int {
+	return m.Size()
+}
+func (m *CustodyAuthenticator) XXX_DiscardUnknown() {
+	xxx_messageInfo_CustodyAuthenticator.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CustodyAuthenticator proto.InternalMessageInfo
+
+func (m *CustodyAuthenticator) GetPubkey() []byte {
+	if m != nil {
+		return m.Pubkey
+	}
+	return nil
+}
+
+func (m *CustodyAuthenticator) GetAlgorithm() string {
+	if m != nil {
+		return m.Algorithm
+	}
+	return ""
+}
+
+func (m *CustodyAuthenticator) GetScope() string {
+	if m != nil {
+		return m.Scope
+	}
+	return ""
+}
+
+// OracleSource is a registered modular data source for a chain_uid.
+// Mirrors IBCv2 CounterpartyInfo modularity: each source has its own merkle prefix
+// and custody-bound authenticator rather than trusting a monolithic sidecar response.
+type OracleSource struct {
+	// unique id within the chain_uid, e.g. "loyalty-db", "btc-usd", "zec-usd"
+	SourceId string           `protobuf:"bytes,1,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
+	Kind     OracleSourceKind `protobuf:"varint,2,opt,name=kind,proto3,enum=terp.hashmerchant.v1.OracleSourceKind" json:"kind,omitempty"`
+	// endpoint URL or connection string the sidecar queries
+	Endpoint string `protobuf:"bytes,3,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// IBCv2-style merkle prefix for membership proofs from this source
+	MerklePrefix [][]byte `protobuf:"bytes,4,rep,name=merkle_prefix,json=merklePrefix,proto3" json:"merkle_prefix,omitempty"`
+	// custody authenticator limiting what this source may attest
+	Authenticator *CustodyAuthenticator `protobuf:"bytes,5,opt,name=authenticator,proto3" json:"authenticator,omitempty"`
+	Enabled       bool                  `protobuf:"varint,6,opt,name=enabled,proto3" json:"enabled,omitempty"`
+}
+
+func (m *OracleSource) Reset()         { *m = OracleSource{} }
+func (m *OracleSource) String() string { return proto.CompactTextString(m) }
+func (*OracleSource) ProtoMessage()    {}
+func (*OracleSource) Descriptor() ([]byte, []int) {
+	return fileDescriptor_fe086f74134e6aac, []int{1}
+}
+func (m *OracleSource) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *OracleSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_OracleSource.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *OracleSource) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OracleSource.Merge(m, src)
+}
+func (m *OracleSource) XXX_Size() int {
+	return m.Size()
+}
+func (m *OracleSource) XXX_DiscardUnknown() {
+	xxx_messageInfo_OracleSource.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OracleSource proto.InternalMessageInfo
+
+func (m *OracleSource) GetSourceId() string {
+	if m != nil {
+		return m.SourceId
+	}
+	return ""
+}
+
+func (m *OracleSource) GetKind() OracleSourceKind {
+	if m != nil {
+		return m.Kind
+	}
+	return OracleSourceKind_ORACLE_SOURCE_KIND_UNSPECIFIED
+}
+
+func (m *OracleSource) GetEndpoint() string {
+	if m != nil {
+		return m.Endpoint
+	}
+	return ""
+}
+
+func (m *OracleSource) GetMerklePrefix() [][]byte {
+	if m != nil {
+		return m.MerklePrefix
+	}
+	return nil
+}
+
+func (m *OracleSource) GetAuthenticator() *CustodyAuthenticator {
+	if m != nil {
+		return m.Authenticator
+	}
+	return nil
+}
+
+func (m *OracleSource) GetEnabled() bool {
+	if m != nil {
+		return m.Enabled
+	}
+	return false
+}
+
 // RegisteredChain describes a foreign blockchain whose substore roots
 // validators will mirror via vote extensions.
 type RegisteredChain struct {
@@ -68,13 +262,15 @@ type RegisteredChain struct {
 	HashAlgos []string `protobuf:"bytes,4,rep,name=hash_algos,json=hashAlgos,proto3" json:"hash_algos,omitempty"`
 	// enabled toggles attestation acceptance
 	Enabled bool `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// modular oracle sources aggregated by the sidecar (IBCv2 workflow)
+	OracleSources []*OracleSource `protobuf:"bytes,6,rep,name=oracle_sources,json=oracleSources,proto3" json:"oracle_sources,omitempty"`
 }
 
 func (m *RegisteredChain) Reset()         { *m = RegisteredChain{} }
 func (m *RegisteredChain) String() string { return proto.CompactTextString(m) }
 func (*RegisteredChain) ProtoMessage()    {}
 func (*RegisteredChain) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fe086f74134e6aac, []int{0}
+	return fileDescriptor_fe086f74134e6aac, []int{2}
 }
 func (m *RegisteredChain) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -138,6 +334,101 @@ func (m *RegisteredChain) GetEnabled() bool {
 	return false
 }
 
+func (m *RegisteredChain) GetOracleSources() []*OracleSource {
+	if m != nil {
+		return m.OracleSources
+	}
+	return nil
+}
+
+// OracleAttestation is a per-source signed value bundled in VoteExtensionHashData.
+type OracleAttestation struct {
+	SourceId string `protobuf:"bytes,1,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
+	// attested value (e.g. merkle root bytes or price feed digest)
+	Value     []byte `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	Height    uint64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	Timestamp int64  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// custody signature over domain-separated payload
+	CustodySignature []byte `protobuf:"bytes,5,opt,name=custody_signature,json=custodySignature,proto3" json:"custody_signature,omitempty"`
+	// optional ICS-23 proof for this source's value
+	Ics23Proof []byte `protobuf:"bytes,6,opt,name=ics23_proof,json=ics23Proof,proto3" json:"ics23_proof,omitempty"`
+}
+
+func (m *OracleAttestation) Reset()         { *m = OracleAttestation{} }
+func (m *OracleAttestation) String() string { return proto.CompactTextString(m) }
+func (*OracleAttestation) ProtoMessage()    {}
+func (*OracleAttestation) Descriptor() ([]byte, []int) {
+	return fileDescriptor_fe086f74134e6aac, []int{3}
+}
+func (m *OracleAttestation) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *OracleAttestation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_OracleAttestation.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *OracleAttestation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OracleAttestation.Merge(m, src)
+}
+func (m *OracleAttestation) XXX_Size() int {
+	return m.Size()
+}
+func (m *OracleAttestation) XXX_DiscardUnknown() {
+	xxx_messageInfo_OracleAttestation.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OracleAttestation proto.InternalMessageInfo
+
+func (m *OracleAttestation) GetSourceId() string {
+	if m != nil {
+		return m.SourceId
+	}
+	return ""
+}
+
+func (m *OracleAttestation) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *OracleAttestation) GetHeight() uint64 {
+	if m != nil {
+		return m.Height
+	}
+	return 0
+}
+
+func (m *OracleAttestation) GetTimestamp() int64 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
+func (m *OracleAttestation) GetCustodySignature() []byte {
+	if m != nil {
+		return m.CustodySignature
+	}
+	return nil
+}
+
+func (m *OracleAttestation) GetIcs23Proof() []byte {
+	if m != nil {
+		return m.Ics23Proof
+	}
+	return nil
+}
+
 // RegisteredContract is a CosmWasm contract that has paid escrow to receive
 // sudo callbacks when new hash roots are confirmed.
 type RegisteredContract struct {
@@ -152,7 +443,7 @@ func (m *RegisteredContract) Reset()         { *m = RegisteredContract{} }
 func (m *RegisteredContract) String() string { return proto.CompactTextString(m) }
 func (*RegisteredContract) ProtoMessage()    {}
 func (*RegisteredContract) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fe086f74134e6aac, []int{1}
+	return fileDescriptor_fe086f74134e6aac, []int{4}
 }
 func (m *RegisteredContract) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -222,7 +513,7 @@ func (m *EscrowRecord) Reset()         { *m = EscrowRecord{} }
 func (m *EscrowRecord) String() string { return proto.CompactTextString(m) }
 func (*EscrowRecord) ProtoMessage()    {}
 func (*EscrowRecord) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fe086f74134e6aac, []int{2}
+	return fileDescriptor_fe086f74134e6aac, []int{5}
 }
 func (m *EscrowRecord) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -290,13 +581,15 @@ type HashRoot struct {
 	AttestationCount uint32 `protobuf:"varint,5,opt,name=attestation_count,json=attestationCount,proto3" json:"attestation_count,omitempty"`
 	// block_time of the foreign chain (unix seconds)
 	BlockTime int64 `protobuf:"varint,6,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
+	// confirmed per-source attestations included in this root round
+	Attestations []*OracleAttestation `protobuf:"bytes,7,rep,name=attestations,proto3" json:"attestations,omitempty"`
 }
 
 func (m *HashRoot) Reset()         { *m = HashRoot{} }
 func (m *HashRoot) String() string { return proto.CompactTextString(m) }
 func (*HashRoot) ProtoMessage()    {}
 func (*HashRoot) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fe086f74134e6aac, []int{3}
+	return fileDescriptor_fe086f74134e6aac, []int{6}
 }
 func (m *HashRoot) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -367,6 +660,13 @@ func (m *HashRoot) GetBlockTime() int64 {
 	return 0
 }
 
+func (m *HashRoot) GetAttestations() []*OracleAttestation {
+	if m != nil {
+		return m.Attestations
+	}
+	return nil
+}
+
 // HashPairTicket is the core on-chain primitive: a filterable, zk-optimised
 // pair of hashes linking an origin chain state to a destination representation.
 type HashPairTicket struct {
@@ -383,7 +683,7 @@ func (m *HashPairTicket) Reset()         { *m = HashPairTicket{} }
 func (m *HashPairTicket) String() string { return proto.CompactTextString(m) }
 func (*HashPairTicket) ProtoMessage()    {}
 func (*HashPairTicket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fe086f74134e6aac, []int{4}
+	return fileDescriptor_fe086f74134e6aac, []int{7}
 }
 func (m *HashPairTicket) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -473,13 +773,15 @@ type VoteExtensionHashData struct {
 	ForeignBlockTime int64  `protobuf:"varint,6,opt,name=foreign_block_time,json=foreignBlockTime,proto3" json:"foreign_block_time,omitempty"`
 	// ics23_proof is an optional ICS-23 commitment proof for the root
 	Ics23Proof []byte `protobuf:"bytes,7,opt,name=ics23_proof,json=ics23Proof,proto3" json:"ics23_proof,omitempty"`
+	// per-source attestations aggregated by the sidecar (IBCv2 modular auth)
+	Attestations []*OracleAttestation `protobuf:"bytes,8,rep,name=attestations,proto3" json:"attestations,omitempty"`
 }
 
 func (m *VoteExtensionHashData) Reset()         { *m = VoteExtensionHashData{} }
 func (m *VoteExtensionHashData) String() string { return proto.CompactTextString(m) }
 func (*VoteExtensionHashData) ProtoMessage()    {}
 func (*VoteExtensionHashData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fe086f74134e6aac, []int{5}
+	return fileDescriptor_fe086f74134e6aac, []int{8}
 }
 func (m *VoteExtensionHashData) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -557,9 +859,20 @@ func (m *VoteExtensionHashData) GetIcs23Proof() []byte {
 	return nil
 }
 
+func (m *VoteExtensionHashData) GetAttestations() []*OracleAttestation {
+	if m != nil {
+		return m.Attestations
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterEnum("terp.hashmerchant.v1.MarketMode", MarketMode_name, MarketMode_value)
+	proto.RegisterEnum("terp.hashmerchant.v1.OracleSourceKind", OracleSourceKind_name, OracleSourceKind_value)
+	proto.RegisterType((*CustodyAuthenticator)(nil), "terp.hashmerchant.v1.CustodyAuthenticator")
+	proto.RegisterType((*OracleSource)(nil), "terp.hashmerchant.v1.OracleSource")
 	proto.RegisterType((*RegisteredChain)(nil), "terp.hashmerchant.v1.RegisteredChain")
+	proto.RegisterType((*OracleAttestation)(nil), "terp.hashmerchant.v1.OracleAttestation")
 	proto.RegisterType((*RegisteredContract)(nil), "terp.hashmerchant.v1.RegisteredContract")
 	proto.RegisterType((*EscrowRecord)(nil), "terp.hashmerchant.v1.EscrowRecord")
 	proto.RegisterType((*HashRoot)(nil), "terp.hashmerchant.v1.HashRoot")
@@ -570,60 +883,200 @@ func init() {
 func init() { proto.RegisterFile("terp/hashmerchant/v1/types.proto", fileDescriptor_fe086f74134e6aac) }
 
 var fileDescriptor_fe086f74134e6aac = []byte{
-	// 834 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x94, 0xc1, 0x6e, 0x1b, 0x45,
-	0x18, 0xc7, 0xbd, 0xf1, 0x92, 0xc6, 0x5f, 0xec, 0xc6, 0x1d, 0x85, 0xb2, 0xa4, 0xaa, 0x6b, 0x5c,
-	0x21, 0x99, 0x02, 0x5e, 0xd2, 0x0a, 0xc1, 0x35, 0x71, 0x16, 0xd5, 0x2a, 0x69, 0xac, 0x6d, 0x02,
-	0x12, 0x97, 0xd5, 0x78, 0x66, 0x6a, 0x0f, 0xf6, 0xce, 0xac, 0x66, 0xc6, 0x69, 0xdc, 0xa7, 0xe8,
-	0x85, 0x3b, 0xef, 0xc0, 0x2b, 0x70, 0xe8, 0x31, 0x47, 0x4e, 0x08, 0x25, 0x4f, 0xc0, 0x1b, 0xa0,
-	0x99, 0xdd, 0x8d, 0xd6, 0x80, 0xa0, 0xb7, 0x6f, 0x7e, 0xdf, 0xdf, 0x9e, 0xff, 0x37, 0xff, 0xd9,
-	0x81, 0xae, 0x61, 0x2a, 0x0b, 0x67, 0x58, 0xcf, 0x52, 0xa6, 0xc8, 0x0c, 0x0b, 0x13, 0x9e, 0xef,
-	0x87, 0x66, 0x95, 0x31, 0x3d, 0xc8, 0x94, 0x34, 0x12, 0xed, 0x5a, 0xc5, 0xa0, 0xaa, 0x18, 0x9c,
-	0xef, 0xef, 0xed, 0x4e, 0xe5, 0x54, 0x3a, 0x41, 0x68, 0xab, 0x5c, 0xbb, 0xd7, 0x21, 0x52, 0xa7,
-	0x52, 0x87, 0x13, 0xac, 0x59, 0x78, 0xbe, 0x3f, 0x61, 0x06, 0xef, 0x87, 0x44, 0x72, 0x91, 0xf7,
-	0x7b, 0x3f, 0x7b, 0xb0, 0x13, 0xb3, 0x29, 0xd7, 0x86, 0x29, 0x46, 0x87, 0x33, 0xcc, 0x05, 0xba,
-	0x07, 0x0d, 0x62, 0x8b, 0x64, 0xc9, 0x69, 0xe0, 0x75, 0xbd, 0x7e, 0x23, 0xde, 0x72, 0xe0, 0x8c,
-	0x53, 0x84, 0xc0, 0x17, 0x38, 0x65, 0xc1, 0x86, 0xe3, 0xae, 0x46, 0x0f, 0xa1, 0xa5, 0x32, 0x92,
-	0x30, 0x41, 0x33, 0xc9, 0x85, 0xd1, 0x41, 0xbd, 0x5b, 0xef, 0x37, 0xe2, 0xa6, 0xca, 0x48, 0x54,
-	0x32, 0x74, 0x1f, 0xc0, 0x5a, 0x4e, 0xf0, 0x62, 0x2a, 0x75, 0xe0, 0x3b, 0x45, 0xc3, 0x92, 0x03,
-	0x0b, 0x50, 0x00, 0xb7, 0x98, 0xc0, 0x93, 0x05, 0xa3, 0xc1, 0x7b, 0x5d, 0xaf, 0xbf, 0x15, 0x97,
-	0xcb, 0xde, 0x4f, 0x1e, 0xa0, 0x8a, 0x45, 0x29, 0x8c, 0xc2, 0xc4, 0xd8, 0x4d, 0x49, 0x51, 0x27,
-	0x98, 0x52, 0x55, 0x38, 0x6d, 0x96, 0xf0, 0x80, 0x52, 0xb5, 0x3e, 0xca, 0xc6, 0xdf, 0x46, 0x79,
-	0x08, 0x2d, 0xbd, 0x9c, 0x68, 0x23, 0x15, 0x4b, 0xe6, 0x6c, 0x75, 0x63, 0xbb, 0x84, 0xcf, 0xd8,
-	0x6a, 0xcd, 0x97, 0xbf, 0xee, 0xeb, 0x57, 0x0f, 0x9a, 0x91, 0x26, 0x4a, 0xbe, 0x8a, 0x19, 0x91,
-	0x8a, 0xbe, 0x9b, 0xa3, 0xaf, 0x60, 0x13, 0xa7, 0x72, 0x29, 0x8c, 0xb3, 0xb3, 0xfd, 0xf8, 0xc3,
-	0x41, 0x9e, 0xd0, 0xc0, 0x26, 0x34, 0x28, 0x12, 0x1a, 0x0c, 0x25, 0x17, 0x87, 0xfe, 0xdb, 0xdf,
-	0x1f, 0xd4, 0xe2, 0x42, 0x8e, 0x1e, 0xc1, 0x9d, 0x0c, 0x73, 0x9a, 0x2c, 0x85, 0xe1, 0x8b, 0x64,
-	0xc6, 0xf8, 0x74, 0x66, 0x82, 0x7a, 0xd7, 0xeb, 0xfb, 0xf1, 0x8e, 0x6d, 0x9c, 0x59, 0xfe, 0xd4,
-	0x61, 0xab, 0x5d, 0x60, 0x6d, 0x92, 0x4c, 0x2d, 0x05, 0x2b, 0xb5, 0x7e, 0xae, 0xb5, 0x8d, 0xb1,
-	0xe5, 0xb9, 0xb6, 0xf7, 0x8b, 0x07, 0x5b, 0x4f, 0xb1, 0x9e, 0xc5, 0x52, 0x9a, 0xff, 0x8d, 0xde,
-	0x86, 0x57, 0x46, 0x6f, 0x6b, 0x74, 0x17, 0x36, 0xd7, 0xac, 0x14, 0x2b, 0xab, 0x55, 0x52, 0xe6,
-	0x9b, 0x36, 0x63, 0x57, 0xa3, 0x4f, 0xe1, 0x0e, 0x36, 0x86, 0x69, 0x83, 0x0d, 0x97, 0x22, 0x21,
-	0xee, 0x14, 0x6c, 0xd8, 0xad, 0xb8, 0x5d, 0x69, 0x0c, 0xdd, 0xb8, 0xf7, 0x01, 0x26, 0x0b, 0x49,
-	0xe6, 0x89, 0xe1, 0x29, 0x0b, 0x36, 0xbb, 0x5e, 0xbf, 0x1e, 0x37, 0x1c, 0x39, 0xe5, 0x29, 0xeb,
-	0xbd, 0xd9, 0x80, 0xdb, 0xd6, 0xf5, 0x18, 0x73, 0x75, 0xca, 0xc9, 0x9c, 0xb9, 0x5f, 0x64, 0x4a,
-	0xfe, 0xc8, 0x88, 0x49, 0x6e, 0xcc, 0x37, 0x0a, 0x32, 0xa2, 0xe8, 0x01, 0x6c, 0x4b, 0xc5, 0xa7,
-	0x5c, 0x24, 0xf6, 0xd2, 0xb9, 0x21, 0x9a, 0x31, 0xe4, 0xc8, 0xfe, 0x13, 0xfa, 0x04, 0xda, 0x94,
-	0x69, 0xc3, 0x45, 0x6e, 0xcf, 0xa9, 0xea, 0x4e, 0xb5, 0x53, 0xe1, 0x4e, 0xda, 0x83, 0xd6, 0xeb,
-	0x79, 0x42, 0xb8, 0x22, 0x4b, 0xee, 0x76, 0xf3, 0xdd, 0x6e, 0xdb, 0xaf, 0xe7, 0xc3, 0x9c, 0x8d,
-	0x28, 0xfa, 0x02, 0x76, 0xab, 0x7f, 0x97, 0x1f, 0x2b, 0xcf, 0x6f, 0xb7, 0x1f, 0xa3, 0x4a, 0xcf,
-	0x7d, 0x75, 0x23, 0x8a, 0x3e, 0x82, 0x26, 0xbb, 0xc8, 0xb8, 0x5a, 0x25, 0x6e, 0x4e, 0x37, 0xb4,
-	0x1f, 0x6f, 0xe7, 0xec, 0xd0, 0x22, 0xb4, 0x07, 0x5b, 0x29, 0x33, 0x98, 0x62, 0x83, 0x83, 0x5b,
-	0xce, 0xdb, 0xcd, 0xba, 0xf7, 0xa7, 0x07, 0xef, 0x7f, 0x27, 0x0d, 0x8b, 0x2e, 0x0c, 0x13, 0xba,
-	0xb0, 0x7a, 0x84, 0x0d, 0xb6, 0x27, 0xa3, 0xec, 0xb5, 0x49, 0x59, 0xe5, 0x64, 0x0a, 0x32, 0xa2,
-	0xff, 0xfd, 0x91, 0x94, 0xa1, 0xd7, 0x2b, 0xa1, 0xff, 0x5b, 0xb8, 0x1f, 0xc3, 0xed, 0x97, 0x52,
-	0x31, 0x3e, 0x15, 0xe5, 0x7d, 0xcb, 0x07, 0x6d, 0x15, 0xb4, 0xb8, 0x99, 0x9f, 0x01, 0x2a, 0x65,
-	0xff, 0x88, 0xb7, 0x5d, 0x74, 0x0e, 0xcb, 0x94, 0x6d, 0x66, 0x9c, 0xe8, 0xc7, 0x4f, 0x92, 0x4c,
-	0x49, 0xf9, 0xb2, 0x98, 0x18, 0x1c, 0x1a, 0x5b, 0xf2, 0xe8, 0x7b, 0x80, 0x63, 0xac, 0xe6, 0xcc,
-	0x1c, 0x4b, 0xca, 0xd0, 0x3d, 0xf8, 0xe0, 0xf8, 0x20, 0x7e, 0x16, 0x9d, 0x26, 0xc7, 0x27, 0x47,
-	0x51, 0x72, 0xf6, 0xfc, 0xc5, 0x38, 0x1a, 0x8e, 0xbe, 0x19, 0x45, 0x47, 0xed, 0x1a, 0xda, 0x85,
-	0x76, 0xb5, 0x79, 0x32, 0x8e, 0x9e, 0xb7, 0x3d, 0x74, 0x17, 0x50, 0x95, 0x0e, 0xbf, 0x3d, 0x79,
-	0x11, 0x1d, 0xb5, 0x37, 0x0e, 0xe3, 0xb7, 0x57, 0x1d, 0xef, 0xf2, 0xaa, 0xe3, 0xfd, 0x71, 0xd5,
-	0xf1, 0xde, 0x5c, 0x77, 0x6a, 0x97, 0xd7, 0x9d, 0xda, 0x6f, 0xd7, 0x9d, 0xda, 0x0f, 0x5f, 0x4f,
-	0xb9, 0x99, 0x2d, 0x27, 0x03, 0x22, 0xd3, 0xd0, 0x3e, 0xc4, 0x82, 0x99, 0x57, 0x52, 0xcd, 0x5d,
-	0xfd, 0x39, 0x91, 0x8a, 0x85, 0xe7, 0x5f, 0x86, 0x17, 0xeb, 0x0f, 0xb8, 0x7b, 0xbd, 0x27, 0x9b,
-	0xee, 0xc9, 0x7d, 0xf2, 0x57, 0x00, 0x00, 0x00, 0xff, 0xff, 0xe9, 0xdb, 0x1d, 0xbe, 0xe2, 0x05,
-	0x00, 0x00,
+	// 1211 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x56, 0xcd, 0x6e, 0xdb, 0xc6,
+	0x16, 0x36, 0x25, 0xfa, 0x47, 0xc7, 0x94, 0x43, 0x0f, 0x74, 0x73, 0x95, 0x3f, 0x45, 0x57, 0xc1,
+	0x6d, 0x55, 0xb7, 0x95, 0x6a, 0x07, 0x45, 0x8b, 0xee, 0x64, 0x5a, 0xad, 0x05, 0xc7, 0x96, 0x30,
+	0x92, 0x5b, 0x20, 0x1b, 0x62, 0x44, 0x4e, 0xa4, 0xa9, 0x24, 0x0e, 0x31, 0x1c, 0x3a, 0x76, 0x56,
+	0x7d, 0x84, 0x2c, 0xda, 0xd7, 0xe9, 0xaa, 0x8b, 0xa0, 0xab, 0x2c, 0xdb, 0x4d, 0x51, 0x24, 0xcb,
+	0xbe, 0x44, 0x31, 0x43, 0xca, 0xa6, 0x1c, 0x25, 0x29, 0xd0, 0xdd, 0xcc, 0x77, 0x3e, 0x9d, 0x39,
+	0x3f, 0xdf, 0x39, 0x22, 0x54, 0x25, 0x15, 0x61, 0x73, 0x4c, 0xa2, 0xf1, 0x8c, 0x0a, 0x6f, 0x4c,
+	0x02, 0xd9, 0x3c, 0xdb, 0x6d, 0xca, 0x8b, 0x90, 0x46, 0x8d, 0x50, 0x70, 0xc9, 0x51, 0x49, 0x31,
+	0x1a, 0x59, 0x46, 0xe3, 0x6c, 0xf7, 0x76, 0x69, 0xc4, 0x47, 0x5c, 0x13, 0x9a, 0xea, 0x94, 0x70,
+	0x6f, 0x57, 0x3c, 0x1e, 0xcd, 0x78, 0xd4, 0x1c, 0x92, 0x88, 0x36, 0xcf, 0x76, 0x87, 0x54, 0x92,
+	0xdd, 0xa6, 0xc7, 0x59, 0x90, 0xd8, 0x6b, 0x43, 0x28, 0x39, 0x71, 0x24, 0xb9, 0x7f, 0xd1, 0x8a,
+	0xe5, 0x98, 0x06, 0x92, 0x79, 0x44, 0x72, 0x81, 0x6e, 0xc2, 0x5a, 0x18, 0x0f, 0x27, 0xf4, 0xa2,
+	0x6c, 0x54, 0x8d, 0xba, 0x85, 0xd3, 0x1b, 0xba, 0x0b, 0x05, 0x32, 0x1d, 0x71, 0xc1, 0xe4, 0x78,
+	0x56, 0xce, 0x55, 0x8d, 0x7a, 0x01, 0x5f, 0x01, 0xa8, 0x04, 0xab, 0x91, 0xc7, 0x43, 0x5a, 0xce,
+	0x6b, 0x4b, 0x72, 0xa9, 0xfd, 0x98, 0x03, 0xab, 0x2b, 0x88, 0x37, 0xa5, 0x7d, 0x1e, 0x0b, 0x8f,
+	0xa2, 0x3b, 0x50, 0x88, 0xf4, 0xc9, 0x65, 0xbe, 0xf6, 0x5f, 0xc0, 0x1b, 0x09, 0xd0, 0xf1, 0xd1,
+	0x57, 0x60, 0x4e, 0x58, 0xe0, 0x6b, 0xe7, 0x5b, 0x7b, 0x1f, 0x34, 0x96, 0x25, 0xdb, 0xc8, 0xba,
+	0x3b, 0x62, 0x81, 0x8f, 0xf5, 0x6f, 0xd0, 0x6d, 0xd8, 0xa0, 0x81, 0x1f, 0x72, 0x16, 0xc8, 0x34,
+	0x84, 0xcb, 0x3b, 0x7a, 0x00, 0xc5, 0x19, 0x15, 0x93, 0x29, 0x75, 0x43, 0x41, 0x9f, 0xb0, 0xf3,
+	0xb2, 0x59, 0xcd, 0xd7, 0x2d, 0x6c, 0x25, 0x60, 0x4f, 0x63, 0xa8, 0x07, 0x45, 0x92, 0xad, 0x43,
+	0x79, 0xb5, 0x6a, 0xd4, 0x37, 0xf7, 0x76, 0x96, 0x47, 0xb1, 0xac, 0x72, 0x78, 0xd1, 0x01, 0x2a,
+	0xc3, 0x3a, 0x0d, 0xc8, 0x70, 0x4a, 0xfd, 0xf2, 0x5a, 0xd5, 0xa8, 0x6f, 0xe0, 0xf9, 0xb5, 0xf6,
+	0x97, 0x01, 0x37, 0x30, 0x1d, 0xb1, 0x48, 0x52, 0x41, 0x7d, 0x67, 0x4c, 0x58, 0xa0, 0x2a, 0xe3,
+	0xa9, 0x83, 0x1b, 0x5f, 0x55, 0x46, 0x03, 0xa7, 0xcc, 0x47, 0x08, 0xcc, 0x80, 0xcc, 0x68, 0x5a,
+	0x76, 0x7d, 0x56, 0x59, 0x89, 0xd0, 0x73, 0xe7, 0x59, 0x46, 0xe5, 0x7c, 0x35, 0x5f, 0x2f, 0x60,
+	0x4b, 0x84, 0x5e, 0x7b, 0x8e, 0xa1, 0x7b, 0x00, 0x2a, 0x74, 0x57, 0x35, 0x2a, 0xd2, 0x79, 0x17,
+	0x70, 0x41, 0x21, 0x2d, 0x05, 0x64, 0x43, 0x5c, 0x5d, 0x08, 0x11, 0x75, 0x60, 0x8b, 0xeb, 0x4a,
+	0xbb, 0x49, 0x7b, 0xa2, 0xf2, 0x5a, 0x35, 0x5f, 0xdf, 0xdc, 0xab, 0xbd, 0xbf, 0x2b, 0xb8, 0xc8,
+	0x33, 0xb7, 0xa8, 0xf6, 0xab, 0x01, 0xdb, 0x89, 0xbd, 0x25, 0x25, 0x8d, 0x24, 0x91, 0x8c, 0x07,
+	0xef, 0x56, 0x42, 0x09, 0x56, 0xcf, 0xc8, 0x34, 0x4e, 0x12, 0xb6, 0x70, 0x72, 0x51, 0xca, 0x1c,
+	0x53, 0x36, 0x1a, 0x27, 0x1d, 0x36, 0x71, 0x7a, 0x53, 0xca, 0x94, 0x6c, 0xa6, 0x3c, 0xcf, 0xc2,
+	0xb2, 0x59, 0x35, 0xea, 0x79, 0x7c, 0x05, 0xa0, 0x8f, 0x61, 0xdb, 0x4b, 0xba, 0xe5, 0x46, 0x6c,
+	0x14, 0x10, 0x19, 0x0b, 0xaa, 0xb3, 0xb5, 0xb0, 0x9d, 0x1a, 0xfa, 0x73, 0x1c, 0xdd, 0x87, 0x4d,
+	0xe6, 0x45, 0x7b, 0x0f, 0xdd, 0x50, 0x70, 0xfe, 0x44, 0xf7, 0xcd, 0xc2, 0xa0, 0xa1, 0x9e, 0x42,
+	0x6a, 0x3f, 0x19, 0x80, 0x32, 0xad, 0xe3, 0x81, 0x14, 0xc4, 0xd3, 0x12, 0xf3, 0xd2, 0xb3, 0x4b,
+	0x7c, 0x5f, 0xa4, 0x19, 0x59, 0x73, 0xb0, 0xe5, 0xfb, 0x62, 0xb1, 0xc5, 0xb9, 0x6b, 0x2d, 0x7e,
+	0x00, 0xc5, 0x28, 0x1e, 0x46, 0x92, 0x0b, 0xea, 0x4e, 0xe8, 0xc5, 0x65, 0x3b, 0xe7, 0xe0, 0x11,
+	0xbd, 0x58, 0xe8, 0x97, 0xb9, 0x28, 0xa9, 0x5f, 0x0c, 0xb0, 0xda, 0x91, 0x27, 0xf8, 0x53, 0x4c,
+	0x3d, 0x2e, 0xfc, 0x7f, 0x16, 0xd1, 0x17, 0xb0, 0x46, 0x66, 0x3c, 0x0e, 0xa4, 0x0e, 0x67, 0x73,
+	0xef, 0x56, 0x23, 0x59, 0x1a, 0x0d, 0xb5, 0x34, 0x1a, 0xe9, 0xd2, 0x68, 0x38, 0x9c, 0x05, 0xfb,
+	0xe6, 0x8b, 0x3f, 0xee, 0xaf, 0xe0, 0x94, 0x8e, 0x76, 0x60, 0x3b, 0x24, 0xcc, 0x77, 0xe3, 0x40,
+	0xb2, 0xa9, 0xbb, 0xd0, 0x95, 0x1b, 0xca, 0x70, 0xaa, 0xf0, 0xc3, 0xa4, 0x3d, 0x3b, 0xb0, 0x3d,
+	0x25, 0x91, 0x74, 0x43, 0x11, 0x07, 0x74, 0xce, 0x35, 0x13, 0xae, 0x32, 0xf4, 0x14, 0x9e, 0x70,
+	0x6b, 0x3f, 0xe4, 0x60, 0xe3, 0x90, 0x44, 0x63, 0xcc, 0xb9, 0x7c, 0xef, 0x48, 0x28, 0x51, 0xcf,
+	0x47, 0x42, 0x9d, 0xdf, 0x2a, 0x10, 0x04, 0xa6, 0xe0, 0x3c, 0x79, 0xd4, 0xc2, 0xfa, 0xac, 0x64,
+	0x41, 0xae, 0xe4, 0xe8, 0x7a, 0xba, 0x0a, 0x4a, 0x16, 0x45, 0x6c, 0x67, 0x0c, 0x8e, 0x4e, 0xf7,
+	0x1e, 0xc0, 0x70, 0xca, 0xbd, 0x89, 0xab, 0x64, 0xa5, 0x55, 0x91, 0xc7, 0x05, 0x8d, 0x0c, 0xd8,
+	0x8c, 0xa2, 0x23, 0xb0, 0x32, 0x3f, 0x89, 0xca, 0xeb, 0x7a, 0x54, 0x3e, 0x7c, 0xd7, 0xa8, 0x64,
+	0x46, 0x01, 0x2f, 0xfc, 0xb8, 0xf6, 0x3c, 0x07, 0x5b, 0xaa, 0x04, 0x3d, 0xc2, 0xc4, 0x80, 0x79,
+	0x13, 0xaa, 0x9f, 0x0f, 0x05, 0xff, 0x9e, 0x7a, 0xf2, 0x6a, 0x58, 0x0a, 0x29, 0xd2, 0xf1, 0x95,
+	0x68, 0xb9, 0x60, 0x23, 0x16, 0xb8, 0xea, 0xad, 0x74, 0x66, 0x20, 0x81, 0x94, 0x27, 0xf4, 0x11,
+	0xd8, 0x3e, 0x8d, 0x24, 0x0b, 0x92, 0x5c, 0x35, 0x2b, 0xaf, 0x59, 0x37, 0x32, 0xb8, 0xa6, 0xd6,
+	0xa0, 0xf8, 0x6c, 0xe2, 0x7a, 0x4c, 0x78, 0x31, 0xd3, 0xaf, 0x99, 0xfa, 0xb5, 0xcd, 0x67, 0x13,
+	0x27, 0xc1, 0x3a, 0x3e, 0xfa, 0x0c, 0x4a, 0x59, 0x77, 0x49, 0x8f, 0x58, 0xb2, 0x42, 0x4c, 0x8c,
+	0x32, 0x36, 0xbd, 0xda, 0x3a, 0x3e, 0xfa, 0x1f, 0x58, 0xf4, 0x3c, 0x64, 0xe2, 0xc2, 0xd5, 0x45,
+	0xd3, 0x15, 0x34, 0xf1, 0x66, 0x82, 0xed, 0x2b, 0x48, 0x2d, 0xf0, 0x19, 0x95, 0xc4, 0x27, 0x92,
+	0x94, 0xd7, 0x75, 0x6c, 0x97, 0xf7, 0xda, 0xcf, 0x39, 0xf8, 0xcf, 0xb7, 0x5c, 0xd2, 0xf6, 0xb9,
+	0xa4, 0x41, 0x94, 0x86, 0x7a, 0x40, 0x24, 0x51, 0x95, 0x11, 0x4a, 0x83, 0xb3, 0xcc, 0x1a, 0x29,
+	0xa4, 0x48, 0xc7, 0x7f, 0xf7, 0xc4, 0xcd, 0x15, 0x94, 0xcf, 0x28, 0x68, 0x99, 0x52, 0xfe, 0x0f,
+	0x5b, 0x4f, 0xb8, 0xa0, 0x6c, 0x14, 0xcc, 0xc5, 0x9b, 0x24, 0x5a, 0x4c, 0xd1, 0x54, 0xe6, 0x9f,
+	0x00, 0x9a, 0xd3, 0xde, 0xd0, 0x8a, 0x9d, 0x5a, 0xf6, 0x2f, 0x25, 0x73, 0x6d, 0xd1, 0xac, 0x5f,
+	0x5f, 0x34, 0x6f, 0x68, 0x6a, 0xe3, 0x5f, 0x68, 0x6a, 0xe7, 0x3b, 0x80, 0x63, 0x22, 0x26, 0x54,
+	0x1e, 0x73, 0x5f, 0xfd, 0x09, 0xff, 0xf7, 0xb8, 0x85, 0x8f, 0xda, 0x03, 0xf7, 0xb8, 0x7b, 0xd0,
+	0x76, 0x4f, 0x4f, 0xfa, 0xbd, 0xb6, 0xd3, 0xf9, 0xba, 0xd3, 0x3e, 0xb0, 0x57, 0x50, 0x09, 0xec,
+	0xac, 0xb1, 0xdb, 0x6b, 0x9f, 0xd8, 0x06, 0xba, 0x09, 0x28, 0x8b, 0x3a, 0x8f, 0xba, 0xfd, 0xf6,
+	0x81, 0x9d, 0xdb, 0xf9, 0xdd, 0x00, 0xfb, 0xfa, 0x3f, 0x32, 0xaa, 0x41, 0xa5, 0x8b, 0x5b, 0xce,
+	0xa3, 0xb6, 0xdb, 0xef, 0x9e, 0x62, 0xa7, 0xed, 0x1e, 0x75, 0x4e, 0x0e, 0xae, 0x3d, 0x73, 0x1f,
+	0xee, 0x2c, 0xe1, 0xf4, 0xba, 0xfd, 0xc1, 0x37, 0xb8, 0xdd, 0xb7, 0x8d, 0xb7, 0x38, 0xd9, 0xef,
+	0x0c, 0x9c, 0x6e, 0xe7, 0xc4, 0xc5, 0x3d, 0xc7, 0xce, 0xa1, 0x2a, 0xdc, 0x5d, 0xc2, 0x79, 0xec,
+	0xb4, 0xfa, 0x87, 0x9a, 0x91, 0x57, 0xa9, 0x2e, 0x61, 0x1c, 0x0e, 0x06, 0x3d, 0xdb, 0x44, 0xf7,
+	0xe0, 0xd6, 0x12, 0xa3, 0x73, 0xda, 0x1f, 0x74, 0x8f, 0xed, 0xd5, 0x7d, 0xfc, 0xe2, 0x55, 0xc5,
+	0x78, 0xf9, 0xaa, 0x62, 0xfc, 0xf9, 0xaa, 0x62, 0x3c, 0x7f, 0x5d, 0x59, 0x79, 0xf9, 0xba, 0xb2,
+	0xf2, 0xdb, 0xeb, 0xca, 0xca, 0xe3, 0x2f, 0x47, 0x4c, 0x8e, 0xe3, 0x61, 0xc3, 0xe3, 0xb3, 0xa6,
+	0xea, 0x47, 0x40, 0xe5, 0x53, 0x2e, 0x26, 0xfa, 0xfc, 0xa9, 0xc7, 0x05, 0x6d, 0x9e, 0x7d, 0xde,
+	0x3c, 0x5f, 0xfc, 0x92, 0xd3, 0x9f, 0x71, 0xc3, 0x35, 0xfd, 0xed, 0xf5, 0xf0, 0xef, 0x00, 0x00,
+	0x00, 0xff, 0xff, 0x86, 0xfa, 0x0e, 0x64, 0xeb, 0x09, 0x00, 0x00,
+}
+
+func (m *CustodyAuthenticator) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CustodyAuthenticator) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CustodyAuthenticator) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Scope) > 0 {
+		i -= len(m.Scope)
+		copy(dAtA[i:], m.Scope)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Scope)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Algorithm) > 0 {
+		i -= len(m.Algorithm)
+		copy(dAtA[i:], m.Algorithm)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Algorithm)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Pubkey) > 0 {
+		i -= len(m.Pubkey)
+		copy(dAtA[i:], m.Pubkey)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Pubkey)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *OracleSource) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *OracleSource) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *OracleSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Enabled {
+		i--
+		if m.Enabled {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.Authenticator != nil {
+		{
+			size, err := m.Authenticator.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.MerklePrefix) > 0 {
+		for iNdEx := len(m.MerklePrefix) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.MerklePrefix[iNdEx])
+			copy(dAtA[i:], m.MerklePrefix[iNdEx])
+			i = encodeVarintTypes(dAtA, i, uint64(len(m.MerklePrefix[iNdEx])))
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Endpoint) > 0 {
+		i -= len(m.Endpoint)
+		copy(dAtA[i:], m.Endpoint)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Endpoint)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Kind != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.Kind))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.SourceId) > 0 {
+		i -= len(m.SourceId)
+		copy(dAtA[i:], m.SourceId)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.SourceId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *RegisteredChain) Marshal() (dAtA []byte, err error) {
@@ -646,6 +1099,20 @@ func (m *RegisteredChain) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.OracleSources) > 0 {
+		for iNdEx := len(m.OracleSources) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.OracleSources[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTypes(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x32
+		}
+	}
 	if m.Enabled {
 		i--
 		if m.Enabled {
@@ -685,6 +1152,67 @@ func (m *RegisteredChain) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.ChainUid)
 		copy(dAtA[i:], m.ChainUid)
 		i = encodeVarintTypes(dAtA, i, uint64(len(m.ChainUid)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *OracleAttestation) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *OracleAttestation) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *OracleAttestation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Ics23Proof) > 0 {
+		i -= len(m.Ics23Proof)
+		copy(dAtA[i:], m.Ics23Proof)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Ics23Proof)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.CustodySignature) > 0 {
+		i -= len(m.CustodySignature)
+		copy(dAtA[i:], m.CustodySignature)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.CustodySignature)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.Timestamp != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.Timestamp))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Height != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.Height))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Value) > 0 {
+		i -= len(m.Value)
+		copy(dAtA[i:], m.Value)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Value)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.SourceId) > 0 {
+		i -= len(m.SourceId)
+		copy(dAtA[i:], m.SourceId)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.SourceId)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -817,6 +1345,20 @@ func (m *HashRoot) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Attestations) > 0 {
+		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Attestations[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTypes(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x3a
+		}
+	}
 	if m.BlockTime != 0 {
 		i = encodeVarintTypes(dAtA, i, uint64(m.BlockTime))
 		i--
@@ -944,6 +1486,20 @@ func (m *VoteExtensionHashData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Attestations) > 0 {
+		for iNdEx := len(m.Attestations) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Attestations[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTypes(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x42
+		}
+	}
 	if len(m.Ics23Proof) > 0 {
 		i -= len(m.Ics23Proof)
 		copy(dAtA[i:], m.Ics23Proof)
@@ -1003,6 +1559,60 @@ func encodeVarintTypes(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *CustodyAuthenticator) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Pubkey)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.Algorithm)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.Scope)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	return n
+}
+
+func (m *OracleSource) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.SourceId)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if m.Kind != 0 {
+		n += 1 + sovTypes(uint64(m.Kind))
+	}
+	l = len(m.Endpoint)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if len(m.MerklePrefix) > 0 {
+		for _, b := range m.MerklePrefix {
+			l = len(b)
+			n += 1 + l + sovTypes(uint64(l))
+		}
+	}
+	if m.Authenticator != nil {
+		l = m.Authenticator.Size()
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if m.Enabled {
+		n += 2
+	}
+	return n
+}
+
 func (m *RegisteredChain) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1031,6 +1641,43 @@ func (m *RegisteredChain) Size() (n int) {
 	}
 	if m.Enabled {
 		n += 2
+	}
+	if len(m.OracleSources) > 0 {
+		for _, e := range m.OracleSources {
+			l = e.Size()
+			n += 1 + l + sovTypes(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *OracleAttestation) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.SourceId)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if m.Height != 0 {
+		n += 1 + sovTypes(uint64(m.Height))
+	}
+	if m.Timestamp != 0 {
+		n += 1 + sovTypes(uint64(m.Timestamp))
+	}
+	l = len(m.CustodySignature)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.Ics23Proof)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
 	}
 	return n
 }
@@ -1109,6 +1756,12 @@ func (m *HashRoot) Size() (n int) {
 	if m.BlockTime != 0 {
 		n += 1 + sovTypes(uint64(m.BlockTime))
 	}
+	if len(m.Attestations) > 0 {
+		for _, e := range m.Attestations {
+			l = e.Size()
+			n += 1 + l + sovTypes(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -1179,6 +1832,12 @@ func (m *VoteExtensionHashData) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTypes(uint64(l))
 	}
+	if len(m.Attestations) > 0 {
+		for _, e := range m.Attestations {
+			l = e.Size()
+			n += 1 + l + sovTypes(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -1187,6 +1846,375 @@ func sovTypes(x uint64) (n int) {
 }
 func sozTypes(x uint64) (n int) {
 	return sovTypes(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *CustodyAuthenticator) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CustodyAuthenticator: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CustodyAuthenticator: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pubkey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Pubkey = append(m.Pubkey[:0], dAtA[iNdEx:postIndex]...)
+			if m.Pubkey == nil {
+				m.Pubkey = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Algorithm", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Algorithm = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Scope", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Scope = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *OracleSource) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: OracleSource: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: OracleSource: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Kind", wireType)
+			}
+			m.Kind = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Kind |= OracleSourceKind(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Endpoint", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Endpoint = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MerklePrefix", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MerklePrefix = append(m.MerklePrefix, make([]byte, postIndex-iNdEx))
+			copy(m.MerklePrefix[len(m.MerklePrefix)-1], dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authenticator", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Authenticator == nil {
+				m.Authenticator = &CustodyAuthenticator{}
+			}
+			if err := m.Authenticator.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Enabled = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *RegisteredChain) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -1365,6 +2393,262 @@ func (m *RegisteredChain) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.Enabled = bool(v != 0)
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OracleSources", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OracleSources = append(m.OracleSources, &OracleSource{})
+			if err := m.OracleSources[len(m.OracleSources)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *OracleAttestation) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: OracleAttestation: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: OracleAttestation: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Value = append(m.Value[:0], dAtA[iNdEx:postIndex]...)
+			if m.Value == nil {
+				m.Value = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Height", wireType)
+			}
+			m.Height = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Height |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
+			}
+			m.Timestamp = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Timestamp |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CustodySignature", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CustodySignature = append(m.CustodySignature[:0], dAtA[iNdEx:postIndex]...)
+			if m.CustodySignature == nil {
+				m.CustodySignature = []byte{}
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ics23Proof", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Ics23Proof = append(m.Ics23Proof[:0], dAtA[iNdEx:postIndex]...)
+			if m.Ics23Proof == nil {
+				m.Ics23Proof = []byte{}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTypes(dAtA[iNdEx:])
@@ -1889,6 +3173,40 @@ func (m *HashRoot) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Attestations", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Attestations = append(m.Attestations, &OracleAttestation{})
+			if err := m.Attestations[len(m.Attestations)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTypes(dAtA[iNdEx:])
@@ -2393,6 +3711,40 @@ func (m *VoteExtensionHashData) Unmarshal(dAtA []byte) error {
 			m.Ics23Proof = append(m.Ics23Proof[:0], dAtA[iNdEx:postIndex]...)
 			if m.Ics23Proof == nil {
 				m.Ics23Proof = []byte{}
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Attestations", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Attestations = append(m.Attestations, &OracleAttestation{})
+			if err := m.Attestations[len(m.Attestations)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		default:

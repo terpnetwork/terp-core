@@ -106,6 +106,18 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 	var genState types.GenesisState
 	cdc.MustUnmarshalJSON(gs, &genState)
 	am.keeper.InitGenesis(ctx, genState)
+
+	// Optional extension until proto regen: oracle_sources map in genesis JSON.
+	var extra struct {
+		OracleSources map[string][]types.OracleSource `json:"oracle_sources"`
+	}
+	if err := json.Unmarshal(gs, &extra); err == nil {
+		for chainUID, sources := range extra.OracleSources {
+			if err := am.keeper.SetOracleSources(ctx, chainUID, sources); err != nil {
+				panic(err)
+			}
+		}
+	}
 }
 
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {

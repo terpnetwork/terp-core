@@ -16,6 +16,9 @@ The `x/hashmerchant` module uses a single KVStore with the store key `hashmercha
 | `0x04` | `0x04 \| chain_uid \| "\|" \| algo` | `HashRoot` | Confirmed state roots |
 | `0x05` | `0x05` | `Params` | Module parameters |
 | `0x06` | `0x06` | `uint64` | Last prune epoch height |
+| `0x07` | `0x07 \| chain_uid` | oracle sources (JSON today) | Modular `OracleSource[]` (**target** prefix) |
+
+> **Implementation note:** `keeper/oracle_store.go` currently uses prefix `0x06` for oracle sources, which **collides** with prune epoch. Target is `0x07` (see [10_multi_source_oracle.md](10_multi_source_oracle.md) §8 P0).
 
 ## Data Structures
 

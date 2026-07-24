@@ -16,6 +16,17 @@ func (k Keeper) InitGenesis(ctx sdk.Context, gs types.GenesisState) {
 		if err := k.SetRegisteredChain(ctx, c); err != nil {
 			panic(err)
 		}
+		if len(c.OracleSources) > 0 {
+			sources := make([]types.OracleSource, 0, len(c.OracleSources))
+			for _, src := range c.OracleSources {
+				if src != nil {
+					sources = append(sources, *src)
+				}
+			}
+			if err := k.SetOracleSources(ctx, c.ChainUid, sources); err != nil {
+				panic(err)
+			}
+		}
 	}
 	for _, c := range gs.RegisteredContracts {
 		if err := k.SetRegisteredContract(ctx, c); err != nil {

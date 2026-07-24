@@ -15,6 +15,43 @@ enum MarketMode {
   MARKET_MODE_CLOSED = 2;
 }
 
+// OracleSourceKind identifies a modular data-source type (Skip-Connect-style).
+enum OracleSourceKind {
+  ORACLE_SOURCE_KIND_UNSPECIFIED = 0;
+  ORACLE_SOURCE_KIND_POSTGRES = 1;
+  ORACLE_SOURCE_KIND_BITCOIN_RPC = 2;
+  ORACLE_SOURCE_KIND_ZCASH_RPC = 3;
+  ORACLE_SOURCE_KIND_HTTP = 4;
+  ORACLE_SOURCE_KIND_CUSTOM = 5;
+}
+
+// CustodyAuthenticator limits signing surface area per source (Penumbra-style).
+// Only attestations whose domain matches `scope` and verify under `pubkey` are accepted.
+message CustodyAuthenticator {
+  // ed25519 or secp256k1 public key bytes
+  bytes pubkey = 1;
+  // signing algorithm: "ed25519" | "secp256k1"
+  string algorithm = 2;
+  // allowed attestation scope, e.g. "merkle_root", "price_feed"
+  string scope = 3;
+}
+
+// OracleSource is a registered modular data source for a chain_uid.
+// Mirrors IBCv2 CounterpartyInfo modularity: each source has its own merkle prefix
+// and custody-bound authenticator rather than trusting a monolithic sidecar response.
+message OracleSource {
+  // unique id within the chain_uid, e.g. "loyalty-db", "btc-usd", "zec-usd"
+  string source_id = 1;
+  OracleSourceKind kind = 2;
+  // endpoint URL or connection string the sidecar queries
+  string endpoint = 3;
+  // IBCv2-style merkle prefix for membership proofs from this source
+  repeated bytes merkle_prefix = 4;
+  // custody authenticator limiting what this source may attest
+  CustodyAuthenticator authenticator = 5;
+  bool enabled = 6;
+}
+
 // RegisteredChain describes a foreign blockchain whose substore roots
 // validators will mirror via vote extensions.
 message RegisteredChain {
@@ -28,6 +65,21 @@ message RegisteredChain {
   repeated string hash_algos = 4;
   // enabled toggles attestation acceptance
   bool enabled = 5;
+  // modular oracle sources aggregated by the sidecar (IBCv2 workflow)
+  repeated OracleSource oracle_sources = 6;
+}
+
+// OracleAttestation is a per-source signed value bundled in VoteExtensionHashData.
+message OracleAttestation {
+  string source_id = 1;
+  // attested value (e.g. merkle root bytes or price feed digest)
+  bytes value = 2;
+  uint64 height = 3;
+  int64 timestamp = 4;
+  // custody signature over domain-separated payload
+  bytes custody_signature = 5;
+  // optional ICS-23 proof for this source's value
+  bytes ics23_proof = 6;
 }
 
 // RegisteredContract is a CosmWasm contract that has paid escrow to receive
@@ -60,6 +112,8 @@ message HashRoot {
   uint32 attestation_count = 5;
   // block_time of the foreign chain (unix seconds)
   int64 block_time = 6;
+  // confirmed per-source attestations included in this root round
+  repeated OracleAttestation attestations = 7;
 }
 
 // HashPairTicket is the core on-chain primitive: a filterable, zk-optimised
@@ -86,4 +140,6 @@ message VoteExtensionHashData {
   int64 foreign_block_time = 6;
   // ics23_proof is an optional ICS-23 commitment proof for the root
   bytes ics23_proof = 7;
+  // per-source attestations aggregated by the sidecar (IBCv2 modular auth)
+  repeated OracleAttestation attestations = 8;
 }

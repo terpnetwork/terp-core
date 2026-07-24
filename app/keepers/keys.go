@@ -26,11 +26,13 @@ import (
 	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
+	cwhookstypes "github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
 	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
 	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
 	globalfeetypes "github.com/terpnetwork/terp-core/v5/x/globalfee/types"
 	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
+	hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
 )
 
 func (appKeepers *AppKeepers) GenerateKeys() {
@@ -65,7 +67,8 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		driptypes.StoreKey,
 		smartaccounttypes.StoreKey,
 		tokenfactorytypes.StoreKey,
-		// hashmerchanttypes.StoreKey,
+		hashmerchanttypes.StoreKey,
+		cwhookstypes.StoreKey,
 	)
 
 	appKeepers.tkeys = storetypes.NewTransientStoreKeys(paramstypes.TStoreKey)

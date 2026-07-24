@@ -18,7 +18,14 @@ Every sudo callback delivers a `HashMerchantSudoMsg` with the following structur
     "height": 19500000,
     "root": "base64-encoded-32-byte-root",
     "attestation_count": 85,
-    "block_time": 1710000000
+    "block_time": 1710000000,
+    "oracle_sources": [
+      {
+        "source_id": "skip-connect",
+        "value": "<bytes of attested payload>",
+        "height": 19500000
+      }
+    ]
   }
 }
 ```
@@ -26,11 +33,14 @@ Every sudo callback delivers a `HashMerchantSudoMsg` with the following structur
 | Field | Type | Description |
 |-------|------|-------------|
 | `chain_uid` | `string` | The registered chain identifier |
-| `algo` | `string` | Hash algorithm used (e.g., `keccak256`, `sha256`, `poseidon`) |
-| `height` | `uint64` | Block height on the foreign chain |
-| `root` | `bytes` (base64) | The confirmed state root (32 bytes) |
-| `attestation_count` | `uint32` | How many validators attested to this root |
+| `algo` | `string` | Hash algorithm used (e.g., `keccak256`, `sha256`, `poseidon`, `oracle-agg-v1`) |
+| `height` | `uint64` | Block height on the foreign chain (or representative height) |
+| `root` | `bytes` (base64) | The confirmed root (32 bytes typical) |
+| `attestation_count` | `uint32` | Number of **validators** that attested to this root (not source count) |
 | `block_time` | `int64` | Foreign chain block timestamp (unix seconds) |
+| `oracle_sources` | `array` (optional) | Per-source values from the VE bag (see multi-source trust notes) |
+
+**Trust:** Until Model B multi-source binding is fully implemented ([10_multi_source_oracle.md](10_multi_source_oracle.md)), treat `oracle_sources` as **module-provided hints** under a power-quorum `root`. Contracts must not mint supply from oracle fields; apply stale/bps policy for prices.
 
 ## Rust Trait Definition
 

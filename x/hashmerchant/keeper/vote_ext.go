@@ -20,14 +20,25 @@ import (
 // SetVerifyVoteExtensionHandler in app.go.
 // ---------------------------------------------------------------------------
 
-// sidecarResponse is the JSON structure returned by the mock sidecar's
-// /vote-extension endpoint.
+// sidecarAttestationJSON is a per-source attestation in the sidecar response.
+type sidecarAttestationJSON struct {
+	SourceID          string `json:"source_id"`
+	Value             string `json:"value"` // hex-encoded
+	Height            uint64 `json:"height"`
+	Timestamp         int64  `json:"timestamp"`
+	CustodySignature  string `json:"custody_signature"` // hex-encoded ed25519
+}
+
+// sidecarResponse is the JSON structure returned by the sidecar's
+// /vote-extension endpoint (IBCv2 modular oracle format).
 type sidecarResponse struct {
-	ChainUID         string `json:"chain_uid"`
-	Algo             string `json:"algo"`
-	Root             string `json:"root"` // hex-encoded
-	ForeignHeight    uint64 `json:"foreign_height"`
-	ForeignBlockTime int64  `json:"foreign_block_time"`
+	RuntimeID        string                   `json:"runtime_id"`
+	ChainUID         string                   `json:"chain_uid"`
+	Algo             string                   `json:"algo"`
+	Root             string                   `json:"root"` // hex-encoded aggregated root
+	ForeignHeight    uint64                   `json:"foreign_height"`
+	ForeignBlockTime int64                    `json:"foreign_block_time"`
+	Attestations     []sidecarAttestationJSON `json:"attestations"`
 }
 
 // ExtendVoteHandler is called by CometBFT during the vote phase.
@@ -84,13 +95,60 @@ func (k Keeper) fetchSidecar(ctx sdk.Context) (*types.VoteExtensionHashData, err
 		return nil, fmt.Errorf("decoding root hex: %w", err)
 	}
 
+	attestations := make([]types.OracleAttestation, 0, len(sr.Attestations))
+	for _, a := range sr.Attestations {
+		valueBytes, err := hex.DecodeString(a.Value)
+		if err != nil {
+			return nil, fmt.Errorf("decoding attestation value hex for %q: %w", a.SourceID, err)
+		}
+		sigBytes, err := hex.DecodeString(a.CustodySignature)
+		if err != nil {
+			return nil, fmt.Errorf("decoding custody signature hex for %q: %w", a.SourceID, err)
+		}
+		attestations = append(attestations, types.OracleAttestation{
+			SourceId:          a.SourceID,
+			Value:             valueBytes,
+			Height:            a.Height,
+			Timestamp:         a.Timestamp,
+			CustodySignature:  sigBytes,
+		})
+	}
+
+	root := rootBytes
+	if len(root) == 0 && len(attestations) > 0 {
+		root = aggregateAttestationRoot(attestations)
+	}
+
+	protoAttestations := make([]*types.OracleAttestation, len(attestations))
+	for i := range attestations {
+		protoAttestations[i] = &attestations[i]
+	}
+
 	return &types.VoteExtensionHashData{
+		RuntimeId:        sr.RuntimeID,
 		ChainUid:         sr.ChainUID,
 		Algo:             sr.Algo,
-		Root:             rootBytes,
+		Root:             root,
 		ForeignHeight:    sr.ForeignHeight,
 		ForeignBlockTime: sr.ForeignBlockTime,
+		Attestations:     protoAttestations,
 	}, nil
+}
+
+// voteExtensionAttestations returns per-source attestations from the proto field,
+// falling back to the legacy HMOR bundle in Ics23Proof for older sidecars.
+func voteExtensionAttestations(data types.VoteExtensionHashData) []types.OracleAttestation {
+	if len(data.Attestations) > 0 {
+		out := make([]types.OracleAttestation, 0, len(data.Attestations))
+		for _, att := range data.Attestations {
+			if att != nil {
+				out = append(out, *att)
+			}
+		}
+		return out
+	}
+	legacy, _ := unpackOracleBundle(data.Ics23Proof)
+	return legacy
 }
 
 // VerifyVoteExtensionHandler validates a peer's vote extension.
@@ -112,8 +170,16 @@ func (k Keeper) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 			}, nil
 		}
 
-		// Basic validity: chain must be registered and enabled.
-		if !k.HasRegisteredChain(ctx, data.ChainUid) {
+		chain, err := k.GetRegisteredChain(ctx, data.ChainUid)
+		if err != nil || !chain.Enabled {
+			return &abci.ResponseVerifyVoteExtension{
+				Status: abci.ResponseVerifyVoteExtension_REJECT,
+			}, nil
+		}
+
+		attestations := voteExtensionAttestations(data)
+		if err := k.verifyOracleAttestations(ctx, data.ChainUid, attestations); err != nil {
+			k.Logger(ctx).Debug("rejecting vote extension", "err", err)
 			return &abci.ResponseVerifyVoteExtension{
 				Status: abci.ResponseVerifyVoteExtension_REJECT,
 			}, nil
@@ -163,10 +229,11 @@ func (k Keeper) ProcessVoteExtensions(ctx sdk.Context, extCommitInfo abci.Extend
 
 	// Tally: (chainUID, algo) → list of (root, votingPower).
 	type rootVote struct {
-		root        []byte
-		height      uint64
-		blockTime   int64
-		votingPower int64
+		root         []byte
+		height       uint64
+		blockTime    int64
+		votingPower  int64
+		attestations []types.OracleAttestation
 	}
 	type tallyKey struct {
 		chainUID string
@@ -191,11 +258,13 @@ func (k Keeper) ProcessVoteExtensions(ctx sdk.Context, extCommitInfo abci.Extend
 		if tally[key] == nil {
 			tally[key] = make(map[string][]rootVote)
 		}
+		attestations := voteExtensionAttestations(data)
 		tally[key][rootHex] = append(tally[key][rootHex], rootVote{
-			root:        data.Root,
-			height:      data.ForeignHeight,
-			blockTime:   data.ForeignBlockTime,
-			votingPower: vote.Validator.Power,
+			root:         data.Root,
+			height:       data.ForeignHeight,
+			blockTime:    data.ForeignBlockTime,
+			votingPower:  vote.Validator.Power,
+			attestations: attestations,
 		})
 	}
 
@@ -213,6 +282,10 @@ func (k Keeper) ProcessVoteExtensions(ctx sdk.Context, extCommitInfo abci.Extend
 			}
 			// Quorum reached — write the root.
 			representative := votes[0]
+			protoAttestations := make([]*types.OracleAttestation, len(representative.attestations))
+			for i := range representative.attestations {
+				protoAttestations[i] = &representative.attestations[i]
+			}
 			root := types.HashRoot{
 				ChainUid:         key.chainUID,
 				Algo:             key.algo,
@@ -220,14 +293,14 @@ func (k Keeper) ProcessVoteExtensions(ctx sdk.Context, extCommitInfo abci.Extend
 				Root:             representative.root,
 				AttestationCount: uint32(len(votes)),
 				BlockTime:        representative.blockTime,
+				Attestations:     protoAttestations,
 			}
 			if err := k.SetHashRoot(ctx, root); err != nil {
 				k.Logger(ctx).Error("failed to set hash root", "err", err)
 				continue
 			}
 
-			// Dispatch sudo callbacks to all contracts registered for this chain.
-			k.dispatchSudoCallbacks(ctx, root)
+			k.dispatchSudoCallbacks(ctx, root, representative.attestations)
 
 			ctx.EventManager().EmitEvent(sdk.NewEvent(
 				"hashmerchant_root_confirmed",
@@ -251,16 +324,23 @@ type HashMerchantSudoMsg struct {
 }
 
 // HashMerchantSudoPayload carries the confirmed root data.
-type HashMerchantSudoPayload struct {
-	ChainUID         string `json:"chain_uid"`
-	Algo             string `json:"algo"`
-	Height           uint64 `json:"height"`
-	Root             []byte `json:"root"`
-	AttestationCount uint32 `json:"attestation_count"`
-	BlockTime        int64  `json:"block_time"`
+type HashMerchantSudoOracleAttestation struct {
+	SourceID string `json:"source_id"`
+	Value    []byte `json:"value"`
+	Height   uint64 `json:"height"`
 }
 
-func (k Keeper) dispatchSudoCallbacks(ctx sdk.Context, root types.HashRoot) {
+type HashMerchantSudoPayload struct {
+	ChainUID         string                            `json:"chain_uid"`
+	Algo             string                            `json:"algo"`
+	Height           uint64                            `json:"height"`
+	Root             []byte                            `json:"root"`
+	AttestationCount uint32                            `json:"attestation_count"`
+	BlockTime        int64                             `json:"block_time"`
+	OracleSources    []HashMerchantSudoOracleAttestation `json:"oracle_sources,omitempty"`
+}
+
+func (k Keeper) dispatchSudoCallbacks(ctx sdk.Context, root types.HashRoot, attestations []types.OracleAttestation) {
 	blockHeight := uint64(ctx.BlockHeight())
 
 	k.IterateRegisteredContracts(ctx, func(c types.RegisteredContract) bool {
@@ -274,7 +354,15 @@ func (k Keeper) dispatchSudoCallbacks(ctx sdk.Context, root types.HashRoot) {
 			return false
 		}
 
-		// Build sudo message.
+		var oracleSources []HashMerchantSudoOracleAttestation
+		for _, att := range attestations {
+			oracleSources = append(oracleSources, HashMerchantSudoOracleAttestation{
+				SourceID: att.SourceId,
+				Value:    att.Value,
+				Height:   att.Height,
+			})
+		}
+
 		sudoMsg := HashMerchantSudoMsg{
 			HashMerchant: &HashMerchantSudoPayload{
 				ChainUID:         root.ChainUid,
@@ -283,6 +371,7 @@ func (k Keeper) dispatchSudoCallbacks(ctx sdk.Context, root types.HashRoot) {
 				Root:             root.Root,
 				AttestationCount: root.AttestationCount,
 				BlockTime:        root.BlockTime,
+				OracleSources:    oracleSources,
 			},
 		}
 		bz, err := json.Marshal(sudoMsg)

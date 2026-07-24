@@ -60,7 +60,11 @@ import (
 	"github.com/terpnetwork/terp-core/v5/x/drip"
 	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
 
-	// hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
+	"github.com/terpnetwork/terp-core/v5/x/hashmerchant"
+	hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
+
+	cwhooksmodule "github.com/terpnetwork/terp-core/v5/x/cw-hooks/module"
+	cwhookstypes "github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
 
 	"github.com/cosmos/cosmos-sdk/x/group"
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
@@ -119,8 +123,8 @@ var ModuleBasics = module.NewBasicManager(
 	drip.AppModuleBasic{},
 	tokenfactory.AppModuleBasic{},
 	smartaccount.AppModuleBasic{},
-	// hashmerchant.AppModuleBasic{},
-	// cwhooks.AppModuleBasic{},
+	hashmerchant.AppModuleBasic{},
+	cwhooksmodule.AppModuleBasic{},
 )
 
 func simulationModules(
@@ -185,8 +189,8 @@ func orderBeginBlockers() []string {
 		globalfee.ModuleName,
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
-		// cwhooks.ModuleName,
-		// hashmerchanttypes.ModuleName,
+		cwhookstypes.ModuleName,
+		hashmerchanttypes.ModuleName,
 		wasmtypes.ModuleName,
 		wasmlctypes.ModuleName,
 	}
@@ -223,8 +227,8 @@ func orderEndBlockers() []string {
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		smartaccounttypes.ModuleName,
-		// hashmerchanttypes.ModuleName,
-		// cwhooks.ModuleName,
+		hashmerchanttypes.ModuleName,
+		cwhookstypes.ModuleName,
 		wasmtypes.ModuleName,
 		wasmlctypes.ModuleName,
 	}
@@ -249,8 +253,8 @@ func orderInitBlockers() []string {
 		ibchookstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		smartaccounttypes.ModuleName,
-		// hashmerchanttypes.ModuleName,
-		// cwhooks.ModuleName,
+		hashmerchanttypes.ModuleName,
+		cwhookstypes.ModuleName,
 		wasmtypes.ModuleName,
 		wasmlctypes.ModuleName,
 	}
