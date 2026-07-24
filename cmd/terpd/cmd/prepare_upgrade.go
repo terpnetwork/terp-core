@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -105,29 +104,14 @@ func calculateTargetUpgradeHeight(clientCtx client.Context, targetTime time.Time
 	return targetHeight, nil
 }
 
-// generateCIDFromMetadata uses your CidFromReader logic
-// generateCIDFromMetadata returns a proper ipfs:// CID for the metadata JSON
-func generateCIDFromMetadata(metadata govtypes.ProposalMetadata) (string, error) {
-	bz, err := json.Marshal(metadata)
+// generateCIDFromFileBytes returns ipfs://CIDv0 matching default `ipfs add`
+// on the exact file bytes (UnixFS file + dag-pb, not raw/DagJSON).
+func generateCIDFromFileBytes(data []byte) (string, error) {
+	cidStr, err := ipfs.AddBytesString(data)
 	if err != nil {
 		return "", err
 	}
-
-	// Use DagJSON codec (recommended for metadata) + sha2-256
-	hash, err := mh.Sum(bz, mh.SHA2_256, -1)
-	if err != nil {
-		return "", err
-	}
-
-	c := ipfs.NewCidV1(ipfs.DagJSON, hash) // or cid.Raw if you prefer
-
-	return "ipfs://" + c.String(), nil
-}
-
-func cidFromBytes(data []byte) (ipfs.Cid, error) {
-	r := bytes.NewReader(data)
-	_, c, err := ipfs.CidFromReader(r) // your imported function
-	return c, err
+	return "ipfs://" + cidStr, nil
 }
 
 // Prompt prompts the user for all values of the given type.
@@ -413,17 +397,23 @@ func NewReleaseProposalCmd() *cobra.Command {
 				return err
 			}
 
-			// Write draft metadata
+			// Write draft metadata, then CID from the exact on-disk bytes
+			// (must match `ipfs add draft_metadata.json`).
 			metadataPath := filepath.Join(upgradeDir, draftMetadataFileName)
 			if err := writeFile(metadataPath, metadata); err != nil {
 				return err
 			}
-
-			// Generate deterministic CID
-			cidStr, err := generateCIDFromMetadata(metadata)
+			metaBytes, err := os.ReadFile(metadataPath)
+			if err != nil {
+				return fmt.Errorf("read metadata for CID: %w", err)
+			}
+			cidStr, err := generateCIDFromFileBytes(metaBytes)
 			if err != nil {
 				fmt.Printf("Warning: could not generate CID: %v\n", err)
 				cidStr = "ipfs://<CID-HERE>"
+			} else {
+				fmt.Printf("✅ Metadata CID (ipfs add compatible): %s\n", cidStr)
+				fmt.Printf("   Upload with: ipfs add %s\n", metadataPath)
 			}
 
 			// === Build proposal ===
