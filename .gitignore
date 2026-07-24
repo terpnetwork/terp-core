@@ -60,3 +60,36 @@ github.com
 data
 terp-core
 target
+
+# --- secrets / local ops (never commit) ---
+# private keys & certs
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+ed25519-minio-key*
+*.pub
+!**/testdata/**/*.pub
+# env / credentials
+.env
+.env.*
+!.env.example
+*.credentials.json
+credentials.json
+**/cloudflared/**/credentials.json
+**/cloudflared/**/cert.pem
+# oline edge local tunnel id (also under crates/*)
+crates/o-line/config/edge/sites.toml
+config/edge/sites.toml
+# local agent / review noise
+.hermes/
+.worktrees/
+_review/
+**/scripts/act/runs/
+*.local.toml
+*.local.yaml
+*.local.yml
+SENTRY_SETUP.md
+oline-ui.md
