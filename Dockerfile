@@ -28,9 +28,13 @@ ARG WASMVM_SOURCE
 # Pull in the wasmvm static library (github mode only).
 # In local mode the lib is staged in build/wasmvm/ and will
 # be copied after the full source COPY below.
+#
+# Do NOT use `go list -m` here: go.mod may replace wasmvm → ./crates/zk-wasmvm
+# and crates/ is dockerignored until staging; parse the require line instead.
 # ---------------------------------------------------------
 RUN if [ "$WASMVM_SOURCE" = "github" ]; then \
-      WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}') && \
+      WASMVM_VERSION=$(awk '/github.com\/CosmWasm\/wasmvm\/v3/ && !/=>/ {print $2; exit}' go.mod) && \
+      if [ -z "$WASMVM_VERSION" ]; then echo "ERROR: could not parse wasmvm version from go.mod"; exit 1; fi && \
       ARCH=$(uname -m) && \
       echo "==> Downloading wasmvm $WASMVM_VERSION from GitHub ($ARCH)" && \
       wget -q https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/libwasmvm_muslc.$ARCH.a \
@@ -43,6 +47,7 @@ RUN if [ "$WASMVM_SOURCE" = "github" ]; then \
 
 # ---------------------------------------------------------
 # Copy the source tree (everything) and build *statically*
+# (.dockerignore excludes crates/ — ZK sources must be under build/zk-deps/)
 # ---------------------------------------------------------
 COPY . /code/
 
@@ -51,24 +56,41 @@ COPY . /code/
 # ---------------------------------------------------------
 RUN ARCH=$(uname -m) && \
     if [ "$WASMVM_SOURCE" = "local" ]; then \
-      echo "==> Using local wasmvm library" && \
-      # --- static lib ------------------------------------------------------- \
+      echo "==> Using local zk-wasmvm / zk-wasmd (go replace + staged muslc)" && \
+      # --- static lib (also living under build/zk-deps/.../internal/api via rsync) --- \
       if [ ! -f /code/build/wasmvm/libwasmvm_muslc.$ARCH.a ]; then \
         echo "ERROR: build/wasmvm/libwasmvm_muslc.$ARCH.a not found." && \
-        echo "Run 'make docker-stage-zk' first to stage zk dependencies." && \
+        echo "Run 'make docker-stage-zk' / build-zk-local first to stage zk dependencies." && \
         exit 1; \
       fi && \
       cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a /lib/libwasmvm_muslc.$ARCH.a && \
-      # --- go.mod: rewrite local replace paths to staged copies -------------- \
+      # Keep go replace to monorepo ZK forks — rewrite host paths → staged docker paths.
+      # crates/ is dockerignored; build/zk-deps is what the image actually contains.
+      if [ ! -f /code/build/zk-deps/zk-wasmvm/go.mod ] || [ ! -f /code/build/zk-deps/zk-wasmd/go.mod ]; then \
+        echo "ERROR: staged zk-deps missing. Need build/zk-deps/zk-wasmvm and zk-wasmd." && \
+        exit 1; \
+      fi && \
+      # Ensure muslc .a is present where cgo LDFLAGS ${SRCDIR} looks (internal/api)
+      cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a \
+         /code/build/zk-deps/zk-wasmvm/internal/api/libwasmvm_muslc.$ARCH.a && \
       sed -i 's|=> \./crates/zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
-      sed -i 's|=> \./crates/zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod; \
+      sed -i 's|=> \./crates/zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \
+      # Also accept already-rewritten or alternate relative forms
+      sed -i 's|=> \.\./zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
+      sed -i 's|=> \.\./zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \
+      echo "==> go.mod replaces after rewrite:" && \
+      grep -E 'CosmWasm/(wasmd|wasmvm)' /code/go.mod | head -20; \
     else \
-      echo "==> Stripping local replace directives for standard build" && \
-      # --- go.mod: remove the zk-local replace block so go uses upstream ----- \
-      sed -i '/zk-circuit flavored wasmvm included in fork/d' /code/go.mod && \
-      sed -i '/zk-circuit flavored wasmvm/d'                  /code/go.mod && \
-      sed -i '/=> \.\.\/zk-wasmvm/d'                          /code/go.mod && \
-      sed -i '/=> \.\.\/zk-wasmd/d'                           /code/go.mod; \
+      echo "==> Stripping local ZK replace directives for stock (github wasmvm) build" && \
+      # Remove monorepo path replaces so require lines resolve to module proxy
+      sed -i '/github.com\/CosmWasm\/wasmd => \.\/crates\/zk-wasmd/d' /code/go.mod && \
+      sed -i '/github.com\/CosmWasm\/wasmvm\/v3 => \.\/crates\/zk-wasmvm/d' /code/go.mod && \
+      sed -i '/github.com\/CosmWasm\/wasmd => \/code\/build\/zk-deps\/zk-wasmd/d' /code/go.mod && \
+      sed -i '/github.com\/CosmWasm\/wasmvm\/v3 => \/code\/build\/zk-deps\/zk-wasmvm/d' /code/go.mod && \
+      sed -i '/=> \.\.\/zk-wasmvm/d' /code/go.mod && \
+      sed -i '/=> \.\.\/zk-wasmd/d'  /code/go.mod && \
+      sed -i '/zk-circuit flavored wasmd/d' /code/go.mod && \
+      sed -i '/zk-circuit flavored wasmvm/d' /code/go.mod; \
     fi
 
 # force it to use static lib (from above) not standard libgo_cosmwasm.so file

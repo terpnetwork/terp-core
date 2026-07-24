@@ -7,7 +7,15 @@ WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}')
 
 .PHONY: release release-help release-publish release-dry-run release-snapshot \
 	create-binaries create-checksums release-prep create-binaries-json \
-	create-upgrade-guide release-proposal
+	create-upgrade-guide release-proposal \
+	release-bundle release-s3 release-dev
+
+# Shared with docker.mk for version-aligned testnet/ZK releases
+RELEASE_TAG ?= v5.3.0-dev
+NETWORK ?= testnet
+CHAIN_ID ?= 120u-1
+MINIO_ALIAS ?= usb2
+DRY_RUN ?= 0
 
 release-help:
 	@echo "release subcommands"
@@ -27,6 +35,13 @@ release-help:
 	@echo "  create-binaries-json     Generate cosmovisor-compatible binaries JSON"
 	@echo "  create-upgrade-guide     Generate upgrade guide (rolling or coordinated)"
 	@echo "  release-proposal         Submit governance upgrade proposal (stub)"
+	@echo ""
+	@echo "Testnet ZK / S3 verifiable distribution (see scripts/release/README.md):"
+	@echo "  release-bundle           Deterministic source.tar.gz + manifest.json"
+	@echo "  release-s3               Upload bundle to MinIO (MINIO_ALIAS=$(MINIO_ALIAS))"
+	@echo "  release-dev              bundle + s3 for RELEASE_TAG (default $(RELEASE_TAG))"
+	@echo "  docker-publish-dev       (docker.mk) ZK image tagged RELEASE_TAG"
+	@echo "  docker-push-dev          (docker.mk) push IMAGE_REPO:RELEASE_TAG"
 
 ###############################################################################
 # Full end-to-end release pipeline
@@ -192,3 +207,23 @@ create-upgrade-guide:
 
 release-proposal:
 	@bash scripts/release/create_proposal/submit_proposal.sh
+
+###############################################################################
+# Deterministic source bundle + MinIO/S3 publish (testnet ZK lineage)
+# Docs: scripts/release/README.md
+###############################################################################
+
+release-bundle:
+	@RELEASE_TAG=$(RELEASE_TAG) NETWORK=$(NETWORK) CHAIN_ID=$(CHAIN_ID) \
+		IMAGE_REPO=$(or $(IMAGE_REPO),ghcr.io/terpnetwork/terp-core) \
+		./scripts/release/make_release_bundle.sh
+
+release-s3:
+	@RELEASE_TAG=$(RELEASE_TAG) NETWORK=$(NETWORK) CHAIN_ID=$(CHAIN_ID) \
+		MINIO_ALIAS=$(MINIO_ALIAS) DRY_RUN=$(DRY_RUN) \
+		S3_BUCKET=$(S3_BUCKET) SYNC_ENTRYPOINT=$(or $(SYNC_ENTRYPOINT),0) \
+		ENTRYPOINT_SRC=$(ENTRYPOINT_SRC) CONFIG_ENDPOINTS_SRC=$(CONFIG_ENDPOINTS_SRC) \
+		./scripts/release/publish_s3_release.sh
+
+# Convenience: bundle then upload (does not build/push docker)
+release-dev: release-bundle release-s3

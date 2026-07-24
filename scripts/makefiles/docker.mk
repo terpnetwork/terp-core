@@ -24,7 +24,13 @@ _HOST_ARCH := $(shell uname -m | sed 's/arm64/aarch64/; s/x86_64/x86_64/')
 	docker-build-nonroot docker-build-localnet docker-localterp docker-clean \
 	build-zk-local build-zk-local-localnet _docker-stage-zk-lib \
 	docker-build-zk docker-build-zk-localnet docker-stage-zk docker-clean-zk \
-	_docker-stage _docker-stage-all-libs wasmvm-download-libs wasmvm-build-libs
+	_docker-stage _docker-stage-all-libs wasmvm-download-libs wasmvm-build-libs \
+	docker-publish-dev docker-push-dev
+
+# Dev / testnet ZK release tag (see scripts/release/README.md)
+RELEASE_TAG ?= v5.3.0-dev
+IMAGE_REPO ?= ghcr.io/terpnetwork/terp-core
+LOCAL_REPO ?= terpnetwork/terp-core
 
 docker-help:
 	@echo "docker subcommands"
@@ -32,6 +38,8 @@ docker-help:
 	@echo "Usage:"
 	@echo "  make docker-build                          	   # GitHub wasmvm (multi-lib)"
 	@echo "  make docker-build WASMVM_SOURCE=local||github     # local zk-wasmvm"
+	@echo "  make docker-publish-dev RELEASE_TAG=v5.3.0-dev    # ZK build + version tags"
+	@echo "  make docker-push-dev RELEASE_TAG=v5.3.0-dev       # push to IMAGE_REPO"
 	@echo ""
 	@echo "Available Commands:"
 	@echo "  docker-build                Build Docker image (distroless)"
@@ -39,12 +47,16 @@ docker-help:
 	@echo "  docker-build-nonroot        Build nonroot Docker image"
 	@echo "  docker-build-localnet       Build localterp dev image"
 	@echo "  build-zk-local              Build with local ../zk-wasmvm (all libs)"
+	@echo "  docker-publish-dev          ZK build + tag as RELEASE_TAG + local-zk + ghcr name"
+	@echo "  docker-push-dev             docker push IMAGE_REPO:RELEASE_TAG"
 	@echo "  wasmvm-download-libs        Download official libs into build/wasmvm/"
 	@echo "  wasmvm-build-libs           Build libs locally (if you have zk-wasmvm)"
 	@echo "  docker-clean                Clean staged artifacts"
 	@echo ""
 	@echo "Current config:"
 	@echo "  WASMVM_VERSION = $(WASMVM_VERSION)"
+	@echo "  RELEASE_TAG    = $(RELEASE_TAG)"
+	@echo "  IMAGE_REPO     = $(IMAGE_REPO)"
 	@echo "  Build dir libs: build/wasmvm/"
 
 docker: docker-help
@@ -187,3 +199,20 @@ docker-build-zk: build-zk-local
 docker-build-zk-localnet: build-zk-local-localnet
 docker-stage-zk: _docker-stage
 docker-clean-zk: docker-clean
+
+# ---------------------------------------------------------
+# Version-aligned ZK publish (testnet lineage, e.g. v5.3.0-dev)
+# ---------------------------------------------------------
+
+# Build (or SKIP_BUILD=1 retag) and apply RELEASE_TAG + local-zk + ghcr tags.
+docker-publish-dev:
+	@RELEASE_TAG=$(RELEASE_TAG) IMAGE_REPO=$(IMAGE_REPO) LOCAL_REPO=$(LOCAL_REPO) \
+		WASMVM_SOURCE=local SKIP_BUILD=$(or $(SKIP_BUILD),0) \
+		./scripts/release/publish_docker_dev.sh
+
+# Push the versioned image to the registry (requires docker login).
+docker-push-dev:
+	@echo "==> Pushing $(IMAGE_REPO):$(RELEASE_TAG)"
+	@docker push $(IMAGE_REPO):$(RELEASE_TAG)
+	@echo "Pushed $(IMAGE_REPO):$(RELEASE_TAG)"
+	@docker image inspect $(IMAGE_REPO):$(RELEASE_TAG) --format 'RepoDigests={{json .RepoDigests}}' || true

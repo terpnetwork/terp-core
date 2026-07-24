@@ -4,16 +4,18 @@ go 1.25
 
 // for verifiable dependencies:
 // go mod edit -replace github.com/CosmWasm/wasmd=github.com/permissionlessweb/wasmd@a2cad08268f814d7d958baae8a52b5860398ea13
-// go mod edit -replace github.com/CosmWasm/wasmd/v3=github.com/permissionlessweb/wasmvm/v3@178ec936f3ba4b964aeb8872029200f75e96b20d
-// for local/development, download wasmvm & wasmd to (wasmvm puts compiled versions and source here when building:
-//  github.com/CosmWasm/wasmvm/v3 => ./build/zk-deps/zk-wasmvm
-//  github.com/CosmWasm/wasmd => ./build/zk-deps/zk-wasmd
+// go mod edit -replace github.com/CosmWasm/wasmvm/v3=github.com/permissionlessweb/wasmvm/v3@178ec936f3ba4b964aeb8872029200f75e96b20d
+//
+// ZK monorepo path (DEFAULT for this branch / testnet lineage):
+//   host:    ./crates/zk-{wasmd,wasmvm}
+//   docker:  Dockerfile (WASMVM_SOURCE=local) rewrites to /code/build/zk-deps/...
+//            after `make _docker-stage` / build-zk-local stages those trees.
+// Stock mainnet builds (WASMVM_SOURCE=github) strip these two replaces in the Dockerfile.
 
 replace (
-	// zk-circuit flavored wasmvm included in fork
-	// github.com/CosmWasm/wasmd => github.com/permissionlessweb/wasmd v0.0.0-20260702144747-a2cad08268f8
-	// // zk-circuit flavored wasmvm
-	// github.com/CosmWasm/wasmvm/v3 => github.com/permissionlessweb/wasmvm/v3 v3.0.0-20260701204025-178ec936f3ba
+	// zk-circuit flavored wasmd + wasmvm (KEEP — do not comment out on v5.3.0-dev)
+	github.com/CosmWasm/wasmd => ./crates/zk-wasmd
+	github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
 	// temporary replace until upstream release of ibc-hooks for v10
 	github.com/cosmos/cosmos-sdk => github.com/permissionlessweb/cosmos-sdk v0.53.4-pfm-migrate
 	github.com/cosmos/ibc-apps/modules/ibc-hooks/v10 => github.com/permissionlessweb/ibc-apps/modules/ibc-hooks/v10 v10.1.1
