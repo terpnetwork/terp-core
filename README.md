@@ -15,6 +15,15 @@ given feedback to improve stability.
 
 ## Quick Start
 
+If you need the full monorepo (Rust/CosmWasm crates under `crates/` as git submodules), clone recursively and see **[MONOREPO.md](MONOREPO.md)** for submodule init, pointer bumps, directory layout, and troubleshooting:
+
+```sh
+git clone --recursive https://github.com/terpnetwork/terp-core.git
+cd terp-core
+# or after a plain clone:
+# git submodule update --init --recursive
+```
+
 ensure you have installed the minimum depenencies for building from source
 ```sh
 ## requires go installed
