@@ -37,6 +37,7 @@ Foreign-chain roots are optionally **re-hashed into Pallas-curve-compatible repr
 8. **[Parameters](08_parameters.md)**
 9. **[Example: Token Ownership Proof](09_example_token_ownership.md)**
 10. **[Multi-Source Oracle Aggregation](10_multi_source_oracle.md)** — modular sources, Model A/B, aggregate-v1 target, implementation gaps
+11. **[Oracle integration & consumer guide](11_oracle_consumer_guide.md)** — how contracts/keepers query roots and attestations; config; security
 
 ### Operator / test handoffs (repo docs)
 

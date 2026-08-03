@@ -296,6 +296,7 @@ Node: `hashmerchant.sidecar-url` / `HASHMERCHANT_SIDECAR_URL`. Empty → empty V
 | `crates/terp-rs/tools/hash-market` | In-house multi-source runtime / relay |
 | `tools/hashmerchant-support/` | Operator install façade |
 | `docs/bootstrap/hashmerchant-nft-oracle-minter-handoff.md` | Consumer contracts |
+| [11_oracle_consumer_guide.md](11_oracle_consumer_guide.md) | Integration / consumer how-to |
 
 ---
 

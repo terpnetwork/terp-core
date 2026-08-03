@@ -4,6 +4,8 @@ order: 6
 
 # Sudo Interface (Contract Traits)
 
+For a full consumer-oriented walkthrough (query paths, registration, security), see [11_oracle_consumer_guide.md](11_oracle_consumer_guide.md).
+
 When a hash root is confirmed, the module delivers it to registered CosmWasm contracts via the `sudo` entrypoint. This section defines the message schema (the "trait") and shows how to implement it in Rust.
 
 ## JSON Message Schema
