@@ -4,7 +4,7 @@
 # Tags applied (local + registry names):
 #   terpnetwork/terp-core:local-zk
 #   terpnetwork/terp-core:<RELEASE_TAG>
-#   <IMAGE_REPO>:<RELEASE_TAG>          (default ghcr.io/terpnetwork/terp-core)
+#   <IMAGE_REPO>:<RELEASE_TAG>          (default containers.terp.network/terp-core)
 #
 # Usage:
 #   ./scripts/release/publish_docker_dev.sh
@@ -13,7 +13,7 @@
 #
 # Env:
 #   RELEASE_TAG     (default: v5.3.0-dev)
-#   IMAGE_REPO      (default: ghcr.io/terpnetwork/terp-core)
+#   IMAGE_REPO      (default: containers.terp.network/terp-core)
 #   LOCAL_REPO      (default: terpnetwork/terp-core)
 #   WASMVM_SOURCE   (default: local) — must be local for ZK monorepo build
 #   SKIP_BUILD      (default: 0) — if 1, retag existing :local-zk without rebuild
@@ -24,7 +24,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 RELEASE_TAG="${RELEASE_TAG:-v5.3.0-dev}"
-IMAGE_REPO="${IMAGE_REPO:-ghcr.io/terpnetwork/terp-core}"
+IMAGE_REPO="${IMAGE_REPO:-containers.terp.network/terp-core}"
 LOCAL_REPO="${LOCAL_REPO:-terpnetwork/terp-core}"
 WASMVM_SOURCE="${WASMVM_SOURCE:-local}"
 SKIP_BUILD="${SKIP_BUILD:-0}"

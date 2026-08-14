@@ -19,7 +19,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 RELEASE_TAG="${RELEASE_TAG:-v5.3.0-dev}"
-IMAGE_REPO="${IMAGE_REPO:-ghcr.io/terpnetwork/terp-core}"
+IMAGE_REPO="${IMAGE_REPO:-containers.terp.network/terp-core}"
 LOCAL_REPO="${LOCAL_REPO:-terpnetwork/terp-core}"
 NETWORK="${NETWORK:-testnet}"
 CHAIN_ID="${CHAIN_ID:-120u-1}"

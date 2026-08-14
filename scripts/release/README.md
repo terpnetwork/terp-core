@@ -8,8 +8,8 @@ without drift.
 
 | Lineage | Branch / tag | Docker (default) | S3 tree |
 |---------|----------------|------------------|---------|
-| **Mainnet** (stock CosmWasm wasmvm) | release tags e.g. `v5.2.0` | `ghcr.io/terpnetwork/terp-core:v5.2.0` | `snapshots/mainnet/morocco-1/` |
-| **Testnet ZK** (monorepo + local zk-wasmvm) | `v5.3.0-dev` (and later `v5.3.0`) | `ghcr.io/terpnetwork/terp-core:v5.3.0-dev` | `releases/v5.3.0-dev/` + `snapshots/testnet/120u-1/` |
+| **Mainnet** (stock CosmWasm wasmvm) | release tags e.g. `v5.2.0` | `containers.terp.network/terp-core:v5.2.0` | `snapshots/mainnet/morocco-1/` |
+| **Testnet ZK** (monorepo + local zk-wasmvm) | `v5.3.0-dev` (and later `v5.3.0`) | `containers.terp.network/terp-core:v5.3.0-dev` | `releases/terp-core/v5.3.0-dev/` + `snapshots/testnet/120u-1/` |
 
 Build ZK images with `WASMVM_SOURCE=local` from this monorepo (`crates/zk-wasmvm`).
 
@@ -24,18 +24,20 @@ make docker-publish-dev RELEASE_TAG=v5.3.0-dev
 # Retag only (reuse existing :local-zk without rebuild):
 # make docker-publish-dev RELEASE_TAG=v5.3.0-dev SKIP_BUILD=1
 
-# 3) Push image (needs docker login to ghcr.io)
+# 3) Push image (needs docker login to containers.terp.network)
 make docker-push-dev RELEASE_TAG=v5.3.0-dev
 
 # 4) Bundle source + manifest (local build/release/<tag>/)
 make release-bundle RELEASE_TAG=v5.3.0-dev
 
-# 5) Publish bundle + optional network assets to MinIO/S3
-#    MINIO_ALIAS defaults to usb2 (host MinIO); override as needed
-make release-s3 RELEASE_TAG=v5.3.0-dev NETWORK=testnet CHAIN_ID=120u-1
+# 5) Publish bundle to releases/<project>/<tag>/ on MinIO/S3
+#    PROJECT defaults to terp-core (repo name). MINIO_ALIAS defaults to usb2.
+make release-s3 RELEASE_TAG=v5.3.0-dev PROJECT=terp-core NETWORK=testnet CHAIN_ID=120u-1
 # dry-run:
-make release-s3 RELEASE_TAG=v5.3.0-dev NETWORK=testnet CHAIN_ID=120u-1 DRY_RUN=1
+make release-s3 RELEASE_TAG=v5.3.0-dev DRY_RUN=1
 ```
+
+**S3 layout (all projects):** see [`S3-LAYOUT.md`](./S3-LAYOUT.md) — bucket `releases` → `<project>/<tag>/`.
 
 ### Rebuild notes (ZK static link)
 
@@ -70,7 +72,8 @@ make docker-push-dev RELEASE_TAG=v5.3.0-dev
 |--------|---------|
 | [`publish_docker_dev.sh`](./publish_docker_dev.sh) | ZK docker build + multi-tag (`local-zk`, `v5.3.0-dev`, ghcr) |
 | [`make_release_bundle.sh`](./make_release_bundle.sh) | Deterministic `source.tar.gz`, git metadata, image digests, `manifest.json` |
-| [`publish_s3_release.sh`](./publish_s3_release.sh) | `mc cp` bundle → `releases/<tag>/` + optional `snapshots/<network>/<chain>/` |
+| [`publish_s3_release.sh`](./publish_s3_release.sh) | `mc cp` bundle → `releases/<project>/<tag>/` + snapshot pointer |
+| [`S3-LAYOUT.md`](./S3-LAYOUT.md) | Canonical multi-project MinIO layout |
 | [`prep.sh`](./prep.sh) | Goreleaser-era binary tarballs (mainnet-style) |
 
 ## Manifest (verifiability)
@@ -88,8 +91,11 @@ Anyone can re-run `make_release_bundle.sh` on the same commit and compare checks
 
 ## S3 layout
 
+Full spec: [`S3-LAYOUT.md`](./S3-LAYOUT.md).
+
 ```
-releases/<tag>/
+# Bucket: releases  (source + binaries for every project)
+releases/<project>/<tag>/
   manifest.json
   SOURCE_COMMIT
   source.tar.gz
@@ -97,26 +103,33 @@ releases/<tag>/
   docker-images.txt
   sha256sum.txt                 # if binary artifacts present
 
+# Bucket: snapshots  (network ops only)
 snapshots/<network>/<chain_id>/
-  releases/<tag> -> copied manifest pointer files (optional)
-  scripts/oline-entrypoint.sh   # if SYNC_ENTRYPOINT=1 and file provided
-  scripts/config-node-endpoints.sh
+  genesis.json, chain.json, scripts/
+  releases/<project>/<tag>/     # lightweight pointer to software release
 ```
 
 Public base: `https://s3.terp.network/` (via host MinIO + Cloudflare).
+
+Examples:
+
+- `https://s3.terp.network/releases/terp-core/v5.3.0-dev/manifest.json`
+- `https://s3.terp.network/releases/terp-core/latest/manifest.json`
 
 ## Environment
 
 | Variable | Default | Meaning |
 |----------|---------|---------|
 | `RELEASE_TAG` | `v5.3.0-dev` | Version label |
-| `IMAGE_REPO` | `ghcr.io/terpnetwork/terp-core` | Registry repository |
+| `PROJECT` / `RELEASE_PROJECT` | `terp-core` | Folder under releases bucket (repo name) |
+| `IMAGE_REPO` | `containers.terp.network/terp-core` | Registry repository |
 | `WASMVM_SOURCE` | `local` for dev-zk builds | `local` = monorepo zk-wasmvm |
 | `MINIO_ALIAS` | `usb2` | `mc` alias for host MinIO |
-| `S3_BUCKET` | `snapshots` | Bucket name |
+| `S3_BUCKET` | `releases` | Target bucket for source bundles |
 | `NETWORK` | `testnet` | `mainnet` \| `testnet` |
 | `CHAIN_ID` | `120u-1` | e.g. `morocco-1` / `120u-1` |
 | `DRY_RUN` | `0` | Print `mc` actions only |
+| `PUBLISH_LATEST` | `0` | Also write `releases/<project>/latest/` |
 | `SYNC_ENTRYPOINT` | `0` | Also push oline entrypoint scripts |
 | `ENTRYPOINT_SRC` | path to `oline-entrypoint.sh` | Optional |
 
@@ -127,8 +140,23 @@ After push:
 ```toml
 # ~/.oline/config.toml
 [testnet]
-sentry_image = "ghcr.io/terpnetwork/terp-core:v5.3.0-dev"
+sentry_image = "containers.terp.network/terp-core:v5.3.0-dev"
 
 [testnet.images]
-node = "ghcr.io/terpnetwork/terp-core:v5.3.0-dev"
+node = "containers.terp.network/terp-core:v5.3.0-dev"
 ```
+
+
+## ZK libwasmvm artifacts
+
+Run make target wasmvm-curate. It copies every libwasmvm* from crates/zk-wasmvm
+into build/wasmvm-release/ plus SHA256SUMS and VERSIONS.txt.
+
+wasmd CheckLibwasmVersion requires the rust CARGO_PKG_VERSION (3.0.7-zk) to be
+a substring of the Go wasmvm module version. A path replace to ./crates/zk-wasmvm
+reports (devel) and the check is a no-op. Tag ZK releases so go.mod require is
+v3.0.7-zk (or set rust version to 3.0.7 to match v3.0.7).
+
+Goreleaser linux hooks copy build/wasmvm-release muslc archives when present
+so published linux binaries link the curated ZK muslc instead of the official
+CosmWasm GitHub asset.

@@ -222,7 +222,7 @@ release-proposal:
 
 release-bundle:
 	@RELEASE_TAG=$(RELEASE_TAG) NETWORK=$(NETWORK) CHAIN_ID=$(CHAIN_ID) \
-		IMAGE_REPO=$(or $(IMAGE_REPO),ghcr.io/terpnetwork/terp-core) \
+		IMAGE_REPO=$(or $(IMAGE_REPO),containers.terp.network/terp-core) \
 		./scripts/release/make_release_bundle.sh
 
 release-s3:

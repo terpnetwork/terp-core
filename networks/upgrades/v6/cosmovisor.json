@@ -1,7 +1,7 @@
 {
   "binaries": {
-    "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-amd64",
-    "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-arm64",
-    "darwin/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-darwin-arm64"
+    "darwin/arm64": "https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-darwin-arm64.tar.gz?checksum=sha256:6838329e668d61c118e9ea08bcc4ba5a0e21906a68307ba060e70797e611dd46",
+    "linux/amd64": "https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-amd64.tar.gz?checksum=sha256:2c2241fe79f44f8d2b3374ed722e2d7a5e125fc54ec80b6f727433e60309f750",
+    "linux/arm64": "https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-arm64.tar.gz?checksum=sha256:da5485436c8b0c7d60a8f65261ea87adf3a86394912934d2be01a59fca23a859"
   }
 }

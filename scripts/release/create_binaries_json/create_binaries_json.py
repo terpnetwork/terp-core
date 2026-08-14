@@ -12,9 +12,9 @@ the GitHub release exists), then falls back to fetching from GitHub.
 Output:
 {
   "binaries": {
-    "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.0/terpd-5.1.0-linux-amd64.tar.gz?checksum=sha256:<checksum>",
-    "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.0/terpd-5.1.0-linux-arm64.tar.gz?checksum=sha256:<checksum>",
-    "darwin/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.0/terpd-5.1.0-darwin-arm64.tar.gz?checksum=sha256:<checksum>",
+    "linux/amd64": "https://s3.terp.network/releases/terp-core/v5.1.0/terpd-5.1.0-linux-amd64.tar.gz?checksum=sha256:<checksum>",
+    "linux/arm64": "https://s3.terp.network/releases/terp-core/v5.1.0/terpd-5.1.0-linux-arm64.tar.gz?checksum=sha256:<checksum>",
+    "darwin/arm64": "https://s3.terp.network/releases/terp-core/v5.1.0/terpd-5.1.0-darwin-arm64.tar.gz?checksum=sha256:<checksum>",
   }
 }
 
@@ -73,9 +73,9 @@ def get_checksums(tag=None, checksums_url=None):
         print(f"Using local checksums from {LOCAL_CHECKSUMS_PATH}", file=sys.stderr)
         return read_local_checksums(LOCAL_CHECKSUMS_PATH)
 
-    github_url = f"https://github.com/terpnetwork/terp-core/releases/download/{tag}/sha256sum.txt"
-    print(f"Local {LOCAL_CHECKSUMS_PATH} not found, fetching from {github_url}", file=sys.stderr)
-    return download_checksums(github_url)
+    s3_url = f"https://s3.terp.network/releases/terp-core/{tag}/sha256sum.txt"
+    print(f"Local {LOCAL_CHECKSUMS_PATH} not found, fetching from {s3_url}", file=sys.stderr)
+    return download_checksums(s3_url)
 
 
 def checksums_to_binaries_json(checksums, tag):
@@ -91,7 +91,7 @@ def checksums_to_binaries_json(checksums, tag):
             continue
         checksum, filename = parts
 
-        # Only process versioned tarballs — these are what get uploaded to GitHub
+        # Only process versioned tarballs — these are what get uploaded to s3.terp.network
         if not filename.endswith('.tar.gz') or not filename.startswith('terpd-'):
             continue
 
@@ -108,7 +108,7 @@ def checksums_to_binaries_json(checksums, tag):
             continue
 
         url = (
-            f"https://github.com/terpnetwork/terp-core/releases/download/{tag}"
+            f"https://s3.terp.network/releases/terp-core/{tag}"
             f"/{filename}?checksum=sha256:{checksum}"
         )
         binaries[f"{platform}/{arch}"] = url
