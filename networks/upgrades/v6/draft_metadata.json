@@ -1,0 +1,8 @@
+{
+  "title": "v6 — SDK 0.54 / IBC-Go 11.1",
+  "authors": ["Terp Network"],
+  "summary": "Software upgrade plan v6 at height 22611000 (~15:00 UTC 24 Aug 2026; remasured 2026-08-14 still >7d).",
+  "details": "Breaking app upgrade: cosmos-sdk v0.54.3, ibc-go v11.1/v11.2, 08-wasm v11.1.0, CosmWasm 0.70 with zk-wasmvm. Handler name is v6. Cosmovisor path: $DAEMON_HOME/cosmovisor/upgrades/v6/bin/terpd.",
+  "proposal_forum_url": "",
+  "vote_option_context": "YES schedules halt at 22611000. NO / NWV / ABSTAIN as usual."
+}

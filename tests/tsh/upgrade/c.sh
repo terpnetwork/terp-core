@@ -135,7 +135,7 @@ wait_halt() {
 }
 
 echo "C: make install NEW_BIND=$NEW_BIND"
-( cd "$NEW_RELEASE_PATH" && make install )
+( cd "$NEW_RELEASE_PATH" && GOWORK=off go install -mod=mod -tags "netgo ledger" ./cmd/terpd )
 command -v "$NEW_BIND" >/dev/null || { echo "$NEW_BIND not on PATH"; exit 1; }
 echo "C: OLD=$OLD_BIND ($("$OLD_BIND" version | head -1)) NEW=$NEW_BIND ($("$NEW_BIND" version | head -1))"
 
@@ -428,5 +428,189 @@ if [ "$ok" != 1 ]; then
   exit 1
 fi
 echo "C: polytone callbacks landed — upgrade + IBC path good"
-kill "$HERMES_PID" 2>/dev/null || true
 
+####################################################################
+# Gated no-rick circuit + polytone proof from counterparty
+####################################################################
+ROOT_HINT="$(cd "$(dirname "$0")/../../.." && pwd)"
+NORICK_WASM="${NORICK_WASM:-$ROOT_HINT/artifacts/cw_norick.wasm}"
+NORICK_VK="${NORICK_VK:-$ROOT_HINT/artifacts/testdata/norick_vk.bin}"
+# Compiled CosmWasm blob (params|cs+vk|80-byte footer) from to_bytes_with_params / export_vk.
+# Do not pair with vk_combined.bin — that is a different blob.
+
+[ -f "$NORICK_WASM" ] || { echo "C: missing $NORICK_WASM"; exit 1; }
+[ -f "$NORICK_VK" ] || { echo "C: missing $NORICK_VK"; exit 1; }
+SPLIT_DIR="${TMPDIR:-/tmp}/c-norick-split"
+python3 "$(dirname "$0")/split_norick_vk.py" "$NORICK_VK" "$SPLIT_DIR"
+# shellcheck disable=SC1091
+. "$SPLIT_DIR/meta.env"
+NORICK_PARAMS="$SPLIT_DIR/params.bin"
+NORICK_VKBODY="$SPLIT_DIR/vk_body.bin"
+
+ADDR2=$("$NEW_BIND" keys show "$KEY2" --home "$HOME1" --keyring-backend "$KEYRING" -a)
+echo "C: circuit uploader candidate KEY2=$ADDR2"
+
+echo "C: post-upgrade circuit_upload_access (expect Nobody)"
+WP=$("$NEW_BIND" q wasm params --home "$HOME1" --node "tcp://127.0.0.1:${RPC1}" -o json)
+echo "$WP" | jq '{code:.code_upload_access.permission, circuit:.circuit_upload_access.permission, circuit_addrs:.circuit_upload_access.addresses}'
+PERM=$(echo "$WP" | jq -r '.circuit_upload_access.permission // empty')
+if [ "$PERM" != "Nobody" ] && [ "$PERM" != "ACCESS_TYPE_NOBODY" ] && [ "$PERM" != "3" ]; then
+  echo "C: WARN circuit permission is $PERM (expected Nobody after v6)"
+fi
+
+echo "C: KEY2 store-full-circuit must be rejected while Nobody"
+set +e
+"$NEW_BIND" tx wasm store-full-circuit "$NORICK_PARAMS" "$NORICK_VKBODY" \
+  --k "$CIRCUIT_K" --circuit-type "$CIRCUIT_PROVER" --curve-type "$CIRCUIT_CURVE" \
+  --from "$KEY2" --home "$HOME1" --chain-id "$ID1" --keyring-backend "$KEYRING" \
+  --node "tcp://127.0.0.1:${RPC1}" --gas auto --gas-adjustment 1.5 --fees "400000$DENOM" -y \
+  -o json > /tmp/c-circuit-denied.json 2>/tmp/c-circuit-denied.err
+DENY_RC=$?
+set -e
+DENY_CODE=$(jq -r '.code // 1' /tmp/c-circuit-denied.json 2>/dev/null || echo 1)
+echo "C: unauthorized circuit upload rc=$DENY_RC code=$DENY_CODE"
+if [ "$DENY_RC" = "0" ] && [ "$DENY_CODE" = "0" ]; then
+  echo "C: FAIL gated access — KEY2 stored a circuit before gov grant"
+  cat /tmp/c-circuit-denied.json
+  exit 1
+fi
+echo "C: gated deny ok"
+
+echo "C: gov MsgUpdateParams CircuitUploadAccess AnyOfAddresses KEY2"
+cat > "$HOME1/circuit-access.json" <<EOF
+{
+  "messages": [{
+    "@type": "/cosmwasm.wasm.v1.MsgUpdateParams",
+    "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+    "params": {
+      "code_upload_access": {"permission": "Everybody", "addresses": []},
+      "instantiate_default_permission": "Everybody",
+      "circuit_upload_access": {"permission": "AnyOfAddresses", "addresses": ["$ADDR2"]}
+    }
+  }],
+  "metadata": "",
+  "deposit": "5000000000$DENOM",
+  "title": "allow KEY2 circuit upload",
+  "summary": "set CircuitUploadAccess to AnyOfAddresses for no-rick vk (add-circuit-upload-params-addresses cannot start from Nobody)",
+  "expedited": true
+}
+EOF
+"$NEW_BIND" tx gov submit-proposal "$HOME1/circuit-access.json" --from "$KEY" --home "$HOME1" --chain-id "$ID1" \
+  --keyring-backend "$KEYRING" --node "tcp://127.0.0.1:${RPC1}" \
+  --gas auto --gas-adjustment 1.4 --fees "2000$DENOM" -y
+sleep 3
+PROP=$("$NEW_BIND" q gov proposals --home "$HOME1" --node "tcp://127.0.0.1:${RPC1}" -o json \
+  | jq -r '[.proposals[] | .id // .proposal_id] | max')
+echo "C: circuit grant proposal id=$PROP"
+[ -n "$PROP" ] && [ "$PROP" != "null" ] || { echo "C: no proposal id"; exit 1; }
+# Validator KEY has the bonded power; KEY2 is not required to pass.
+# Expedited voting is 5s — a second vote after pass is "inactive proposal".
+"$NEW_BIND" tx gov vote "$PROP" yes --from "$KEY" --home "$HOME1" --chain-id "$ID1" \
+  --keyring-backend "$KEYRING" --node "tcp://127.0.0.1:${RPC1}" \
+  --gas auto --gas-adjustment 1.2 --fees "1000$DENOM" -y
+set +e
+"$NEW_BIND" tx gov vote "$PROP" yes --from "$KEY2" --home "$HOME1" --chain-id "$ID1" \
+  --keyring-backend "$KEYRING" --node "tcp://127.0.0.1:${RPC1}" \
+  --gas auto --gas-adjustment 1.2 --fees "1000$DENOM" -y
+set -e
+echo "C: wait expedited voting period (5s + 3s)"
+sleep 8
+PS=$("$NEW_BIND" q gov proposal "$PROP" --home "$HOME1" --node "tcp://127.0.0.1:${RPC1}" -o json \
+  | jq -r '.proposal.status // .status')
+echo "C: proposal $PROP status=$PS"
+WP2=$("$NEW_BIND" q wasm params --home "$HOME1" --node "tcp://127.0.0.1:${RPC1}" -o json)
+echo "$WP2" | jq '{circuit:.circuit_upload_access.permission, addrs:.circuit_upload_access.addresses}'
+HAS=$(echo "$WP2" | jq -r --arg a "$ADDR2" '(.circuit_upload_access.addresses // []) | index($a) | if .==null then "no" else "yes" end')
+if [ "$HAS" != "yes" ]; then
+  echo "C: FAIL KEY2 not in circuit_upload_access after gov"
+  exit 1
+fi
+echo "C: KEY2 granted circuit upload"
+
+echo "C: KEY2 store-full-circuit (no-rick vk)"
+set +e
+"$NEW_BIND" tx wasm store-full-circuit "$NORICK_PARAMS" "$NORICK_VKBODY" \
+  --k "$CIRCUIT_K" --circuit-type "$CIRCUIT_PROVER" --curve-type "$CIRCUIT_CURVE" \
+  --from "$KEY2" --home "$HOME1" --chain-id "$ID1" --keyring-backend "$KEYRING" \
+  --node "tcp://127.0.0.1:${RPC1}" --gas auto --gas-adjustment 1.6 --fees "800000$DENOM" -y \
+  -o json > /tmp/c-circuit-ok.json 2>/tmp/c-circuit-ok.err
+OK_RC=$?
+set -e
+OK_CODE=$(jq -r '.code // 1' /tmp/c-circuit-ok.json 2>/dev/null || echo 1)
+echo "C: authorized circuit upload rc=$OK_RC code=$OK_CODE"
+if [ "$OK_RC" != "0" ] || [ "$OK_CODE" != "0" ]; then
+  echo "C: FAIL authorized circuit upload"
+  cat /tmp/c-circuit-ok.json /tmp/c-circuit-ok.err | tail -40
+  exit 1
+fi
+sleep 3
+
+echo "C: store + instantiate no-rick wasm on local-1"
+store_one "$HOME1" "$RPC1" "$ID1" "$NORICK_WASM"
+NR_CODE=$("$NEW_BIND" q wasm list-code --home "$HOME1" --node "tcp://127.0.0.1:${RPC1}" -o json \
+  | jq -r '[.code_infos[].code_id] | max')
+echo "C: no-rick code_id=$NR_CODE"
+# cw-norick instantiate creates 2 TF denoms (10_000_000uterp each)
+"$NEW_BIND" tx wasm instantiate "$NR_CODE" '{}' --from "$KEY" --home "$HOME1" --chain-id "$ID1" \
+  --keyring-backend "$KEYRING" --node "tcp://127.0.0.1:${RPC1}" \
+  --amount "20000000$DENOM" --no-admin --label "norick-c1" --gas auto --gas-adjustment 1.5 --fees "400000$DENOM" -y
+sleep 3
+NORICK_A=$(lca "$HOME1" "$RPC1" "$NR_CODE")
+echo "C: norick_a=$NORICK_A"
+[ -n "$NORICK_A" ] || { echo "C: no-rick instantiate failed"; exit 1; }
+
+# Host-generated proofs from tests/tsh/zk/gen-testdata.sh (no wasm-bindgen).
+CASES_JSON="${NORICK_CASES:-}"
+if [ -z "$CASES_JSON" ]; then
+  if [ -f "$ROOT_HINT/artifacts/testdata/norick_cases.json" ]; then
+    CASES_JSON="$ROOT_HINT/artifacts/testdata/norick_cases.json"
+  elif [ -f "$ROOT_HINT/artifacts/norick_cases.json" ]; then
+    CASES_JSON="$ROOT_HINT/artifacts/norick_cases.json"
+  fi
+fi
+if [ -z "${CASES_JSON:-}" ] || [ ! -f "$CASES_JSON" ]; then
+  echo "C: missing norick_cases.json — run tests/tsh/zk/gen-testdata.sh"
+  exit 1
+fi
+echo "C: using testdata cases $CASES_JSON"
+OK_CASE=$(jq -c '[.cases[] | select(.expect_ok==true and .local_ok==true)][0]' "$CASES_JSON")
+[ "$OK_CASE" != "null" ] && [ -n "$OK_CASE" ] || { echo "C: no local_ok case in $CASES_JSON"; exit 1; }
+CASE_NAME=$(echo "$OK_CASE" | jq -r .name)
+PROOF_B64=$(echo "$OK_CASE" | jq -r .proof_b64)
+FORBIDDEN=$(echo "$OK_CASE" | jq -r .forbidden)
+echo "C: case=$CASE_NAME forbidden=$FORBIDDEN proof_len=${#PROOF_B64}"
+PROOVE=$(printf '{"proove":{"cid":1,"forbidden":"%s","proof":"%s"}}' "$FORBIDDEN" "$PROOF_B64")
+PROOVE_B64=$(printf '%s' "$PROOVE" | base64 | tr -d '\n')
+POLY_MSG=$(printf '{"execute":{"msgs":[{"wasm":{"execute":{"contract_addr":"%s","msg":"%s","funds":[]}}}],"timeout_seconds":"300","callback":{"receiver":"%s","msg":"bm9yaWNrCg=="}}}' \
+  "$NORICK_A" "$PROOVE_B64" "$TESTER_B")
+
+echo "C: polytone execute no-rick prove from local-2 to local-1"
+"$NEW_BIND" tx wasm execute "$NOTE_B" "$POLY_MSG" \
+  --from "$KEY" --home "$HOME2" --chain-id "$ID2" --keyring-backend "$KEYRING" \
+  --node "tcp://127.0.0.1:${RPC2}" --gas auto --gas-adjustment 1.5 --fees "400000$DENOM" -y
+sleep 3
+"$HERMES_BIN" clear packets --chain "$ID2" --port "wasm.$NOTE_B" --channel channel-0 || true
+"$HERMES_BIN" clear packets --chain "$ID2" --port "wasm.$NOTE_B" --channel channel-1 || true
+"$HERMES_BIN" clear packets --chain "$ID1" --port "wasm.$NOTE_A" --channel channel-0 || true
+
+echo "C: wait for counterparty no-rick callback on tester_b"
+ok2=0
+for i in $(seq 1 30); do
+  HB=$("$NEW_BIND" q wasm contract-state smart "$TESTER_B" '{"history":{}}' --home "$HOME2" --node "tcp://127.0.0.1:${RPC2}" -o json 2>/dev/null || echo '{}')
+  nb=$(echo "$HB" | jq -r '(.data.history // .history // []) | length')
+  echo "  tester_b history=$nb try=$i"
+  if [ "${nb:-0}" -ge 2 ]; then
+    ok2=1
+    echo "$HB" | jq '{history:(.data.history // .history)}'
+    break
+  fi
+  sleep 3
+done
+if [ "$ok2" != 1 ]; then
+  echo "C: no-rick polytone callback did not land"
+  tail -40 /tmp/tsh-c-hermes.log
+  exit 1
+fi
+echo "C: gated circuit upload + polytone no-rick execute from counterparty — PASS"
+
+kill "$HERMES_PID" 2>/dev/null || true

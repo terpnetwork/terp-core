@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "22611000",
+        "info": "https://s3.terp.network/releases/terp-core/v6.0.0/cosmovisor.json",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "10000000000uterp",
+  "title": "v6 — SDK 0.54 / IBC-Go 11.1",
+  "summary": "Coordinated upgrade to plan v6 at height 22611000 (~2026-08-24 15:00 UTC). Cosmos SDK v0.54.3, ibc-go v11.1, official 08-wasm v11.1.0, wasmd 0.70 + zk-wasmvm. Deletes x/group and x/nft stores. Drain nonrefundable PFM packets before halt.",
+  "expedited": false
+}

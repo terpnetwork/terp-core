@@ -1,0 +1,20 @@
+[package]
+name = "norick-testdata"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Offline No-Rick VK + host Halo2 proofs for tsh e2e testdata (no wasm-bindgen)"
+
+[[bin]]
+name = "gen_norick_testdata"
+path = "src/main.rs"
+
+[dependencies]
+base64 = "0.22"
+group = "0.13"
+cosmwasm-std = { path = "../../../../crates/cosmwasm/packages/std" }
+halo2_proofs = { path = "../../../../crates/zcash/halo2/halo2_proofs", default-features = false, features = ["batch"] }
+pasta_curves = "=0.5.1"
+rand = "0.8"
+serde_json = "1"
+zk-cosmwasm = { path = "../../../../crates/cosmwasm/packages/zk" }

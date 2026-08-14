@@ -6,20 +6,22 @@
 | Plan name (handler) | **`v6`** |
 | Binary tag | [`v6.0.0`](https://s3.terp.network/releases/terp-core/v6.0.0/manifest.json) *(fill when published)* |
 | Upgrade height | **`22611000`** |
-| Target wall time | **2026-08-24 15:00 UTC** (10 days from 2026-08-14) |
+| Target wall time | **2026-08-24 15:00 UTC** (~9.7 days from 2026-08-14 22:16 UTC remasure) |
 | Proposal | [ping.pub](https://www.ping.pub/terp/gov) — ID **TBD** until submitted |
 | Countdown | [block 22611000](https://www.ping.pub/terp/block/22611000) |
 
 ## Schedule (measured, not guessed)
 
-Snapshot taken **2026-08-13 06:44 UTC**:
+Snapshot taken **2026-08-13 06:44 UTC**, remasured **2026-08-14 22:16 UTC**:
 
-- Live height: `22336990`
-- Mean block time (last 2000 blocks): **~3.5785 s**
-- +11.34 d → ~`22610879`
-- **Rounded coordinated height: `22611000`**
+- Live height (remasure): `22376777`
+- Mean block time (last 2000 blocks): **~3.5763 s**
+- +7.00 d floor → ~`22545889`
+- +9.70 d to coordinated height `22611000` (**above the 7-day floor**)
+- +10.00 d raw → ~`22618366`
+- **Rounded coordinated height stays `22611000`**
 
-Re-measure 48 hours before submitting the proposal. If average block time drifts by 0.1 s, height moves by ~±8k blocks over 11 days. Adjust `draft_proposal.json` before broadcast.
+Re-measure 48 hours before submitting the proposal. If average block time drifts by 0.1 s, height moves by ~±8k blocks over 10 days. Adjust `draft_proposal.json` before broadcast. Do not submit if remaining blocks imply fewer than 7 days.
 
 This is a **breaking** cut: Cosmos SDK **v0.54.3**, ibc-go **v11.1/v11.2**, official **08-wasm v11.1.0**, CosmWasm/wasmd **0.70** + local **zk-wasmvm**. `x/group` and in-tree `x/nft` stores are deleted.
 
