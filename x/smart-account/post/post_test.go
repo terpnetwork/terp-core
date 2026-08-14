@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	storetypes "cosmossdk.io/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
@@ -22,14 +22,14 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/terpnetwork/terp-core/v5/app"
-	"github.com/terpnetwork/terp-core/v5/app/params"
-	terptestutils "github.com/terpnetwork/terp-core/v5/app/testutils"
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/post"
+	"github.com/terpnetwork/terp-core/v6/app"
+	"github.com/terpnetwork/terp-core/v6/app/params"
+	terptestutils "github.com/terpnetwork/terp-core/v6/app/testutils"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/post"
 
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/testutils"
 
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 
 	"github.com/stretchr/testify/suite"
 )

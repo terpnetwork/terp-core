@@ -1,422 +1,432 @@
-#!/bin/bash
-echo "performing v520 upgrade"
+#!/usr/bin/env bash
+####################################################################
+# TEST C: two local chains, each: OLD_BIND gov software-upgrade v6 → halt
+# → NEW_BIND start → applied height + POST_BLOCKS → Hermes + polytone
+# note↔voice (existing tsh/polytone + helpers/relayer, un-bitrotted).
+####################################################################
+set -euo pipefail
 
-# ####################################################################
-# # A. START
-# ####################################################################
-# export UPGRADE_VERSION_TITLE=${UPGRADE_VERSION_TITLE:-"v520"}
-# export KEY="terp1"
-# export KEY2="terp2"
-# export TFDENOM="skeret"
-# export NEW_RELEASE_PATH="../../../"
-# export OLD_RELEASE_PATH="../../../../../terp-core"
-# export CONFIG_FLAGS="--keyring-backend $KEYRING"
+OLD_BIND="${OLD_BIND:-terp-mainnet}"
+NEW_BIND="${NEW_BIND:-terpd}"
+UPGRADE_VERSION_TITLE="${UPGRADE_VERSION_TITLE:-v6}"
+NEW_RELEASE_PATH="${NEW_RELEASE_PATH:-../../../}"
+KEY="${KEY:-terp1}"
+KEY2="${KEY2:-terp2}"
+DENOM="${DENOM:-uterp}"
+KEYRING="${KEYRING:-test}"
+KEYALGO="${KEYALGO:-secp256k1}"
+TIMEOUT_COMMIT="${TIMEOUT_COMMIT:-1s}"
+HALT_DELTA="${HALT_DELTA:-15}"
+POST_BLOCKS="${POST_BLOCKS:-5}"
+CLEAN="${CLEAN:-true}"
 
-# # Chain definitions - easy to extend to 3+ chains later
-# declare -A CHAIN1=(
-#     [id]="local-1"
-#     [home]="${HOME_DIR:-~/.terpd}"
-#     [rpc]=26657
-#     [rest]=1317
-#     [p2p]=26656
-#     [grpc]=9090
-#     [grpc_web]=9091
-#     [prof]=6060
-# )
+HOME1="${HOME1:-$HOME/.terpd-c1}"
+HOME2="${HOME2:-$HOME/.terpd-c2}"
+ID1="${ID1:-local-1}"
+ID2="${ID2:-local-2}"
+RPC1="${RPC1:-26957}"
+RPC2="${RPC2:-23957}"
+P2P1="${P2P1:-26956}"
+P2P2="${P2P2:-23956}"
+GRPC1="${GRPC1:-19090}"
+GRPC2="${GRPC2:-19091}"
+RELAYER="${RELAYER:-relayer}"
+WASM_DIR="${WASM_DIR:-../../../artifacts}"
+HERMES_BIN="${HERMES_BIN:-$HOME/go/bin/hermes}"
+HERMES_VER="${HERMES_VER:-v1.13.2}"
+OLD_LOG1="${OLD_LOG1:-/tmp/tsh-c1-old.log}"
+OLD_LOG2="${OLD_LOG2:-/tmp/tsh-c2-old.log}"
+NEW_LOG1="${NEW_LOG1:-/tmp/tsh-c1-new.log}"
+NEW_LOG2="${NEW_LOG2:-/tmp/tsh-c2-new.log}"
 
-# declare -A CHAIN2=(
-#     [id]="local-2"
-#     [home]="${HOME_DIR2:-~/.terpd2}"
-#     [rpc]=23657
-#     [rest]=1337
-#     [p2p]=23656
-#     [grpc]=9390
-#     [grpc_web]=9391
-#     [prof]=6061
-# )
+command -v "$OLD_BIND" >/dev/null || { echo "$OLD_BIND not found"; exit 1; }
+command -v jq >/dev/null || { echo "jq required"; exit 1; }
 
-# MONIKER="localterp"
-# DENOM="uterp"
-# KEYRING=${KEYRING:-"test"}
-# KEYALGO="secp256k1"
-# TIMEOUT_COMMIT=${TIMEOUT_COMMIT:-"1s"}
-# BINARY=${BINARY:-terpd}
-# CLEAN=${CLEAN:-"true"}
+rpc_h() { curl -sf "http://127.0.0.1:$1/status" | jq -r '.result.sync_info.latest_block_height'; }
+wait_rpc() {
+  local port=$1
+  for _ in $(seq 1 60); do curl -sf "http://127.0.0.1:$port/status" >/dev/null && return 0; sleep 1; done
+  echo "rpc :$port down"; return 1
+}
 
-# POLYTONE_CONTRACTS=(
-#     "polytone_listener.wasm"
-#     "polytone_note.wasm"
-#     "polytone_proxy.wasm"
-#     "polytone_voice.wasm"
-#     "polytone_tester.wasm"
-# )
+applied_h() {
+  local home=$1 port=$2
+  "$NEW_BIND" q upgrade applied "$UPGRADE_VERSION_TITLE" \
+    --home "$home" --node "tcp://127.0.0.1:${port}" -o json 2>/dev/null \
+    | jq -r '.height // empty'
+}
 
-# POLYTONE_CONTRACTS=(
-#   "polytone_listener.wasm"
-#   "polytone_note.wasm"
-#   "polytone_proxy.wasm"
-#   "polytone_voice.wasm"
-#   "polytone_tester.wasm"
-#   )
+init_home() {
+  local home=$1 id=$2 rpc=$3 p2p=$4 grpc=$5
+  rm -rf "$home"
+  echo "decorate bright ozone fork gallery riot bus exhaust worth way bone indoor calm squirrel merry zero scheme cotton until shop any excess stage laundry" | \
+    "$OLD_BIND" keys add "$KEY" --home "$home" --keyring-backend "$KEYRING" --algo "$KEYALGO" --recover
+  echo "wealth flavor believe regret funny network recall kiss grape useless pepper cram hint member few certain unveil rather brick bargain curious require crowd raise" | \
+    "$OLD_BIND" keys add "$KEY2" --home "$home" --keyring-backend "$KEYRING" --algo "$KEYALGO" --recover
+  if [ ! -s /tmp/c-relayer.mnemonic ]; then
+    set +o pipefail
+    yes | "$OLD_BIND" keys add "$RELAYER" --home "$home" --keyring-backend "$KEYRING" --algo "$KEYALGO" --output json > "$home/relayer.json" 2>&1
+    set -o pipefail
+    jq -r '.mnemonic' "$home/relayer.json" > /tmp/c-relayer.mnemonic
+  else
+    "$OLD_BIND" keys add "$RELAYER" --home "$home" --keyring-backend "$KEYRING" --algo "$KEYALGO" --recover < /tmp/c-relayer.mnemonic
+  fi
+  "$OLD_BIND" init localterp --home "$home" --chain-id "$id" --default-denom "$DENOM"
+  jq '.app_state.gov.params.voting_period="15s" | .app_state.gov.params.expedited_voting_period="5s" | .app_state.gov.params.min_deposit=[{"denom":"uterp","amount":"1000000"}] | .app_state.staking.params.bond_denom="uterp" | .app_state.mint.params.mint_denom="uterp"' \
+    "$home/config/genesis.json" > "$home/config/tmp.json"
+  mv "$home/config/tmp.json" "$home/config/genesis.json"
+  "$OLD_BIND" genesis add-genesis-account "$KEY" 1000000000000uterp --home "$home" --keyring-backend "$KEYRING"
+  "$OLD_BIND" genesis add-genesis-account "$KEY2" 100000000000uterp --home "$home" --keyring-backend "$KEYRING"
+  "$OLD_BIND" genesis add-genesis-account "$RELAYER" 1000000000000uterp --home "$home" --keyring-backend "$KEYRING"
+  "$OLD_BIND" genesis gentx "$KEY" 10000000000uterp --home "$home" --keyring-backend "$KEYRING" --chain-id "$id"
+  "$OLD_BIND" genesis collect-gentxs --home "$home"
+  sed -i.bak "/^\[rpc\]/,/^\[/ s/^laddr *=.*/laddr = \"tcp:\/\/127.0.0.1:${rpc}\"/" "$home/config/config.toml"
+  sed -i.bak "/^\[rpc\]/,/^\[/ s/^pprof_laddr *=.*/pprof_laddr = \"localhost:16${rpc: -3}\"/" "$home/config/config.toml"
+  sed -i.bak "/^\[p2p\]/,/^\[/ s/^laddr *=.*/laddr = \"tcp:\/\/127.0.0.1:${p2p}\"/" "$home/config/config.toml"
+  sed -i.bak "/^\[p2p\]/,/^\[/ s/^pex *=.*/pex = false/" "$home/config/config.toml"
+  sed -i.bak "/^\[p2p\]/,/^\[/ s/^seeds *=.*/seeds = \"\"/" "$home/config/config.toml"
+  sed -i.bak "/^\[p2p\]/,/^\[/ s/^persistent_peers *=.*/persistent_peers = \"\"/" "$home/config/config.toml"
+  sed -i.bak "/^\[consensus\]/,/^\[/ s/^[[:space:]]*timeout_commit[[:space:]]*=.*/timeout_commit = \"${TIMEOUT_COMMIT}\"/" "$home/config/config.toml"
+  sed -i.bak "/^\[grpc\]/,/^\[/ s/address.*/address = \"127.0.0.1:${grpc}\"/" "$home/config/app.toml" || true
+}
 
-# command -v $BINARY > /dev/null 2>&1 || { echo >&2 "$BINARY command not found. Ensure this is setup / properly installed in your GOPATH (make install)."; exit 1; }
-# command -v jq > /dev/null 2>&1 || { echo >&2 "jq not installed. More info: https://stedolan.github.io/jq/download/"; exit 1; }
-# pkill -f $BINARY
+propose_v6() {
+  local home=$1 id=$2 halt=$3 rpc=$4
+  cat > "$home/upgrade.json" <<EOF
+{
+  "messages": [{
+    "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+    "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+    "plan": {"name": "$UPGRADE_VERSION_TITLE", "time": "0001-01-01T00:00:00Z", "height": "$halt", "info": "", "upgraded_client_state": null}
+  }],
+  "metadata": "",
+  "deposit": "5000000000$DENOM",
+  "title": "$UPGRADE_VERSION_TITLE",
+  "summary": "v6 sdk 0.54 / ibc-go 11.1",
+  "expedited": true
+}
+EOF
+  "$OLD_BIND" tx gov submit-proposal "$home/upgrade.json" --from "$KEY" --home "$home" --chain-id "$id" \
+    --keyring-backend "$KEYRING" --node "tcp://127.0.0.1:${rpc}" \
+    --gas auto --gas-adjustment 1.5 --fees "2000$DENOM" -y
+  sleep 2
+  "$OLD_BIND" tx gov vote 1 yes --from "$KEY" --home "$home" --chain-id "$id" \
+    --keyring-backend "$KEYRING" --node "tcp://127.0.0.1:${rpc}" \
+    --gas auto --gas-adjustment 1.2 --fees "1000$DENOM" -y
+  sleep 2
+  "$OLD_BIND" tx gov vote 1 yes --from "$KEY2" --home "$home" --chain-id "$id" \
+    --keyring-backend "$KEYRING" --node "tcp://127.0.0.1:${rpc}" \
+    --gas auto --gas-adjustment 1.2 --fees "1000$DENOM" -y
+  sleep 2
+}
 
+wait_halt() {
+  local pid=$1 log=$2
+  for _ in $(seq 1 180); do
+    if ! kill -0 "$pid" 2>/dev/null; then return 0; fi
+    if grep -q "UPGRADE \"${UPGRADE_VERSION_TITLE}\" NEEDED" "$log" 2>/dev/null; then
+      kill "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
 
-# $BINARY config keyring-backend $KEYRING
-# $BINARY config chain-id "${CHAIN1[id]}"
+echo "C: make install NEW_BIND=$NEW_BIND"
+( cd "$NEW_RELEASE_PATH" && make install )
+command -v "$NEW_BIND" >/dev/null || { echo "$NEW_BIND not on PATH"; exit 1; }
+echo "C: OLD=$OLD_BIND ($("$OLD_BIND" version | head -1)) NEW=$NEW_BIND ($("$NEW_BIND" version | head -1))"
 
-# $BINARY config keyring-backend $KEYRING
-# $BINARY config chain-id "${CHAIN2[id]}"
+if [ "$CLEAN" != "false" ]; then
+  rm -f /tmp/c-relayer.mnemonic
+  init_home "$HOME1" "$ID1" "$RPC1" "$P2P1" "$GRPC1"
+  init_home "$HOME2" "$ID2" "$RPC2" "$P2P2" "$GRPC2"
+fi
 
-# run_on_chain() {
-#     local home_dir=$1
-#     shift
-#     "$BINARY" --home="$home_dir" $CONFIG_FLAGS "$@"
-# }
+: > "$OLD_LOG1"; : > "$OLD_LOG2"
+"$OLD_BIND" start --home "$HOME1" --pruning=nothing --minimum-gas-prices=0uterp \
+  --rpc.laddr="tcp://127.0.0.1:$RPC1" >>"$OLD_LOG1" 2>&1 &
+PID1=$!
+"$OLD_BIND" start --home "$HOME2" --pruning=nothing --minimum-gas-prices=0uterp \
+  --rpc.laddr="tcp://127.0.0.1:$RPC2" >>"$OLD_LOG2" 2>&1 &
+PID2=$!
+wait_rpc "$RPC1"
+wait_rpc "$RPC2"
+for _ in $(seq 1 60); do
+  a=$(rpc_h "$RPC1" || echo 0)
+  b=$(rpc_h "$RPC2" || echo 0)
+  if [ "${a:-0}" -ge 1 ] && [ "${b:-0}" -ge 1 ]; then
+    break
+  fi
+  sleep 1
+done
+H1=$(rpc_h "$RPC1")
+if [ "${H1:-0}" -lt 1 ]; then
+  echo "C: no first block yet"; exit 1
+fi
+HALT=$((H1 + HALT_DELTA))
+echo "C: proposing $UPGRADE_VERSION_TITLE halt=$HALT"
+propose_v6 "$HOME1" "$ID1" "$HALT" "$RPC1"
+propose_v6 "$HOME2" "$ID2" "$HALT" "$RPC2"
 
-# # Run same command on both chains
-# for_each_chain() {
-#     local cmd="$1"
-#     shift
-#     for chain in "${!CHAIN1[@]}" "${!CHAIN2[@]}"; do
-#         if [[ $chain == "CHAIN1" ]]; then
-#             eval "local home=\${CHAIN1[home]}"
-#         else
-#             eval "local home=\${CHAIN2[home]}"
-#         fi
-#         echo "→ Running on ${home}: $cmd $*"
-#         run_on_chain "$home" "$cmd" "$@"
-#     done
-# }
+echo "C: waiting for UPGRADE NEEDED on both"
+wait_halt "$PID1" "$OLD_LOG1" || { echo "C: c1 did not halt"; tail -30 "$OLD_LOG1"; exit 1; }
+wait_halt "$PID2" "$OLD_LOG2" || { echo "C: c2 did not halt"; tail -30 "$OLD_LOG2"; exit 1; }
+sleep 2
 
-# build_version() {
-#     local path=$1
-#     echo "Building from $path..."
-#     (cd "$path" && make install)
-# }
+for home in "$HOME1" "$HOME2"; do
+  if [ ! -f "$home/data/upgrade-info.json" ]; then
+    echo "C: missing $home/data/upgrade-info.json"; exit 1
+  fi
+  echo "C: $home info=$(cat "$home/data/upgrade-info.json")"
+done
 
-# update_genesis() {
-#     local home=$1
-#     local jq_cmd=$2
+: > "$NEW_LOG1"; : > "$NEW_LOG2"
+"$NEW_BIND" start --home "$HOME1" --pruning=nothing --minimum-gas-prices=0uterp \
+  --rpc.laddr="tcp://127.0.0.1:$RPC1" >>"$NEW_LOG1" 2>&1 &
+NPID1=$!
+"$NEW_BIND" start --home "$HOME2" --pruning=nothing --minimum-gas-prices=0uterp \
+  --rpc.laddr="tcp://127.0.0.1:$RPC2" >>"$NEW_LOG2" 2>&1 &
+NPID2=$!
+wait_rpc "$RPC1"
+wait_rpc "$RPC2"
 
-#     cat "$home/config/genesis.json" | jq "$jq_cmd" > "$home/config/tmp_genesis.json"
-#     mv "$home/config/tmp_genesis.json" "$home/config/genesis.json"
-# }
+ok_applied() {
+  local home=$1 port=$2
+  local ah
+  for _ in $(seq 1 120); do
+    ah=$(applied_h "$home" "$port" || true)
+    if [ -n "$ah" ] && [ "$ah" != "0" ]; then
+      echo "$ah"
+      return 0
+    fi
+    sleep 2
+  done
+  return 1
+}
 
+A1=$(ok_applied "$HOME1" "$RPC1") || { echo "C: c1 not applied"; tail -40 "$NEW_LOG1"; exit 1; }
+A2=$(ok_applied "$HOME2" "$RPC2") || { echo "C: c2 not applied"; tail -40 "$NEW_LOG2"; exit 1; }
+echo "C: applied c1=$A1 c2=$A2"
 
-# tune_config() {
-#     local home=$1 rpc rest p2p grpc grpc_web prof
-#     sed -i.bak -e "s|laddr = \"tcp://127.0.0.1:26657\"|laddr = \"tcp://0.0.0.0:$rpc\"|g" "$home/config/config.toml"
-#     sed -i.bak -e 's|cors_allowed_origins = \[\]|cors_allowed_origins = ["*"]|g' "$home/config/config.toml"
-#     sed -i.bak -e "s|address = \"tcp://localhost:1317\"|address = \"tcp://0.0.0.0:$rest\"|g" "$home/config/app.toml"
-#     sed -i.bak -e 's|enable = false|enable = true|g' "$home/config/app.toml"
-#     sed -i.bak -e "s|pprof_laddr = \"localhost:6060\"|pprof_laddr = \"localhost:$prof\"|g" "$home/config/config.toml"
-#     sed -i.bak -e "s|laddr = \"tcp://0.0.0.0:26656\"|laddr = \"tcp://0.0.0.0:$p2p\"|g" "$home/config/config.toml"
-#     sed -i.bak -e "s|address = \"localhost:9090\"|address = \"0.0.0.0:$grpc\"|g" "$home/config/app.toml"
-#     sed -i.bak -e "s|address = \"localhost:9091\"|address = \"0.0.0.0:$grpc_web\"|g" "$home/config/app.toml"
-#     sed -i.bak -e "s|timeout_commit = \"5s\"|timeout_commit = \"$TIMEOUT_COMMIT\"|g" "$home/config/config.toml"
-# }
+T1=$(( $(rpc_h "$RPC1") + POST_BLOCKS ))
+T2=$(( $(rpc_h "$RPC2") + POST_BLOCKS ))
+echo "C: waiting post-upgrade blocks t1=$T1 t2=$T2"
+for _ in $(seq 1 120); do
+  a=$(rpc_h "$RPC1" || echo 0)
+  b=$(rpc_h "$RPC2" || echo 0)
+  echo "  c1=$a/$T1 c2=$b/$T2"
+  if [ "$a" -ge "$T1" ] && [ "$b" -ge "$T2" ]; then break; fi
+  if ! kill -0 "$NPID1" 2>/dev/null || ! kill -0 "$NPID2" 2>/dev/null; then
+    echo "C: new binary died"; exit 1
+  fi
+  sleep 2
+done
+a=$(rpc_h "$RPC1"); b=$(rpc_h "$RPC2")
+if [ "$a" -lt "$T1" ] || [ "$b" -lt "$T2" ]; then
+  echo "C: missing post-upgrade blocks"; exit 1
+fi
 
+"$NEW_BIND" q wasm params --home "$HOME1" --node "tcp://127.0.0.1:${RPC1}" -o json | jq '.circuit_upload_access.permission // .'
+"$NEW_BIND" q tokenfactory params --home "$HOME1" --node "tcp://127.0.0.1:${RPC1}" -o json | jq .
+"$NEW_BIND" q wasm params --home "$HOME2" --node "tcp://127.0.0.1:${RPC2}" -o json | jq '.circuit_upload_access.permission // .'
+"$NEW_BIND" q tokenfactory params --home "$HOME2" --node "tcp://127.0.0.1:${RPC2}" -o json | jq .
+echo "C: both nodes upgraded applied=$UPGRADE_VERSION_TITLE h1=$a h2=$b"
 
-# from_scratch() {
-#     rm -rf "${CHAIN1[home]}" "${CHAIN2[home]}"
-#     (
-#     echo "Building version we are updating to..."
-#     cd $OLD_RELEASE_PATH &&
-#     make install 
-#     echo "build complete"
-#     ) &
-#     BUILD_PID=$!
-#     wait $BUILD_PID
-#     BUILD_EXIT=$?
-#     if [ $BUILD_EXIT -eq 0 ]; then
-#         echo "completed successfully"
-#         echo "BUILD_PID: $BUILD_PID"
-#     else
-#         echo "build failed (Build: $BUILD_EXIT)"
-#         exit 1
-#     fi
-#     for home in "${CHAIN1[home]}" "${CHAIN2[home]}"; do
-#     run_on_chain "$home" config keyring-backend "$KEYRING"
-#     run_on_chain "$home" config chain-id "$( [[ $home == "${CHAIN1[home]}" ]] && echo "${CHAIN1[id]}" || echo "${CHAIN2[id]}" )"
-#     done
-#     # Recover keys
-#   echo "decorate bright ozone fork gallery riot bus exhaust worth way bone indoor calm squirrel merry zero scheme cotton until shop any excess stage laundry" | $BINARY keys add $KEY --keyring-backend $KEYRING --algo $KEYALGO --recover
-#   echo "wealth flavor believe regret funny network recall kiss grape useless pepper cram hint member few certain unveil rather brick bargain curious require crowd raise" | $BINARY keys add $KEY2 --keyring-backend $KEYRING --algo $KEYALGO --recover
+ensure_hermes() {
+  if command -v "$HERMES_BIN" >/dev/null; then
+    return 0
+  fi
+  echo "C: installing hermes $HERMES_VER to $HOME/go/bin"
+  mkdir -p "$HOME/go/bin" /tmp/hermes-dl
+  local url="https://github.com/informalsystems/hermes/releases/download/${HERMES_VER}/hermes-${HERMES_VER}-aarch64-apple-darwin.tar.gz"
+  curl -fL --retry 3 -o /tmp/hermes-dl/hermes.tgz "$url"
+  tar -xzf /tmp/hermes-dl/hermes.tgz -C /tmp/hermes-dl
+  install -m 0755 /tmp/hermes-dl/hermes "$HOME/go/bin/hermes"
+  HERMES_BIN="$HOME/go/bin/hermes"
+}
 
+write_hermes_cfg() {
+  mkdir -p "$HOME/.hermes"
+  cat > "$HOME/.hermes/config.toml" <<EOF
+[global]
+log_level = "info"
 
-#     run_on_chain "${CHAIN1[home]}" init "$MONIKER" --chain-id "${CHAIN1[id]}" --default-denom "$DENOM"
-#     run_on_chain "${CHAIN2[home]}" init "$MONIKER" --chain-id "${CHAIN2[id]}" --default-denom "$DENOM"
+[mode.clients]
+enabled = true
+refresh = true
+misbehaviour = true
+[mode.connections]
+enabled = true
+[mode.channels]
+enabled = true
+[mode.packets]
+enabled = true
+clear_interval = 100
+clear_on_start = true
+tx_confirmation = true
 
-#         # Use --source instead of piping (more reliable in recent SDKs)
-#     run_on_chain "${CHAIN1[home]}" keys add "$KEY" \
-#         --keyring-backend "$KEYRING" \
-#         --algo "$KEYALGO" \
-#         \
-#         --source <(echo "decorate bright ozone fork gallery riot bus exhaust worth way bone indoor calm squirrel merry zero scheme cotton until shop any excess stage laundry") \
-#         --no-backup 2>/dev/null || true
+[[chains]]
+id = "$ID1"
+type = "CosmosSdk"
+rpc_addr = "http://127.0.0.1:$RPC1"
+grpc_addr = "http://127.0.0.1:$GRPC1"
+event_source = { mode = "push", url = "ws://127.0.0.1:$RPC1/websocket", batch_delay = "500ms" }
+rpc_timeout = "10s"
+account_prefix = "terp"
+key_name = "$RELAYER"
+store_prefix = "ibc"
+compat_mode = "0.38"
+default_gas = 200000
+max_gas = 4000000
+gas_multiplier = 1.3
+gas_price = { price = 0.1, denom = "$DENOM" }
+clock_drift = "5s"
+max_block_time = "30s"
+trust_threshold = { numerator = "1", denominator = "3" }
+address_type = { derivation = "cosmos" }
 
-#     run_on_chain "${CHAIN1[home]}" keys add "$KEY2" \
-#         --keyring-backend "$KEYRING" \
-#         --algo "$KEYALGO" \
-#         --recover \
-#         --source <(echo "wealth flavor believe regret funny network recall kiss grape useless pepper cram hint member few certain unveil rather brick bargain curious require crowd raise") \
-#         --no-backup 2>/dev/null || true
+[[chains]]
+id = "$ID2"
+type = "CosmosSdk"
+rpc_addr = "http://127.0.0.1:$RPC2"
+grpc_addr = "http://127.0.0.1:$GRPC2"
+event_source = { mode = "push", url = "ws://127.0.0.1:$RPC2/websocket", batch_delay = "500ms" }
+rpc_timeout = "10s"
+account_prefix = "terp"
+key_name = "$RELAYER"
+store_prefix = "ibc"
+compat_mode = "0.38"
+default_gas = 200000
+max_gas = 4000000
+gas_multiplier = 1.3
+gas_price = { price = 0.1, denom = "$DENOM" }
+clock_drift = "5s"
+max_block_time = "30s"
+trust_threshold = { numerator = "1", denominator = "3" }
+address_type = { derivation = "cosmos" }
+EOF
+}
 
-#     # Also add them to the second chain's keyring
-#     run_on_chain "${CHAIN2[home]}" keys add "$KEY" \
-#         --keyring-backend "$KEYRING" \
-#         --algo "$KEYALGO" \
-#         --recover \
-#         --source <(echo "decorate bright ozone fork gallery riot bus exhaust worth way bone indoor calm squirrel merry zero scheme cotton until shop any excess stage laundry") \
-#         --no-backup 2>/dev/null || true
+store_one() {
+  local home=$1 rpc=$2 id=$3 wasm=$4
+  "$NEW_BIND" tx wasm store "$wasm" --from "$KEY" --home "$home" --chain-id "$id" \
+    --keyring-backend "$KEYRING" --node "tcp://127.0.0.1:${rpc}" \
+    --gas auto --gas-adjustment 1.5 --fees "400000$DENOM" -y
+  sleep 3
+}
 
-#     run_on_chain "${CHAIN2[home]}" keys add "$KEY2" \
-#         --keyring-backend "$KEYRING" \
-#         --algo "$KEYALGO" \
-#         --recover \
-#         --source <(echo "wealth flavor believe regret funny network recall kiss grape useless pepper cram hint member few certain unveil rather brick bargain curious require crowd raise") \
-#         --no-backup 2>/dev/null || true
+lca() {
+  local home=$1 rpc=$2 code=$3
+  "$NEW_BIND" q wasm list-contract-by-code "$code" --home "$home" --node "tcp://127.0.0.1:${rpc}" -o json \
+    | jq -r '.contracts[0] // empty'
+}
 
-#     # Common genesis updates
-#     for home in "${CHAIN1[home]}" "${CHAIN2[home]}"; do
-#         update_genesis "$home" '.consensus_params["block"]["max_gas"]="100000000"'
-#         update_genesis "$home" '.app_state["gov"]["params"]["min_deposit"]=[{"denom": "uterp","amount": "1000000"}]'
-#         update_genesis "$home" '.app_state["gov"]["voting_params"]["voting_period"]="15s"'
-#         update_genesis "$home" '.app_state["staking"]["params"]["bond_denom"]="uterp"'
-#         update_genesis "$home" '.app_state["staking"]["params"]["min_commission_rate"]="0.050000000000000000"'
-#         update_genesis "$home" '.app_state["gov"]["params"]["voting_period"]="5s"'
-#         update_genesis "$home" '.app_state["gov"]["params"]["expedited_voting_period"]="2s"'
-#         update_genesis "$home" '.app_state["mint"]["params"]["mint_denom"]="uterp"'
-#         update_genesis "$home" '.app_state["crisis"]["constant_fee"]={"denom": "uterp","amount": "1000"}'
-#     done
+echo "C: polytone + hermes (post-upgrade)"
+ensure_hermes
+command -v "$HERMES_BIN" >/dev/null || { echo "C: hermes missing"; exit 1; }
 
-#     # Genesis accounts + gentxs
-#     run_on_chain "${CHAIN1[home]}" genesis add-genesis-account "$KEY"  1000000000000uterp,1000uthiolx --keyring-backend "$KEYRING"
-#     run_on_chain "${CHAIN1[home]}" genesis add-genesis-account "$KEY2" 100000000000uterp,1000uthiolx --keyring-backend "$KEYRING"
-#     run_on_chain "${CHAIN2[home]}" genesis add-genesis-account "$KEY"  1000000000000uterp,1000uthiolx --keyring-backend "$KEYRING"
-#     run_on_chain "${CHAIN2[home]}" genesis add-genesis-account "$KEY2" 100000000000uterp,1000uthiolx --keyring-backend "$KEYRING"
+for f in polytone_listener.wasm polytone_note.wasm polytone_proxy.wasm polytone_voice.wasm polytone_tester.wasm; do
+  [ -f "$WASM_DIR/$f" ] || { echo "C: missing $WASM_DIR/$f"; exit 1; }
+done
 
-#     run_on_chain "${CHAIN1[home]}" genesis gentx "$KEY" 10000000000uterp --keyring-backend "$KEYRING" --chain-id "${CHAIN1[id]}"
-#     run_on_chain "${CHAIN2[home]}" genesis gentx "$KEY" 1000000uterp --keyring-backend "$KEYRING" --chain-id "${CHAIN2[id]}"
+for pair in "$HOME1 $RPC1 $ID1" "$HOME2 $RPC2 $ID2"; do
+  set -- $pair
+  echo "C: store polytone wasm on $3"
+  store_one "$1" "$2" "$3" "$WASM_DIR/polytone_listener.wasm"
+  store_one "$1" "$2" "$3" "$WASM_DIR/polytone_note.wasm"
+  store_one "$1" "$2" "$3" "$WASM_DIR/polytone_proxy.wasm"
+  store_one "$1" "$2" "$3" "$WASM_DIR/polytone_voice.wasm"
+  store_one "$1" "$2" "$3" "$WASM_DIR/polytone_tester.wasm"
+done
 
-#     run_on_chain "${CHAIN1[home]}" genesis collect-gentxs
-#     run_on_chain "${CHAIN2[home]}" genesis collect-gentxs
+NOTE_ID=2
+VOICE_ID=4
+TESTER_ID=5
+LISTENER_ID=1
 
-#     run_on_chain "${CHAIN1[home]}" genesis validate-genesis
-#     run_on_chain "${CHAIN2[home]}" genesis validate-genesis
-# }
+inst() {
+  local home=$1 rpc=$2 id=$3 code=$4 msg=$5 label=$6
+  "$NEW_BIND" tx wasm instantiate "$code" "$msg" --from "$KEY" --home "$home" --chain-id "$id" \
+    --keyring-backend "$KEYRING" --node "tcp://127.0.0.1:${rpc}" \
+    --no-admin --label "$label" --gas auto --gas-adjustment 1.4 --fees "400000$DENOM" -y
+  sleep 3
+}
 
+inst "$HOME1" "$RPC1" "$ID1" "$NOTE_ID" '{"block_max_gas":"100000000"}' "note-c1"
+inst "$HOME2" "$RPC2" "$ID2" "$NOTE_ID" '{"block_max_gas":"100000000"}' "note-c2"
+inst "$HOME1" "$RPC1" "$ID1" "$VOICE_ID" '{"proxy_code_id":"3","block_max_gas":"100000000"}' "voice-c1"
+inst "$HOME2" "$RPC2" "$ID2" "$VOICE_ID" '{"proxy_code_id":"3","block_max_gas":"100000000"}' "voice-c2"
+inst "$HOME1" "$RPC1" "$ID1" "$TESTER_ID" '{}' "tester-c1"
+inst "$HOME2" "$RPC2" "$ID2" "$TESTER_ID" '{}' "tester-c2"
 
-# ####################################################################
-# # Main Flow
-# ####################################################################
-# pkill -f "$BINARY" || true
+NOTE_A=$(lca "$HOME1" "$RPC1" "$NOTE_ID")
+NOTE_B=$(lca "$HOME2" "$RPC2" "$NOTE_ID")
+VOICE_A=$(lca "$HOME1" "$RPC1" "$VOICE_ID")
+VOICE_B=$(lca "$HOME2" "$RPC2" "$VOICE_ID")
+TESTER_A=$(lca "$HOME1" "$RPC1" "$TESTER_ID")
+TESTER_B=$(lca "$HOME2" "$RPC2" "$TESTER_ID")
+echo "C: note_a=$NOTE_A note_b=$NOTE_B voice_a=$VOICE_A voice_b=$VOICE_B tester_a=$TESTER_A tester_b=$TESTER_B"
+[ -n "$NOTE_A" ] && [ -n "$NOTE_B" ] && [ -n "$VOICE_A" ] && [ -n "$VOICE_B" ] || { echo "C: missing contract addrs"; exit 1; }
 
-# if [ "$CLEAN" != "false" ]; then
-#     echo "Starting from clean state..."
-#     build_version "$OLD_RELEASE_PATH"
-#     from_scratch
+inst "$HOME1" "$RPC1" "$ID1" "$LISTENER_ID" "{\"note\":\"$NOTE_A\"}" "listener-c1"
+inst "$HOME2" "$RPC2" "$ID2" "$LISTENER_ID" "{\"note\":\"$NOTE_B\"}" "listener-c2"
 
-#     tune_config "${CHAIN1[home]}" "${CHAIN1[rpc]}" "${CHAIN1[rest]}" "${CHAIN1[p2p]}" "${CHAIN1[grpc]}" "${CHAIN1[grpc_web]}" "${CHAIN1[prof]}"
-#     tune_config "${CHAIN2[home]}" "${CHAIN2[rpc]}" "${CHAIN2[rest]}" "${CHAIN2[p2p]}" "${CHAIN2[grpc]}" "${CHAIN2[grpc_web]}" "${CHAIN2[prof]}"
-# fi
+write_hermes_cfg
+"$HERMES_BIN" keys delete --chain "$ID1" --all || true
+"$HERMES_BIN" keys delete --chain "$ID2" --all || true
+"$HERMES_BIN" keys add --key-name "$RELAYER" --chain "$ID1" --hd-path "m/44'/118'/0'/0/0" --mnemonic-file /tmp/c-relayer.mnemonic
+"$HERMES_BIN" keys add --key-name "$RELAYER" --chain "$ID2" --hd-path "m/44'/118'/0'/0/0" --mnemonic-file /tmp/c-relayer.mnemonic
 
-# # Start both nodes
-# run_on_chain "${CHAIN1[home]}" start --pruning=nothing --minimum-gas-prices=0uterp --rpc.laddr="tcp://0.0.0.0:${CHAIN1[rpc]}" --wasm.skip_wasmvm_version_check &
-# run_on_chain "${CHAIN2[home]}" start --pruning=nothing --minimum-gas-prices=0uterp --rpc.laddr="tcp://0.0.0.0:${CHAIN2[rpc]}" --wasm.skip_wasmvm_version_check &
-# echo "Both nodes started..."
-# sleep 10
-# ####################################################################
-# # B. RELAYER CONFIG
-# ####################################################################
-# (
-# ## create mnemonic file, grab menmonic from relayer key file, print to new txt file
-# REL_MNEMONIC=$(jq -r '.mnemonic' $VAL1HOME/$RELAYERFILE)
-# echo "$REL_MNEMONIC" >  $VAL1HOME/mnemonic.txt
-# ## if hermes command does not exist, install hermes
-# if ! command -v hermes &> /dev/null
-# then
-#     cargo install ibc-relayer-cli --bin hermes --locked
-# fi
+echo "C: hermes create note_a ↔ voice_b"
+"$HERMES_BIN" create channel --a-chain "$ID1" --b-chain "$ID2" \
+  --a-port "wasm.$NOTE_A" --b-port "wasm.$VOICE_B" \
+  --order unordered --chan-version polytone-1 --new-client-connection --yes
+echo "C: hermes create note_b ↔ voice_a"
+"$HERMES_BIN" create channel --a-chain "$ID2" --b-chain "$ID1" \
+  --a-port "wasm.$NOTE_B" --b-port "wasm.$VOICE_A" \
+  --order unordered --chan-version polytone-1 --new-client-connection --yes
 
-# ## configure hermes with chain & and b
-# rm -rf $HERMES && mkdir -p $HERMES
-# cp ../$HERMES_CFG_TEMPLATE_PATH $HERMES/config.toml
+"$HERMES_BIN" start > /tmp/tsh-c-hermes.log 2>&1 &
+HERMES_PID=$!
+sleep 5
 
-# ## modify $HERMES_CFG toml with correct values 
-# sed -i.bak "/^\[chains\]/,/^\[/ { 
-#     /id = \"$CHAINID_A\"/ { 
-#         s/rpc_addr.*/rpc_addr = \"http:\/\/127.0.0.1:$VAL1_RPC_PORT\"/; 
-#         s/grpc_addr.*/grpc_addr = \"http:\/\/127.0.0.1:$VAL1_GRPC_PORT\"/; 
-#         s/event_source.url.*/event_source.url = \"ws:\/\/127.0.0.1:$VAL1_RPC_PORT\/websocket\"/; 
-#         s/key_name.*/key_name = \"$VAL\"/; 
-#     } 
-# }" "$HERMES/config.toml"
+echo "C: execute empty polytone notes + callback to testers"
+"$NEW_BIND" tx wasm execute "$NOTE_A" \
+  "{\"execute\":{\"msgs\":[],\"timeout_seconds\":\"300\",\"callback\":{\"receiver\":\"$TESTER_A\",\"msg\":\"aGVsbG8K\"}}}" \
+  --from "$KEY" --home "$HOME1" --chain-id "$ID1" --keyring-backend "$KEYRING" \
+  --node "tcp://127.0.0.1:${RPC1}" --gas auto --gas-adjustment 1.4 --fees "400000$DENOM" -y
+sleep 3
+"$NEW_BIND" tx wasm execute "$NOTE_B" \
+  "{\"execute\":{\"msgs\":[],\"timeout_seconds\":\"300\",\"callback\":{\"receiver\":\"$TESTER_B\",\"msg\":\"aGVsbG8K\"}}}" \
+  --from "$KEY" --home "$HOME2" --chain-id "$ID2" --keyring-backend "$KEYRING" \
+  --node "tcp://127.0.0.1:${RPC2}" --gas auto --gas-adjustment 1.4 --fees "400000$DENOM" -y
+sleep 2
+"$HERMES_BIN" clear packets --chain "$ID1" --port "wasm.$NOTE_A" --channel channel-0 || true
+"$HERMES_BIN" clear packets --chain "$ID2" --port "wasm.$NOTE_B" --channel channel-1 || true
+"$HERMES_BIN" clear packets --chain "$ID2" --port "wasm.$NOTE_B" --channel channel-0 || true
 
-# sed -i.bak "/^\[chains\]/,/^\[/ { 
-#     /id = \"$CHAINID_B\"/ { 
-#         s/rpc_addr.*/rpc_addr = \"http:\/\/127.0.0.1:$VAL2_RPC_PORT\"/; 
-#         s/grpc_addr.*/grpc_addr = \"http:\/\/127.0.0.1:$VAL2_GRPC_PORT\"/; 
-#         s/event_source.url.*/event_source.url = \"ws:\/\/127.0.0.1:$VAL2_RPC_PORT\/websocket\"/; 
-#         s/key_name.*/key_name = \"$VAL\"/; 
-#     } 
-# }" "$HERMES/config.toml"
+echo "C: wait for hermes packets"
+ok=0
+for i in $(seq 1 40); do
+  HA=$("$NEW_BIND" q wasm contract-state smart "$TESTER_A" '{"history":{}}' --home "$HOME1" --node "tcp://127.0.0.1:${RPC1}" -o json 2>/dev/null || echo '{}')
+  HB=$("$NEW_BIND" q wasm contract-state smart "$TESTER_B" '{"history":{}}' --home "$HOME2" --node "tcp://127.0.0.1:${RPC2}" -o json 2>/dev/null || echo '{}')
+  na=$(echo "$HA" | jq -r '(.data.history // .history // []) | length')
+  nb=$(echo "$HB" | jq -r '(.data.history // .history // []) | length')
+  echo "  polytone history a=$na b=$nb try=$i"
+  if [ "${na:-0}" -ge 1 ] && [ "${nb:-0}" -ge 1 ]; then
+    ok=1
+    break
+  fi
+  sleep 3
+done
+if [ "$ok" != 1 ]; then
+  echo "C: polytone callbacks never landed"
+  tail -50 /tmp/tsh-c-hermes.log
+  exit 1
+fi
+echo "C: polytone callbacks landed — upgrade + IBC path good"
+kill "$HERMES_PID" 2>/dev/null || true
 
-
-# echo "Clean up hermes"
-# hermes keys delete --chain "$CHAINID_A" --all
-# hermes keys delete --chain "$CHAINID_B" --all
-
-# echo "import keys"
-# hermes keys add --key-name $RELAYER --chain $CHAINID_A --hd-path "m/44'/118'/0'/0/0" --mnemonic-file $VAL1HOME/mnemonic.txt
-# hermes keys add --key-name $RELAYER --chain $CHAINID_B --hd-path "m/44'/118'/0'/0/0" --mnemonic-file $VAL1HOME/mnemonic.txt
-
-# sleep 15
-# ) &
-# BUILD_RELAYER_PID=$!
-# wait $BUILD_RELAYER_PID
-# RELAYER_EXIT=$?
-
-# ####################################################################
-# # C. POLYTONE CONFIG
-# ####################################################################
-# (
-# POLYONE_LISTENER_ID=1
-# POLYONE_NOTE_ID=2
-# POLYONE_PROXY_ID=3
-# POLYONE_VOICE_ID=4
-# POLYONE_TESTER_ID=5
-
-# # init note
-#  BINARY tx wasm i $POLYONE_NOTE_ID '{"block_max_gas": "100000000" }' --from $DEL --home $VAL1HOME --chain-id $CHAINID_A --no-admin --label="note contract chain1" --fees 400000uterp --gas auto --gas-adjustment 1.3 -y 
-#  BINARY tx wasm i $POLYONE_NOTE_ID '{"block_max_gas": "100000000" }' --from $USER --home $VAL2HOME --chain-id $CHAINID_B --no-admin --label="note contract chain2" --fees 400000uterp --gas auto --gas-adjustment 1.3 -y
-# sleep 1
-#  BINARY tx wasm i $POLYONE_VOICE_ID '{"proxy_code_id":"3","block_max_gas":"100000000" }' --from $DEL --home $VAL1HOME --chain-id $CHAINID_A --no-admin --label="voice contract chain1" -y --fees 400000uterp --gas auto --gas-adjustment 1.3
-#  BINARY tx wasm i $POLYONE_VOICE_ID '{"proxy_code_id":"3","block_max_gas":"100000000" }' --from $DEL --home $VAL2HOME --chain-id $CHAINID_B --no-admin --label="voice contract chain1" -y --fees 400000uterp --gas auto --gas-adjustment 1.3
-# sleep 1
-#  BINARY tx wasm i $POLYONE_TESTER_ID '{}' --from $DEL --home $VAL1HOME --no-admin --label="tester contract chain1" --fees 400000uterp --gas auto --gas-adjustment 1.3 -y 
-#  BINARY tx wasm i $POLYONE_TESTER_ID '{}' --from $DEL --home $VAL2HOME --no-admin --label="tester contract chain2" --fees 400000uterp --gas auto --gas-adjustment 1.3 -y 
-# sleep 1
-# POLYONE_NOTE_ADDR_A=$(BINARY q wasm lca $POLYONE_NOTE_ID  --home $VAL1HOME -o json | jq -r .contracts[0])
-# POLYONE_NOTE_ADDR_B=$(BINARY q wasm lca $POLYONE_NOTE_ID  --home $VAL2HOME -o json | jq -r .contracts[0])
-# POLYONE_TESTER_ADDR_A=$(BINARY q wasm lca $POLYONE_TESTER_ID --home $VAL1HOME -o json | jq -r .contracts[0])
-# POLYONE_TESTER_ADDR_B=$(BINARY q wasm lca $POLYONE_TESTER_ID --home $VAL2HOME -o json | jq -r .contracts[0])
-# POLYONE_VOICE_ADDR_A=$(BINARY q wasm lca $POLYONE_VOICE_ID  --home $VAL1HOME -o json | jq -r .contracts[0])
-# POLYONE_VOICE_ADDR_B=$(BINARY q wasm lca $POLYONE_VOICE_ID  --home $VAL2HOME -o json | jq -r .contracts[0])
-# echo "POLYONE_NOTE_ADDR_A: $POLYONE_NOTE_ADDR_A"
-# echo "POLYONE_NOTE_ADDR_B: $POLYONE_NOTE_ADDR_B"
-# echo "POLYONE_TESTER_ADDR_A: $POLYONE_TESTER_ADDR_A"
-# echo "POLYONE_TESTER_ADDR_B: $POLYONE_TESTER_ADDR_B"
-# echo "POLYONE_VOICE_ADDR_A: $POLYONE_VOICE_ADDR_A"
-# echo "POLYONE_VOICE_ADDR_B: $POLYONE_VOICE_ADDR_B"
-# BINARY tx wasm i $POLYONE_LISTENER_ID "{\"note\":\"$POLYONE_NOTE_ADDR_A\"}" --from $DEL --home $VAL1HOME --no-admin --label="listener contract chain1" --fees 400000uterp --gas auto --gas-adjustment 1.3 -y 
-# BINARY tx wasm i $POLYONE_LISTENER_ID "{\"note\":\"$POLYONE_NOTE_ADDR_B\"}" --from $DEL --home $VAL2HOME --no-admin --label="listener contract chain2" --fees 400000uterp --gas auto --gas-adjustment 1.3 -y 
-# ) &
-# POLYTONE_WASM_PID=$!
-# wait $POLYTONE_WASM_PID
-# POLYTONE_EXIT=$?
-
-# ####################################################################
-# # A. UPLOAD WASM 
-# ####################################################################
-# ## if polytone wasm files dont exist in  ./bin, download 
-# if [ -z "$(ls -A ./bins)" ]; then
-#   sh download.sh
-#   while [ -z "$(ls -A ./bin)" ]; do
-#     sleep 1
-#   done
-# fi
-
-# ## upload polytone 
-#   for contract in "${POLYTONE_CONTRACTS[@]}"; do
-#     echo "Uploading $contract WASM file..."
-#     # get tx hash 
-#     BINARY tx wasm upload --home $VAL2HOME ./bins/$contract --from $USER --chain-id $CHAINID_B --gas auto --gas-adjustment 1.4 --gas auto --fees 400000uterp -y 
-#     BINARY tx wasm upload --home $VAL1HOME ./bins/$contract --from $DEL  --chain-id $CHAINID_A --gas auto --gas-adjustment 1.4 --gas auto --fees 400000uterp -y 
-#     sleep 2
-#     echo "Uploaded $contract WASM file successfully."
-#     sleep 4
-# done
-
-# ####################################################################
-# # C. UPGRADE
-# ####################################################################
-# echo "lets upgrade "
-# sleep 1
-# cat <<EOF > "$HOME_DIR/upgrade.json" 
-# {
-#  "messages": [
-#   {
-#    "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
-#    "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
-#    "plan": {
-#     "name": "$UPGRADE_VERSION_TITLE",
-#     "time": "0001-01-01T00:00:00Z",
-#     "height": "6",
-#     "info": "https://github.com/permissionlessweb/terp-core/releases/download/v6.0.0/terpd",
-#     "upgraded_client_state": null
-#    }
-#   }
-#  ],
-#  "metadata": "ipfs://CID",
-#  "deposit": "5000000000$DENOM",
-#  "title": "$UPGRADE_VERSION_TITLE",
-#  "summary": "mememe",
-#  "expedited": true 
-# }
-# EOF
-# sleep 1
-# BINARY tx staking delegate  $VAL1_OP_ADDR  10000000000uterp --from "$KEY2" --gas auto --gas-adjustment 1.2 --fees 1000$DENOM --chain-id $CHAIN_ID --home $HOME_DIR --keyring-backend $KEYRING -y
-# echo "propose upgrade using expedited proposal..."
-# BINARY tx gov submit-proposal $HOME_DIR/upgrade.json --gas auto --gas-adjustment 1.5 --fees="2000$DENOM" \
-#  --chain-id=$CHAIN_ID --home=$HOME_DIR --from="$KEY"  --keyring-backend $KEYRING -y
-# sleep 1
-# BINARY tx gov vote 1 yes --from "$KEY" --gas auto --gas-adjustment 1.2 --fees 1000$DENOM --chain-id $CHAIN_ID --home $HOME_DIR  --keyring-backend $KEYRING -y
-# BINARY tx gov vote 1 yes --from "$KEY2" --gas auto --gas-adjustment 1.2 --fees 1000$DENOM --chain-id $CHAIN_ID --home $HOME_DIR --keyring-backend $KEYRING -y
-# sleep 1
-# BINARY q gov proposal 1 --home $HOME_DIR
-# BINARY tx tokenfactory create-denom  $TFDENOM --from "$KEY" --gas auto --gas-adjustment 1.2 --fees 1000$DENOM --chain-id $CHAIN_ID --home $HOME_DIR --keyring-backend $KEYRING -y
-# sleep 3
-# pkill -f terpd
-# (
-#     echo "Building version we are updating to..."
-    
-#     cd $NEW_RELEASE_PATH &&
-#     make install 
-#     echo "build complete"
-# ) &
-# BUILD_PID=$!
-# wait $BUILD_PID
-# BUILD_EXIT=$?
-# if [ $BUILD_EXIT -eq 0 ]; then
-#     echo "completed successfully"
-#     echo "BUILD_PID: $BUILD_PID"
-# else
-#     echo "build failed (Build: $BUILD_EXIT)"
-#     exit 1
-# fi
-
-# if [ $POLYTONE_EXIT -eq 0 ] && [ $RELAYER_EXIT -eq 0 ]; then
-#     echo "completed successfully"
-#     echo "BUILD_PID: $BUILD_PID"
-# else
-#     echo "build failed (Build: $BUILD_EXIT)"
-#     exit 1
-# fi
-
-# echo "Running Upgrade"
-# BINARY start --home $HOME_DIR --log_level trace
-# sleep 2
-# BINARY q tokenfactory params  $TFDENOM --from "$KEY2" --home $HOME_DIR 
-# BINARY tx tokenfactory create-denom  $TFDENOM2 --from "$KEY2" --gas auto --gas-adjustment 1.2 --fees 1000$DENOM --chain-id $CHAIN_ID --home $HOME_DIR --keyring-backend $KEYRING -y
-
-# ####################################################################
-# # E. VERIFY
-# ####################################################################
-# # check ibc wasm still works
-# # check 08-wasm light client works
-# # validate uploads of vanilla wasm works
-# # validate custom vm 

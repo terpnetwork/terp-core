@@ -7,9 +7,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 
-	storetypes "cosmossdk.io/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 )
 
 // GetAllAuthenticatorData is used in genesis export to export all the authenticator for all accounts

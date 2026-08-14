@@ -1,11 +1,11 @@
 package keeper
 
 import (
-	storetypes "cosmossdk.io/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v6/x/globalfee/types"
 )
 
 // Keeper of the globalfee store

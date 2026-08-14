@@ -24,7 +24,7 @@ type AccountKeeper interface {
 // StakingKeeper defines the staking module interface needed for quorum checks.
 type StakingKeeper interface {
 	GetBondedValidatorsByPower(ctx context.Context) ([]stakingtypes.Validator, error)
-	TotalBondedTokens(ctx context.Context) (math.Int, error)
+	TotalValidatorPower(ctx context.Context) (math.Int, error)
 }
 
 // WasmKeeper defines the CosmWasm module interface for sudo dispatch.

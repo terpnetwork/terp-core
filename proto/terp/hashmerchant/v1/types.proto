@@ -4,7 +4,7 @@ package terp.hashmerchant.v1;
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-option go_package = "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types";
+option go_package = "github.com/terpnetwork/terp-core/v6/x/hashmerchant/types";
 
 // MarketMode governs who may provide hash attestations.
 enum MarketMode {

@@ -6,24 +6,18 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	mint "github.com/cosmos/cosmos-sdk/x/mint"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
-	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
-	ica "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts"
-	icatypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/types"
-	transfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
-	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
-	ibc "github.com/cosmos/ibc-go/v10/modules/core"
-	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
-	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
+	ica "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts"
+	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
+	packetforward "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware"
+	packetforwardtypes "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/types"
+	transfer "github.com/cosmos/ibc-go/v11/modules/apps/transfer"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v11/modules/core"
+	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
+	ibctm "github.com/cosmos/ibc-go/v11/modules/light-clients/07-tendermint"
 
-	"cosmossdk.io/x/evidence"
-	evidencetypes "cosmossdk.io/x/evidence/types"
-	"cosmossdk.io/x/feegrant"
-	feegrantmodule "cosmossdk.io/x/feegrant/module"
-	"cosmossdk.io/x/nft"
-	nftmodule "cosmossdk.io/x/nft/module"
-	"cosmossdk.io/x/upgrade"
-	upgradetypes "cosmossdk.io/x/upgrade/types"
+	"github.com/cosmos/cosmos-sdk/contrib/x/crisis"
+	crisistypes "github.com/cosmos/cosmos-sdk/contrib/x/crisis/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
@@ -36,10 +30,12 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	"github.com/cosmos/cosmos-sdk/x/evidence"
+	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
+	"github.com/cosmos/cosmos-sdk/x/feegrant"
+	feegrantmodule "github.com/cosmos/cosmos-sdk/x/feegrant/module"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
@@ -50,39 +46,38 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/cosmos/cosmos-sdk/x/upgrade"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	appparams "github.com/terpnetwork/terp-core/v5/app/params"
-	"github.com/terpnetwork/terp-core/v5/x/feeshare"
-	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
-	"github.com/terpnetwork/terp-core/v5/x/globalfee"
-	"github.com/terpnetwork/terp-core/v5/x/tokenfactory"
+	appparams "github.com/terpnetwork/terp-core/v6/app/params"
+	"github.com/terpnetwork/terp-core/v6/x/feeshare"
+	feesharetypes "github.com/terpnetwork/terp-core/v6/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v6/x/globalfee"
+	"github.com/terpnetwork/terp-core/v6/x/tokenfactory"
 
-	"github.com/terpnetwork/terp-core/v5/x/drip"
-	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
+	"github.com/terpnetwork/terp-core/v6/x/drip"
+	driptypes "github.com/terpnetwork/terp-core/v6/x/drip/types"
 
-	"github.com/terpnetwork/terp-core/v5/x/hashmerchant"
-	hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
+	"github.com/terpnetwork/terp-core/v6/x/hashmerchant"
+	hashmerchanttypes "github.com/terpnetwork/terp-core/v6/x/hashmerchant/types"
 
-	cwhooksmodule "github.com/terpnetwork/terp-core/v5/x/cw-hooks/module"
-	cwhookstypes "github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
+	cwhooksmodule "github.com/terpnetwork/terp-core/v6/x/cw-hooks/module"
+	cwhookstypes "github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
 
-	"github.com/cosmos/cosmos-sdk/x/group"
-	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
-	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/types"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11"
+	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11/types"
 
-	// cwhooks "github.com/terpnetwork/terp-core/v5/x/cw-hooks"
+	// cwhooks "github.com/terpnetwork/terp-core/v6/x/cw-hooks"
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
 
-	smartaccount "github.com/terpnetwork/terp-core/v5/x/smart-account"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	smartaccount "github.com/terpnetwork/terp-core/v6/x/smart-account"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 
-	groupmodule "github.com/cosmos/cosmos-sdk/x/group/module"
-
-	wasmlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10"
-	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
+	wasmlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11"
+	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 )
 
 // ModuleBasics defines the module BasicManager is in charge of setting up basic,
@@ -105,9 +100,8 @@ var ModuleBasics = module.NewBasicManager(
 	upgrade.AppModuleBasic{},
 	evidence.AppModuleBasic{},
 	authzmodule.AppModuleBasic{},
-	groupmodule.AppModuleBasic{},
 	vesting.AppModuleBasic{},
-	nftmodule.AppModuleBasic{},
+
 	consensus.AppModuleBasic{},
 	// non sdk modules
 	wasm.AppModuleBasic{},
@@ -150,7 +144,7 @@ func simulationModules(
 		evidence.NewAppModule(*app.EvidenceKeeper),
 		wasm.NewAppModule(appCodec, app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), app.GetSubspace(wasmtypes.ModuleName)),
 		ibc.NewAppModule(app.IBCKeeper),
-		transfer.NewAppModule(*app.TransferKeeper),
+		transfer.NewAppModule(app.TransferKeeper),
 		feeshare.NewAppModule(app.FeeShareKeeper, *app.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
 		drip.NewAppModule(app.DripKeeper, *app.AccountKeeper),
 		globalfee.NewAppModule(appCodec, app.GlobalFeeKeeper, bondDenom),
@@ -174,8 +168,6 @@ func orderBeginBlockers() []string {
 		genutiltypes.ModuleName,
 		authz.ModuleName,
 		feegrant.ModuleName,
-		nft.ModuleName,
-		group.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
@@ -198,11 +190,11 @@ func orderBeginBlockers() []string {
 
 func orderEndBlockers() []string {
 	return []string{
+		banktypes.ModuleName,
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
 		authtypes.ModuleName,
-		banktypes.ModuleName,
 		distrtypes.ModuleName,
 		slashingtypes.ModuleName,
 		minttypes.ModuleName,
@@ -210,8 +202,6 @@ func orderEndBlockers() []string {
 		evidencetypes.ModuleName,
 		authz.ModuleName,
 		feegrant.ModuleName,
-		nft.ModuleName,
-		group.ModuleName,
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
@@ -239,7 +229,7 @@ func orderInitBlockers() []string {
 		authtypes.ModuleName, banktypes.ModuleName,
 		distrtypes.ModuleName, stakingtypes.ModuleName, slashingtypes.ModuleName, govtypes.ModuleName,
 		minttypes.ModuleName, crisistypes.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
-		feegrant.ModuleName, nft.ModuleName, group.ModuleName, paramstypes.ModuleName, upgradetypes.ModuleName,
+		feegrant.ModuleName, paramstypes.ModuleName, upgradetypes.ModuleName,
 		vestingtypes.ModuleName, consensusparamtypes.ModuleName,
 		// additional non simd modules
 		ibctransfertypes.ModuleName,

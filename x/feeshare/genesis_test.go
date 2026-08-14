@@ -9,10 +9,10 @@ import (
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v5/app"
-	"github.com/terpnetwork/terp-core/v5/app/testutils"
-	"github.com/terpnetwork/terp-core/v5/x/feeshare"
-	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v6/app"
+	"github.com/terpnetwork/terp-core/v6/app/testutils"
+	"github.com/terpnetwork/terp-core/v6/x/feeshare"
+	"github.com/terpnetwork/terp-core/v6/x/feeshare/types"
 )
 
 type GenesisTestSuite struct {

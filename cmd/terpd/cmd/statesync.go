@@ -8,14 +8,17 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"text/tabwriter"
 	"time"
 
-	"cosmossdk.io/log"
-	snapshots "cosmossdk.io/store/snapshots"
-	snapshottypes "cosmossdk.io/store/snapshots/types"
+	"cosmossdk.io/log/v2"
+	snapshots "github.com/cosmos/cosmos-sdk/store/v2/snapshots"
+	snapshottypes "github.com/cosmos/cosmos-sdk/store/v2/snapshots/types"
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 
+	abcicli "github.com/cometbft/cometbft/abci/client"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtcfg "github.com/cometbft/cometbft/config"
 	cmtlog "github.com/cometbft/cometbft/libs/log"
@@ -32,7 +35,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v6/app"
 )
 
 // StatesyncCmd provides tools to debug and test state-sync snapshots
@@ -46,7 +49,8 @@ Subcommands:
   info    Show detailed info about a snapshot (auto-detects latest)
   query   Query snapshot metadata via ABCI ListSnapshots (lightweight)
   test    Dry-run full state-sync restore (OfferSnapshot + ApplySnapshotChunk)
-  fetch   Fetch a snapshot from the production network via P2P state-sync`,
+  fetch   Fetch a snapshot from the production network via P2P state-sync
+  rpc     Query RPC endpoints and P2P peers for snapshot metadata`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},
@@ -62,6 +66,7 @@ func init() {
 		querySnapshotsCmd(),
 		testStateSyncCmd(),
 		fetchSnapshotCmd(),
+		rpcSnapshotsCmd(),
 	)
 }
 
@@ -581,6 +586,450 @@ the other statesync subcommands (list, query, test).`,
 	cmd.Flags().Int64("trust-offset", 1000, "Blocks behind latest to set trust height")
 
 	return cmd
+}
+
+// ====================== RPC / P2P SNAPSHOT QUERY ======================
+//
+// The rpc command queries RPC endpoints for status and peer discovery, then
+// connects to P2P peers via a lightweight temporary node to discover the
+// actual snapshots each peer advertises. The snapshot metadata is captured
+// by intercepting OfferSnapshot ABCI calls made over the P2P snapshot channel.
+
+// captureSnapClient wraps an abcicli.Client and captures OfferSnapshot calls.
+// When a peer offers a snapshot during P2P state-sync discovery, the snapshot
+// metadata is recorded.
+type captureSnapClient struct {
+	abcicli.Client
+	mu      sync.Mutex
+	offered []*abci.Snapshot
+}
+
+func (c *captureSnapClient) OfferSnapshot(ctx context.Context, req *abci.RequestOfferSnapshot) (*abci.ResponseOfferSnapshot, error) {
+	if req != nil && req.Snapshot != nil {
+		c.mu.Lock()
+		c.offered = append(c.offered, req.Snapshot)
+		c.mu.Unlock()
+	}
+	// Accept so the peer continues offering; we stop the node before any
+	// chunk download begins.
+	return &abci.ResponseOfferSnapshot{Result: abci.ResponseOfferSnapshot_ACCEPT}, nil
+}
+
+// captureClientCreator wraps a proxy.ClientCreator and returns captureSnapClient
+// instances that record offered snapshots.
+type captureClientCreator struct {
+	base    proxy.ClientCreator
+	offered []*abci.Snapshot
+	mu      sync.Mutex
+}
+
+func (c *captureClientCreator) NewABCIClient() (abcicli.Client, error) {
+	client, err := c.base.NewABCIClient()
+	if err != nil {
+		return nil, err
+	}
+	return &captureSnapClient{
+		Client:  client,
+		offered: c.offered,
+	}, nil
+}
+
+// rpcSnapshotsCmd queries RPC endpoints and/or P2P peers for snapshot metadata.
+func rpcSnapshotsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "rpc",
+		Short: "Query RPC endpoints and P2P peers for snapshot metadata",
+		Long: `Queries RPC endpoints and/or P2P peers for node status and available
+state-sync snapshots.
+
+For each RPC endpoint, the command:
+  1. Connects and gets the node status (chain ID, latest block height, etc.)
+  2. Gets ABCI info (app version)
+  3. Discovers P2P peers via NetInfo and queries them for snapshots
+
+For each P2P peer (auto-discovered or explicitly specified with --peer-addrs),
+the command:
+  1. Bootstraps a lightweight temporary CometBFT node in state-sync mode
+  2. Connects to the peer via P2P channel 0x60 (snapshot discovery)
+  3. Captures the snapshot metadata the peer advertises
+  4. Shuts down and displays the results
+
+P2P peer format: nodeID@host:port  (e.g. abc123@192.168.1.1:26656)
+
+Examples:
+  terpd statesync rpc --rpc-addrs https://rpc.terp.network:443
+  terpd statesync rpc --peer-addrs abc123@192.168.1.1:26656
+  terpd statesync rpc --rpc-addrs https://rpc1.terp.network:443 --peer-addrs def456@10.0.0.1:26656
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rpcAddrs, _ := cmd.Flags().GetStringSlice("rpc-addrs")
+			peerAddrs, _ := cmd.Flags().GetStringSlice("peer-addrs")
+			if len(rpcAddrs) == 0 && len(peerAddrs) == 0 {
+				return fmt.Errorf("at least one --rpc-addr or --peer-addr is required")
+			}
+			home, _ := cmd.Flags().GetString("home")
+			timeout, _ := cmd.Flags().GetDuration("timeout")
+			return querySnapshots(cmd.Context(), home, rpcAddrs, peerAddrs, timeout)
+		},
+	}
+	cmd.Flags().StringSlice("rpc-addrs", nil, "Comma-separated list of RPC endpoints")
+	cmd.Flags().StringSlice("peer-addrs", nil, "Comma-separated list of P2P peers (nodeID@host:port)")
+	cmd.Flags().Duration("timeout", 30*time.Second, "Max time to wait for P2P snapshot discovery")
+	return cmd
+}
+
+// discoveredSnapshot holds snapshot metadata from a P2P peer.
+type discoveredSnapshot struct {
+	PeerAddr string
+	Height   uint64
+	Format   uint32
+	Chunks   uint32
+	Hash     []byte
+}
+
+// rpcNodeInfo holds the result of querying a single RPC endpoint.
+type rpcNodeInfo struct {
+	Address        string
+	ChainID        string
+	Moniker        string
+	NodeID         string
+	LatestHeight   int64
+	EarliestHeight int64
+	CatchingUp     bool
+	AppVersion     string
+	QueryError     string
+}
+
+// querySnapshots is the main entry point for the rpc command.
+func querySnapshots(ctx context.Context, home string, rpcAddrs, peerAddrs []string, p2pTimeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+
+	var rpcResults []rpcNodeInfo
+	var snapResults []discoveredSnapshot
+	peerSet := make(map[string]bool) // dedup discovered peers
+
+	// Phase 1: Query RPC endpoints for status and peer discovery
+	for _, addr := range rpcAddrs {
+		addr = strings.TrimSpace(addr)
+		if addr == "" {
+			continue
+		}
+
+		info := rpcNodeInfo{Address: addr}
+
+		client, err := rpchttp.NewWithTimeout(addr, "/websocket", 10)
+		if err != nil {
+			info.QueryError = fmt.Sprintf("connect: %v", err)
+			rpcResults = append(rpcResults, info)
+			continue
+		}
+
+		status, err := client.Status(ctx)
+		if err != nil {
+			info.QueryError = fmt.Sprintf("status: %v", err)
+			rpcResults = append(rpcResults, info)
+			continue
+		}
+
+		info.ChainID = status.NodeInfo.Network
+		info.Moniker = status.NodeInfo.Moniker
+		info.NodeID = string(status.NodeInfo.DefaultNodeID)
+		info.LatestHeight = status.SyncInfo.LatestBlockHeight
+		info.EarliestHeight = status.SyncInfo.EarliestBlockHeight
+		info.CatchingUp = status.SyncInfo.CatchingUp
+
+		abciInfo, err := client.ABCIInfo(ctx)
+		if err == nil {
+			info.AppVersion = fmt.Sprintf("%d", abciInfo.Response.AppVersion)
+		}
+
+		rpcResults = append(rpcResults, info)
+
+		// Discover P2P peers from this RPC node
+		netInfo, err := client.NetInfo(ctx)
+		if err != nil {
+			continue
+		}
+
+		rpcHost := extractHost(addr)
+		if rpcHost != "" && info.NodeID != "" {
+			peer := fmt.Sprintf("%s@%s:26656", info.NodeID, rpcHost)
+			if !peerSet[peer] {
+				peerSet[peer] = true
+				peerAddrs = append(peerAddrs, peer)
+			}
+		}
+
+		for _, p := range netInfo.Peers {
+			port := "26656"
+			if parts := strings.Split(p.NodeInfo.ListenAddr, ":"); len(parts) > 1 {
+				port = parts[len(parts)-1]
+			}
+			peer := fmt.Sprintf("%s@%s:%s", p.NodeInfo.DefaultNodeID, p.RemoteIP, port)
+			if !peerSet[peer] {
+				peerSet[peer] = true
+				peerAddrs = append(peerAddrs, peer)
+			}
+		}
+	}
+
+	// Phase 2: Query P2P peers for snapshots
+	if len(peerAddrs) > 0 {
+		fmt.Fprintf(os.Stderr, "\nQuerying %d P2P peers for snapshots (timeout: %s)...\n", len(peerAddrs), p2pTimeout)
+		for _, peer := range peerAddrs {
+			peer = strings.TrimSpace(peer)
+			if peer == "" {
+				continue
+			}
+			if snaps, err := discoverPeerSnapshots(ctx, home, peer, p2pTimeout); err == nil {
+				for _, s := range snaps {
+					snapResults = append(snapResults, discoveredSnapshot{
+						PeerAddr: peer,
+						Height:   s.Height,
+						Format:   s.Format,
+						Chunks:   s.Chunks,
+						Hash:     s.Hash,
+					})
+				}
+			}
+		}
+	}
+
+	// Display results
+	displayRPCResults(rpcResults, snapResults)
+	return nil
+}
+
+// discoverPeerSnapshots starts a lightweight temporary node, connects to a P2P
+// peer, discovers snapshots via the P2P state-sync channel, and returns the
+// metadata of all snapshots the peer advertises.
+func discoverPeerSnapshots(ctx context.Context, home, peerAddr string, timeout time.Duration) ([]*abci.Snapshot, error) {
+	if home == "" {
+		home = app.DefaultNodeHome
+	}
+
+	// Parse peer address
+	parts := strings.SplitN(peerAddr, "@", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid peer address %q — expected nodeID@host:port", peerAddr)
+	}
+
+	// Create temporary directory
+	tmpDir, err := os.MkdirTemp("", "terpd-p2p-disc-*")
+	if err != nil {
+		return nil, fmt.Errorf("temp dir: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	configDir := filepath.Join(tmpDir, "config")
+	dataDir := filepath.Join(tmpDir, "data")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		return nil, err
+	}
+
+	// Copy genesis from home
+	genSrc := filepath.Join(home, "config", "genesis.json")
+	genDst := filepath.Join(configDir, "genesis.json")
+	if err := copyFile(genSrc, genDst); err != nil {
+		return nil, fmt.Errorf("genesis: %w", err)
+	}
+
+	// Generate temp node key
+	nodeKey, err := p2p.LoadOrGenNodeKey(filepath.Join(configDir, "node_key.json"))
+	if err != nil {
+		return nil, fmt.Errorf("node key: %w", err)
+	}
+
+	// Generate temp priv validator
+	pvKeyFile := filepath.Join(configDir, "priv_validator_key.json")
+	pvStateFile := filepath.Join(dataDir, "priv_validator_state.json")
+	filePV := pvm.GenFilePV(pvKeyFile, pvStateFile)
+	filePV.Save()
+
+	// Build CometBFT config — minimal state-sync node
+	cmtCfg := cmtcfg.DefaultConfig()
+	cmtCfg.RootDir = tmpDir
+	cmtCfg.DBBackend = "goleveldb"
+	cmtCfg.P2P.ListenAddress = "tcp://0.0.0.0:26658"
+	cmtCfg.P2P.PersistentPeers = peerAddr
+	cmtCfg.P2P.AllowDuplicateIP = true
+	cmtCfg.P2P.PexReactor = false
+	cmtCfg.P2P.MaxNumInboundPeers = 0
+	cmtCfg.P2P.AddrBookStrict = false
+	cmtCfg.P2P.Seeds = ""
+	cmtCfg.Mempool.Broadcast = false
+	cmtCfg.RPC.ListenAddress = "tcp://127.0.0.1:26659"
+	cmtCfg.StateSync.Enable = true
+	// Use a dummy RPC server — the peer just needs to connect via P2P
+	cmtCfg.StateSync.RPCServers = []string{"http://127.0.0.1:26657", "http://127.0.0.1:26657"}
+	cmtCfg.StateSync.TrustHeight = 1
+	cmtCfg.StateSync.TrustHash = "0000000000000000000000000000000000000000000000000000000000000000"
+	cmtCfg.StateSync.TrustPeriod = 336 * time.Hour
+
+	// Create a minimal app (no modules, just snapshot support)
+	appDB, err := dbm.NewDB("application", dbm.GoLevelDBBackend, dataDir)
+	if err != nil {
+		return nil, fmt.Errorf("app DB: %w", err)
+	}
+	defer appDB.Close()
+
+	// Use a no-op logger
+	logger := log.NewNopLogger()
+
+	// Create a minimal BaseApp with snapshot support
+	memDB := dbm.NewMemDB()
+	snapshotDir := filepath.Join(dataDir, "snapshots")
+	snapDB, err := dbm.NewDB("metadata", dbm.GoLevelDBBackend, snapshotDir)
+	if err != nil {
+		return nil, fmt.Errorf("snapshot DB: %w", err)
+	}
+	defer snapDB.Close()
+
+	store, err := snapshots.NewStore(snapDB, snapshotDir)
+	if err != nil {
+		return nil, fmt.Errorf("snapshot store: %w", err)
+	}
+
+	ba := baseapp.NewBaseApp(
+		"terpd",
+		logger,
+		memDB,
+		nil,
+		baseapp.SetSnapshot(store, snapshottypes.NewSnapshotOptions(0, 0)),
+	)
+
+	// Wrap the app with our capture client
+	var offeredSnapshots []*abci.Snapshot
+
+	captureCreator := &captureClientCreator{
+		base:    proxy.NewLocalClientCreator(server.NewCometABCIWrapper(ba)),
+		offered: offeredSnapshots,
+	}
+
+	// Create the CometBFT node
+	cmtNode, err := cmtnode.NewNodeWithContext(
+		ctx,
+		cmtCfg,
+		filePV,
+		nodeKey,
+		captureCreator,
+		cmtnode.DefaultGenesisDocProviderFunc(cmtCfg),
+		cmtcfg.DefaultDBProvider,
+		cmtnode.DefaultMetricsProvider(cmtCfg.Instrumentation),
+		cmtlog.NewTMLogger(io.Discard),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("node creation: %w", err)
+	}
+
+	// Start the node
+	if err := cmtNode.Start(); err != nil {
+		return nil, fmt.Errorf("node start: %w", err)
+	}
+
+	// Wait for snapshot discovery
+	discoveryCtx, discoveryCancel := context.WithTimeout(ctx, timeout)
+	defer discoveryCancel()
+
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	// The node needs time to connect to the peer via P2P, then the peer
+	// will call ListSnapshots on itself, and the response will trigger
+	// OfferSnapshot on our node. We capture the OfferSnapshot calls.
+	<-discoveryCtx.Done()
+
+	// Stop the node
+	cmtNode.Stop()
+	cmtNode.Wait()
+
+	// Check if we got any snapshots
+	if len(offeredSnapshots) == 0 {
+		return nil, fmt.Errorf("no snapshots discovered from %s (peer may not be available or snapshots disabled)", peerAddr)
+	}
+
+	return offeredSnapshots, nil
+}
+
+// displayRPCResults prints a table of all queried RPC nodes and P2P snapshot results.
+func displayRPCResults(rpcResults []rpcNodeInfo, snapResults []discoveredSnapshot) {
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+
+	// RPC node status table
+	if len(rpcResults) > 0 {
+		fmt.Fprintln(w, "RPC ADDRESS	CHAIN ID	MONIKER	NODE ID	LATEST	EARLIEST	CATCHING UP	APP VER")
+		fmt.Fprintln(w, "-----------	--------	-------	-------	------	--------	-----------	-------")
+		for _, r := range rpcResults {
+			errStr := r.QueryError
+			fmt.Fprintf(w, "%s	%s	%s	%s	%d	%d	%v	%s\n",
+				r.Address, r.ChainID, r.Moniker, r.NodeID,
+				r.LatestHeight, r.EarliestHeight, r.CatchingUp, r.AppVersion)
+			if errStr != "" {
+				fmt.Fprintf(w, "	ERR: %s	%s	%s	%s	%s	%s	%s\n", errStr, "", "", "", "", "", "")
+			}
+		}
+		w.Flush()
+	}
+
+	// P2P discovered snapshots table
+	if len(snapResults) > 0 {
+		fmt.Println("\n\nDiscovered Snapshots (via P2P):")
+		fmt.Fprintln(w, "PEER ADDRESS	HEIGHT	FORMAT	CHUNKS	HASH")
+		fmt.Fprintln(w, "------------	------	------	------	----")
+
+		// Group by peer
+		type peerSnaps struct {
+			peer string
+			snaps []discoveredSnapshot
+		}
+		peerMap := make(map[string][]discoveredSnapshot)
+		var peerOrder []string
+		for _, s := range snapResults {
+			if _, ok := peerMap[s.PeerAddr]; !ok {
+				peerOrder = append(peerOrder, s.PeerAddr)
+			}
+			peerMap[s.PeerAddr] = append(peerMap[s.PeerAddr], s)
+		}
+
+		for _, peer := range peerOrder {
+			snaps := peerMap[peer]
+			for i, s := range snaps {
+				peerCol := peer
+				if i > 0 {
+					peerCol = ""
+				}
+				fmt.Fprintf(w, "%s	%d	%d	%d	%X\n",
+					peerCol, s.Height, s.Format, s.Chunks, s.Hash)
+			}
+		}
+		w.Flush()
+
+		// Summary
+		totalSnaps := len(snapResults)
+		uniquePeers := len(peerOrder)
+		fmt.Printf("\nTotal snapshots: %d from %d peer(s)\n", totalSnaps, uniquePeers)
+	} else {
+		fmt.Println("\n\nNo snapshots discovered via P2P.")
+	}
+
+	// Summary
+	fmt.Println("\n--- Summary ---")
+	fmt.Printf("RPCs queried : %d (%d ok, %d failed)\n", len(rpcResults), countSuccessRPC(rpcResults), len(rpcResults)-countSuccessRPC(rpcResults))
+	fmt.Printf("Peers queried: %d\n", len(snapResults))
+}
+
+func countSuccessRPC(results []rpcNodeInfo) int {
+	n := 0
+	for _, r := range results {
+		if r.QueryError == "" {
+			n++
+		}
+	}
+	return n
 }
 
 // ====================== HELPERS ======================

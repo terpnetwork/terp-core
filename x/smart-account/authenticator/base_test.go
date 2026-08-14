@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	storetypes "cosmossdk.io/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -17,14 +17,14 @@ import (
 
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/authenticator"
 
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 
-	"github.com/terpnetwork/terp-core/v5/app"
-	"github.com/terpnetwork/terp-core/v5/app/params"
-	appparams "github.com/terpnetwork/terp-core/v5/app/params"
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
+	"github.com/terpnetwork/terp-core/v6/app"
+	"github.com/terpnetwork/terp-core/v6/app/params"
+	appparams "github.com/terpnetwork/terp-core/v6/app/params"
+	testutils "github.com/terpnetwork/terp-core/v6/app/testutils"
 )
 
 type BaseAuthenticatorSuite struct {
@@ -81,7 +81,9 @@ func (s *BaseAuthenticatorSuite) GenSimpleTx(msgs []sdk.Msg, signers []cryptotyp
 		if ak.HasAccount(s.Ctx, sdk.AccAddress(signer.PubKey().Address())) {
 			account = ak.GetAccount(s.Ctx, sdk.AccAddress(signer.PubKey().Address()))
 		} else {
-			account = authtypes.NewBaseAccount(sdk.AccAddress(signer.PubKey().Address()), signer.PubKey(), ak.NextAccountNumber(s.Ctx), 0)
+			addr := sdk.AccAddress(signer.PubKey().Address())
+			account = authtypes.NewBaseAccount(addr, signer.PubKey(), 0, 0)
+			account.SetAccountNumber(ak.NextAccountNumber(s.Ctx, account))
 		}
 		accNums = append(accNums, account.GetAccountNumber())
 		accSeqs = append(accSeqs, account.GetSequence())

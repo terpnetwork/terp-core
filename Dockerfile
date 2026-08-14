@@ -33,7 +33,7 @@ ARG WASMVM_SOURCE
 # and crates/ is dockerignored until staging; parse the require line instead.
 # ---------------------------------------------------------
 RUN if [ "$WASMVM_SOURCE" = "github" ]; then \
-      WASMVM_VERSION=$(awk '/github.com\/CosmWasm\/wasmvm\/v3/ && !/=>/ {print $2; exit}' go.mod) && \
+      WASMVM_VERSION=$(awk '/^[[:space:]]*github.com\/CosmWasm\/wasmvm\/v3/ && !/=>/ {print $2; exit}' go.mod) && \
       if [ -z "$WASMVM_VERSION" ]; then echo "ERROR: could not parse wasmvm version from go.mod"; exit 1; fi && \
       ARCH=$(uname -m) && \
       echo "==> Downloading wasmvm $WASMVM_VERSION from GitHub ($ARCH)" && \
@@ -70,11 +70,16 @@ RUN ARCH=$(uname -m) && \
         echo "ERROR: staged zk-deps missing. Need build/zk-deps/zk-wasmvm and zk-wasmd." && \
         exit 1; \
       fi && \
+      if [ ! -f /code/build/zk-deps/ibc-hooks-v11/go.mod ]; then \
+        echo "ERROR: staged ibc-hooks-v11 missing under build/zk-deps." && \
+        exit 1; \
+      fi && \
       # Ensure muslc .a is present where cgo LDFLAGS ${SRCDIR} looks (internal/api)
       cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a \
          /code/build/zk-deps/zk-wasmvm/internal/api/libwasmvm_muslc.$ARCH.a && \
       sed -i 's|=> \./crates/zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \./crates/zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \
+      sed -i 's|=> \./crates/ibc-hooks-v11|=> /code/build/zk-deps/ibc-hooks-v11|g' /code/go.mod && \
       # Also accept already-rewritten or alternate relative forms
       sed -i 's|=> \.\./zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \.\./zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \
@@ -94,7 +99,7 @@ RUN ARCH=$(uname -m) && \
     fi
 
 # force it to use static lib (from above) not standard libgo_cosmwasm.so file
-RUN LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build
+RUN go mod tidy && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build
 RUN echo "Ensuring binary is statically linked ..." \
   && (file /code/build/terpd | grep "statically linked")
 

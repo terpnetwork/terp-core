@@ -5,7 +5,7 @@ import (
 	"math/rand"
 
 	"cosmossdk.io/math"
-	storetypes "cosmossdk.io/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,8 +14,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
-	ap "github.com/terpnetwork/terp-core/v5/app/params"
-	"github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
+	ap "github.com/terpnetwork/terp-core/v6/app/params"
+	"github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
 )
 
 // Simulation operation weights constants

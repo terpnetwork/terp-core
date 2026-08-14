@@ -11,6 +11,7 @@ include scripts/makefiles/lint.mk
 include scripts/makefiles/proto.mk
 include scripts/makefiles/tests.mk
 include scripts/makefiles/release.mk
+include scripts/makefiles/deps.mk
 
 .DEFAULT_GOAL := help
 help:
@@ -146,20 +147,7 @@ build: build-check-version go.sum
 		go mod tidy; \
 	fi
 ########################################
-### Tools & dependencies
-
-go-mod-cache: go.sum
-	@echo "--> Download go modules to local cache"
-	@go mod download
-
-go.sum: go.mod
-	@echo "--> Ensure dependencies have not been modified"
-	@go mod verify
-
-draw-deps:
-	@# requires brew install graphviz or apt-get install graphviz
-	go get github.com/RobotsAndPencils/goviz
-	@goviz -i ./cmd/terpd -d 2 | dot -Tpng -o dependency-graph.png
+### Tools & dependencies (go-mod-cache, go.sum, draw-deps: scripts/makefiles/deps.mk)
 
 clean:
 	rm -rf snapcraft-local.yaml build/

@@ -48,7 +48,11 @@ init_bootstrap() {
       terpd genesis validate-genesis
 
       if [ "${ENABLE_FAUCET}" = "true" ]; then
-            # Setup faucet
+            # Faucet HTTP starts after chain (see bootstrap.sh); legacy path kept for init_bootstrap only.
+            export TERPD="${TERPD:-terpd}"
+            export RPC_NODE="${RPC_NODE:-http://127.0.0.1:26657}"
+            export FUNDER_WALLET_NAME="${FUNDER_WALLET_NAME:-a}"
+            export FAUCET_WALLET_NAME="${FAUCET_WALLET_NAME:-faucet}"
             setsid /usr/bin/node ./faucet/faucet_server.js &
       fi
 

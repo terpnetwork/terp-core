@@ -7,12 +7,12 @@ import (
 	proto "github.com/cosmos/gogoproto/proto"
 
 	"cosmossdk.io/math"
-	"cosmossdk.io/store/prefix"
-	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/store/v2/prefix"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/authenticator"
 )
 
 // This is a very naive implementation of an authenticator that tracks sends and blocks if the total amount sent is greater than 3_000

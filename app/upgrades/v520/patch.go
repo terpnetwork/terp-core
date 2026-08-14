@@ -11,7 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/terpnetwork/terp-core/v5/app/keepers"
+	"github.com/terpnetwork/terp-core/v6/app/keepers"
 )
 
 // / Fetches all validators from x/staking, and query rewards for each of their delegations.

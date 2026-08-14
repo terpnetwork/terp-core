@@ -1,0 +1,230 @@
+{
+  "$schema": "../versions.schema.json",
+  "chain_name": "terpnetwork",
+  "versions": [
+    {
+      "name": "v1.0.0-stable",
+      "recommended_version": "v1.0.0-stable",
+      "compatible_versions": [
+        "v1.0.0",
+        "v1.0.0-stable"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.37.0"
+      }
+    },
+    {
+      "name": "huckleberry",
+      "recommended_version": "huckleberry",
+      "compatible_versions": [
+        "huckleberry"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.37.0"
+      }
+    },
+    {
+      "name": "barberry",
+      "recommended_version": "barberry",
+      "compatible_versions": [
+        "barberry"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.37.1"
+      }
+    },
+    {
+      "name": "v2.0.0",
+      "recommended_version": "v2.0.0",
+      "compatible_versions": [
+        "v2.0.0"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.37.2"
+      }
+    },
+    {
+      "name": "v3.0.0",
+      "recommended_version": "v3.0.0",
+      "compatible_versions": [
+        "v3.0.0"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.37.2"
+      }
+    },
+    {
+      "name": "v2-pigeonfall",
+      "recommended_version": "v2-pigeonfall",
+      "compatible_versions": [
+        "v2-pigeonfall"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.37.2"
+      }
+    },
+    {
+      "name": "v3-pigeonfall",
+      "recommended_version": "v3-pigeonfall",
+      "compatible_versions": [
+        "v3-pigeonfall"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.37.2"
+      },
+      "next_version_name": "v4"
+    },
+    {
+      "name": "v4",
+      "proposal": 30,
+      "height": 3698609,
+      "recommended_version": "v4.2.2",
+      "compatible_versions": [
+        "v4.1.0",
+        "v4.2.0",
+        "v4.2.1",
+        "v4.2.2"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.37.2"
+      },
+      "binaries": {
+        "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v4.2.2/terpd-linux-amd64",
+        "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v4.2.2/terpd-linux-arm64"
+      },
+      "next_version_name": "v5"
+    },
+    {
+      "name": "v5",
+      "recommended_version": "v5",
+      "compatible_versions": [
+        "v5",
+        "v5.0.1"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.38.18"
+      },
+      "next_version_name": "v5.0.2"
+    },
+    {
+      "name": "v5.0.2",
+      "recommended_version": "v5.0.3",
+      "compatible_versions": [
+        "v5.0.2",
+        "v5.0.3"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.38.21"
+      },
+      "next_version_name": "v5.0.3",
+      "binaries": {
+        "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v5.0.3/terpd-linux-amd64",
+        "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.0.3/terpd-linux-arm64"
+      }
+    },
+    {
+      "name": "v5.0.3",
+      "recommended_version": "v5.0.3",
+      "compatible_versions": [
+        "v5.0.2",
+        "v5.0.3"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.38.21"
+      },
+      "next_version_name": "v5.1.0"
+    },
+    {
+      "name": "v5.1.0",
+      "recommended_version": "v5.1.1",
+      "compatible_versions": [
+        "v5.1.0",
+        "v5.1.1"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.38.21"
+      },
+      "next_version_name": "v5.2.0",
+      "binaries": {
+        "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.1/terpd-linux-amd64",
+        "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.1/terpd-linux-arm64"
+      }
+    },
+    {
+      "name": "v5.2.0",
+      "proposal": null,
+      "height": 21725359,
+      "recommended_version": "v5.2.0",
+      "compatible_versions": [
+        "v5.2.0"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.38.21"
+      },
+      "sdk": {
+        "type": "cosmos",
+        "version": "0.53.4"
+      },
+      "ibc": {
+        "type": "go",
+        "version": "v10.5.0"
+      },
+      "cosmwasm": {
+        "version": "0.61.8",
+        "enabled": true,
+        "path": "$HOME/.terpd/data/wasm"
+      },
+      "next_version_name": "v6",
+      "binaries": {
+        "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v5.2.0/terpd-linux-amd64",
+        "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.2.0/terpd-linux-arm64",
+        "darwin/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.2.0/terpd-darwin-arm64"
+      }
+    },
+    {
+      "name": "v6",
+      "proposal": null,
+      "height": 22611000,
+      "recommended_version": "v6.0.0",
+      "compatible_versions": [
+        "v6.0.0"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.39.3"
+      },
+      "sdk": {
+        "type": "cosmos",
+        "version": "0.54.3"
+      },
+      "ibc": {
+        "type": "go",
+        "version": "v11.1.0"
+      },
+      "cosmwasm": {
+        "version": "0.70.3",
+        "enabled": true,
+        "path": "$HOME/.terpd/data/wasm"
+      },
+      "next_version_name": "",
+      "binaries": {
+        "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-amd64",
+        "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-arm64",
+        "darwin/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-darwin-arm64"
+      }
+    }
+  ]
+}

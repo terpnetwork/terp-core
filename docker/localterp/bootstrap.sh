@@ -90,11 +90,6 @@ fi
 
 setsid lcp --proxyUrl http://127.0.0.1:1316 --port 1317 --proxyPartial '' &
 
-if [ "${ENABLE_FAUCET}" = "true" ]; then
-  # Setup faucet
-  setsid node faucet_server.js &
-fi
-
 if [ "${SLEEP}" = "true" ]; then
   sleep infinity
 fi
@@ -102,4 +97,30 @@ fi
 # Allow large wasm uploads for local development (default 819200 = 800KB)
 export MAX_WASM_SIZE=${MAX_WASM_SIZE:-"16777216"}
 
-RUST_BACKTRACE=1 terpd start --rpc.laddr tcp://0.0.0.0:26657 --log_level "${LOG_LEVEL}"
+# Chain first; faucet waits for RPC then funder→faucet top-up (not genesis-bound).
+RUST_BACKTRACE=1 terpd start --rpc.laddr tcp://0.0.0.0:26657 --log_level "${LOG_LEVEL}" &
+TERPD_PID=$!
+
+if [ "${ENABLE_FAUCET}" = "true" ]; then
+  export TERPD="${TERPD:-terpd}"
+  export CHAIN_ID="${chain_id:-${CHAINID:-120u-1}}"
+  export CHAINID="${CHAIN_ID}"
+  export RPC_NODE="${RPC_NODE:-http://127.0.0.1:26657}"
+  # Funder is a genesis-funded key (default a). Faucet key is generated/recovered separately.
+  export FUNDER_WALLET_NAME="${FUNDER_WALLET_NAME:-a}"
+  export FAUCET_WALLET_NAME="${FAUCET_WALLET_NAME:-faucet}"
+  # Wait until RPC answers, then start faucet (fund-on-ready).
+  (
+    for i in $(seq 1 120); do
+      if curl -fsS "${RPC_NODE}/status" >/dev/null 2>&1; then
+        echo "[bootstrap] RPC up — starting faucet (funder=${FUNDER_WALLET_NAME} → ${FAUCET_WALLET_NAME})"
+        exec node faucet_server.js
+      fi
+      sleep 0.5
+    done
+    echo "[bootstrap] WARNING: RPC not up in 60s — starting faucet anyway (will retry)"
+    exec node faucet_server.js
+  ) &
+fi
+
+wait $TERPD_PID

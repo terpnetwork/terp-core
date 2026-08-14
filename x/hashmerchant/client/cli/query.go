@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
+	"github.com/terpnetwork/terp-core/v6/x/hashmerchant/types"
 )
 
 func GetQueryCmd() *cobra.Command {

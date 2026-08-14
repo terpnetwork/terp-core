@@ -6,23 +6,23 @@ import (
 	"os"
 	"testing"
 
-	terpibctesting "github.com/terpnetwork/terp-core/v5/tests/ibctesting"
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
-	moduletestutils "github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
+	terpibctesting "github.com/terpnetwork/terp-core/v6/tests/ibctesting"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/authenticator"
+	moduletestutils "github.com/terpnetwork/terp-core/v6/x/smart-account/testutils"
 
-	"github.com/terpnetwork/terp-core/v5/app"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v6/app"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	ibctesting "github.com/cosmos/ibc-go/v10/testing"
+	ibctesting "github.com/cosmos/ibc-go/v11/testing"
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/terpnetwork/terp-core/v5/app/params"
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
+	"github.com/terpnetwork/terp-core/v6/app/params"
+	testutils "github.com/terpnetwork/terp-core/v6/app/testutils"
 )
 
 type AuthenticatorSuite struct {

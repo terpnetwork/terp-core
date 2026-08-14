@@ -3,17 +3,17 @@ package v2_test
 import (
 	"testing"
 
-	storetypes "cosmossdk.io/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 
-	"github.com/terpnetwork/terp-core/v5/x/feeshare"
-	"github.com/terpnetwork/terp-core/v5/x/feeshare/exported"
-	v2 "github.com/terpnetwork/terp-core/v5/x/feeshare/migrations/v2"
-	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v6/x/feeshare"
+	"github.com/terpnetwork/terp-core/v6/x/feeshare/exported"
+	v2 "github.com/terpnetwork/terp-core/v6/x/feeshare/migrations/v2"
+	"github.com/terpnetwork/terp-core/v6/x/feeshare/types"
 )
 
 type mockSubspace struct {

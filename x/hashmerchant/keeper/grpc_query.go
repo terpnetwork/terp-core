@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
+	"github.com/terpnetwork/terp-core/v6/x/hashmerchant/types"
 )
 
 var _ types.QueryServer = Keeper{}

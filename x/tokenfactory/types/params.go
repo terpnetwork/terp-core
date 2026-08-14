@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/terpnetwork/terp-core/v5/app/params"
+	"github.com/terpnetwork/terp-core/v6/app/params"
 )
 
 func NewParams(denomCreationFee sdk.Coins) Params {

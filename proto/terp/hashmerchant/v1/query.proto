@@ -7,7 +7,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "terp/hashmerchant/v1/types.proto";
 import "terp/hashmerchant/v1/genesis.proto";
 
-option go_package = "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types";
+option go_package = "github.com/terpnetwork/terp-core/v6/x/hashmerchant/types";
 
 // Query defines the x/hashmerchant gRPC query service.
 service Query {

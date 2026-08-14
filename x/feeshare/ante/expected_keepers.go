@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	revtypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
+	revtypes "github.com/terpnetwork/terp-core/v6/x/feeshare/types"
 )
 
 type BankKeeper interface {

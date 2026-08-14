@@ -12,10 +12,14 @@ WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}')
 
 # Shared with docker.mk for version-aligned testnet/ZK releases
 RELEASE_TAG ?= v5.3.0-dev
+# S3 releases bucket folder = project/repo name (see scripts/release/S3-LAYOUT.md)
+PROJECT ?= terp-core
 NETWORK ?= testnet
 CHAIN_ID ?= 120u-1
 MINIO_ALIAS ?= usb2
+S3_BUCKET ?= releases
 DRY_RUN ?= 0
+PUBLISH_LATEST ?= 0
 
 release-help:
 	@echo "release subcommands"
@@ -36,12 +40,15 @@ release-help:
 	@echo "  create-upgrade-guide     Generate upgrade guide (rolling or coordinated)"
 	@echo "  release-proposal         Submit governance upgrade proposal (stub)"
 	@echo ""
-	@echo "Testnet ZK / S3 verifiable distribution (see scripts/release/README.md):"
+	@echo "Testnet ZK / S3 verifiable distribution (see scripts/release/README.md, S3-LAYOUT.md):"
 	@echo "  release-bundle           Deterministic source.tar.gz + manifest.json"
-	@echo "  release-s3               Upload bundle to MinIO (MINIO_ALIAS=$(MINIO_ALIAS))"
+	@echo "  release-s3               Upload to releases/\$$PROJECT/\$$TAG/ (MINIO_ALIAS=$(MINIO_ALIAS))"
+	@echo "  wasmvm-curate            Pack libwasmvm artifacts + SHA256SUMS + VERSIONS.txt"
 	@echo "  release-dev              bundle + s3 for RELEASE_TAG (default $(RELEASE_TAG))"
 	@echo "  docker-publish-dev       (docker.mk) ZK image tagged RELEASE_TAG"
 	@echo "  docker-push-dev          (docker.mk) push IMAGE_REPO:RELEASE_TAG"
+	@echo ""
+	@echo "  PROJECT=$(PROJECT)  S3_BUCKET=$(S3_BUCKET)  →  releases/$(PROJECT)/$(RELEASE_TAG)/"
 
 ###############################################################################
 # Full end-to-end release pipeline
@@ -219,11 +226,21 @@ release-bundle:
 		./scripts/release/make_release_bundle.sh
 
 release-s3:
-	@RELEASE_TAG=$(RELEASE_TAG) NETWORK=$(NETWORK) CHAIN_ID=$(CHAIN_ID) \
+	@RELEASE_TAG=$(RELEASE_TAG) PROJECT=$(PROJECT) NETWORK=$(NETWORK) CHAIN_ID=$(CHAIN_ID) \
 		MINIO_ALIAS=$(MINIO_ALIAS) DRY_RUN=$(DRY_RUN) \
 		S3_BUCKET=$(S3_BUCKET) SYNC_ENTRYPOINT=$(or $(SYNC_ENTRYPOINT),0) \
 		ENTRYPOINT_SRC=$(ENTRYPOINT_SRC) CONFIG_ENDPOINTS_SRC=$(CONFIG_ENDPOINTS_SRC) \
+		PUBLISH_LATEST=$(PUBLISH_LATEST) \
 		./scripts/release/publish_s3_release.sh
 
 # Convenience: bundle then upload (does not build/push docker)
 release-dev: release-bundle release-s3
+
+
+###############################################################################
+# ZK libwasmvm artifact pack (checksums + version pairing)
+###############################################################################
+
+.PHONY: wasmvm-curate
+wasmvm-curate:
+	@./scripts/release/curate_wasmvm_artifacts.sh

@@ -9,18 +9,18 @@ import (
 
 	"cosmossdk.io/math"
 
-	upgradetypes "cosmossdk.io/x/upgrade/types"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/terpnetwork/terp-core/v5/app/keepers"
-	"github.com/terpnetwork/terp-core/v5/app/upgrades"
+	"github.com/terpnetwork/terp-core/v6/app/keepers"
+	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 
 	"github.com/CosmWasm/wasmd/x/wasm/types"
-	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
-	icacontrollertypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/types"
-	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
-	sca "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
+	icacontrollertypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/types"
+	icahosttypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/types"
+	sca "github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 )
 
 const (

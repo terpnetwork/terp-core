@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	apptesting "github.com/terpnetwork/terp-core/v5/app/testutils"
-	drip "github.com/terpnetwork/terp-core/v5/x/drip"
-	"github.com/terpnetwork/terp-core/v5/x/drip/types"
+	apptesting "github.com/terpnetwork/terp-core/v6/app/testutils"
+	drip "github.com/terpnetwork/terp-core/v6/x/drip"
+	"github.com/terpnetwork/terp-core/v6/x/drip/types"
 )
 
 type GenesisTestSuite struct {

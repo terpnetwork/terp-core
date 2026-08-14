@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
+	"github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
 )
 
 func (s *KeeperTestSuite) TestRegisterContracts() {

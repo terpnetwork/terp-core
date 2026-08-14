@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"cosmossdk.io/log"
-	storetypes "cosmossdk.io/store/types"
-	feegrantkeeper "cosmossdk.io/x/feegrant/keeper"
+	"cosmossdk.io/log/v2"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
+	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/telemetry"
@@ -17,8 +17,8 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/authenticator"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 )
 
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {

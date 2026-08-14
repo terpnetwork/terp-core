@@ -28,6 +28,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          # SKIP submodules:recursive — Dockerfile WASMVM_SOURCE=github strips
+          # ./crates/zk-* replaces; crates/ is dockerignored. Recursive bloats runners.
+          fetch-depth: 1
 
       - name: Setup Go ${{ env.GO_VERSION }}
         uses: actions/setup-go@v6
@@ -77,6 +81,9 @@ jobs:
 
       - name: checkout chain
         uses: actions/checkout@v6
+        with:
+          # SKIP submodules:recursive — E2E runs make against prebuilt image only.
+          fetch-depth: 1
 
       - name: Download Tarball Artifact
         uses: actions/download-artifact@v6

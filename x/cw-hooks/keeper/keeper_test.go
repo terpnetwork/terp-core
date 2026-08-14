@@ -7,13 +7,13 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/stretchr/testify/suite"
-	testutil "github.com/terpnetwork/terp-core/v5/app/testutils"
+	testutil "github.com/terpnetwork/terp-core/v6/app/testutils"
 
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
-	"github.com/terpnetwork/terp-core/v5/x/cw-hooks/keeper"
-	"github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
+	"github.com/terpnetwork/terp-core/v6/x/cw-hooks/keeper"
+	"github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
 )
 
 var _ = embed.FS{}

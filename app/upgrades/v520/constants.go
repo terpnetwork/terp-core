@@ -1,9 +1,9 @@
 package v520
 
 import (
-	store "cosmossdk.io/store/types"
+	store "github.com/cosmos/cosmos-sdk/store/v2/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	"github.com/terpnetwork/terp-core/v5/app/upgrades"
+	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 )
 
 const (

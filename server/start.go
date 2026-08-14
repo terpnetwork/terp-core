@@ -607,7 +607,7 @@ func startApp(svrCtx *terpserver.Context, appCreator types.AppCreator, opts Star
 			return app, traceCleanupFn, err
 		}
 	} else {
-		app = appCreator(svrCtx.Logger, db, traceWriter, svrCtx.Viper)
+		app = appCreator(svrCtx.Logger, db, svrCtx.Viper)
 	}
 
 	cleanupFn = func() {

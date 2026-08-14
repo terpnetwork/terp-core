@@ -4,17 +4,17 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
-	storetypes "cosmossdk.io/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 
-	"github.com/terpnetwork/terp-core/v5/x/globalfee"
-	"github.com/terpnetwork/terp-core/v5/x/globalfee/keeper/exported"
-	v2 "github.com/terpnetwork/terp-core/v5/x/globalfee/migrations/v2"
-	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v6/x/globalfee"
+	"github.com/terpnetwork/terp-core/v6/x/globalfee/keeper/exported"
+	v2 "github.com/terpnetwork/terp-core/v6/x/globalfee/migrations/v2"
+	"github.com/terpnetwork/terp-core/v6/x/globalfee/types"
 )
 
 //lint:ignore U1000 disregard lint check

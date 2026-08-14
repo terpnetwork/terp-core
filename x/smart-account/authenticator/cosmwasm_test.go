@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"cosmossdk.io/store/prefix"
+	"github.com/cosmos/cosmos-sdk/store/v2/prefix"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -19,12 +19,12 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/stretchr/testify/suite"
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
+	testutils "github.com/terpnetwork/terp-core/v6/app/testutils"
 
-	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v6/app"
 
-	"github.com/terpnetwork/terp-core/v5/app/params"
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
+	"github.com/terpnetwork/terp-core/v6/app/params"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/authenticator"
 )
 
 type CosmwasmAuthenticatorTest struct {

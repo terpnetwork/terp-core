@@ -7,23 +7,23 @@ replace (
 	// github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.45.13-ics
 	github.com/ChainSafe/go-schnorrkel => github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 	github.com/ChainSafe/go-schnorrkel/1 => github.com/ChainSafe/go-schnorrkel v1.0.0
-	// github.com/CosmWasm/wasmd => ../../crates/zk-wasmd
-	// github.com/CosmWasm/wasmvm/v3 => ../../crates/zk-wasmvm
-	github.com/strangelove-ventures/interchaintest/v10 => github.com/burnt-labs/interchaintest/v10 v10.0.0-wasmvm3
+	github.com/CosmWasm/wasmd => ../../crates/zk-wasmd
+	github.com/CosmWasm/wasmvm/v3 => ../../crates/zk-wasmvm
+	// github.com/strangelove-ventures/interchaintest/v10 => github.com/burnt-labs/interchaintest/v10 v10.0.0-wasmvm3
 	// For this nested module, you always want to replace the parent reference with the current worktree.
-	github.com/terpnetwork/terp-core/v5 => ../../
+	github.com/terpnetwork/terp-core/v6 => ../../
 )
 
 require (
 	cosmossdk.io/math v1.5.3
-	github.com/CosmWasm/wasmd v0.61.8
+	github.com/CosmWasm/wasmd v0.70.3
 	github.com/CosmWasm/wasmvm/v3 v3.0.3
-	github.com/cosmos/cosmos-sdk v0.53.6
-	github.com/cosmos/ibc-go/v10 v10.5.0
+	github.com/cosmos/cosmos-sdk v0.54.3
+	github.com/cosmos/ibc-go/v11 v11.2.0
 	github.com/docker/docker v28.0.0+incompatible
 	github.com/strangelove-ventures/interchaintest/v10 v10.0.0
 	github.com/stretchr/testify v1.11.1
-	github.com/terpnetwork/terp-core/v5 v5.0.0-00010101000000-000000000000
+	github.com/terpnetwork/terp-core/v6 v6.0.0-00010101000000-000000000000
 	go.uber.org/zap v1.27.0
 )
 

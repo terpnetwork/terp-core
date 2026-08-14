@@ -21,7 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v6/app"
 )
 
 // BootstrapConfig holds settings for automated node bootstrapping.

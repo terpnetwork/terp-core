@@ -8,11 +8,11 @@ import (
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	"github.com/stretchr/testify/require"
-	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v6/app"
 
-	"cosmossdk.io/log"
+	"cosmossdk.io/log/v2"
 
-	storetypes "cosmossdk.io/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	cosmosdb "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/flags"

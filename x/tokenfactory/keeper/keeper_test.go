@@ -8,9 +8,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
-	"github.com/terpnetwork/terp-core/v5/x/tokenfactory/keeper"
-	"github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
+	testutils "github.com/terpnetwork/terp-core/v6/app/testutils"
+	"github.com/terpnetwork/terp-core/v6/x/tokenfactory/keeper"
+	"github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
 )
 
 type KeeperTestSuite struct {

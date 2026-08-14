@@ -9,12 +9,12 @@ import (
 
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/header"
-	upgradetypes "cosmossdk.io/x/upgrade/types"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
-	v5 "github.com/terpnetwork/terp-core/v5/app/upgrades/v5"
+	testutils "github.com/terpnetwork/terp-core/v6/app/testutils"
+	v5 "github.com/terpnetwork/terp-core/v6/app/upgrades/v5"
 
-	"cosmossdk.io/x/upgrade"
+	"github.com/cosmos/cosmos-sdk/x/upgrade"
 
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 )

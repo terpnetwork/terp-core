@@ -12,7 +12,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	v1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
-	"github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
+	"github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
 )
 
 type GovHooks struct {
@@ -77,7 +77,7 @@ type SudoAfterProposalVotingPeriodEnded struct {
 	AfterProposalVotingPeriodEnded string `json:"after_proposal_voting_period_ended"`
 }
 
-func (h GovHooks) AfterProposalSubmission(ctx context.Context, proposalID uint64) error {
+func (h GovHooks) AfterProposalSubmission(ctx context.Context, proposalID uint64, _ sdk.AccAddress) error {
 	prop, err := h.k.govKeeper.Proposals.Get(ctx, proposalID)
 	if err != nil {
 		return err

@@ -9,7 +9,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
+	"github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
 )
 
 var _ types.MsgServer = &msgServer{}

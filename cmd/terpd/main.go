@@ -1,14 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os"
-
-	"cosmossdk.io/log"
 
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
-	"github.com/terpnetwork/terp-core/v5/app"
-	"github.com/terpnetwork/terp-core/v5/cmd/terpd/cmd"
+	"github.com/terpnetwork/terp-core/v6/app"
+	"github.com/terpnetwork/terp-core/v6/cmd/terpd/cmd"
 )
 
 func main() {
@@ -16,7 +15,9 @@ func main() {
 	rootCmd, _ := cmd.NewRootCmd()
 
 	if err := svrcmd.Execute(rootCmd, "TERPD", app.DefaultNodeHome); err != nil {
-		log.NewLogger(rootCmd.OutOrStderr()).Error("failure when running app", "err", err)
+		// Client commands (status, query) fail this way when no node is listening.
+		// Do not wrap as "failure when running app" — that is a node-start error.
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }

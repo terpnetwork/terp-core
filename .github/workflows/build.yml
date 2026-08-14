@@ -4,8 +4,11 @@ name: build
 on:
   push:
     paths:
-      - '**.go'      
+      - '**.go'
       - 'go.sum'
+      - 'go.mod'
+      - '.github/workflows/build.yml'
+      - '.gitmodules'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,18 +17,27 @@ concurrency:
 env:
   GO_VERSION: 1.25
 
+# Monorepo submodule policy:
+# - go.mod path-replaces CosmWasm → ./crates/zk-wasmd and ./crates/zk-wasmvm
+# - SKIP full recursive checkout (60+ crates) to avoid runner bloat
+# - Only init the path-replace submodules required for go build/test/tidy
+
 jobs:
   build:
     runs-on: ubuntu-latest
     name: build
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: Init Go path-replace submodules
+        run: git submodule update --init --depth 1 crates/zk-wasmd crates/zk-wasmvm
       - name: Setup go
         uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
       - run: go build ./...
-  
+
   test:
     runs-on: ubuntu-latest
     name: test
@@ -36,6 +48,10 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: Init Go path-replace submodules
+        run: git submodule update --init --depth 1 crates/zk-wasmd crates/zk-wasmvm
       - name: Test
         run: go test ./...
 
@@ -44,6 +60,10 @@ jobs:
     name: tidy
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: Init Go path-replace submodules
+        run: git submodule update --init --depth 1 crates/zk-wasmd crates/zk-wasmvm
       - name: Setup go
         uses: actions/setup-go@v6
         with:

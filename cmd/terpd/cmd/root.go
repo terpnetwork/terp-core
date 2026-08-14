@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -10,7 +9,7 @@ import (
 	wasmcli "github.com/CosmWasm/wasmd/x/wasm/client/cli"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	ibcwccli "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/client/cli"
+	ibcwccli "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/client/cli"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
@@ -18,7 +17,7 @@ import (
 
 	"cosmossdk.io/client/v2/autocli"
 	"cosmossdk.io/core/appmodule"
-	"cosmossdk.io/log"
+	"cosmossdk.io/log/v2"
 	cosmosdb "github.com/cosmos/cosmos-db"
 	runtimeservices "github.com/cosmos/cosmos-sdk/runtime/services"
 	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
@@ -46,9 +45,9 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
-	"github.com/terpnetwork/terp-core/v5/app"
-	"github.com/terpnetwork/terp-core/v5/app/params"
-	testnetserver "github.com/terpnetwork/terp-core/v5/server"
+	"github.com/terpnetwork/terp-core/v6/app"
+	"github.com/terpnetwork/terp-core/v6/app/params"
+	testnetserver "github.com/terpnetwork/terp-core/v6/server"
 )
 
 // NewRootCmd creates a new root command for terpd. It is called once in the
@@ -334,7 +333,6 @@ type appCreator struct {
 func (ac appCreator) newApp(
 	logger log.Logger,
 	db cosmosdb.DB,
-	traceStore io.Writer,
 	appOpts servertypes.AppOptions,
 ) servertypes.Application {
 	skipUpgradeHeights := make(map[int64]bool)
@@ -354,7 +352,7 @@ func (ac appCreator) newApp(
 	return app.NewTerpApp(
 		logger,
 		db,
-		traceStore,
+		nil,
 		loadLatest,
 		cast.ToString(appOpts.Get(flags.FlagHome)),
 		appOpts,
@@ -367,7 +365,6 @@ func (ac appCreator) newApp(
 func (ac appCreator) appExport(
 	logger log.Logger,
 	db cosmosdb.DB,
-	traceStore io.Writer,
 	height int64,
 	forZeroHeight bool,
 	jailAllowedAddrs []string,
@@ -393,7 +390,7 @@ func (ac appCreator) appExport(
 	wasmApp = app.NewTerpApp(
 		logger,
 		db,
-		traceStore,
+		nil,
 		height == -1,
 		cast.ToString(appOpts.Get(flags.FlagHome)),
 		appOpts,
@@ -441,9 +438,9 @@ var tempDir = func() string {
 
 // newTestnetApp starts by running the normal newApp method. From there, the app interface returned is modified in order
 // for a testnet to be created from the provided app.
-func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
+func (ac appCreator) newTestnetApp(logger log.Logger, db cosmosdb.DB, appOpts servertypes.AppOptions) servertypes.Application {
 	// Create an app and type cast to an TerpApp
-	cosmosApp := ac.newApp(logger, db, traceStore, appOpts)
+	cosmosApp := ac.newApp(logger, db, appOpts)
 	terpApp, ok := cosmosApp.(*app.TerpApp)
 	if !ok {
 		panic("app created from newApp is not of type terpApp")

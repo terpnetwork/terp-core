@@ -11,7 +11,7 @@ import (
 	cmtcfg "github.com/cometbft/cometbft/config"
 	"github.com/spf13/cobra"
 
-	"github.com/terpnetwork/terp-core/v5/app"
+	"github.com/terpnetwork/terp-core/v6/app"
 )
 
 // Deterministic test mnemonics (same as localterp shell scripts).

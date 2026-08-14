@@ -3,13 +3,13 @@ package keeper
 import (
 	"fmt"
 
-	"cosmossdk.io/log"
+	"cosmossdk.io/log/v2"
 
-	storetypes "cosmossdk.io/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	revtypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
+	revtypes "github.com/terpnetwork/terp-core/v6/x/feeshare/types"
 )
 
 // Keeper of this module maintains collections of feeshares for contracts

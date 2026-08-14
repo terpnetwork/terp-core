@@ -35,6 +35,10 @@ jobs:
       - 
         name: Check out the repo
         uses: actions/checkout@v6
+        with:
+          # SKIP submodules:recursive — stock image build uses WASMVM_SOURCE=github
+          # and strips monorepo path replaces; crates/ is dockerignored.
+          fetch-depth: 1
       - 
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
-	storetypes "cosmossdk.io/store/types"
-	upgradetypes "cosmossdk.io/x/upgrade/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	"github.com/cometbft/cometbft/crypto"
 	"github.com/cometbft/cometbft/libs/bytes"
@@ -23,8 +23,8 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	v520 "github.com/terpnetwork/terp-core/v5/app/upgrades/v520"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
+	v520 "github.com/terpnetwork/terp-core/v6/app/upgrades/v520"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
 )
 
 // ExportAppStateAndValidators exports the state of the application for a genesis

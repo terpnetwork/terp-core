@@ -1,0 +1,53 @@
+# PIR / headstash notes — L1 only (no live server; non-flaky).
+# Live process smoke: PIR_LIVE=1 just demo-pir-notes-smoke (local / optional job).
+name: pir-notes
+
+on:
+  push:
+    paths:
+      - "crates/terp-rs/tools/hash-market/**"
+      - "crates/terp-rs/crates/seam_note_out/**"
+      - "crates/headstash/test-press/src/harness/note_persist_client.rs"
+      - "crates/headstash/justfile"
+      - ".github/workflows/pir-notes.yml"
+      - "docs/research/PIR-NOTES*.md"
+      - "docs/research/NOTES-AUTH-MODULAR.md"
+  pull_request:
+    paths:
+      - "crates/terp-rs/tools/hash-market/**"
+      - "crates/terp-rs/crates/seam_note_out/**"
+      - "crates/headstash/test-press/src/harness/note_persist_client.rs"
+      - "crates/headstash/justfile"
+      - ".github/workflows/pir-notes.yml"
+      - "docs/research/PIR-NOTES*.md"
+      - "docs/research/NOTES-AUTH-MODULAR.md"
+  workflow_dispatch:
+
+concurrency:
+  group: pir-notes-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  l1:
+    name: note_persist + notes_auth L1
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: crates/terp-rs
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Required: crates/terp-rs + sibling path deps (cosmwasm, cw-*, ibc-proto-rs, …)
+          submodules: recursive
+          fetch-depth: 1
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crates/terp-rs -> target
+      - name: hash-market note_persist (multi-note PIR + modular bearer)
+        run: cargo test -p hash-market --lib note_persist --features server
+      - name: hash-market notes_auth modular compose
+        run: cargo test -p hash-market --lib notes_auth --features server
+      - name: seam_note_out pure
+        run: cargo test -p seam_note_out --lib

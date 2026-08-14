@@ -10,7 +10,7 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
+	"github.com/terpnetwork/terp-core/v6/x/hashmerchant/types"
 )
 
 // ---------------------------------------------------------------------------

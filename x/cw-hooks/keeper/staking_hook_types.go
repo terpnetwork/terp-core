@@ -21,7 +21,7 @@ func NewValidator(val stakingtypes.ValidatorI) *Validator {
 		ValidatorAddress: val.GetOperator(),
 		Commission:       val.GetCommission().String(),
 		ValidatorTokens:  val.GetTokens().String(),
-		BondedTokens:     val.GetBondedTokens().String(),
+		BondedTokens:     val.GetTokens().String(),
 		BondStatus:       val.GetStatus().String(),
 	}
 }

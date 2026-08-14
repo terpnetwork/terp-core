@@ -43,3 +43,33 @@ MODFILES := ./go.mod ./interchaintest/go.mod
 
 deps-tidy-workspace:
 	@./scripts/tidy_workspace.sh
+###############################################################################
+###                         Git submodules (monorepo)                       ###
+###############################################################################
+
+.PHONY: submodules-init submodules-init-go submodules-status submodules-help
+
+# Fresh clone helper — prefer: git clone --recursive <url>
+# or after shallow clone: make submodules-init
+submodules-help:
+	@echo "Submodule commands (monorepo)"
+	@echo ""
+	@echo "  make submodules-init       git submodule update --init --recursive"
+	@echo "  make submodules-init-go    only crates/zk-wasmd + crates/zk-wasmvm (go.mod path replace)"
+	@echo "  make submodules-status     git submodule status"
+	@echo ""
+	@echo "Fresh checkout:"
+	@echo "  git clone --recursive <repo-url>"
+	@echo "  # or: git submodule update --init --recursive"
+
+submodules-init:
+	@echo "--> Initializing all git submodules (recursive)"
+	git submodule update --init --recursive
+
+# Minimal set required for go build/test with monorepo path replaces in go.mod
+submodules-init-go:
+	@echo "--> Initializing Go path-replace submodules (zk-wasmd, zk-wasmvm)"
+	git submodule update --init --depth 1 crates/zk-wasmd crates/zk-wasmvm
+
+submodules-status:
+	git submodule status

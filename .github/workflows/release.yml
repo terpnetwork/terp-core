@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # SKIP submodules:recursive — release binaries built via Dockerfile
+          # (github wasmvm). crates/ dockerignored; recursive not required.
+          fetch-depth: 1
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -66,6 +70,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # SKIP submodules:recursive — release binaries built via Dockerfile
+          # (github wasmvm). crates/ dockerignored; recursive not required.
+          fetch-depth: 1
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4

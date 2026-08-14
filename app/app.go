@@ -18,9 +18,7 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
-	"cosmossdk.io/log"
-	storetypes "cosmossdk.io/store/types"
-	nftmodule "cosmossdk.io/x/nft/module"
+	"cosmossdk.io/log/v2"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmos "github.com/cometbft/cometbft/libs/os"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -31,10 +29,12 @@ import (
 	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
+	crisistypes "github.com/cosmos/cosmos-sdk/contrib/x/crisis/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	runtimeservices "github.com/cosmos/cosmos-sdk/runtime/services"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -48,7 +48,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/consensus"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
@@ -59,67 +58,66 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
-	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
-	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
-	ap "github.com/terpnetwork/terp-core/v5/app/params"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11"
+	packetforward "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware"
+	ap "github.com/terpnetwork/terp-core/v6/app/params"
 
-	smartaccount "github.com/terpnetwork/terp-core/v5/x/smart-account"
+	smartaccount "github.com/terpnetwork/terp-core/v6/x/smart-account"
 
-	cwhooksmodule "github.com/terpnetwork/terp-core/v5/x/cw-hooks/module"
+	cwhooksmodule "github.com/terpnetwork/terp-core/v6/x/cw-hooks/module"
 
+	"github.com/cosmos/cosmos-sdk/contrib/x/crisis"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	txmodule "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/prometheus/client_golang/prometheus"
 
 	sigtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
-	groupmodule "github.com/cosmos/cosmos-sdk/x/group/module"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	ibcwlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10"
-	// ibcwlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/keeper"
-	ibcwlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
-	ica "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts"
-	transfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
-	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
-	ibc "github.com/cosmos/ibc-go/v10/modules/core"
-	ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
-	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
+	ibcwlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11"
+	// ibcwlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
+	ibcwlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
+	ica "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts"
+	transfer "github.com/cosmos/ibc-go/v11/modules/apps/transfer"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v11/modules/core"
+	ibcclienttypes "github.com/cosmos/ibc-go/v11/modules/core/02-client/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v11/modules/core/04-channel/types"
+	ibctm "github.com/cosmos/ibc-go/v11/modules/light-clients/07-tendermint"
 
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/spf13/cast"
 
-	terpabci "github.com/terpnetwork/terp-core/v5/app/abci"
-	"github.com/terpnetwork/terp-core/v5/app/keepers"
-	"github.com/terpnetwork/terp-core/v5/docs"
-	"github.com/terpnetwork/terp-core/v5/x/feeshare"
-	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
-	"github.com/terpnetwork/terp-core/v5/x/globalfee"
-	"github.com/terpnetwork/terp-core/v5/x/hashmerchant"
-	"github.com/terpnetwork/terp-core/v5/x/tokenfactory"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
+	terpabci "github.com/terpnetwork/terp-core/v6/app/abci"
+	"github.com/terpnetwork/terp-core/v6/app/keepers"
+	"github.com/terpnetwork/terp-core/v6/docs"
+	"github.com/terpnetwork/terp-core/v6/x/feeshare"
+	feesharetypes "github.com/terpnetwork/terp-core/v6/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v6/x/globalfee"
+	"github.com/terpnetwork/terp-core/v6/x/hashmerchant"
+	"github.com/terpnetwork/terp-core/v6/x/tokenfactory"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
 
-	"cosmossdk.io/x/evidence"
-	"cosmossdk.io/x/upgrade"
+	"github.com/cosmos/cosmos-sdk/x/evidence"
+	"github.com/cosmos/cosmos-sdk/x/upgrade"
 
-	feegrantmodule "cosmossdk.io/x/feegrant/module"
-	upgradetypes "cosmossdk.io/x/upgrade/types"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
+	feegrantmodule "github.com/cosmos/cosmos-sdk/x/feegrant/module"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v5/app/upgrades"
-	v5 "github.com/terpnetwork/terp-core/v5/app/upgrades/v5"
-	v520 "github.com/terpnetwork/terp-core/v5/app/upgrades/v520"
+	"github.com/terpnetwork/terp-core/v6/app/upgrades"
+	v5 "github.com/terpnetwork/terp-core/v6/app/upgrades/v5"
+	v520 "github.com/terpnetwork/terp-core/v6/app/upgrades/v520"
+	v6 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
+	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 	// unnamed import of statik for swagger UI support
 	// _ "github.com/cosmos/cosmos-sdk/client/docs/statik" // statik for swagger UI support
 )
@@ -143,6 +141,7 @@ var (
 	Upgrades = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,v4_1.Upgrade,
 		v5.Upgrade,
 		v520.Upgrade,
+		v6.Upgrade,
 	}
 )
 
@@ -305,7 +304,6 @@ func NewTerpApp(
 	txConfig := encodingConfig.TxConfig
 
 	bApp := baseapp.NewBaseApp(ap.AppName, logger, db, txConfig.TxDecoder(), baseAppOptions...)
-	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
 	bApp.SetTxEncoder(txConfig.TxEncoder())
@@ -415,18 +413,16 @@ func NewTerpApp(
 		evidence.NewAppModule(*app.EvidenceKeeper),
 		params.NewAppModule(app.ParamsKeeper),
 		authzmodule.NewAppModule(appCodec, *app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
-		groupmodule.NewAppModule(appCodec, *app.GroupKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
-		nftmodule.NewAppModule(appCodec, *app.NFTKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		consensus.NewAppModule(appCodec, *app.ConsensusParamsKeeper),
 		feeshare.NewAppModule(app.FeeShareKeeper, *app.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
 		globalfee.NewAppModule(appCodec, app.GlobalFeeKeeper, bondDenom),
 		tokenfactory.NewAppModule(app.TokenFactoryKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(tokenfactorytypes.ModuleName)),
 		wasm.NewAppModule(appCodec, app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), app.GetSubspace(wasmtypes.ModuleName)),
 		ibc.NewAppModule(app.IBCKeeper),
-		transfer.NewAppModule(*app.TransferKeeper),
+		transfer.NewAppModule(app.TransferKeeper),
 		ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper),
 		ibcwlc.NewAppModule(*app.IBCWasmClientKeeper),
-		packetforward.NewAppModule(app.PacketForwardKeeper, app.GetSubspace(packetforwardtypes.ModuleName)),
+		packetforward.NewAppModule(app.PacketForwardKeeper),
 		ibchooks.NewAppModule(*app.AccountKeeper),
 		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
 		hashmerchant.NewAppModule(app.HashMerchantKeeper),
@@ -725,7 +721,9 @@ func (app *TerpApp) RegisterTendermintService(clientCtx client.Context) {
 }
 
 func (app *TerpApp) RegisterNodeService(clientCtx client.Context, cfg config.Config) {
-	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter(), cfg)
+	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter(), cfg, func() int64 {
+		return app.CommitMultiStore().EarliestVersion()
+	})
 }
 
 // configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -784,20 +782,20 @@ func (app *TerpApp) GetChainBondDenom() string {
 	return d
 }
 
-// we cache the reflectionService to save us time within tests.
-var cachedReflectionService *runtimeservices.ReflectionService = nil
+// // we cache the reflectionService to save us time within tests.
+// var cachedReflectionService *runtimeservices.ReflectionService = nil
 
-func getReflectionService() *runtimeservices.ReflectionService {
-	if cachedReflectionService != nil {
-		return cachedReflectionService
-	}
-	reflectionSvc, err := runtimeservices.NewReflectionService()
-	if err != nil {
-		panic(err)
-	}
-	cachedReflectionService = reflectionSvc
-	return reflectionSvc
-}
+// func getReflectionService() *runtimeservices.ReflectionService {
+// 	if cachedReflectionService != nil {
+// 		return cachedReflectionService
+// 	}
+// 	reflectionSvc, err := runtimeservices.NewReflectionService()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	cachedReflectionService = reflectionSvc
+// 	return reflectionSvc
+// }
 
 // RegisterSwaggerAPI registers swagger route with API Server
 func RegisterSwaggerAPI(_ client.Context, apiSvr *api.Server) error {

@@ -1,0 +1,38 @@
+# Forward-only baseline: credits + durable + reg-close + evidence (+ optional auth-vm)
+# Local: act -W .github/workflows/infra-credits-baseline.yml -j baseline
+name: infra credits baseline
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "crates/inference-edge/**"
+      - "crates/o-line/src/auth_plane/**"
+      - "crates/buzz/crates/buzz-acp/**"
+      - ".github/workflows/infra-credits-baseline.yml"
+      - ".github/workflows/inference-edge-credits.yml"
+  pull_request:
+    paths:
+      - "crates/inference-edge/**"
+      - "crates/o-line/src/auth_plane/**"
+      - "crates/buzz/crates/buzz-acp/**"
+      - ".github/workflows/infra-credits-baseline.yml"
+
+jobs:
+  baseline:
+    name: forward baseline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            crates/inference-edge
+            crates/o-line
+            crates/buzz
+      - name: Baseline script
+        env:
+          # Do not fail CI on auth-vm residual until INFRA-04 + deps land
+          AUTH_VM_REQUIRED: "0"
+        run: bash crates/inference-edge/scripts/ci-baseline-forward.sh

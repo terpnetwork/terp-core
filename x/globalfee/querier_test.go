@@ -6,15 +6,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
+	testutils "github.com/terpnetwork/terp-core/v6/app/testutils"
 
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v5/x/globalfee"
-	globalfeekeeper "github.com/terpnetwork/terp-core/v5/x/globalfee/keeper"
-	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v6/x/globalfee"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v6/x/globalfee/keeper"
+	"github.com/terpnetwork/terp-core/v6/x/globalfee/types"
 )
 
 type QuerierTestSuite struct {

@@ -15,12 +15,12 @@ import (
 
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
-	storetypes "cosmossdk.io/store/types"
-	txsigning "cosmossdk.io/x/tx/signing"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
+	txsigning "github.com/cosmos/cosmos-sdk/x/tx/signing"
 
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
-	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/authenticator"
+	smartaccountkeeper "github.com/terpnetwork/terp-core/v6/x/smart-account/keeper"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 )
 
 // AuthenticatorDecorator is responsible for processing authentication logic

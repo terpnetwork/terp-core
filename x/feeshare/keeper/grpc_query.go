@@ -6,11 +6,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"cosmossdk.io/store/prefix"
+	"github.com/cosmos/cosmos-sdk/store/v2/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	"github.com/terpnetwork/terp-core/v5/x/feeshare/types"
+	"github.com/terpnetwork/terp-core/v6/x/feeshare/types"
 )
 
 var _ types.QueryServer = Querier{}

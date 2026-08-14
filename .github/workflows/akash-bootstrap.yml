@@ -1,0 +1,69 @@
+name: Akash Bootstrap CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'crates/ict-rs/**'
+      - 'crates/o-line/**'
+      - 'plays/instant-replay/**'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_LOG: info,ict_rs=debug
+
+jobs:
+  akash-bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      docker:
+        image: docker:29.2-dind
+        options: --privileged
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Install just
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just
+
+      - name: Cache cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crates/ict-rs/ict-rs
+
+      - name: Run ict-rs akash bootstrap tests
+        run: |
+          cd crates/ict-rs/ict-rs
+          cargo test --features akash,testing \
+            --test akash_bootstrap_test \
+            -- --nocapture --ignored
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Verify minio_ipfs_config builds
+        run: |
+          cd crates/ict-rs/ict-rs
+          cargo test --features akash,testing \
+            --test akash_bootstrap_test \
+            test_akash_sidecar_minio_ipfs_config \
+            -- --nocapture
+
+      - name: Verify akash sidecar config builds
+        run: |
+          cd crates/ict-rs/ict-rs
+          cargo test --features akash,testing \
+            --test akash_bootstrap_test \
+            test_akash_mock_sidecar_config \
+            -- --nocapture

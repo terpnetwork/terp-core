@@ -1,0 +1,151 @@
+# marketplace-parallel-delta-loop v1 — full ICT L0 + UI unit + sync
+# Schema: terp.testing.parallel_delta_loop/v1
+# Hermes profile: qa-integration-tester / skill marketplace-parallel-delta-loop
+#
+# Layout: monorepo checkout with crates/ict-rs + websites/dao-dao-ui present.
+# If nested git checkouts omit one track, use SKIP_ICT / SKIP_UI on the gate script.
+
+name: Marketplace parallel delta loop
+
+on:
+  push:
+    branches: [main, master, development]
+    paths:
+      - 'crates/ict-rs/examples/marketplace_inventory_offline.rs'
+      - 'crates/ict-rs/examples/marketplace-db/**'
+      - 'crates/ict-rs/docs/MARKETPLACE*.md'
+      - 'crates/ict-rs/docs/marketplace_harness.md'
+      - 'crates/ict-rs/docs/profiles/**'
+      - 'crates/ict-rs/scripts/run-marketplace-delta-loop-gates.sh'
+      - 'crates/terp-rs/contracts/hash-merchant/marketplace-mirror/**'
+      - 'websites/dao-dao-ui/packages/utils/mesh.ts'
+      - 'websites/dao-dao-ui/packages/utils/mesh.test.ts'
+      - 'websites/dao-dao-ui/packages/utils/marketplaceListings.ts'
+      - 'websites/dao-dao-ui/packages/utils/marketplaceListings.test.ts'
+      - 'websites/dao-dao-ui/packages/utils/marketplaceAuction.ts'
+      - 'websites/dao-dao-ui/packages/utils/marketplaceAuction.test.ts'
+      - 'websites/dao-dao-ui/packages/utils/daoNipRecords.ts'
+      - 'websites/dao-dao-ui/packages/utils/daoNipRecords.test.ts'
+      - 'websites/dao-dao-ui/packages/utils/calendarEvents.ts'
+      - 'websites/dao-dao-ui/packages/utils/calendarEvents.test.ts'
+      - 'websites/dao-dao-ui/packages/utils/embedFriction.ts'
+      - 'websites/dao-dao-ui/packages/utils/embedFriction.test.ts'
+      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Marketplace/**'
+      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Calendar/**'
+      - 'websites/dao-dao-ui/packages/stateful/modules/modules/EventHub/**'
+      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Buzz/**'
+      - 'websites/dao-dao-ui/packages/stateful/modules/modules/HermesOps/**'
+      - 'websites/dao-dao-ui/docs/superpowers/specs/AGENT-M3-ICT-DELTA-SYNC.md'
+      - 'websites/dao-dao-ui/docs/superpowers/specs/TESTING-HERMES-PROFILE-marketplace-parallel-delta-loop.md'
+      - 'websites/dao-dao-ui/.github/workflows/marketplace-delta-loop.yml'
+      - '.github/workflows/marketplace-delta-loop.yml'
+  pull_request:
+    paths:
+      - 'crates/ict-rs/examples/marketplace_inventory_offline.rs'
+      - 'crates/ict-rs/examples/marketplace-db/**'
+      - 'crates/ict-rs/docs/MARKETPLACE*.md'
+      - 'crates/ict-rs/docs/marketplace_harness.md'
+      - 'crates/ict-rs/docs/profiles/**'
+      - 'crates/ict-rs/scripts/run-marketplace-delta-loop-gates.sh'
+      - 'crates/terp-rs/contracts/hash-merchant/marketplace-mirror/**'
+      - 'websites/dao-dao-ui/packages/utils/mesh.ts'
+      - 'websites/dao-dao-ui/packages/utils/mesh.test.ts'
+      - 'websites/dao-dao-ui/packages/utils/marketplaceListings.ts'
+      - 'websites/dao-dao-ui/packages/utils/marketplaceListings.test.ts'
+      - 'websites/dao-dao-ui/packages/utils/marketplaceAuction.ts'
+      - 'websites/dao-dao-ui/packages/utils/marketplaceAuction.test.ts'
+      - 'websites/dao-dao-ui/packages/utils/daoNipRecords.ts'
+      - 'websites/dao-dao-ui/packages/utils/daoNipRecords.test.ts'
+      - 'websites/dao-dao-ui/packages/utils/calendarEvents.ts'
+      - 'websites/dao-dao-ui/packages/utils/calendarEvents.test.ts'
+      - 'websites/dao-dao-ui/packages/utils/embedFriction.ts'
+      - 'websites/dao-dao-ui/packages/utils/embedFriction.test.ts'
+      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Marketplace/**'
+      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Calendar/**'
+      - 'websites/dao-dao-ui/packages/stateful/modules/modules/EventHub/**'
+      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Buzz/**'
+      - 'websites/dao-dao-ui/packages/stateful/modules/modules/HermesOps/**'
+      - 'websites/dao-dao-ui/docs/superpowers/specs/AGENT-M3-ICT-DELTA-SYNC.md'
+      - 'websites/dao-dao-ui/docs/superpowers/specs/TESTING-HERMES-PROFILE-marketplace-parallel-delta-loop.md'
+      - 'websites/dao-dao-ui/.github/workflows/marketplace-delta-loop.yml'
+      - '.github/workflows/marketplace-delta-loop.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: marketplace-delta-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: Run parallel delta loop gates
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Nested dao-dao-ui may be a separate checkout; submodules optional
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Detect tracks
+        id: tracks
+        run: |
+          ICT=0; UI=0
+          [[ -f crates/ict-rs/examples/marketplace_inventory_offline.rs ]] && ICT=1
+          [[ -f websites/dao-dao-ui/packages/utils/marketplaceListings.test.ts ]] && UI=1
+          echo "ict=$ICT" >> "$GITHUB_OUTPUT"
+          echo "ui=$UI" >> "$GITHUB_OUTPUT"
+          echo "ICT track present=$ICT UI track present=$UI"
+
+      - name: Setup Rust
+        if: steps.tracks.outputs.ict == '1'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        if: steps.tracks.outputs.ict == '1'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crates/ict-rs -> target
+
+      - name: Setup pnpm + Node
+        if: steps.tracks.outputs.ui == '1'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        if: steps.tracks.outputs.ui == '1'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: websites/dao-dao-ui/pnpm-lock.yaml
+
+      - name: Install UI deps
+        if: steps.tracks.outputs.ui == '1'
+        working-directory: websites/dao-dao-ui
+        run: pnpm install
+
+      - name: Run gate script
+        env:
+          SKIP_ICT: ${{ steps.tracks.outputs.ict == '0' && '1' || '0' }}
+          SKIP_UI: ${{ steps.tracks.outputs.ui == '0' && '1' || '0' }}
+        run: |
+          chmod +x crates/ict-rs/scripts/run-marketplace-delta-loop-gates.sh
+          ./crates/ict-rs/scripts/run-marketplace-delta-loop-gates.sh
+
+      - name: Assert verdict pass
+        run: |
+          LATEST=$(ls -t crates/ict-rs/docs/profiles/reports/marketplace-parallel-delta-loop-*.json | head -1)
+          echo "Report: $LATEST"
+          jq '{schema, profile_id, verdict, tracks: .tracks|map_values(.status)}' "$LATEST"
+          jq -e '.verdict == "pass" and .schema == "terp.testing.parallel_delta_loop/v1"' "$LATEST"
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketplace-parallel-delta-loop-report
+          path: crates/ict-rs/docs/profiles/reports/marketplace-parallel-delta-loop-*.json
+          if-no-files-found: warn

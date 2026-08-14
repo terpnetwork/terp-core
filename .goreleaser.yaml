@@ -67,7 +67,7 @@ builds:
     binary: terpd
     hooks:
       pre:
-        - wget https://github.com/CosmWasm/wasmvm/releases/download/{{ .Env.WASMVM_VERSION }}/libwasmvm_muslc.x86_64.a -O /usr/lib/x86_64-linux-gnu/libwasmvm_muslc.a
+        - sh -c "src=/go/src/terpd/build/wasmvm-release/libwasmvm_muslc.x86_64.a; if [ -f $src ]; then cp $src /usr/lib/x86_64-linux-gnu/libwasmvm_muslc.a; else wget https://github.com/CosmWasm/wasmvm/releases/download/{{ .Env.WASMVM_VERSION }}/libwasmvm_muslc.x86_64.a -O /usr/lib/x86_64-linux-gnu/libwasmvm_muslc.a; fi"
     goos:
       - linux
     goarch:
@@ -97,7 +97,7 @@ builds:
     binary: terpd
     hooks:
       pre:
-        - wget https://github.com/CosmWasm/wasmvm/releases/download/{{ .Env.WASMVM_VERSION }}/libwasmvm_muslc.aarch64.a -O /usr/lib/aarch64-linux-gnu/libwasmvm_muslc.a
+        - sh -c "src=/go/src/terpd/build/wasmvm-release/libwasmvm_muslc.aarch64.a; if [ -f $src ]; then cp $src /usr/lib/aarch64-linux-gnu/libwasmvm_muslc.a; else wget https://github.com/CosmWasm/wasmvm/releases/download/{{ .Env.WASMVM_VERSION }}/libwasmvm_muslc.aarch64.a -O /usr/lib/aarch64-linux-gnu/libwasmvm_muslc.a; fi"
     goos:
       - linux
     goarch:

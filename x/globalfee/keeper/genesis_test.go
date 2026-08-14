@@ -10,9 +10,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/terpnetwork/terp-core/v5/app"
-	"github.com/terpnetwork/terp-core/v5/x/globalfee"
-	"github.com/terpnetwork/terp-core/v5/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v6/app"
+	"github.com/terpnetwork/terp-core/v6/x/globalfee"
+	"github.com/terpnetwork/terp-core/v6/x/globalfee/types"
 )
 
 func (s *KeeperTestSuite) TestDefaultGenesis() {

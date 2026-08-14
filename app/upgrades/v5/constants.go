@@ -1,11 +1,11 @@
 package v5
 
 import (
-	store "cosmossdk.io/store/types"
-	circuittypes "cosmossdk.io/x/circuit/types"
-	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
-	"github.com/terpnetwork/terp-core/v5/app/upgrades"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	store "github.com/cosmos/cosmos-sdk/store/v2/types"
+	circuittypes "github.com/cosmos/cosmos-sdk/contrib/x/circuit/types"
+	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
+	"github.com/terpnetwork/terp-core/v6/app/upgrades"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 )
 
 const UpgradeName = "v5"

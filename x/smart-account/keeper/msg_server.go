@@ -8,7 +8,7 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 )
 
 type msgServer struct {

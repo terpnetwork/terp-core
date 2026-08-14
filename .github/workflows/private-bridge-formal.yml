@@ -1,0 +1,71 @@
+# Private bridge formal layer — Quint typecheck + Lean lake build.
+# Round-2 residual (STATUS-REVIEW). Bounded verify optional (slow); typecheck always.
+name: private-bridge-formal
+
+on:
+  push:
+    paths:
+      - "crates/terp-rs/docs/private-bridge/formal/**"
+      - "crates/terp-rs/docs/private-bridge/agents/formal-invariants-quint-lean-2026-07-27/**"
+      - ".github/workflows/private-bridge-formal.yml"
+  pull_request:
+    paths:
+      - "crates/terp-rs/docs/private-bridge/formal/**"
+      - "crates/terp-rs/docs/private-bridge/agents/formal-invariants-quint-lean-2026-07-27/**"
+      - ".github/workflows/private-bridge-formal.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: private-bridge-formal-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quint-typecheck:
+    name: quint typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: crates/terp-rs/docs/private-bridge
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Formal sources live under crates/terp-rs submodule tree
+          submodules: recursive
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Quint
+        run: npm install -g @informalsystems/quint
+      - name: typecheck bridge_mint
+        run: quint typecheck formal/quint/bridge_mint.qnt
+      - name: typecheck private_dex
+        run: quint typecheck formal/quint/private_dex.qnt
+      - name: typecheck private_dex_fee (if present)
+        run: |
+          if [ -f formal/quint/private_dex_fee.qnt ]; then
+            quint typecheck formal/quint/private_dex_fee.qnt
+          fi
+      - name: typecheck bridge_mint_bexp (if present)
+        run: |
+          if [ -f formal/quint/bridge_mint_bexp.qnt ]; then
+            quint typecheck formal/quint/bridge_mint_bexp.qnt
+          fi
+
+  lean-build:
+    name: lake build PrivateBridge
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: crates/terp-rs/docs/private-bridge/formal/lean
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Formal sources live under crates/terp-rs submodule tree
+          submodules: recursive
+          fetch-depth: 1
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: crates/terp-rs/docs/private-bridge/formal/lean

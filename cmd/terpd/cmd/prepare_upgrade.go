@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 
-	"github.com/terpnetwork/terp-core/v5/cmd/ipfs"
+	"github.com/terpnetwork/terp-core/v6/cmd/ipfs"
 
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -22,7 +22,7 @@ import (
 	"strconv"
 
 	govv1 "cosmossdk.io/api/cosmos/gov/v1"
-	upgradetypes "cosmossdk.io/x/upgrade/types"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"

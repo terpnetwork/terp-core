@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 
-	"github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
+	"github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
 )
 
 var _ types.QueryServer = queryServer{}

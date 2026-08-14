@@ -84,12 +84,13 @@ credentials.json
 crates/o-line/config/edge/sites.toml
 config/edge/sites.toml
 # local agent / review noise
-.hermes/
+.hermes*
 .worktrees/
 _review/
 **/scripts/act/runs/
-*.local.toml
-*.local.yaml
-*.local.yml
+*.local.*
 SENTRY_SETUP.md
 oline-ui.md
+docs/
+.grok
+artifacts/

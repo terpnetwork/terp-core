@@ -206,7 +206,7 @@ func testnetify(ctx *server.Context, testnetAppCreator types.AppCreator, db dbm.
 
 	ctx.Viper.Set(KeyNewValAddr, validatorAddress)
 	ctx.Viper.Set(KeyUserPubKey, userPubKey)
-	testnetApp := testnetAppCreator(ctx.Logger, db, traceWriter, ctx.Viper)
+	testnetApp := testnetAppCreator(ctx.Logger, db, ctx.Viper)
 
 	// We need to create a temporary proxyApp to get the initial state of the application.
 	cmtApp := server.NewCometABCIWrapper(testnetApp)

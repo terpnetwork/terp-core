@@ -8,14 +8,14 @@ import (
 	"testing"
 	"time"
 
-	storetypes "cosmossdk.io/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	"github.com/cosmos/cosmos-sdk/x/bank/testutil"
 
 	"github.com/cosmos/cosmos-sdk/codec/types"
 
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -30,11 +30,11 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/terpnetwork/terp-core/v5/app"
-	"github.com/terpnetwork/terp-core/v5/app/params"
-	testutils "github.com/terpnetwork/terp-core/v5/app/testutils"
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/ante"
-	moduletestutils "github.com/terpnetwork/terp-core/v5/x/smart-account/testutils"
+	"github.com/terpnetwork/terp-core/v6/app"
+	"github.com/terpnetwork/terp-core/v6/app/params"
+	testutils "github.com/terpnetwork/terp-core/v6/app/testutils"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/ante"
+	moduletestutils "github.com/terpnetwork/terp-core/v6/x/smart-account/testutils"
 )
 
 type AuthenticatorAnteSuite struct {

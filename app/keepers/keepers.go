@@ -11,55 +11,55 @@ import (
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/server"
 
-	"cosmossdk.io/x/feegrant"
-	"cosmossdk.io/x/nft"
+	"github.com/cosmos/cosmos-sdk/x/feegrant"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmvm "github.com/CosmWasm/wasmvm/v3"
-	ibcwlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/keeper"
-	ibcwlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
-	appparams "github.com/terpnetwork/terp-core/v5/app/params"
+	ibcwlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
+	ibcwlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
+	appparams "github.com/terpnetwork/terp-core/v6/app/params"
 
-	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
-	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/keeper"
-	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
+	packetforward "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware"
+	packetforwardkeeper "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/keeper"
+	packetforwardtypes "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/types"
 
-	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
-	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/keeper"
-	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/types"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11"
+	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11/keeper"
+	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11/types"
 
-	icacontroller "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller"
-	icacontrollerkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/keeper"
-	icacontrollertypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/types"
+	icacontroller "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller"
+	icacontrollerkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/keeper"
+	icacontrollertypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/types"
 
-	icahost "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host"
-	icahostkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/keeper"
-	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
-	icatypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/types"
+	icahost "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host"
+	icahostkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/keeper"
+	icahosttypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/types"
+	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
 
-	transfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
+	transfer "github.com/cosmos/ibc-go/v11/modules/apps/transfer"
+	transferv2 "github.com/cosmos/ibc-go/v11/modules/apps/transfer/v2"
 
-	ibctransferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
-	ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
-	ibcconnectiontypes "github.com/cosmos/ibc-go/v10/modules/core/03-connection/types"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v11/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 
-	porttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
-	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
-	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
+	porttypes "github.com/cosmos/ibc-go/v11/modules/core/05-port/types"
+	ibcapi "github.com/cosmos/ibc-go/v11/modules/core/api"
+	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
+	ibckeeper "github.com/cosmos/ibc-go/v11/modules/core/keeper"
 
-	storetypes "cosmossdk.io/store/types"
-	evidencekeeper "cosmossdk.io/x/evidence/keeper"
-	evidencetypes "cosmossdk.io/x/evidence/types"
-	feegrantkeeper "cosmossdk.io/x/feegrant/keeper"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
+	evidencekeeper "github.com/cosmos/cosmos-sdk/x/evidence/keeper"
+	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
+	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
 
-	nftkeeper "cosmossdk.io/x/nft/keeper"
-	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
-	upgradetypes "cosmossdk.io/x/upgrade/types"
+	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
+	crisiskeeper "github.com/cosmos/cosmos-sdk/contrib/x/crisis/keeper"
+	crisistypes "github.com/cosmos/cosmos-sdk/contrib/x/crisis/types"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -69,15 +69,11 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
-	"github.com/cosmos/cosmos-sdk/x/group"
-	groupkeeper "github.com/cosmos/cosmos-sdk/x/group/keeper"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
@@ -89,27 +85,27 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	dripkeeper "github.com/terpnetwork/terp-core/v5/x/drip/keeper"
-	driptypes "github.com/terpnetwork/terp-core/v5/x/drip/types"
-	feesharekeeper "github.com/terpnetwork/terp-core/v5/x/feeshare/keeper"
-	feesharetypes "github.com/terpnetwork/terp-core/v5/x/feeshare/types"
+	dripkeeper "github.com/terpnetwork/terp-core/v6/x/drip/keeper"
+	driptypes "github.com/terpnetwork/terp-core/v6/x/drip/types"
+	feesharekeeper "github.com/terpnetwork/terp-core/v6/x/feeshare/keeper"
+	feesharetypes "github.com/terpnetwork/terp-core/v6/x/feeshare/types"
 
-	"github.com/terpnetwork/terp-core/v5/x/globalfee"
-	globalfeekeeper "github.com/terpnetwork/terp-core/v5/x/globalfee/keeper"
-	globalfeetypes "github.com/terpnetwork/terp-core/v5/x/globalfee/types"
+	"github.com/terpnetwork/terp-core/v6/x/globalfee"
+	globalfeekeeper "github.com/terpnetwork/terp-core/v6/x/globalfee/keeper"
+	globalfeetypes "github.com/terpnetwork/terp-core/v6/x/globalfee/types"
 
-	"github.com/terpnetwork/terp-core/v5/x/smart-account/authenticator"
-	smartaccountkeeper "github.com/terpnetwork/terp-core/v5/x/smart-account/keeper"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v5/x/smart-account/types"
+	"github.com/terpnetwork/terp-core/v6/x/smart-account/authenticator"
+	smartaccountkeeper "github.com/terpnetwork/terp-core/v6/x/smart-account/keeper"
+	smartaccounttypes "github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 
-	cwhookskeeper "github.com/terpnetwork/terp-core/v5/x/cw-hooks/keeper"
-	cwhookstypes "github.com/terpnetwork/terp-core/v5/x/cw-hooks/types"
+	cwhookskeeper "github.com/terpnetwork/terp-core/v6/x/cw-hooks/keeper"
+	cwhookstypes "github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
 
-	tokenfactorykeeper "github.com/terpnetwork/terp-core/v5/x/tokenfactory/keeper"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v5/x/tokenfactory/types"
-	hashmerchantkeeper "github.com/terpnetwork/terp-core/v5/x/hashmerchant/keeper"
-	hashmerchanttypes "github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
-	// terpwasm "github.com/terpnetwork/terp-core/v5/internal/wasm"
+	hashmerchantkeeper "github.com/terpnetwork/terp-core/v6/x/hashmerchant/keeper"
+	hashmerchanttypes "github.com/terpnetwork/terp-core/v6/x/hashmerchant/types"
+	tokenfactorykeeper "github.com/terpnetwork/terp-core/v6/x/tokenfactory/keeper"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
+	// terpwasm "github.com/terpnetwork/terp-core/v6/internal/wasm"
 )
 
 var (
@@ -125,7 +121,6 @@ var maccPerms = map[string][]string{
 	stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 	stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 	govtypes.ModuleName:            {authtypes.Burner},
-	nft.ModuleName:                 nil,
 	ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 	icatypes.ModuleName:            nil,
 	globalfee.ModuleName:           nil,
@@ -155,8 +150,6 @@ type AppKeepers struct {
 	ParamsKeeper          paramskeeper.Keeper
 	EvidenceKeeper        *evidencekeeper.Keeper
 	FeeGrantKeeper        *feegrantkeeper.Keeper
-	GroupKeeper           *groupkeeper.Keeper
-	NFTKeeper             *nftkeeper.Keeper
 	ConsensusParamsKeeper *consensusparamkeeper.Keeper
 
 	IBCKeeper            *ibckeeper.Keeper // IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
@@ -174,7 +167,7 @@ type AppKeepers struct {
 	WasmKeeper           *wasmkeeper.Keeper
 	IBCWasmClientKeeper  *ibcwlckeeper.Keeper
 
-	DripKeeper dripkeeper.Keeper
+	DripKeeper         dripkeeper.Keeper
 	HashMerchantKeeper *hashmerchantkeeper.Keeper
 	CwHooksKeeper      *cwhookskeeper.Keeper
 
@@ -343,7 +336,6 @@ func NewAppKeepers(
 	appKeepers.IBCKeeper = ibckeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[ibcexported.StoreKey]),
-		appKeepers.GetSubspace(ibcexported.ModuleName),
 		appKeepers.UpgradeKeeper,
 		govModAddress,
 	)
@@ -368,24 +360,12 @@ func NewAppKeepers(
 		runtime.NewKVStoreService(appKeepers.keys[govtypes.StoreKey]),
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
-		stakingKeeper,
 		appKeepers.DistrKeeper,
 		bApp.MsgServiceRouter(),
 		govConfig,
 		govModAddress,
+		govkeeper.NewDefaultCalculateVoteResultsAndVotingPower(stakingKeeper),
 	)
-	groupConfig := group.DefaultConfig()
-	groupConfig.MaxMetadataLen = 500
-	groupKeeper := groupkeeper.NewKeeper(keys[group.StoreKey], appCodec, bApp.MsgServiceRouter(), appKeepers.AccountKeeper, groupConfig)
-	appKeepers.GroupKeeper = &groupKeeper
-
-	nftKeeper := nftkeeper.NewKeeper(
-		runtime.NewKVStoreService(appKeepers.keys[nftkeeper.StoreKey]),
-		appCodec,
-		appKeepers.AccountKeeper,
-		appKeepers.BankKeeper,
-	)
-	appKeepers.NFTKeeper = &nftKeeper
 
 	// Configure the hooks keeper
 	hooksKeeper := ibchookskeeper.NewKeeper(
@@ -401,70 +381,60 @@ func NewAppKeepers(
 		appKeepers.Ics20WasmHooks,
 	)
 
-	// Initialize packet forward middleware router (BEFORE transferKeeper)
-	appKeepers.PacketForwardKeeper = packetforwardkeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[packetforwardtypes.StoreKey]),
-		nil, // Will be zero-value here. Reference is set later on with SetTransferKeeper.
-		appKeepers.IBCKeeper.ChannelKeeper,
-		appKeepers.BankKeeper,
-		appKeepers.HooksICS4Wrapper,
-		govModAddress,
-	)
-
-	// Create Transfer Keepers
+	// Create Transfer Keepers (channel keeper as default ICS4; PFM wraps after)
 	transferKeeper := ibctransferkeeper.NewKeeper(
 		appCodec,
+		appKeepers.AccountKeeper.AddressCodec(),
 		runtime.NewKVStoreService(appKeepers.keys[ibctransfertypes.StoreKey]),
-		appKeepers.GetSubspace(ibctransfertypes.ModuleName),
-		// The ICS4Wrapper is replaced by the PacketForwardKeeper instead of the channel so that sending can be overridden by the middleware
-		appKeepers.PacketForwardKeeper,
 		appKeepers.IBCKeeper.ChannelKeeper,
 		bApp.MsgServiceRouter(),
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		govModAddress,
 	)
-	appKeepers.TransferKeeper = &transferKeeper
+	appKeepers.TransferKeeper = transferKeeper
 
-	appKeepers.PacketForwardKeeper.SetTransferKeeper(appKeepers.TransferKeeper)
+	appKeepers.PacketForwardKeeper = packetforwardkeeper.NewKeeper(
+		appCodec,
+		appKeepers.AccountKeeper.AddressCodec(),
+		runtime.NewKVStoreService(appKeepers.keys[packetforwardtypes.StoreKey]),
+		appKeepers.TransferKeeper,
+		appKeepers.IBCKeeper.ChannelKeeper,
+		appKeepers.BankKeeper,
+		govModAddress,
+	)
 
 	icaHostKeeper := icahostkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[icahosttypes.StoreKey]),
-		appKeepers.GetSubspace(icahosttypes.SubModuleName),
-		appKeepers.HooksICS4Wrapper,
 		appKeepers.IBCKeeper.ChannelKeeper,
 		appKeepers.AccountKeeper,
 		bApp.MsgServiceRouter(),
 		bApp.GRPCQueryRouter(),
 		govModAddress,
 	)
-	appKeepers.ICAHostKeeper = &icaHostKeeper
+	appKeepers.ICAHostKeeper = icaHostKeeper
 
 	icaControllerKeeper := icacontrollerkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.keys[icacontrollertypes.StoreKey]),
-		appKeepers.GetSubspace(icacontrollertypes.SubModuleName),
-		appKeepers.HooksICS4Wrapper,
 		appKeepers.IBCKeeper.ChannelKeeper,
 		bApp.MsgServiceRouter(),
 		govModAddress,
 	)
-	appKeepers.ICAControllerKeeper = &icaControllerKeeper
+	appKeepers.ICAControllerKeeper = icaControllerKeeper
 
-	// Create Transfer Stack
+	// transfer -> PFM -> ibc-hooks
 	var transferStack porttypes.IBCModule
-	transferStack = transfer.NewIBCModule(*appKeepers.TransferKeeper)
-	transferStack = ibchooks.NewIBCMiddleware(transferStack, &appKeepers.HooksICS4Wrapper)
-	transferStack = packetforward.NewIBCMiddleware(
-		transferStack,
+	transferStack = transfer.NewIBCModule(appKeepers.TransferKeeper)
+	pfmStack := packetforward.NewIBCMiddleware(
 		appKeepers.PacketForwardKeeper,
 		0,
 		packetforwardkeeper.DefaultForwardTransferPacketTimeoutTimestamp,
 	)
-	// Since packetforward is outermost middleware, the ICS4Wrapper should be the innermost (base)
-	// So we pass the callback-enabled wrapper (HooksICS4Wrapper) via WithICS4Wrapper
+	pfmStack.SetUnderlyingApplication(transferStack)
+	hooksMw := ibchooks.NewIBCMiddleware(pfmStack, &appKeepers.HooksICS4Wrapper)
+	transferStack = &hooksMw
 	appKeepers.TransferKeeper.WithICS4Wrapper(appKeepers.HooksICS4Wrapper)
 
 	// create evidence keeper with router
@@ -510,7 +480,7 @@ func NewAppKeepers(
 	)
 
 	wasmCapabilities := append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0", "bn254", "hash-blake")
-	// create wasmvm to use for both x/wasm and wasm-light-client
+	// Both x/wasm and 08-wasm use the local zk-wasmvm (wasmvm v3).
 	wasmVm, err := wasmvm.NewVM(wasmDir, wasmCapabilities, 32, wasmConfig.ContractDebugMode, wasmConfig.MemoryCacheSize)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create terp wasm vm: %s", err))
@@ -629,12 +599,12 @@ func NewAppKeepers(
 	// SendPacket, since it is originating from the application to core IBC:
 	// icaAuthModuleKeeper.SendTx -> icaController.SendPacket -> fee.SendPacket -> channel.SendPacket
 	var icaControllerStack porttypes.IBCModule
-	icaControllerStack = icacontroller.NewIBCMiddleware(*appKeepers.ICAControllerKeeper)
+	icaControllerStack = icacontroller.NewIBCMiddleware(appKeepers.ICAControllerKeeper)
 
 	// RecvPacket, message that originates from core IBC and goes down to app, the flow is:
 	// channel.RecvPacket -> fee.OnRecvPacket -> icaHost.OnRecvPacket
 	var icaHostStack porttypes.IBCModule
-	icaHostStack = icahost.NewIBCModule(*appKeepers.ICAHostKeeper)
+	icaHostStack = icahost.NewIBCModule(appKeepers.ICAHostKeeper)
 
 	// Create fee enabled wasm ibc Stack
 	var wasmStack porttypes.IBCModule
@@ -648,15 +618,19 @@ func NewAppKeepers(
 		AddRoute(icahosttypes.SubModuleName, icaHostStack)
 	appKeepers.IBCKeeper.SetRouter(ibcRouter)
 
+	// IBC-v2 (channel/v2) router. Without this, ChannelKeeperV2.Router is nil and
+	// wasm Ibc2Msg::SendPacket panics in Route (nil pointer).
+	ibcRouterV2 := ibcapi.NewRouter().
+		AddRoute(ibctransfertypes.PortID, transferv2.NewIBCModule(appKeepers.TransferKeeper)).
+		AddPrefixRoute(wasmkeeper.PortIDPrefixV2, wasmkeeper.NewIBC2Handler(appKeepers.WasmKeeper))
+	appKeepers.IBCKeeper.SetRouterV2(ibcRouterV2)
+
 	return appKeepers
 }
 
 // initParamsKeeper init params keeper and its subspaces
 func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino, key, tkey storetypes.StoreKey) paramskeeper.Keeper {
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
-
-	keytable := ibcclienttypes.ParamKeyTable()
-	keytable.RegisterParamSet(&ibcconnectiontypes.Params{})
 
 	paramsKeeper.Subspace(authtypes.ModuleName)
 	paramsKeeper.Subspace(banktypes.ModuleName)
@@ -666,11 +640,11 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(slashingtypes.ModuleName)
 	paramsKeeper.Subspace(govtypes.ModuleName)
 	paramsKeeper.Subspace(crisistypes.ModuleName)
-	paramsKeeper.Subspace(ibctransfertypes.ModuleName).WithKeyTable(ibctransfertypes.ParamKeyTable())
-	paramsKeeper.Subspace(ibcexported.ModuleName).WithKeyTable(keytable)
+	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
+	paramsKeeper.Subspace(ibcexported.ModuleName)
 	paramsKeeper.Subspace(tokenfactorytypes.ModuleName).WithKeyTable(tokenfactorytypes.ParamKeyTable())
-	paramsKeeper.Subspace(icahosttypes.SubModuleName).WithKeyTable(icahosttypes.ParamKeyTable())
-	paramsKeeper.Subspace(icacontrollertypes.SubModuleName).WithKeyTable(icacontrollertypes.ParamKeyTable())
+	paramsKeeper.Subspace(icahosttypes.SubModuleName)
+	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
 	paramsKeeper.Subspace(packetforwardtypes.ModuleName)
 	paramsKeeper.Subspace(globalfee.ModuleName)
 	paramsKeeper.Subspace(ibchookstypes.ModuleName)

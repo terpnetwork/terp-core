@@ -3,7 +3,7 @@ package authenticator
 import (
 	"fmt"
 
-	txsigning "cosmossdk.io/x/tx/signing"
+	txsigning "github.com/cosmos/cosmos-sdk/x/tx/signing"
 
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 

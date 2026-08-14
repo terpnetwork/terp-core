@@ -15,9 +15,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/terpnetwork/terp-core/v5/x/hashmerchant/client/cli"
-	"github.com/terpnetwork/terp-core/v5/x/hashmerchant/keeper"
-	"github.com/terpnetwork/terp-core/v5/x/hashmerchant/types"
+	"github.com/terpnetwork/terp-core/v6/x/hashmerchant/client/cli"
+	"github.com/terpnetwork/terp-core/v6/x/hashmerchant/keeper"
+	"github.com/terpnetwork/terp-core/v6/x/hashmerchant/types"
 )
 
 var (
