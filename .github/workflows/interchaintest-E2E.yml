@@ -1,4 +1,4 @@
-name: ictest E2E
+name: ict-rs E2E
 
 on:
   pull_request:
@@ -8,15 +8,17 @@ on:
     branches:
       - "main"
       - "master"
+      - "v6.0.0-dev"
 
 permissions:
   contents: read
   packages: write
 
 env:
-  GO_VERSION: 1.25
+  GO_VERSION: "1.25"
   TAR_PATH: /tmp/terp-docker-image.tar
   IMAGE_NAME: terp-docker-image
+  ICT_BINS: ict-rs-bins
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -29,15 +31,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          # SKIP submodules:recursive — Dockerfile WASMVM_SOURCE=github strips
-          # ./crates/zk-* replaces; crates/ is dockerignored. Recursive bloats runners.
           fetch-depth: 1
-
-      - name: Setup Go ${{ env.GO_VERSION }}
-        uses: actions/setup-go@v6
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: interchaintest/go.sum
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -46,70 +40,106 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          tags: terpnetwork/terp-core:local
+          tags: |
+            terpnetwork/terp-core:local
+            terpnetwork/terp-core:local-zk
           outputs: type=docker,dest=${{ env.TAR_PATH }}
+          cache-from: type=gha,scope=terp-core-e2e
+          cache-to: type=gha,mode=max,scope=terp-core-e2e
 
-      - name: Upload artifact
+      - name: Upload image
         uses: actions/upload-artifact@v5
         with:
           name: ${{ env.IMAGE_NAME }}
           path: ${{ env.TAR_PATH }}
+          retention-days: 3
 
-  e2e-tests:
-    needs: build-docker
+  build-ict-rs:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # names of `make` commands to run tests
-        test:
-          - "e2e-basic"
-          - "e2e-pfm"
-          - "e2e-ibc"
-          - "e2e-polytone"
-          # - "e2e-clock"
-          # - "e2e-upgrade"
-          # - "e2e-drip"
-          # - "e2e-cwhooks"
-      fail-fast: false
-
     steps:
-      - name: Set up Go ${{ env.GO_VERSION }}
-        uses: actions/setup-go@v6
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: interchaintest/go.sum
-
-      - name: checkout chain
+      - name: Checkout
         uses: actions/checkout@v6
         with:
-          # SKIP submodules:recursive — E2E runs make against prebuilt image only.
           fetch-depth: 1
 
-      - name: Download Tarball Artifact
+      - name: Sparse ict-rs path-deps
+        run: bash scripts/ci/ict-rs-submodules.sh
+
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.88"
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crates/ict-rs
+          shared-key: ict-rs-e2e
+          cache-targets: true
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Build ict-ci + suites once
+        working-directory: crates/ict-rs
+        run: just ci-build
+        env:
+          CARGO_TERM_COLOR: always
+
+      - name: Stage bins
+        run: |
+          mkdir -p /tmp/ict-bins/examples
+          cp crates/ict-rs/target/release/ict-ci /tmp/ict-bins/ict-ci
+          cp crates/ict-rs/target/release/examples/ibc_transfer /tmp/ict-bins/examples/
+          cp crates/ict-rs/target/release/examples/polytone /tmp/ict-bins/examples/
+          cp crates/ict-rs/target/release/examples/cosmos_upgrade /tmp/ict-bins/examples/
+          chmod +x /tmp/ict-bins/ict-ci /tmp/ict-bins/examples/*
+
+      - name: Upload bins
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ env.ICT_BINS }}
+          path: /tmp/ict-bins
+          retention-days: 3
+
+  e2e-tests:
+    needs: [build-docker, build-ict-rs]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - ibc_transfer
+          - polytone
+    steps:
+      - name: Checkout (wasm contracts for polytone)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Download image
         uses: actions/download-artifact@v6
         with:
           name: ${{ env.IMAGE_NAME }}
           path: /tmp
 
-      - name: Load Docker Image
+      - name: Load image
         run: |
           docker image load -i ${{ env.TAR_PATH }}
+          docker tag terpnetwork/terp-core:local terpnetwork/terp-core:local-zk || true
           docker image ls -a
 
-      - name: Run Test
-        id: run_test
-        continue-on-error: true
-        run: make ${{ matrix.test }}
+      - name: Download ict-rs bins
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{ env.ICT_BINS }}
+          path: /tmp/ict-bins
 
-      - name: Retry Failed Test
-        if: steps.run_test.outcome == 'failure'
+      - name: Run suite
+        env:
+          TERP_IMAGE_REPO: terpnetwork/terp-core
+          TERP_IMAGE_VERSION: local-zk
+          ICT_CI_BIN_DIR: /tmp/ict-bins/examples
         run: |
-          for i in 1 2; do
-            echo "Retry attempt $i"
-            if make ${{ matrix.test }}; then
-              echo "Test passed on retry"
-              exit 0
-            fi
-          done
-          echo "Test failed after retries"
-          exit 1
+          chmod +x /tmp/ict-bins/ict-ci /tmp/ict-bins/examples/*
+          /tmp/ict-bins/ict-ci run ${{ matrix.suite }}

@@ -67,3 +67,16 @@ rm-testcache:
 	go clean -testcache
 
 .PHONY: test-mutation ictest-basic ictest-upgrade ictest-ibc 
+# ict-rs (preferred). Build once, run suites without a second cargo.
+e2e-ict-rs-build:
+	bash scripts/ci/ict-rs-submodules.sh
+	$(MAKE) -C crates/ict-rs -s 2>/dev/null || true
+	cd crates/ict-rs && just ci-build
+
+e2e-ict-rs-ibc:
+	cd crates/ict-rs && just ci-run ibc_transfer
+
+e2e-ict-rs-polytone:
+	cd crates/ict-rs && just ci-run polytone
+
+.PHONY: e2e-ict-rs-build e2e-ict-rs-ibc e2e-ict-rs-polytone
