@@ -68,12 +68,18 @@ rm-testcache:
 	go clean -testcache
 
 .PHONY: test-mutation ictest-basic ictest-upgrade ictest-ibc 
-# ict-rs (preferred). GitHub CI downloads a pinned linux-x86_64 tarball
-# (ICT_RS_BINS_URL in .github/workflows/interchaintest-E2E.yml).
-# These targets still compile locally (darwin/host) from the cloned tree.
+# ict-rs (preferred). CI downloads a pinned tarball from
+# https://s3.terp.network/releases/ict-rs/<tag>/ (see scripts/ci/ict-rs-bins.env).
+# Host compile (darwin): e2e-ict-rs-build. Linux tarball: e2e-ict-rs-docker.
 e2e-ict-rs-build:
 	bash scripts/ci/ict-rs-submodules.sh
 	cd crates/ict-rs && just ci-build
+
+e2e-ict-rs-pack:
+	cd crates/ict-rs && just ci-pack
+
+e2e-ict-rs-docker:
+	cd crates/ict-rs && just ci-build-docker
 
 e2e-ict-rs-ibc:
 	cd crates/ict-rs && just ci-run ibc_transfer
@@ -81,4 +87,7 @@ e2e-ict-rs-ibc:
 e2e-ict-rs-polytone:
 	cd crates/ict-rs && just ci-run polytone
 
-.PHONY: e2e-ict-rs-build e2e-ict-rs-ibc e2e-ict-rs-polytone
+e2e-ict-rs-from-tarball:
+	bash scripts/ci/run-e2e-from-tarball.sh $(TARBALL) $(SUITE)
+
+.PHONY: e2e-ict-rs-build e2e-ict-rs-pack e2e-ict-rs-docker e2e-ict-rs-ibc e2e-ict-rs-polytone e2e-ict-rs-from-tarball
