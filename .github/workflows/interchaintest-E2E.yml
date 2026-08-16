@@ -16,7 +16,9 @@ permissions:
 env:
   TAR_PATH: /tmp/terp-docker-image.tar
   IMAGE_NAME: terp-docker-image
-  ICT_BINS: ict-rs-bins
+  # Pinned prebuilt ict-ci (linux-x86_64). Bump when ict-rs CI bins change.
+  ICT_RS_RELEASE: v0.1.0
+  ICT_RS_BINS_URL: https://github.com/permissionlessweb/ict-rs/releases/download/v0.1.0/ict-ci-linux-x86_64.tar.gz
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -50,55 +52,8 @@ jobs:
           path: ${{ env.TAR_PATH }}
           retention-days: 3
 
-  build-ict-rs:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-
-      - name: Fetch ict-rs path-deps
-        run: bash scripts/ci/ict-rs-submodules.sh
-
-      - name: Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: "1.88"
-
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: crates/ict-rs
-          shared-key: ict-rs-e2e
-          cache-targets: true
-
-      - name: Install just
-        uses: extractions/setup-just@v2
-
-      - name: Build ict-ci + suites once
-        working-directory: crates/ict-rs
-        run: just ci-build
-        env:
-          CARGO_TERM_COLOR: always
-
-      - name: Stage bins
-        run: |
-          mkdir -p /tmp/ict-bins/examples
-          cp crates/ict-rs/target/release/ict-ci /tmp/ict-bins/ict-ci
-          cp crates/ict-rs/target/release/examples/ibc_transfer /tmp/ict-bins/examples/
-          cp crates/ict-rs/target/release/examples/polytone /tmp/ict-bins/examples/
-          chmod +x /tmp/ict-bins/ict-ci /tmp/ict-bins/examples/*
-
-      - name: Upload bins
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ env.ICT_BINS }}
-          path: /tmp/ict-bins
-          retention-days: 3
-
   e2e-tests:
-    needs: [build-docker, build-ict-rs]
+    needs: [build-docker]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -123,11 +78,16 @@ jobs:
           docker image load -i ${{ env.TAR_PATH }}
           docker image inspect terpnetwork/terp-core:local >/dev/null
 
-      - name: Download ict-rs bins
-        uses: actions/download-artifact@v6
-        with:
-          name: ${{ env.ICT_BINS }}
-          path: /tmp/ict-bins
+      - name: Download pinned ict-rs bins
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/ict-ci-linux-x86_64.tar.gz "${{ env.ICT_RS_BINS_URL }}"
+          mkdir -p /tmp/ict-bins
+          tar -C /tmp/ict-bins -xzf /tmp/ict-ci-linux-x86_64.tar.gz
+          chmod +x /tmp/ict-bins/ict-ci /tmp/ict-bins/examples/*
+          /tmp/ict-bins/ict-ci list || true
+          test -x /tmp/ict-bins/examples/ibc_transfer
+          test -x /tmp/ict-bins/examples/polytone
 
       - name: Require polytone wasm
         if: ${{ matrix.suite == 'polytone' }}
@@ -144,5 +104,4 @@ jobs:
           TERP_IMAGE_VERSION: local
           ICT_CI_BIN_DIR: /tmp/ict-bins/examples
         run: |
-          chmod +x /tmp/ict-bins/ict-ci /tmp/ict-bins/examples/*
           /tmp/ict-bins/ict-ci run ${{ matrix.suite }}

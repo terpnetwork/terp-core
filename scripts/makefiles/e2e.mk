@@ -68,7 +68,9 @@ rm-testcache:
 	go clean -testcache
 
 .PHONY: test-mutation ictest-basic ictest-upgrade ictest-ibc 
-# ict-rs (preferred). Build once, run suites without a second cargo.
+# ict-rs (preferred). GitHub CI downloads a pinned linux-x86_64 tarball
+# (ICT_RS_BINS_URL in .github/workflows/interchaintest-E2E.yml).
+# These targets still compile locally (darwin/host) from the cloned tree.
 e2e-ict-rs-build:
 	bash scripts/ci/ict-rs-submodules.sh
 	cd crates/ict-rs && just ci-build
