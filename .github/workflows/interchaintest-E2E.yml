@@ -130,7 +130,7 @@ jobs:
           path: /tmp/ict-bins
 
       - name: Require polytone wasm
-        if: matrix.suite == polytone
+        if: ${{ matrix.suite == 'polytone' }}
         run: |
           test -f tests/interchaintest/contracts/polytone_note.wasm
           test -f tests/interchaintest/contracts/polytone_voice.wasm
