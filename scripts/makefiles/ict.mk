@@ -25,3 +25,8 @@ ict-bootstrap-mainnet:
 ict-all: ict-state-sync ict-bootstrap-mainnet
 
 .PHONY: ict-help ict ict-state-sync ict-bootstrap-mainnet ict-all
+
+ict-bulk-memory-gas:
+	cd $(CURDIR)/crates/ict-rs && ICT_BULK_IMAGE=$${ICT_BULK_IMAGE:-local-alpine} ICT_BULK_BIN=$${ICT_BULK_BIN:-terpd} cargo run -p ict-rs --example bulk_memory_gas --features docker
+
+.PHONY: ict-bulk-memory-gas

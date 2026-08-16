@@ -14,8 +14,8 @@ RUNNER_BASE_IMAGE_NONROOT := gcr.io/distroless/static-debian11:nonroot
 # ---------------------------------------------------------------------------
 
 # Sibling repo paths (for local zk development)
-ZK_WASMVM_DIR ?= ./crates/zk-wasmvm
-ZK_WASMD_DIR  ?= ./crates/zk-wasmd
+ZK_WASMVM_DIR ?= ./crates/_worktrees/wasmvm-bulk-memory
+ZK_WASMD_DIR  ?= ./crates/_worktrees/wasmd-bulk-memory
 
 WASMVM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
 _HOST_ARCH := $(shell uname -m | sed 's/arm64/aarch64/; s/x86_64/x86_64/')

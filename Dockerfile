@@ -82,6 +82,8 @@ RUN ARCH=$(uname -m) && \
          /code/build/zk-deps/zk-wasmvm/internal/api/libwasmvm_muslc.$ARCH.a && \
       sed -i 's|=> \./crates/zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \./crates/zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \
+      sed -i 's|=> \./crates/_worktrees/wasmvm-bulk-memory|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
+      sed -i 's|=> \./crates/_worktrees/wasmd-bulk-memory|=> /code/build/zk-deps/zk-wasmd|g' /code/go.mod && \
       sed -i 's|=> \./crates/ibc-hooks-v11|=> /code/build/zk-deps/ibc-hooks-v11|g' /code/go.mod && \
       # Also accept already-rewritten or alternate relative forms
       sed -i 's|=> \.\./zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \

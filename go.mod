@@ -13,8 +13,8 @@ go 1.25.9
 // Stock mainnet builds (WASMVM_SOURCE=github) strip these two replaces in the Dockerfile.
 
 replace (
-	github.com/CosmWasm/wasmd => ./crates/zk-wasmd
-	github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
+	github.com/CosmWasm/wasmd => ./crates/_worktrees/wasmd-bulk-memory
+	github.com/CosmWasm/wasmvm/v3 => ./crates/_worktrees/wasmvm-bulk-memory
 )
 
 require (
