@@ -12,10 +12,8 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 env:
-  GO_VERSION: "1.25"
   TAR_PATH: /tmp/terp-docker-image.tar
   IMAGE_NAME: terp-docker-image
   ICT_BINS: ict-rs-bins
@@ -40,9 +38,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          tags: |
-            terpnetwork/terp-core:local
-            terpnetwork/terp-core:local-zk
+          tags: terpnetwork/terp-core:local
           outputs: type=docker,dest=${{ env.TAR_PATH }}
           cache-from: type=gha,scope=terp-core-e2e
           cache-to: type=gha,mode=max,scope=terp-core-e2e
@@ -62,7 +58,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Sparse ict-rs path-deps
+      - name: Fetch ict-rs path-deps
         run: bash scripts/ci/ict-rs-submodules.sh
 
       - name: Rust toolchain
@@ -92,7 +88,6 @@ jobs:
           cp crates/ict-rs/target/release/ict-ci /tmp/ict-bins/ict-ci
           cp crates/ict-rs/target/release/examples/ibc_transfer /tmp/ict-bins/examples/
           cp crates/ict-rs/target/release/examples/polytone /tmp/ict-bins/examples/
-          cp crates/ict-rs/target/release/examples/cosmos_upgrade /tmp/ict-bins/examples/
           chmod +x /tmp/ict-bins/ict-ci /tmp/ict-bins/examples/*
 
       - name: Upload bins
@@ -112,7 +107,7 @@ jobs:
           - ibc_transfer
           - polytone
     steps:
-      - name: Checkout (wasm contracts for polytone)
+      - name: Checkout (wasm under tests/interchaintest/contracts)
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
@@ -126,8 +121,7 @@ jobs:
       - name: Load image
         run: |
           docker image load -i ${{ env.TAR_PATH }}
-          docker tag terpnetwork/terp-core:local terpnetwork/terp-core:local-zk || true
-          docker image ls -a
+          docker image inspect terpnetwork/terp-core:local >/dev/null
 
       - name: Download ict-rs bins
         uses: actions/download-artifact@v6
@@ -135,10 +129,19 @@ jobs:
           name: ${{ env.ICT_BINS }}
           path: /tmp/ict-bins
 
+      - name: Require polytone wasm
+        if: matrix.suite == polytone
+        run: |
+          test -f tests/interchaintest/contracts/polytone_note.wasm
+          test -f tests/interchaintest/contracts/polytone_voice.wasm
+          test -f tests/interchaintest/contracts/polytone_proxy.wasm
+          test -f tests/interchaintest/contracts/polytone_tester.wasm
+
       - name: Run suite
         env:
+          TERP_CORE: ${{ github.workspace }}
           TERP_IMAGE_REPO: terpnetwork/terp-core
-          TERP_IMAGE_VERSION: local-zk
+          TERP_IMAGE_VERSION: local
           ICT_CI_BIN_DIR: /tmp/ict-bins/examples
         run: |
           chmod +x /tmp/ict-bins/ict-ci /tmp/ict-bins/examples/*

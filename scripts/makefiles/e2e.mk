@@ -1,5 +1,6 @@
 ###############################################################################
 ###                             e2e interchain test                         ###
+# CI runs ict-rs (make e2e-ict-rs-*). Go targets below are local-legacy.
 ###############################################################################
 E2E_UPGRADE_VERSION := "v4"
 e2e-help:
@@ -70,7 +71,6 @@ rm-testcache:
 # ict-rs (preferred). Build once, run suites without a second cargo.
 e2e-ict-rs-build:
 	bash scripts/ci/ict-rs-submodules.sh
-	$(MAKE) -C crates/ict-rs -s 2>/dev/null || true
 	cd crates/ict-rs && just ci-build
 
 e2e-ict-rs-ibc:
