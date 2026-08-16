@@ -2,9 +2,10 @@ ARG GO_VERSION=1.25
 ARG RUNNER_IMAGE=alpine:3.17
 
 # WASMVM_SOURCE controls where the static wasmvm library comes from:
-#   "github" (default) — download libwasmvm_muslc from CosmWasm GitHub releases
+#   "github" (default) — download libwasmvm_muslc from minio.terp.network/releases/zk-wasmvm/<ver>/
 #   "local"            — use pre-built lib from build/wasmvm/ (for custom zk-wasmvm)
 ARG WASMVM_SOURCE=github
+ARG WASMVM_BASE_URL=https://minio.terp.network/releases/zk-wasmvm
 
 FROM golang:${GO_VERSION}-alpine AS go-builder
 
@@ -23,6 +24,7 @@ ADD go.mod go.sum ./
 
 # Re-declare ARGs after FROM (Docker scoping rule)
 ARG WASMVM_SOURCE
+ARG WASMVM_BASE_URL
 
 # ---------------------------------------------------------
 # Pull in the wasmvm static library (github mode only).
@@ -36,11 +38,12 @@ RUN if [ "$WASMVM_SOURCE" = "github" ]; then \
       WASMVM_VERSION=$(awk '/^[[:space:]]*github.com\/CosmWasm\/wasmvm\/v3/ && !/=>/ {print $2; exit}' go.mod) && \
       if [ -z "$WASMVM_VERSION" ]; then echo "ERROR: could not parse wasmvm version from go.mod"; exit 1; fi && \
       ARCH=$(uname -m) && \
-      echo "==> Downloading wasmvm $WASMVM_VERSION from GitHub ($ARCH)" && \
-      wget -q https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/libwasmvm_muslc.$ARCH.a \
+      BASE="${WASMVM_BASE_URL:-https://minio.terp.network/releases/zk-wasmvm}" && \
+      echo "==> Downloading wasmvm $WASMVM_VERSION from $BASE ($ARCH)" && \
+      wget -q "$BASE/$WASMVM_VERSION/libwasmvm_muslc.$ARCH.a" \
            -O /lib/libwasmvm_muslc.$ARCH.a && \
-      wget -q https://github.com/CosmWasm/wasmvm/releases/download/$WASMVM_VERSION/checksums.txt -O /tmp/checksums.txt && \
-      sha256sum /lib/libwasmvm_muslc.$ARCH.a | grep $(grep libwasmvm_muslc.$ARCH /tmp/checksums.txt | cut -d' ' -f1); \
+      wget -q "$BASE/$WASMVM_VERSION/SHA256SUMS" -O /tmp/SHA256SUMS && \
+      sha256sum /lib/libwasmvm_muslc.$ARCH.a | grep $(grep libwasmvm_muslc.$ARCH /tmp/SHA256SUMS | awk '{print $1}'); \
     else \
       echo "==> Skipping GitHub download (WASMVM_SOURCE=$WASMVM_SOURCE)"; \
     fi
