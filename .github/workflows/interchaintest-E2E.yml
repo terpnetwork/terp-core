@@ -1,6 +1,7 @@
 name: ict-rs E2E
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     tags:
@@ -19,7 +20,7 @@ env:
   # Pinned prebuilt ict-ci. Hosted on our MinIO, not GitHub Releases.
   # Bump ICT_RS_RELEASE + URL together (scripts/ci/ict-rs-bins.env).
   ICT_RS_RELEASE: v0.1.0
-  ICT_RS_BINS_URL: https://s3.terp.network/releases/ict-rs/v0.1.0/ict-ci-linux-x86_64.tar.gz
+  ICT_RS_BINS_URL: https://minio.terp.network/releases/ict-rs/v0.1.0/ict-ci-linux-x86_64.tar.gz
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
