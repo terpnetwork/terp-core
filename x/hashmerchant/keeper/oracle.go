@@ -1,9 +1,11 @@
 package keeper
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/sha256"
 	"fmt"
+	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -94,16 +96,41 @@ func (k Keeper) verifyOracleAttestations(ctx sdk.Context, chainUID string, attes
 	return nil
 }
 
-// aggregateAttestationRoot computes SHA256 over sorted source attestations when
-// the sidecar does not supply a pre-aggregated root.
+// aggregateAttestationRoot is the domain-separated commitment over oracle
+// attestations. Source order MUST NOT affect the digest (Neutron-class VE
+// halt: unsorted map/slice iteration in ExtendVote produced different roots
+// on different validators). One attestation per SourceId; first after sort wins.
 func aggregateAttestationRoot(attestations []types.OracleAttestation) []byte {
 	if len(attestations) == 0 {
 		return nil
 	}
+	sorted := append([]types.OracleAttestation(nil), attestations...)
+	sort.Slice(sorted, func(i, j int) bool {
+		if sorted[i].SourceId != sorted[j].SourceId {
+			return sorted[i].SourceId < sorted[j].SourceId
+		}
+		if c := bytes.Compare(sorted[i].Value, sorted[j].Value); c != 0 {
+			return c < 0
+		}
+		if sorted[i].Height != sorted[j].Height {
+			return sorted[i].Height < sorted[j].Height
+		}
+		return sorted[i].Timestamp < sorted[j].Timestamp
+	})
 	h := sha256.New()
-	for _, att := range attestations {
+	seen := make(map[string]struct{}, len(sorted))
+	for _, att := range sorted {
+		if _, ok := seen[att.SourceId]; ok {
+			continue
+		}
+		seen[att.SourceId] = struct{}{}
 		h.Write([]byte(att.SourceId))
 		h.Write(att.Value)
+		var heightBuf [8]byte
+		for i := 0; i < 8; i++ {
+			heightBuf[i] = byte(att.Height >> (8 * i))
+		}
+		h.Write(heightBuf[:])
 	}
 	return h.Sum(nil)
 }

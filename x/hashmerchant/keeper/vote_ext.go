@@ -1,11 +1,13 @@
 package keeper
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -114,9 +116,14 @@ func (k Keeper) fetchSidecar(ctx sdk.Context) (*types.VoteExtensionHashData, err
 		})
 	}
 
-	root := rootBytes
-	if len(root) == 0 && len(attestations) > 0 {
-		root = aggregateAttestationRoot(attestations)
+	// Sidecar hex is advisory. Empty atts must not become a copied root
+	// (that is "HTTP JSON is consensus"). Nonempty atts always re-aggregate.
+	if len(attestations) == 0 {
+		return nil, fmt.Errorf("sidecar returned no attestations")
+	}
+	root := aggregateAttestationRoot(attestations)
+	if len(rootBytes) > 0 && !bytes.Equal(rootBytes, root) {
+		return nil, fmt.Errorf("sidecar root does not match sorted aggregate")
 	}
 
 	protoAttestations := make([]*types.OracleAttestation, len(attestations))
@@ -183,6 +190,16 @@ func (k Keeper) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 			return &abci.ResponseVerifyVoteExtension{
 				Status: abci.ResponseVerifyVoteExtension_REJECT,
 			}, nil
+		}
+
+		// When attestations are present, Root must be the sorted aggregate.
+		if len(attestations) > 0 && len(data.Root) > 0 {
+			expect := aggregateAttestationRoot(attestations)
+			if !bytes.Equal(data.Root, expect) {
+				return &abci.ResponseVerifyVoteExtension{
+					Status: abci.ResponseVerifyVoteExtension_REJECT,
+				}, nil
+			}
 		}
 
 		return &abci.ResponseVerifyVoteExtension{
@@ -269,10 +286,21 @@ func (k Keeper) ProcessVoteExtensions(ctx sdk.Context, extCommitInfo abci.Extend
 	}
 
 	// Check quorum for each (chain, algo) pair.
+	// Map iteration is non-deterministic in Go. Applying sudo / SetHashRoot
+	// in map order can fork AppHash (same class as Neutron VE-oracle halt).
 	quorumThreshold := params.QuorumFraction.MulInt64(totalPower).TruncateInt().Int64()
 
+	type winner struct {
+		key   tallyKey
+		votes []rootVote
+		power int64
+	}
+	var winners []winner
 	for key, rootMap := range tally {
-		for _, votes := range rootMap {
+		var best winner
+		best.power = -1
+		var bestRootHex string
+		for rootHex, votes := range rootMap {
 			var power int64
 			for _, v := range votes {
 				power += v.votingPower
@@ -280,35 +308,54 @@ func (k Keeper) ProcessVoteExtensions(ctx sdk.Context, extCommitInfo abci.Extend
 			if power < quorumThreshold {
 				continue
 			}
-			// Quorum reached — write the root.
-			representative := votes[0]
-			protoAttestations := make([]*types.OracleAttestation, len(representative.attestations))
-			for i := range representative.attestations {
-				protoAttestations[i] = &representative.attestations[i]
+			// One root per (chain, algo): highest power, then lex smaller hex.
+			if power > best.power || (power == best.power && (bestRootHex == "" || rootHex < bestRootHex)) {
+				best = winner{key: key, votes: votes, power: power}
+				bestRootHex = rootHex
 			}
-			root := types.HashRoot{
-				ChainUid:         key.chainUID,
-				Algo:             key.algo,
-				Height:           representative.height,
-				Root:             representative.root,
-				AttestationCount: uint32(len(votes)),
-				BlockTime:        representative.blockTime,
-				Attestations:     protoAttestations,
-			}
-			if err := k.SetHashRoot(ctx, root); err != nil {
-				k.Logger(ctx).Error("failed to set hash root", "err", err)
-				continue
-			}
-
-			k.dispatchSudoCallbacks(ctx, root, representative.attestations)
-
-			ctx.EventManager().EmitEvent(sdk.NewEvent(
-				"hashmerchant_root_confirmed",
-				sdk.NewAttribute("chain_uid", key.chainUID),
-				sdk.NewAttribute("algo", key.algo),
-				sdk.NewAttribute("attestations", fmt.Sprintf("%d", len(votes))),
-			))
 		}
+		if best.power >= quorumThreshold {
+			winners = append(winners, best)
+		}
+	}
+	sort.Slice(winners, func(i, j int) bool {
+		if winners[i].key.chainUID != winners[j].key.chainUID {
+			return winners[i].key.chainUID < winners[j].key.chainUID
+		}
+		return winners[i].key.algo < winners[j].key.algo
+	})
+
+	for _, w := range winners {
+		representative := w.votes[0]
+		sort.Slice(representative.attestations, func(i, j int) bool {
+			return representative.attestations[i].SourceId < representative.attestations[j].SourceId
+		})
+		protoAttestations := make([]*types.OracleAttestation, len(representative.attestations))
+		for i := range representative.attestations {
+			protoAttestations[i] = &representative.attestations[i]
+		}
+		root := types.HashRoot{
+			ChainUid:         w.key.chainUID,
+			Algo:             w.key.algo,
+			Height:           representative.height,
+			Root:             representative.root,
+			AttestationCount: uint32(len(w.votes)),
+			BlockTime:        representative.blockTime,
+			Attestations:     protoAttestations,
+		}
+		if err := k.SetHashRoot(ctx, root); err != nil {
+			k.Logger(ctx).Error("failed to set hash root", "err", err)
+			continue
+		}
+
+		k.dispatchSudoCallbacks(ctx, root, representative.attestations)
+
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			"hashmerchant_root_confirmed",
+			sdk.NewAttribute("chain_uid", w.key.chainUID),
+			sdk.NewAttribute("algo", w.key.algo),
+			sdk.NewAttribute("attestations", fmt.Sprintf("%d", len(w.votes))),
+		))
 	}
 
 	return nil
@@ -355,7 +402,11 @@ func (k Keeper) dispatchSudoCallbacks(ctx sdk.Context, root types.HashRoot, atte
 		}
 
 		var oracleSources []HashMerchantSudoOracleAttestation
-		for _, att := range attestations {
+		sortedAtt := append([]types.OracleAttestation(nil), attestations...)
+		sort.Slice(sortedAtt, func(i, j int) bool {
+			return sortedAtt[i].SourceId < sortedAtt[j].SourceId
+		})
+		for _, att := range sortedAtt {
 			oracleSources = append(oracleSources, HashMerchantSudoOracleAttestation{
 				SourceID: att.SourceId,
 				Value:    att.Value,

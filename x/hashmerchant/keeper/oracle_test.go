@@ -246,13 +246,34 @@ func TestAggregateAttestationRootDeterministic(t *testing.T) {
 	require.Equal(t, r1, r2)
 	require.Len(t, r1, sha256.Size)
 
-	// order-sensitive today (spec notes missing sort — document behaviour)
+	// Same set, different order must commit identically (Neutron VE halt class).
 	swapped := []types.OracleAttestation{
 		{SourceId: "b", Value: []byte("2")},
 		{SourceId: "a", Value: []byte("1")},
 	}
-	require.NotEqual(t, r1, aggregateAttestationRoot(swapped),
-		"current aggregate is order-sensitive; sorted domain-separated root is a known gap")
+	require.Equal(t, r1, aggregateAttestationRoot(swapped),
+		"aggregateAttestationRoot must be independent of attestation order")
+
+	// Shuffle / presentation order must not change the digest.
+	shuffled := []types.OracleAttestation{
+		{SourceId: "b", Value: []byte("2"), Height: 2},
+		{SourceId: "a", Value: []byte("1"), Height: 1},
+		{SourceId: "c", Value: []byte("3"), Height: 3},
+	}
+	canon := []types.OracleAttestation{
+		{SourceId: "a", Value: []byte("1"), Height: 1},
+		{SourceId: "b", Value: []byte("2"), Height: 2},
+		{SourceId: "c", Value: []byte("3"), Height: 3},
+	}
+	require.Equal(t, aggregateAttestationRoot(canon), aggregateAttestationRoot(shuffled))
+
+	// Duplicate SourceId: first after sort wins (not last-write).
+	dups := []types.OracleAttestation{
+		{SourceId: "a", Value: []byte("zz"), Height: 9},
+		{SourceId: "a", Value: []byte("aa"), Height: 1},
+	}
+	onlyFirst := []types.OracleAttestation{{SourceId: "a", Value: []byte("aa"), Height: 1}}
+	require.Equal(t, aggregateAttestationRoot(onlyFirst), aggregateAttestationRoot(dups))
 }
 
 // ---------------------------------------------------------------------------
@@ -601,6 +622,32 @@ func TestVerifyVoteExtensionAcceptsValidCustody(t *testing.T) {
 	resp, err := handler(ctx, &abci.RequestVerifyVoteExtension{VoteExtension: bz})
 	require.NoError(t, err)
 	require.Equal(t, abci.ResponseVerifyVoteExtension_ACCEPT, resp.Status)
+}
+
+func TestVerifyVoteExtensionRejectsMismatchedAggregateRoot(t *testing.T) {
+	k, ctx := setupOracleKeeper(t)
+	pub, priv := genCustodyKey(t)
+	scope := "price/oracle"
+	chainUID := "eth-mainnet"
+	require.NoError(t, k.SetRegisteredChain(ctx, types.RegisteredChain{
+		ChainUid: chainUID, Name: "Ethereum", Enabled: true,
+	}))
+	require.NoError(t, k.SetOracleSources(ctx, chainUID, []types.OracleSource{
+		makeSource("skip-connect", pub, scope, true),
+	}))
+	att := signAttestation(priv, scope, "skip-connect", []byte(`{"p":"95000"}`), 42, 1700000000)
+	data := types.VoteExtensionHashData{
+		ChainUid:     chainUID,
+		Algo:         "oracle-agg-v1",
+		Root:         []byte("not-the-sorted-aggregate"),
+		Attestations: []*types.OracleAttestation{&att},
+	}
+	bz, err := k.cdc.Marshal(&data)
+	require.NoError(t, err)
+	handler := k.VerifyVoteExtensionHandler()
+	resp, err := handler(ctx, &abci.RequestVerifyVoteExtension{VoteExtension: bz})
+	require.NoError(t, err)
+	require.Equal(t, abci.ResponseVerifyVoteExtension_REJECT, resp.Status)
 }
 
 // ---------------------------------------------------------------------------

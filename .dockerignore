@@ -16,3 +16,6 @@ build/zk-deps/**/.git
 vendor/
 crates/
 websites/
+
+# Isolated worktrees must not enter the image context (wasmvm .a I/O bombs).
+_worktrees/
