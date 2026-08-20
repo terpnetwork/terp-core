@@ -23,6 +23,7 @@
 #   WASM            default ../../../artifacts/cw_template.wasm
 ####################################################################
 set -euo pipefail
+export PATH="/usr/local/go/bin:/usr/local/bin:/opt/homebrew/bin:${HOME}/go/bin:${PATH}"
 
 OLD_BIND="${OLD_BIND:-terp-mainnet}"
 NEW_BIND="${NEW_BIND:-terpd}"
@@ -47,6 +48,8 @@ HALT_DELTA="${HALT_DELTA:-16}"
 POST_BLOCKS="${POST_BLOCKS:-5}"
 OLD_LOG="${OLD_LOG:-/tmp/tsh-d-old.log}"
 NEW_LOG="${NEW_LOG:-/tmp/tsh-d-new.log}"
+OLD_PID=""
+NEW_PID=""
 NODE="tcp://127.0.0.1:${RPC}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 WASM="${WASM:-$HERE/../../../artifacts/cw_template.wasm}"
@@ -148,8 +151,8 @@ from_scratch() {
 }
 
 cleanup() {
-  kill "$OLD_PID" 2>/dev/null || true
-  kill "$NEW_PID" 2>/dev/null || true
+  kill "${OLD_PID:-}" 2>/dev/null || true
+  kill "${NEW_PID:-}" 2>/dev/null || true
 }
 trap cleanup EXIT
 
