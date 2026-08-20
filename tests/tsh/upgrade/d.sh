@@ -39,10 +39,10 @@ KEYALGO="${KEYALGO:-secp256k1}"
 KEYRING="${KEYRING:-test}"
 HOME_DIR="${HOME_DIR:-$HOME/.terpd-d}"
 CLEAN="${CLEAN:-true}"
-RPC="${RPC:-26957}"
-REST="${REST:-1321}"
-P2P="${P2P:-26956}"
-GRPC="${GRPC:-9094}"
+RPC="${RPC:-27657}"
+REST="${REST:-1327}"
+P2P="${P2P:-27656}"
+GRPC="${GRPC:-9097}"
 TIMEOUT_COMMIT="${TIMEOUT_COMMIT:-1s}"
 HALT_DELTA="${HALT_DELTA:-16}"
 POST_BLOCKS="${POST_BLOCKS:-5}"
@@ -61,8 +61,14 @@ command -v jq >/dev/null || { echo "jq required"; exit 1; }
 rpc() { curl -sf "http://127.0.0.1:${RPC}/status"; }
 rpc_height() { rpc | jq -r '.result.sync_info.latest_block_height'; }
 wait_rpc() {
-  for _ in $(seq 1 60); do rpc >/dev/null 2>&1 && return 0; sleep 1; done
-  echo "RPC down"; return 1
+  for _ in $(seq 1 60); do
+    local cid
+    cid=$(rpc 2>/dev/null | jq -r ".result.node_info.network // empty") || true
+    if [ "$cid" = "$CHAIN_ID" ]; then return 0; fi
+    sleep 1
+  done
+  echo "RPC down or wrong chain (want $CHAIN_ID). old log:"; tail -40 "$OLD_LOG" 2>/dev/null || true
+  return 1
 }
 wait_blocks() {
   local n="${1:-2}"
