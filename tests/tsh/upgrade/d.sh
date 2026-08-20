@@ -156,8 +156,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "D: make install NEW_BIND=$NEW_BIND"
-( cd "$NEW_RELEASE_PATH" && make install )
+if [ "${SKIP_INSTALL:-0}" = "1" ]; then
+  echo "D: SKIP_INSTALL=1 — using existing $NEW_BIND"
+else
+  echo "D: make install NEW_BIND=$NEW_BIND"
+  ( cd "$NEW_RELEASE_PATH" && make install )
+fi
 command -v "$NEW_BIND" >/dev/null || { echo "$NEW_BIND not on PATH"; exit 1; }
 echo "D: OLD=$OLD_BIND ($("$OLD_BIND" version | head -1)) NEW=$NEW_BIND ($("$NEW_BIND" version | head -1))"
 echo "D: legacy wasm $WASM ($(wc -c < "$WASM") bytes)"
