@@ -14,17 +14,20 @@ tsh-help:
 	@echo "  tsh-polytone 			 Run sh test for ibc + wasm sanity"
 	@echo "  tsh-staking-hooks 		 Run sh test for staking hook sanity"
 	@echo "  tsh-upgrade 		     Run sh test for upgrade proposal & performance sanity"
+	@echo "  tsh-upgrade-wasm 	     Run sh test: existing wasm guests survive v6 bulk_memory VM"
 	@echo "  tsh-zk 			 	 Run sh test for zk-wasmvm module (rick)"
 	@echo "  tsh-hashmerchant 		 Run sh test for hashmerchant vote extensions"
 
 tsh: tsh-help
-tsh-all: tsh-upgrade tsh-staking-hooks tsh-polytone tsh-aa tsh-pfm tsh-ibchook tsh-nfts tsh-zk tsh-hashmerchant
+tsh-all: tsh-upgrade tsh-upgrade-wasm tsh-staking-hooks tsh-polytone tsh-aa tsh-pfm tsh-ibchook tsh-nfts tsh-zk tsh-hashmerchant
 tsh-aa: 
 	cd tests/tsh/aa && sh a.sh
 tsh-ibchook: 
 	cd tests/tsh/ibchook && sh a.sh
 tsh-upgrade: 
 	cd tests/tsh/upgrade && sh a.sh
+tsh-upgrade-wasm:
+	cd tests/tsh/upgrade && sh d.sh
 tsh-staking-hooks: 
 	cd tests/tsh/staking-hooks && sh a.sh
 tsh-polytone: 
