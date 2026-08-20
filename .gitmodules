@@ -51,7 +51,7 @@
 [submodule "crates/cosmwasm"]
 	path = crates/cosmwasm
 	url = https://github.com/permissionlessweb/cosmwasm.git
-	branch = mvp-fix
+	branch = v3.1.0-zk.0
 
 [submodule "crates/cw-asset"]
 	path = crates/cw-asset
@@ -291,7 +291,7 @@
 [submodule "crates/zk-wasmd"]
 	path = crates/zk-wasmd
 	url = https://github.com/permissionlessweb/wasmd
-	branch = mvp
+	branch = merge/upstream-wasmd-v0.70
 
 [submodule "crates/zk-wasmd.bak"]
 	path = crates/zk-wasmd.bak
@@ -301,4 +301,4 @@
 [submodule "crates/zk-wasmvm"]
 	path = crates/zk-wasmvm
 	url = https://github.com/permissionlessweb/wasmvm
-	branch = mvp
+	branch = v3.0.7-zk

@@ -8,6 +8,7 @@ go 1.25.9
 //
 // ZK monorepo path (DEFAULT for this branch / testnet lineage):
 //   host:    ./crates/zk-{wasmd,wasmvm}
+//   v6 default: zk-wasmd@merge/upstream-wasmd-v0.70 (bulk_memory), zk-wasmvm@v3.0.7-zk, cosmwasm@v3.1.0-zk.0 (metered memory.copy)
 //   docker:  Dockerfile (WASMVM_SOURCE=local) rewrites to /code/build/zk-deps/...
 //            after `make _docker-stage` / build-zk-local stages those trees.
 // Stock mainnet builds (WASMVM_SOURCE=github) strip these two replaces in the Dockerfile.
