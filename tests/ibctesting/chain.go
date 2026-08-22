@@ -74,6 +74,12 @@ func (chain *TestChain) commitBlock(res *abci.ResponseFinalizeBlock) {
 		NextValidatorsHash: chain.NextVals.Hash(),
 		ProposerAddress:    chain.ProposedHeader.ProposerAddress,
 	}
+
+	// SDK 0.54 clears finalize state on Commit. ibc-go v11 resets
+	// nextBlockContextInitialized in its private commitBlock, then GetContext
+	// calls NewNextBlockContext. Our copy cannot set that unexported flag, so
+	// recreate finalize state here the same way simapp tests must after Commit.
+	chain.App.GetBaseApp().NewNextBlockContext(chain.ProposedHeader)
 }
 
 // GetTerpApp returns the current chain's app as an TerpApp

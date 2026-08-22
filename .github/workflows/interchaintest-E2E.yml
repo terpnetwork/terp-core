@@ -16,86 +16,72 @@ permissions:
 
 env:
   TAR_PATH: /tmp/terp-docker-image.tar
-  IMAGE_NAME: terp-docker-image
-  # Pinned prebuilt ict-ci. Hosted on our MinIO, not GitHub Releases.
-  # Bump ICT_RS_RELEASE + URL together (scripts/ci/ict-rs-bins.env).
-  ICT_RS_RELEASE: v0.1.0
-  ICT_RS_BINS_URL: https://minio.terp.network/releases/ict-rs/v0.1.0/ict-ci-linux-x86_64.tar.gz
+  PREBUILT_HOST: https://minio.terp.network
+  # Pins live in scripts/ci/terp-prebuilt.env and scripts/ci/ict-rs-bins.env
+  # (refresh with scripts/ci/pin-latest-prebuilts.sh after a MinIO publish).
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-docker:
+  # Discover suites from the pinned ict-ci binary so the matrix matches
+  # what that prebuild actually ships (not a stale YAML list).
+  discover-suites:
     runs-on: ubuntu-latest
+    outputs:
+      suites: ${{ steps.list.outputs.suites }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
-      - name: Stage zk-wasmvm muslc + Go forks
-        run: bash scripts/ci/stage-zk-for-docker.sh
+      - name: Show pins
+        run: |
+          set -euo pipefail
+          echo "== terp-core pin =="
+          cat scripts/ci/terp-prebuilt.env
+          bash scripts/ci/resolve-prebuilt.sh
+          echo "== ict-rs pin =="
+          cat scripts/ci/ict-rs-bins.env
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Download prebuilt ict-rs bins for pinned commit
+        run: bash scripts/ci/fetch-ict-rs-bins.sh /tmp/ict-bins
 
-      - name: Build and export
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          tags: terpnetwork/terp-core:local
-          build-args: |
-            WASMVM_SOURCE=local
-            WASMVM_BASE_URL=https://minio.terp.network/releases/zk-wasmvm
-          outputs: type=docker,dest=${{ env.TAR_PATH }}
-          cache-from: type=gha,scope=terp-core-e2e
-          cache-to: type=gha,mode=max,scope=terp-core-e2e
-
-      - name: Upload image
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ env.IMAGE_NAME }}
-          path: ${{ env.TAR_PATH }}
-          retention-days: 3
+      - name: Matrix from ict-ci list
+        id: list
+        run: |
+          set -euo pipefail
+          json=$(bash scripts/ci/list-ict-ci-suites.sh /tmp/ict-bins)
+          echo "suites=$json" >> "$GITHUB_OUTPUT"
+          echo "pinned ict-ci suites: $json"
 
   e2e-tests:
-    needs: [build-docker]
+    needs: discover-suites
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        suite:
-          - ibc_transfer
-          - polytone
+        suite: ${{ fromJSON(needs.discover-suites.outputs.suites) }}
     steps:
-      - name: Checkout (wasm under tests/interchaintest/contracts)
+      - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
-      - name: Download image
-        uses: actions/download-artifact@v6
-        with:
-          name: ${{ env.IMAGE_NAME }}
-          path: /tmp
+      - name: Fetch pinned terp-core prebuilt
+        run: bash scripts/ci/fetch-prebuilt.sh /tmp/terp-prebuilt
 
-      - name: Load image
-        run: |
-          docker image load -i ${{ env.TAR_PATH }}
-          docker image inspect terpnetwork/terp-core:local >/dev/null
-
-      - name: Download pinned ict-rs bins
+      - name: Load prebuilt chain image
         run: |
           set -euo pipefail
-          curl -fsSL -o /tmp/ict-ci-linux-x86_64.tar.gz "${{ env.ICT_RS_BINS_URL }}"
-          mkdir -p /tmp/ict-bins
-          tar -C /tmp/ict-bins -xzf /tmp/ict-ci-linux-x86_64.tar.gz
-          chmod +x /tmp/ict-bins/ict-ci /tmp/ict-bins/examples/*
-          /tmp/ict-bins/ict-ci list || true
-          test -x /tmp/ict-bins/examples/ibc_transfer
-          test -x /tmp/ict-bins/examples/polytone
+          docker image load -i /tmp/terp-prebuilt/terp-core-local-linux-amd64.tar
+          docker image inspect terpnetwork/terp-core:local >/dev/null
+          echo "SOURCE_COMMIT=$(cat /tmp/terp-prebuilt/SOURCE_COMMIT)"
+
+      - name: Download prebuilt ict-rs bins for pinned commit
+        run: bash scripts/ci/fetch-ict-rs-bins.sh /tmp/ict-bins
 
       - name: Require polytone wasm
         if: ${{ matrix.suite == 'polytone' }}
@@ -111,5 +97,84 @@ jobs:
           TERP_IMAGE_REPO: terpnetwork/terp-core
           TERP_IMAGE_VERSION: local
           ICT_CI_BIN_DIR: /tmp/ict-bins/examples
+        run: /tmp/ict-bins/ict-ci run ${{ matrix.suite }}
+
+      - name: Upload prebuilt terpd digest
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: prebuilt-terpd
+          path: |
+            /tmp/terp-prebuilt/terpd-linux-amd64
+            /tmp/terp-prebuilt/terpd-linux-amd64.sha256
+            /tmp/terp-prebuilt/SOURCE_COMMIT
+          retention-days: 3
+
+  # Parallel: rebuild this commit. Must not block e2e-tests.
+  rebuild:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Stage zk muslc + forks
+        run: bash scripts/ci/stage-zk-for-docker.sh
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Rebuild image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: terpnetwork/terp-core:rebuild
+          build-args: |
+            WASMVM_SOURCE=local
+            WASMVM_BASE_URL=https://minio.terp.network/releases/zk-wasmvm
+          outputs: type=docker,dest=/tmp/rebuild.tar
+
+      - name: Extract rebuilt terpd
         run: |
-          /tmp/ict-bins/ict-ci run ${{ matrix.suite }}
+          set -euo pipefail
+          docker image load -i /tmp/rebuild.tar
+          cid=$(docker create terpnetwork/terp-core:rebuild)
+          docker cp "$cid":/usr/local/bin/terpd /tmp/terpd-rebuilt
+          docker rm "$cid"
+          sha256sum /tmp/terpd-rebuilt | awk '{print $1"  terpd-linux-amd64"}' > /tmp/terpd-rebuilt.sha256
+
+      - name: Upload rebuilt terpd
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: rebuilt-terpd
+          path: |
+            /tmp/terpd-rebuilt
+            /tmp/terpd-rebuilt.sha256
+          retention-days: 3
+
+  assert-identical:
+    needs: [e2e-tests, rebuild]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Download prebuilt terpd
+        uses: actions/download-artifact@v6
+        with:
+          name: prebuilt-terpd
+          path: /tmp/prebuilt
+
+      - name: Download rebuilt terpd
+        uses: actions/download-artifact@v6
+        with:
+          name: rebuilt-terpd
+          path: /tmp/rebuilt
+
+      - name: Assert identical bits
+        run: bash scripts/ci/assert-identical.sh /tmp/prebuilt/terpd-linux-amd64 /tmp/rebuilt/terpd-rebuilt

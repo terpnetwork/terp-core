@@ -57,3 +57,7 @@ ls -lh "build/wasmvm/libwasmvm_muslc.$ARCH.a"
 test -f build/zk-deps/zk-wasmvm/go.mod
 test -f build/zk-deps/zk-wasmd/go.mod
 test -f build/zk-deps/ibc-hooks-v11/go.mod
+if ! grep -q "const CircuitKeyLen" build/zk-deps/zk-wasmvm/lib.go; then
+  echo "ERROR: staged wasmvm has no CircuitKeyLen (origin/v3.0.7-zk is behind local 5aab589+)." >&2
+  exit 1
+fi
