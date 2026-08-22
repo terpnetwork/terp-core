@@ -19,3 +19,15 @@ sh d.sh
 
 Claim if it exits 0: updating the VM to support bulk memory does not brick
 existing smart contracts from working.
+
+
+## E — Cosmovisor auto-swap at v6
+
+Mirrors `b.sh` but starts the node with **Cosmovisor**. Genesis binary is
+`terp-mainnet`; `upgrades/v6/bin/terpd` is this tree. The process must stay up
+across halt.
+
+```sh
+make tsh-upgrade-cv
+# or: SKIP_INSTALL=1 sh e.sh
+```

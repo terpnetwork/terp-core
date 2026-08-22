@@ -1,11 +1,20 @@
 {
-  "title": "Software Upgrade Proposal: ${UPGRADE_NAME}",
-  "description": "Upgrade the Terp Network to ${UPGRADE_NAME}. See full changelog at https://github.com/terpnetwork/terp-core/releases/tag/${UPGRADE_TAG}",
-  "type": "SoftwareUpgrade",
-  "plan": {
-    "name": "${UPGRADE_NAME}",
-    "height": "${UPGRADE_HEIGHT}",
-    "info": "${BINARIES_JSON}"
-  },
-  "deposit": "${DEPOSIT}uterp"
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "${AUTHORITY}",
+      "plan": {
+        "name": "${UPGRADE_NAME}",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "${UPGRADE_HEIGHT}",
+        "info": "${UPGRADE_INFO}",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "${DEPOSIT}uterp",
+  "title": "${TITLE}",
+  "summary": "${SUMMARY}",
+  "expedited": true
 }

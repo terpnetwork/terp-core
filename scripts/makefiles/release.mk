@@ -11,7 +11,7 @@ WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}')
 	release-bundle release-s3 release-dev
 
 # Shared with docker.mk for version-aligned testnet/ZK releases
-RELEASE_TAG ?= v5.3.0-dev
+RELEASE_TAG ?= v6.0.0-dev
 # S3 releases bucket folder = project/repo name (see scripts/release/S3-LAYOUT.md)
 PROJECT ?= terp-core
 NETWORK ?= testnet
@@ -207,6 +207,11 @@ create-upgrade-guide:
 			-u $$upgrade_ver \
 			-t $$upgrade_tag; \
 	fi
+
+create-upgrade-guide-v6:
+	python3 scripts/release/create_upgrade_guide/create_upgrade_guide.py \
+		--type coordinated -c v5.2 -u v6 -t v6.0.0 -p $(or $(PROPOSAL_ID),TBD) -b $(or $(UPGRADE_BLOCK),TBD) \
+		--out scripts/release/create_upgrade_guide/v5.2-to-v6.md
 
 ###############################################################################
 # Governance proposal (stub)
