@@ -1,0 +1,16 @@
+# Exact git pins for a verifiable v6 terpd build.
+# Path-replaces in go.mod: wasmd -> ./crates/zk-wasmd, wasmvm/v3 -> ./crates/zk-wasmvm
+# CosmWasm VM sources are consumed via wasmvm (libwasmvm).
+#
+# terp-core (this repo) records gitlinks at these SHAs.
+# Uncommitted local dirt in crates/cosmwasm is NOT in this pin.
+
+terp-core  https://github.com/terpnetwork/terp-core.git                 v6.0.0-dev                  (see git rev-parse HEAD after this commit)
+cosmwasm   https://github.com/permissionlessweb/cosmwasm.git            v3.1.0-zk.0                 3be431891dc825490178a6f674add9a66182b651
+wasmd      https://github.com/permissionlessweb/wasmd.git               merge/upstream-wasmd-v0.70  2d5821c114ca2650a8d13a67b3d5d0a5431d0f94
+wasmvm     https://github.com/permissionlessweb/wasmvm.git              v3.0.7-zk                   13443df96851d0d48ada4915470e725ae72199a8
+
+# Static libwasmvm muslc used by WASMVM_SOURCE=local / github:
+#   https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/
+#   libwasmvm_muslc.x86_64.a   sha256:7cc14833d1c5e3c5f35c999d322c86590c43ca273ad84b14e74b4d467ea51dbc
+#   libwasmvm_muslc.aarch64.a  sha256:a5b5609301169361a8ab75493565ccc0fa145693d3f2cc333e8c3b228e20e33a

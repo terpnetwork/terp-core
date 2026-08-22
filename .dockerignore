@@ -19,3 +19,14 @@ websites/
 
 # Isolated worktrees must not enter the image context (wasmvm .a I/O bombs).
 _worktrees/
+
+# Do not ship local artifacts into the reproducible-binary context
+build/release/
+build/*.tar.gz
+build/terpd*
+notes/
+optimizer/
+permissionless.money/
+terp.network/
+scripts/scenarios/
+app/upgrades/v520/upgradeHandlerDebug.json
