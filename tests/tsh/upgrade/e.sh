@@ -192,7 +192,16 @@ for i in $(seq 1 180); do
     exit 1
   fi
   if grep -q "UPGRADE \"${UPGRADE_VERSION_TITLE}\" NEEDED" "$CV_LOG" 2>/dev/null; then
+    if [ "$SAW_NEEDED" != "1" ]; then
+      echo "E: saw UPGRADE NEEDED — if the old daemon does not exit, SIGTERM the child so Cosmovisor can swap"
+    fi
     SAW_NEEDED=1
+  fi
+  # 5.2.0 can panic-without-exit; Cosmovisor only swaps after the child dies.
+  if [ "$SAW_NEEDED" = "1" ] && [ "${SENT_TERM:-0}" != "1" ] && [ "$i" -ge 20 ]; then
+    echo "E: sending SIGTERM to Cosmovisor child (old terpd) so parent can exec upgrades/v6"
+    pkill -TERM -P "$CV_PID" 2>/dev/null || true
+    SENT_TERM=1
   fi
   APPLIED_H=$(applied_height || true)
   h=$(rpc_height || echo 0)
