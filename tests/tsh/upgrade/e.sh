@@ -199,11 +199,18 @@ for i in $(seq 1 180); do
     fi
     SAW_NEEDED=1
   fi
-  # 5.2.0 can panic-without-exit; Cosmovisor only swaps after the child dies.
-  if [ "$SAW_NEEDED" = "1" ] && [ "${SENT_TERM:-0}" != "1" ] && [ "$i" -ge 20 ]; then
-    echo "E: sending SIGTERM to Cosmovisor child (old terpd) so parent can exec upgrades/v6"
-    pkill -TERM -P "$CV_PID" 2>/dev/null || true
-    SENT_TERM=1
+  # 5.2.0 panics without exiting. Cosmovisor v1.7 then does not swap until
+  # the wrapper is restarted (same as systemd Restart=always).
+  if [ "$SAW_NEEDED" = "1" ] && [ "${CV_RESTARTED:-0}" != "1" ] && [ "$i" -ge 15 ]; then
+    echo "E: restarting Cosmovisor so it picks upgrades/v6 from upgrade-info.json"
+    kill "$CV_PID" 2>/dev/null || true
+    wait "$CV_PID" 2>/dev/null || true
+    sleep 2
+    "$CV_BIND" run start --home "$HOME_DIR" --pruning=nothing --minimum-gas-prices=0uterp \
+      --rpc.laddr="tcp://127.0.0.1:$RPC" ${WASMVM_SKIP:+--wasm.skip_wasmvm_version_check} >>"$CV_LOG" 2>&1 &
+    CV_PID=$!
+    CV_RESTARTED=1
+    wait_rpc || true
   fi
   APPLIED_H=$(applied_height || true)
   h=$(rpc_height || echo 0)
