@@ -37,6 +37,7 @@ release-help:
 	@echo "  create-checksums         Generate build/sha256sum.txt for raw binaries only"
 	@echo "  release-prep             Create tarballs + unified sha256sum.txt (binaries + tarballs)"
 	@echo "  create-binaries-json     Generate cosmovisor-compatible binaries JSON"
+@echo "  verify-artifacts        Fetch S3 pack, checksum, load image, ict/tsh"
 	@echo "  create-upgrade-guide     Generate upgrade guide (rolling or coordinated)"
 	@echo "  release-proposal         Submit governance upgrade proposal (stub)"
 	@echo ""
@@ -162,6 +163,9 @@ release-prep:
 ###############################################################################
 # Binaries JSON (cosmovisor-compatible)
 ###############################################################################
+
+verify-artifacts:
+	@RELEASE_TAG=$(or $(RELEASE_TAG),v6.0.0) bash scripts/release/verify_artifacts.sh
 
 create-binaries-json:
 ifndef RELEASE_TAG

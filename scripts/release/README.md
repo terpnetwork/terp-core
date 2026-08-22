@@ -68,6 +68,9 @@ make docker-push-dev RELEASE_TAG=v6.0.0-dev
 
 ## Scripts
 
+After publishing a tag pack: `make verify-artifacts RELEASE_TAG=v6.0.0` (S3 checksums, muslc, docker image == ELF, ict-rs).
+
+
 | Script | Purpose |
 |--------|---------|
 | [`publish_docker_dev.sh`](./publish_docker_dev.sh) | ZK docker build + multi-tag (`local-zk`, `v5.3.0-dev`, ghcr) |

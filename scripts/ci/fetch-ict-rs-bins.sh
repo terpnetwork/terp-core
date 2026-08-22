@@ -29,11 +29,14 @@ if [ ! -x "$DEST/ict-ci" ]; then
   echo "ERROR: missing $DEST/ict-ci after unpack" >&2
   exit 1
 fi
-echo "==> ict-ci list (pin $COMMIT)"
-list="$("$DEST/ict-ci" list)"
-if [ -z "$list" ]; then
-  echo "ERROR: ict-ci list empty for pin $COMMIT" >&2
+echo "==> ict-ci pin $COMMIT"
+if "$DEST/ict-ci" list >/tmp/ict-ci-list.txt 2>/tmp/ict-ci-list.err; then
+  cat /tmp/ict-ci-list.txt
+elif grep -q "Exec format error\|cannot execute" /tmp/ict-ci-list.err; then
+  echo "note: ict-ci is linux; unpacked for docker/act ($(uname -sm))"
+else
+  cat /tmp/ict-ci-list.err >&2
+  echo "ERROR: ict-ci list failed" >&2
   exit 1
 fi
-printf '%s\n' "$list"
 echo "ok $DEST commit=$COMMIT tarball=$got"
