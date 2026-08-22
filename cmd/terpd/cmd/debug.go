@@ -213,7 +213,7 @@ Ideal for debugging snapshot restore issues or corrupted state.`,
 
 		fmt.Println("✅ Using home directory :", home)
 		fmt.Println("✅ Genesis file path    :", cfg.GenesisFile())
-		fmt.Println("✅ DB directory         :", cfg.DBDir)
+		fmt.Println("✅ DB directory         :", cfg.DBDir())
 		fmt.Println("✅ DB backend           :", cfg.DBBackend)
 
 		inspector, err := inspect.NewFromConfig(cfg)
