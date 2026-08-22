@@ -140,6 +140,8 @@ export DAEMON_ALLOW_DOWNLOAD_BINARIES=false
 export DAEMON_RESTART_AFTER_UPGRADE=true
 export DAEMON_POLL_INTERVAL=300ms
 export UNSAFE_SKIP_BACKUP=true
+export DAEMON_DATA_BACKUP_DIR="$HOME_DIR/data-backup"
+mkdir -p "$DAEMON_DATA_BACKUP_DIR"
 
 : > "$CV_LOG"
 "$CV_BIND" run start --home "$HOME_DIR" --pruning=nothing --minimum-gas-prices=0uterp \
