@@ -42,6 +42,7 @@ export DAEMON_ALLOW_DOWNLOAD_BINARIES=false
 export DAEMON_RESTART_AFTER_UPGRADE=true
 export DAEMON_POLL_INTERVAL=300ms
 export UNSAFE_SKIP_BACKUP=true
+export DAEMON_DATA_BACKUP_DIR="$HOME/.terpd/data-backup"
 # persist in ~/.profile as needed
 ```
 
