@@ -13,28 +13,28 @@ without drift.
 
 Build ZK images with `WASMVM_SOURCE=local` from this monorepo (`crates/zk-wasmvm`).
 
-## Quick start — `v5.3.0-dev`
+## Quick start — `v6.0.0-dev`
 
 ```bash
 # 1) Branch
-git checkout v5.3.0-dev   # or: git checkout -b v5.3.0-dev
+git checkout v6.0.0-dev
 
 # 2) Build ZK alpine image + tag as v5.3.0-dev (local + ghcr names)
-make docker-publish-dev RELEASE_TAG=v5.3.0-dev
+make docker-publish-dev RELEASE_TAG=v6.0.0-dev
 # Retag only (reuse existing :local-zk without rebuild):
-# make docker-publish-dev RELEASE_TAG=v5.3.0-dev SKIP_BUILD=1
+# make docker-publish-dev RELEASE_TAG=v6.0.0-dev SKIP_BUILD=1
 
 # 3) Push image (needs docker login to containers.terp.network)
-make docker-push-dev RELEASE_TAG=v5.3.0-dev
+make docker-push-dev RELEASE_TAG=v6.0.0-dev
 
 # 4) Bundle source + manifest (local build/release/<tag>/)
-make release-bundle RELEASE_TAG=v5.3.0-dev
+make release-bundle RELEASE_TAG=v6.0.0-dev
 
 # 5) Publish bundle to releases/<project>/<tag>/ on MinIO/S3
 #    PROJECT defaults to terp-core (repo name). MINIO_ALIAS defaults to usb2.
-make release-s3 RELEASE_TAG=v5.3.0-dev PROJECT=terp-core NETWORK=testnet CHAIN_ID=120u-1
+make release-s3 RELEASE_TAG=v6.0.0-dev PROJECT=terp-core NETWORK=testnet CHAIN_ID=120u-1
 # dry-run:
-make release-s3 RELEASE_TAG=v5.3.0-dev DRY_RUN=1
+make release-s3 RELEASE_TAG=v6.0.0-dev DRY_RUN=1
 ```
 
 **S3 layout (all projects):** see [`S3-LAYOUT.md`](./S3-LAYOUT.md) — bucket `releases` → `<project>/<tag>/`.
@@ -62,8 +62,8 @@ Stock mainnet images: `WASMVM_SOURCE=github` strips the two replaces and downloa
 official CosmWasm muslc release.
 
 ```bash
-make docker-publish-dev RELEASE_TAG=v5.3.0-dev
-make docker-push-dev RELEASE_TAG=v5.3.0-dev
+make docker-publish-dev RELEASE_TAG=v6.0.0-dev
+make docker-push-dev RELEASE_TAG=v6.0.0-dev
 ```
 
 ## Scripts
@@ -160,3 +160,17 @@ v3.0.7-zk (or set rust version to 3.0.7 to match v3.0.7).
 Goreleaser linux hooks copy build/wasmvm-release muslc archives when present
 so published linux binaries link the curated ZK muslc instead of the official
 CosmWasm GitHub asset.
+
+
+## Expedited v6 upgrade pack
+
+Plan name on-chain is **`v6`**. Cosmovisor directory: `cosmovisor/upgrades/v6/bin/terpd`.
+
+```bash
+make create-binaries
+make release-prep RELEASE_TAG=v6.0.0
+make create-binaries-json RELEASE_TAG=v6.0.0
+make create-upgrade-guide-v6 PROPOSAL_ID=<id> UPGRADE_BLOCK=<height>
+./scripts/release/create_proposal/submit_proposal.sh --height <H> --tag v6.0.0 --name v6
+make tsh-upgrade-cv   # Cosmovisor auto-swap rehearsal
+```

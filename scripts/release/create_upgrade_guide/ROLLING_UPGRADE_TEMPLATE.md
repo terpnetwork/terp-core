@@ -2,76 +2,63 @@
 
 ## Overview
 
-This is a **non-breaking rolling upgrade**. No governance proposal is required. Validators are reccomended to upgarde at their earliest convenience.
+This is a **non-breaking rolling upgrade**. No governance proposal is required.
+Validators should upgrade at their earliest convenience.
 
-- **Upgrade Version**: $UPGRADE_VERSION
-- **Upgrade Tag**: $UPGRADE_TAG
-- **Release**: [GitHub Release](https://github.com/terpnetwork/terp-core/releases/tag/$UPGRADE_TAG)
+- **Upgrade version**: $UPGRADE_VERSION
+- **Upgrade tag**: $UPGRADE_TAG
+- **Release**: [GitHub](https://github.com/terpnetwork/terp-core/releases/tag/$UPGRADE_TAG) · [S3](https://s3.terp.network/releases/terp-core/$UPGRADE_TAG/)
 
-## Binary Downloads
-
-Pre-built binaries are available on the [release page](https://github.com/terpnetwork/terp-core/releases/tag/$UPGRADE_TAG):
+## Binary downloads
 
 | Platform | Architecture | Download |
 |----------|-------------|----------|
-| Linux    | amd64       | [terpd-linux-amd64](https://github.com/terpnetwork/terp-core/releases/download/$UPGRADE_TAG/terpd-linux-amd64) |
-| Linux    | arm64       | [terpd-linux-arm64](https://github.com/terpnetwork/terp-core/releases/download/$UPGRADE_TAG/terpd-linux-arm64) |
+| Linux    | amd64       | [GitHub](https://github.com/terpnetwork/terp-core/releases/download/$UPGRADE_TAG/terpd-linux-amd64) · [S3](https://s3.terp.network/releases/terp-core/$UPGRADE_TAG/terpd-linux-amd64.tar.gz) |
+| Linux    | arm64       | [GitHub](https://github.com/terpnetwork/terp-core/releases/download/$UPGRADE_TAG/terpd-linux-arm64) · [S3](https://s3.terp.network/releases/terp-core/$UPGRADE_TAG/terpd-linux-arm64.tar.gz) |
 
-## Upgrade Steps
+## Upgrade steps
 
-### Option 1: Build from Source
+### Option 1: Build from source
 
 ```sh
-cd $HOME/terp-core
-git pull
+cd "$HOME/terp-core"
+git fetch --tags
 git checkout $UPGRADE_TAG
 make install
 ```
 
-Restart the terpd daemon after building.
+Restart `terpd`.
 
-### Option 2: Download Pre-built Binary
+### Option 2: Pre-built binary
 
 ```sh
-# For amd64:
 wget https://github.com/terpnetwork/terp-core/releases/download/$UPGRADE_TAG/terpd-linux-amd64 -O terpd
 chmod +x terpd
 sudo mv terpd /usr/local/bin/
-
-# For arm64:
-wget https://github.com/terpnetwork/terp-core/releases/download/$UPGRADE_TAG/terpd-linux-arm64 -O terpd
-chmod +x terpd
-sudo mv terpd /usr/local/bin/
 ```
-
-Restart the terpd daemon after replacing the binary.
 
 ### Option 3: Cosmovisor
 
-If you use Cosmovisor, place the new binary in the upgrades directory:
-
 ```sh
+go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.7.1
 mkdir -p ~/.terpd/cosmovisor/upgrades/$UPGRADE_VERSION/bin
-cd $HOME/terp-core
-git pull
-git checkout $UPGRADE_TAG
-make build
-cp build/terpd ~/.terpd/cosmovisor/upgrades/$UPGRADE_VERSION/bin
+cd "$HOME/terp-core" && git fetch --tags && git checkout $UPGRADE_TAG && make build
+cp build/terpd ~/.terpd/cosmovisor/upgrades/$UPGRADE_VERSION/bin/terpd
 ```
 
-## Verification
+Folder name `$UPGRADE_VERSION` must match the on-chain plan name if this later becomes a coordinated halt.
 
-After upgrading, verify the version:
+## Verification
 
 ```sh
 terpd version
 ```
 
-Expected output should include version `$UPGRADE_TAG`.
+Expected: `$UPGRADE_TAG`.
 
 ---
 
-## Additional Resources
+## Additional resources
 
-- Terp Network Documentation: [Website](https://docs.terp.network)
-- Community Support: [Discord](https://discord.gg/pAxjcFnAFH)
+- Docs: https://docs.terp.network
+- Discord: https://discord.gg/pAxjcFnAFH

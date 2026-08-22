@@ -58,6 +58,8 @@ def main():
                         help='Proposal ID (required for coordinated upgrades)')
     parser.add_argument('--upgrade_block', '-b', metavar='upgrade_block', type=str, required=False,
                         help='Upgrade block height (required for coordinated upgrades)')
+    parser.add_argument('--out', '-o', metavar='path', type=str, required=False,
+                        help='Write guide to this path instead of stdout')
 
     args = parser.parse_args()
 
@@ -96,7 +98,16 @@ def main():
         substitutions['UPGRADE_BLOCK'] = args.upgrade_block
 
     filled_markdown = t.safe_substitute(**substitutions)
-    print(filled_markdown)
+    if args.out:
+        out_path = args.out
+        os.makedirs(os.path.dirname(os.path.abspath(out_path)) or '.', exist_ok=True)
+        with open(out_path, 'w') as fh:
+            fh.write(filled_markdown)
+            if not filled_markdown.endswith('\n'):
+                fh.write('\n')
+        print(f'wrote {out_path}')
+    else:
+        print(filled_markdown)
 
 
 if __name__ == "__main__":
