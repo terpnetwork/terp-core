@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a **coordinated, expedited** software upgrade. Validators **must** halt at
+This is a **coordinated** software upgrade (standard governance voting period, not expedited). Validators **must** halt at
 the upgrade height and restart with the `$UPGRADE_TAG` binary (Cosmovisor does
 this automatically if the upgrade binary is pre-placed).
 

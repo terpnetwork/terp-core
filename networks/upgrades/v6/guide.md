@@ -1,109 +1,104 @@
-# Terp-Core v6 — SDK 0.54 / IBC-Go 11.1
+# Mainnet Upgrade Guide: From Version v5.2 to v6
 
-| | |
-|---|---|
-| Chain-id | `morocco-1` |
-| Plan name (handler) | **`v6`** |
-| Binary tag | [`v6.0.0`](https://s3.terp.network/releases/terp-core/v6.0.0/manifest.json) *(fill when published)* |
-| Upgrade height | **`22611000`** |
-| Target wall time | **2026-08-24 15:00 UTC** (~9.7 days from 2026-08-14 22:16 UTC remasure) |
-| Proposal | [ping.pub](https://www.ping.pub/terp/gov) — ID **TBD** until submitted |
-| Countdown | [block 22611000](https://www.ping.pub/terp/block/22611000) |
+## Overview
 
-## Schedule (measured, not guessed)
+This is a **coordinated** software upgrade (standard governance voting period, not expedited). Validators **must** halt at
+the upgrade height and restart with the `v6.0.0` binary (Cosmovisor does
+this automatically if the upgrade binary is pre-placed).
 
-Snapshot taken **2026-08-13 06:44 UTC**, remasured **2026-08-14 22:16 UTC**:
-
-- Live height (remasure): `22376777`
-- Mean block time (last 2000 blocks): **~3.5763 s**
-- +7.00 d floor → ~`22545889`
-- +9.70 d to coordinated height `22611000` (**above the 7-day floor**)
-- +10.00 d raw → ~`22618366`
-- **Rounded coordinated height stays `22611000`**
-
-Re-measure 48 hours before submitting the proposal. If average block time drifts by 0.1 s, height moves by ~±8k blocks over 10 days. Adjust `draft_proposal.json` before broadcast. Do not submit if remaining blocks imply fewer than 7 days.
-
-This is a **breaking** cut: Cosmos SDK **v0.54.3**, ibc-go **v11.1/v11.2**, official **08-wasm v11.1.0**, CosmWasm/wasmd **0.70** + local **zk-wasmvm**. `x/group` and in-tree `x/nft` stores are deleted.
+- **Plan name** (must match `app/upgrades`): `v6`
+- **Git tag / binary**: `v6.0.0`
+- **v6 proposal**: [Gov](https://www.ping.pub/terp/gov/TBD)
+- **Upgrade height**: `22778000`
+- **Countdown**: [Block countdown](https://www.ping.pub/terp/block/22778000)
+- **Release**: [GitHub](https://github.com/terpnetwork/terp-core/releases/tag/v6.0.0) · [S3](https://s3.terp.network/releases/terp-core/v6.0.0/)
 
 ---
 
 ## Cosmovisor (recommended)
 
-Plan name **must** be `v6` — that is the handler Cosmovisor looks up.
+Cosmovisor swaps `terpd` at the on-chain plan name (`v6`). Docs:
+[Cosmovisor](https://docs.cosmos.network/main/tooling/cosmovisor).
+
+### Install (first time)
 
 ```sh
-# one-time env (systemd Environment= is better than ~/.profile)
+# SDK 0.50+ module path (do not use github.com/cosmos/cosmos-sdk/cosmovisor@v1.0.0)
+go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.7.1
+
+mkdir -p ~/.terpd/cosmovisor/genesis/bin
+mkdir -p ~/.terpd/cosmovisor/upgrades
+
+# Current (pre-upgrade) binary is genesis + current plan folder
+cp "$(command -v terpd)" ~/.terpd/cosmovisor/genesis/bin/terpd
+mkdir -p ~/.terpd/cosmovisor/upgrades/v5.2/bin
+cp "$(command -v terpd)" ~/.terpd/cosmovisor/upgrades/v5.2/bin/terpd
+```
+
+```sh
 export DAEMON_NAME=terpd
-export DAEMON_HOME=$HOME/.terpd
+export DAEMON_HOME="$HOME/.terpd"
 export DAEMON_ALLOW_DOWNLOAD_BINARIES=false
 export DAEMON_RESTART_AFTER_UPGRADE=true
-export UNSAFE_SKIP_BACKUP=false   # set true only if you accept no pre-upgrade backup
-
-mkdir -p "$DAEMON_HOME/cosmovisor/upgrades/v6/bin"
-
-# After v6.0.0 is on s3.terp.network:
-#   curl -fsSL -o /tmp/terpd-6.0.0-linux-amd64.tar.gz \
-#     https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-amd64.tar.gz
-#   tar -C /tmp -xzf /tmp/terpd-6.0.0-linux-amd64.tar.gz
-#   install -m 0755 /tmp/terpd-linux-amd64 "$DAEMON_HOME/cosmovisor/upgrades/v6/bin/terpd"
-#
-# Container operators: containers.terp.network/terp-core:v6.0.0
-cp "$(command -v terpd)" "$DAEMON_HOME/cosmovisor/upgrades/v6/bin/terpd"
-"$DAEMON_HOME/cosmovisor/upgrades/v6/bin/terpd" version
+export DAEMON_POLL_INTERVAL=300ms
+export UNSAFE_SKIP_BACKUP=true
+export DAEMON_DATA_BACKUP_DIR="$HOME/.terpd/data-backup"
+# persist in ~/.profile as needed
 ```
 
-If you allow auto-download, point `plan.info` at `networks/upgrades/v6/cosmovisor.json` once checksums are filled. Those URLs are on `s3.terp.network`, not GitHub.
-
-No pre-upgrade `config.toml` rewrite is required for v6 (that was a v5 timeout_commit change).
-
----
-
-## Manual upgrade
-
-1. Watch height `22611000`. The node will panic/halt on the `v6` plan.
-2. Then:
+Run the node **through** Cosmovisor, not raw `terpd start`:
 
 ```sh
-# binaries + checksums
-curl -fsSL -o /tmp/sha256sum.txt \
-  https://s3.terp.network/releases/terp-core/v6.0.0/sha256sum.txt
-curl -fsSL -o /tmp/terpd-6.0.0-linux-amd64.tar.gz \
-  https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-amd64.tar.gz
-# verify against sha256sum.txt, extract, install over the halted binary
-# or: docker pull containers.terp.network/terp-core:v6.0.0
-# restart terpd / cosmovisor
+cosmovisor run start
 ```
 
-3. Confirm:
+### Pre-place the v6 binary (before halt)
+
+Plan directory name **must** equal the on-chain upgrade name (`v6`, not the git tag).
 
 ```sh
-terpd q upgrade applied v6
-terpd q wasm params
+mkdir -p ~/.terpd/cosmovisor/upgrades/v6/bin
+# from source:
+cd "$HOME/terp-core" && git fetch --tags && git checkout v6.0.0 && make build
+cp build/terpd ~/.terpd/cosmovisor/upgrades/v6/bin/terpd
+# or from S3 / GitHub release tarball, then:
+# cp terpd ~/.terpd/cosmovisor/upgrades/v6/bin/terpd
+chmod +x ~/.terpd/cosmovisor/upgrades/v6/bin/terpd
+~/.terpd/cosmovisor/upgrades/v6/bin/terpd version
 ```
 
-Circuit store/pin is **nobody** after the handler.
+At height `22778000` Cosmovisor restarts into `v6` without a manual binary swap.
 
 ---
 
-## Operator checklist
+## Manual upgrade (no Cosmovisor)
 
-- [ ] Cosmovisor `upgrades/v6/bin/terpd` in place **before** halt
-- [ ] Disk headroom for a state backup (`UNSAFE_SKIP_BACKUP=false`)
-- [ ] No in-flight PFM packets with `nonrefundable=true` (ibc-go PFM v3→v4 aborts)
-- [ ] Peers/seeds still reachable after restart
-- [ ] After halt: `applied v6`, wasm + tokenfactory query
+1. Wait for height `22778000` and `UPGRADE "v6" NEEDED`.
+2. Stop `terpd`.
+3. Install `v6.0.0` and start again:
+
+```sh
+cd "$HOME/terp-core"
+git fetch --tags
+git checkout v6.0.0
+make install
+terpd start
+```
 
 ---
 
-## Repo pack
+## Binaries
 
-| File | Role |
-|---|---|
-| `cosmovisor.json` | Binary URLs for `plan.info` (`s3.terp.network/releases/terp-core/…`) |
-| `draft_proposal.json` | Gov `MsgSoftwareUpgrade` draft |
-| `draft_metadata.json` | Off-chain proposal metadata |
-| `../../chain-registry/terpnetwork/` | **Only** in-repo chain-registry draft (binaries + versions) |
+| Platform | Artifact |
+|----------|----------|
+| linux/amd64 | [GitHub](https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-amd64) · [S3 tarball](https://s3.terp.network/releases/terp-core/v6.0.0/terpd-linux-amd64.tar.gz) |
+| linux/arm64 | [GitHub](https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-arm64) · [S3 tarball](https://s3.terp.network/releases/terp-core/v6.0.0/terpd-linux-arm64.tar.gz) |
 
-Images: `containers.terp.network/terp-core:v6.0.0`. Static release files: `https://s3.terp.network/releases/terp-core/v6.0.0/`.
+`make create-binaries-json RELEASE_TAG=v6.0.0` emits Cosmovisor `upgrade-info` JSON.
 
-Proposal ID stays `TBD` until on-chain. Height is the coordinated target, not yet locked by a vote.
+---
+
+## Additional resources
+
+- Docs: https://docs.terp.network
+- Discord: https://discord.gg/pAxjcFnAFH

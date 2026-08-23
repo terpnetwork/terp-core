@@ -6,15 +6,15 @@
       "plan": {
         "name": "v6",
         "time": "0001-01-01T00:00:00Z",
-        "height": "22611000",
-        "info": "https://s3.terp.network/releases/terp-core/v6.0.0/cosmovisor.json",
+        "height": "22778000",
+        "info": "{\"binaries\": {\"linux/amd64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-amd64.tar.gz?checksum=sha256:de0ee1ad9384e38d484ef17671a65ac6886bfe444ca5c90f7822b689f1873a24\", \"linux/arm64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-arm64.tar.gz?checksum=sha256:1af6450994b1dd7b4dce840925b91dabccf0ce2817c05fd8bb9ac59b0da44159\", \"darwin/arm64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-darwin-arm64.tar.gz?checksum=sha256:5de5fb6d125ee5af89bcd448024e4e5a4631ec5f4281ac89ffbfcbba385de398\"}}",
         "upgraded_client_state": null
       }
     }
   ],
   "metadata": "",
   "deposit": "10000000000uterp",
-  "title": "v6 — SDK 0.54 / IBC-Go 11.1",
-  "summary": "Coordinated upgrade to plan v6 at height 22611000 (~2026-08-24 15:00 UTC). Cosmos SDK v0.54.3, ibc-go v11.1, official 08-wasm v11.1.0, wasmd 0.70 + zk-wasmvm. Deletes x/group and x/nft stores. Drain nonrefundable PFM packets before halt.",
+  "title": "Software Upgrade v6 (v6.0.0)",
+  "summary": "Coordinated upgrade to v6.0.0 at height 22778000. Standard voting period (not expedited). Plan name v6. Binary git 22b493ed07e8ea397f5691d93158800f87b721e7. Pre-place Cosmovisor at cosmovisor/upgrades/v6/bin/terpd. Artifacts: https://s3.terp.network/releases/terp-core/v6.0.0/",
   "expedited": false
 }

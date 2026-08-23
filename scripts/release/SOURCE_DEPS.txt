@@ -5,7 +5,7 @@
 # terp-core (this repo) records gitlinks at these SHAs.
 # Uncommitted local dirt in crates/cosmwasm is NOT in this pin.
 
-terp-core  https://github.com/terpnetwork/terp-core.git                 v6.0.0-dev                  0055b2bca98f87da6339489b5a38b40a11ac4c63
+terp-core  https://github.com/terpnetwork/terp-core.git                 v6.0.0-dev                  22b493ed07e8ea397f5691d93158800f87b721e7
 cosmwasm   https://github.com/permissionlessweb/cosmwasm.git            v3.1.0-zk.0                 682b1e93f83f87d348ab0891bc9b934e695aec56
 wasmd      https://github.com/permissionlessweb/wasmd.git               merge/upstream-wasmd-v0.70  2d5821c114ca2650a8d13a67b3d5d0a5431d0f94
 wasmvm     https://github.com/permissionlessweb/wasmvm.git              v3.0.7-zk                   13443df96851d0d48ada4915470e725ae72199a8

@@ -1,0 +1,22 @@
+# Immutable pins for the v6 upgrade pack.
+# terpd linux bits were compiled from BINARY_COMMIT (tag v6.0.0).
+# This release/v6.0.0 branch may add guides/proposals without moving that tag.
+
+plan: v6
+binary_tag: v6.0.0
+binary_commit: 22b493ed07e8ea397f5691d93158800f87b721e7
+pack_branch: release/v6.0.0
+upgrade_height: 22778000
+current_height_at_pack: 22614102
+avg_block_s: 2.7728
+voting_period_s: 345600
+expedited: false
+deposit: 10000000000uterp
+linux_amd64:  b5ecb5035b7b8d4a56ed2a2943f2266a2e56ab9c210768bde484119bc5f6fc36
+linux_arm64:  3d83798e7f1573133435061df2b778aaa190123de049d88316b82f2fdc047c34
+s3_binaries:  https://s3.terp.network/releases/terp-core/v6.0.0/
+s3_upgrade:   https://s3.terp.network/upgrades/v6/
+muslc:        https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/
+cosmwasm:     682b1e93f83f87d348ab0891bc9b934e695aec56
+wasmd:        2d5821c114ca2650a8d13a67b3d5d0a5431d0f94
+wasmvm:       13443df96851d0d48ada4915470e725ae72199a8
