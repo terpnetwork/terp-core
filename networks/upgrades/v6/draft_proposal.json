@@ -6,7 +6,7 @@
       "plan": {
         "name": "v6",
         "time": "0001-01-01T00:00:00Z",
-        "height": "22778000",
+        "height": "22810000",
         "info": "{\"binaries\": {\"linux/amd64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-amd64-cv.tar.gz?checksum=sha256:4a2457bd0223ba3e26569ce5f1e692cb044aa2501ebd6837b7445f9fac63b655\", \"linux/arm64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-arm64-cv.tar.gz?checksum=sha256:a1da02ae2f130184827925a7b6b23be98509bee593e3c5f4b2570baf0ef95707\", \"darwin/arm64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-darwin-arm64-cv.tar.gz?checksum=sha256:f7c2faa347e051b155cc86e569b974c5ef0c338bd34f1bc40e994df328c4e687\"}}",
         "upgraded_client_state": null
       }
@@ -15,6 +15,6 @@
   "metadata": "",
   "deposit": "10000000000uterp",
   "title": "Software Upgrade v6 (v6.0.0)",
-  "summary": "Coordinated upgrade to v6.0.0 at height 22778000. Standard voting period (not expedited). Plan name v6. Binary git 22b493ed07e8ea397f5691d93158800f87b721e7. Pre-place Cosmovisor at cosmovisor/upgrades/v6/bin/terpd. Artifacts: https://s3.terp.network/releases/terp-core/v6.0.0/",
+  "summary": "Coordinated upgrade to v6.0.0 at height 22810000. Standard voting period (not expedited). Plan name v6. Binary git 22b493ed07e8ea397f5691d93158800f87b721e7. Pre-place Cosmovisor at cosmovisor/upgrades/v6/bin/terpd. Artifacts: https://s3.terp.network/releases/terp-core/v6.0.0/",
   "expedited": false
 }
