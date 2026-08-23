@@ -1,0 +1,21 @@
+[package]
+name = "terp-upgrade-proposal"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "cw-orch CLI to submit terp-core software-upgrade governance proposals"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+cw-orch-core = "2"
+cw-orch-daemon = "0.29"
+dotenvy = "0.15"
+env_logger = "0.11"
+log = "0.4"
+prost = "0.13"
+prost-types = "0.13"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+cosmos-sdk-proto = { version = "0.27", default-features = false }
+cw-orch-traits = "0.25"

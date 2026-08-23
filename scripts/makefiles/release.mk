@@ -7,7 +7,7 @@ WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}')
 
 .PHONY: release release-help release-publish release-dry-run release-snapshot \
 	create-binaries create-checksums release-prep create-binaries-json \
-	create-upgrade-guide release-proposal \
+	create-upgrade-guide release-proposal upgrade-proposal \
 	release-bundle release-s3 release-dev
 
 # Shared with docker.mk for version-aligned testnet/ZK releases
@@ -39,7 +39,8 @@ release-help:
 	@echo "  create-binaries-json     Generate cosmovisor-compatible binaries JSON"
 @echo "  verify-artifacts        Fetch S3 pack, checksum, load image, ict/tsh"
 	@echo "  create-upgrade-guide     Generate upgrade guide (rolling or coordinated)"
-	@echo "  release-proposal         Submit governance upgrade proposal (stub)"
+	@echo "  release-proposal         Dry-run v6 gov proposal via cw-orch (scripts/release/.env)"
+	@echo "  upgrade-proposal         Same as release-proposal; add BROADCAST=1 to submit"
 	@echo ""
 	@echo "Testnet ZK / S3 verifiable distribution (see scripts/release/README.md, S3-LAYOUT.md):"
 	@echo "  release-bundle           Deterministic source.tar.gz + manifest.json"
@@ -218,11 +219,20 @@ create-upgrade-guide-v6:
 		--out scripts/release/create_upgrade_guide/v5.2-to-v6.md
 
 ###############################################################################
-# Governance proposal (stub)
+# Governance proposal (cw-orch; mnemonic in scripts/release/.env)
 ###############################################################################
 
-release-proposal:
-	@bash scripts/release/create_proposal/submit_proposal.sh
+release-proposal: upgrade-proposal
+
+upgrade-proposal:
+	@test -f scripts/release/.env || { \
+		echo "copy scripts/release/.env.example -> scripts/release/.env and set MAIN_MNEMONIC"; \
+		exit 1; \
+	}
+	@cd scripts/release/upgrade-proposal && cargo run --release -- \
+		--proposal "$(CURDIR)/networks/upgrades/v6/draft_proposal.json" \
+		--env-file "$(CURDIR)/scripts/release/.env" \
+		$(if $(filter 1,$(BROADCAST)),--broadcast,)
 
 ###############################################################################
 # Deterministic source bundle + MinIO/S3 publish (testnet ZK lineage)
