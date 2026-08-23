@@ -9,8 +9,8 @@ this automatically if the upgrade binary is pre-placed).
 - **Plan name** (must match `app/upgrades`): `v6`
 - **Git tag / binary**: `v6.0.0`
 - **v6 proposal**: [Gov](https://www.ping.pub/terp/gov/TBD)
-- **Upgrade height**: `22778000`
-- **Countdown**: [Block countdown](https://www.ping.pub/terp/block/22778000)
+- **Upgrade height**: `22810000`
+- **Countdown**: [Block countdown](https://www.ping.pub/terp/block/22810000)
 - **Release**: [GitHub](https://github.com/terpnetwork/terp-core/releases/tag/v6.0.0) · [S3](https://s3.terp.network/releases/terp-core/v6.0.0/)
 
 ---
@@ -67,13 +67,13 @@ chmod +x ~/.terpd/cosmovisor/upgrades/v6/bin/terpd
 ~/.terpd/cosmovisor/upgrades/v6/bin/terpd version
 ```
 
-At height `22778000` Cosmovisor restarts into `v6` without a manual binary swap.
+At height `22810000` Cosmovisor restarts into `v6` without a manual binary swap.
 
 ---
 
 ## Manual upgrade (no Cosmovisor)
 
-1. Wait for height `22778000` and `UPGRADE "v6" NEEDED`.
+1. Wait for height `22810000` and `UPGRADE "v6" NEEDED`.
 2. Stop `terpd`.
 3. Install `v6.0.0` and start again:
 

@@ -6,7 +6,7 @@ plan: v6
 binary_tag: v6.0.0
 binary_commit: 22b493ed07e8ea397f5691d93158800f87b721e7
 pack_branch: release/v6.0.0
-upgrade_height: 22778000
+upgrade_height: 22810000
 current_height_at_pack: 22614102
 avg_block_s: 2.7728
 voting_period_s: 345600
