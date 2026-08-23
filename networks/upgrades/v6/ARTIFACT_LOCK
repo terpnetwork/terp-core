@@ -14,7 +14,7 @@ expedited: false
 deposit: 10000000000uterp
 linux_amd64:  b5ecb5035b7b8d4a56ed2a2943f2266a2e56ab9c210768bde484119bc5f6fc36
 linux_arm64:  3d83798e7f1573133435061df2b778aaa190123de049d88316b82f2fdc047c34
-s3_binaries:  https://s3.terp.network/releases/terp-core/v6.0.0/
+s3_binaries:  https://s3.terp.network/releases/terp-core/v6.0.0/index.html
 s3_upgrade:   https://s3.terp.network/upgrades/v6/
 muslc:        https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/
 cosmwasm:     682b1e93f83f87d348ab0891bc9b934e695aec56

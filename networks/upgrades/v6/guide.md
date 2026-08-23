@@ -11,7 +11,7 @@ this automatically if the upgrade binary is pre-placed).
 - **v6 proposal**: [Gov](https://www.ping.pub/terp/gov/TBD)
 - **Upgrade height**: `22810000`
 - **Countdown**: [Block countdown](https://www.ping.pub/terp/block/22810000)
-- **Release**: [GitHub](https://github.com/terpnetwork/terp-core/releases/tag/v6.0.0) · [S3](https://s3.terp.network/releases/terp-core/v6.0.0/)
+- **Release**: [GitHub](https://github.com/terpnetwork/terp-core/releases/tag/v6.0.0) · [S3](https://s3.terp.network/releases/terp-core/v6.0.0/index.html)
 
 ---
 
@@ -91,8 +91,8 @@ terpd start
 
 | Platform | Artifact |
 |----------|----------|
-| linux/amd64 | [GitHub](https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-amd64) · [S3 tarball](https://s3.terp.network/releases/terp-core/v6.0.0/terpd-linux-amd64.tar.gz) |
-| linux/arm64 | [GitHub](https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-arm64) · [S3 tarball](https://s3.terp.network/releases/terp-core/v6.0.0/terpd-linux-arm64.tar.gz) |
+| linux/amd64 | [GitHub](https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-amd64) · [S3 tarball](https://s3.terp.network/releases/terp-core/v6.0.0/index.htmlterpd-linux-amd64.tar.gz) |
+| linux/arm64 | [GitHub](https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-arm64) · [S3 tarball](https://s3.terp.network/releases/terp-core/v6.0.0/index.htmlterpd-linux-arm64.tar.gz) |
 
 `make create-binaries-json RELEASE_TAG=v6.0.0` emits Cosmovisor `upgrade-info` JSON.
 
