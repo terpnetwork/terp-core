@@ -7,7 +7,7 @@
         "name": "v6",
         "time": "0001-01-01T00:00:00Z",
         "height": "22778000",
-        "info": "{\"binaries\": {\"linux/amd64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-amd64.tar.gz?checksum=sha256:de0ee1ad9384e38d484ef17671a65ac6886bfe444ca5c90f7822b689f1873a24\", \"linux/arm64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-arm64.tar.gz?checksum=sha256:1af6450994b1dd7b4dce840925b91dabccf0ce2817c05fd8bb9ac59b0da44159\", \"darwin/arm64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-darwin-arm64.tar.gz?checksum=sha256:5de5fb6d125ee5af89bcd448024e4e5a4631ec5f4281ac89ffbfcbba385de398\"}}",
+        "info": "{\"binaries\": {\"linux/amd64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-amd64-cv.tar.gz?checksum=sha256:4a2457bd0223ba3e26569ce5f1e692cb044aa2501ebd6837b7445f9fac63b655\", \"linux/arm64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-arm64-cv.tar.gz?checksum=sha256:a1da02ae2f130184827925a7b6b23be98509bee593e3c5f4b2570baf0ef95707\", \"darwin/arm64\": \"https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-darwin-arm64-cv.tar.gz?checksum=sha256:f7c2faa347e051b155cc86e569b974c5ef0c338bd34f1bc40e994df328c4e687\"}}",
         "upgraded_client_state": null
       }
     }

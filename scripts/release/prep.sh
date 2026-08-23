@@ -40,17 +40,31 @@ echo "Checksumming raw binaries..."
 # ------------------------------------------------------------------
 # Create versioned tarballs and append their checksums
 # ------------------------------------------------------------------
+# Cosmovisor auto-download requires ./terpd in the archive (DAEMON_NAME).
+pack_cv_tarball() {
+    local src="$1" dest="$2" stage
+    stage="$(mktemp -d)"
+    cp "$src" "$stage/terpd"
+    chmod 755 "$stage/terpd"
+    COPYFILE_DISABLE=1 tar -C "$stage" -czf "$dest" terpd
+    rm -rf "$stage"
+}
+
 for arch in amd64 arm64; do
     tarball="terpd-$VERSION-linux-$arch.tar.gz"
-    echo "Creating $BUILD_DIR/$tarball..."
-    tar -czf "$BUILD_DIR/$tarball" -C "$BUILD_DIR" "terpd-linux-$arch"
+    echo "Creating $BUILD_DIR/$tarball (member terpd)..."
+    pack_cv_tarball "$BUILD_DIR/terpd-linux-$arch" "$BUILD_DIR/$tarball"
 
     echo "Checksumming $tarball..."
     (cd "$BUILD_DIR" && sha256sum "$tarball" >> sha256sum.txt)
 done
 
-tar -czf "$BUILD_DIR/terpd-darwin-arm64.tar.gz" -C "$BUILD_DIR" "terpd-darwin-arm64"
-(cd "$BUILD_DIR" && sha256sum "terpd-darwin-arm64.tar.gz" >> sha256sum.txt)
+if [[ -f "$BUILD_DIR/terpd-darwin-arm64" ]]; then
+    echo "Creating $BUILD_DIR/terpd-$VERSION-darwin-arm64.tar.gz (member terpd)..."
+    pack_cv_tarball "$BUILD_DIR/terpd-darwin-arm64" "$BUILD_DIR/terpd-$VERSION-darwin-arm64.tar.gz"
+    cp "$BUILD_DIR/terpd-$VERSION-darwin-arm64.tar.gz" "$BUILD_DIR/terpd-darwin-arm64.tar.gz"
+    (cd "$BUILD_DIR" && sha256sum "terpd-$VERSION-darwin-arm64.tar.gz" "terpd-darwin-arm64.tar.gz" >> sha256sum.txt)
+fi
 
 # ------------------------------------------------------------------
 # Summary

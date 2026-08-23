@@ -20,3 +20,7 @@ muslc:        https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/
 cosmwasm:     682b1e93f83f87d348ab0891bc9b934e695aec56
 wasmd:        2d5821c114ca2650a8d13a67b3d5d0a5431d0f94
 wasmvm:       13443df96851d0d48ada4915470e725ae72199a8
+linux_amd64_tar: 4a2457bd0223ba3e26569ce5f1e692cb044aa2501ebd6837b7445f9fac63b655
+linux_arm64_tar: a1da02ae2f130184827925a7b6b23be98509bee593e3c5f4b2570baf0ef95707
+darwin_arm64_tar: f7c2faa347e051b155cc86e569b974c5ef0c338bd34f1bc40e994df328c4e687
+cosmovisor_archive: terpd at tar root (DAEMON_NAME)

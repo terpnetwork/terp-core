@@ -2,13 +2,13 @@
 ####################################################################
 # TEST E: Cosmovisor performs the v6 upgrade (no manual binary restart).
 #
-# Mirrors b.sh (local genesis + expedited gov software-upgrade named v6):
-#   genesis bin  = OLD_BIND (current mainnet, no v6 handler)
-#   upgrades/v6  = NEW_BIND (this tree)
-#   start via `cosmovisor run start`
-#   after halt, Cosmovisor must restart the new binary and apply v6
+# Default (CV_DOWNLOAD=1) matches production:
+#   genesis bin  = OLD_BIND (current mainnet)
+#   plan.info    = networks/upgrades/v6/cosmovisor.json (S3 tar.gz?checksum=sha256)
+#   DAEMON_ALLOW_DOWNLOAD_BINARIES=true — Cosmovisor fetches ./terpd from the pack
+#   do not pre-place upgrades/v6/bin/terpd
 #
-# Does not include parallel feature work (hashmerchant product, lean, etc.).
+# CV_DOWNLOAD=0 pre-places NEW_BIND (offline / no S3).
 ####################################################################
 set -euo pipefail
 export PATH="/usr/local/go/bin:/usr/local/bin:/opt/homebrew/bin:${HOME}/go/bin:${PATH}"
@@ -16,7 +16,11 @@ export PATH="/usr/local/go/bin:/usr/local/bin:/opt/homebrew/bin:${HOME}/go/bin:$
 OLD_BIND="${OLD_BIND:-terp-mainnet}"
 NEW_BIND="${NEW_BIND:-terpd}"
 CV_BIND="${CV_BIND:-cosmovisor}"
-UPGRADE_INFO_URL="${UPGRADE_INFO_URL:-https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+CV_DOWNLOAD="${CV_DOWNLOAD:-1}"
+COSMOVISOR_JSON="${COSMOVISOR_JSON:-$REPO_ROOT/networks/upgrades/v6/cosmovisor.json}"
+UPGRADE_INFO_URL="${UPGRADE_INFO_URL:-}"
 UPGRADE_VERSION_TITLE="${UPGRADE_VERSION_TITLE:-v6}"
 KEY="${KEY:-terp1}"
 KEY2="${KEY2:-terp2}"
@@ -53,8 +57,20 @@ wait_rpc() {
   echo "RPC down or wrong chain (want $CHAIN_ID)"; tail -50 "$CV_LOG"; return 1
 }
 
+query_bin() {
+  if [ -x "$HOME_DIR/cosmovisor/current/bin/terpd" ]; then
+    echo "$HOME_DIR/cosmovisor/current/bin/terpd"
+  elif [ -x "$HOME_DIR/cosmovisor/upgrades/${UPGRADE_VERSION_TITLE}/bin/terpd" ]; then
+    echo "$HOME_DIR/cosmovisor/upgrades/${UPGRADE_VERSION_TITLE}/bin/terpd"
+  elif command -v "$NEW_BIND" >/dev/null; then
+    command -v "$NEW_BIND"
+  else
+    command -v "$OLD_BIND"
+  fi
+}
+
 applied_height() {
-  "$NEW_BIND" q upgrade applied "$UPGRADE_VERSION_TITLE" \
+  "$(query_bin)" q upgrade applied "$UPGRADE_VERSION_TITLE" \
     --home "$HOME_DIR" --node "$NODE" -o json 2>/dev/null \
     | jq -r ".height // empty"
 }
@@ -104,29 +120,38 @@ setup_cosmovisor() {
   command -v "$CV_BIND" >/dev/null || { echo "cosmovisor not on PATH"; exit 1; }
   echo "E: cosmovisor $($CV_BIND version 2>/dev/null | head -1 || echo ok)"
 
-  local old_bin new_bin
+  local old_bin
   old_bin=$(command -v "$OLD_BIND")
-  new_bin=$(command -v "$NEW_BIND")
   mkdir -p "$HOME_DIR/cosmovisor/genesis/bin"
-  mkdir -p "$HOME_DIR/cosmovisor/upgrades/${UPGRADE_VERSION_TITLE}/bin"
   cp "$old_bin" "$HOME_DIR/cosmovisor/genesis/bin/terpd"
-  cp "$new_bin" "$HOME_DIR/cosmovisor/upgrades/${UPGRADE_VERSION_TITLE}/bin/terpd"
   chmod +x "$HOME_DIR/cosmovisor/genesis/bin/terpd"
-  chmod +x "$HOME_DIR/cosmovisor/upgrades/${UPGRADE_VERSION_TITLE}/bin/terpd"
-  echo "E: genesis=$old_bin upgrades/${UPGRADE_VERSION_TITLE}=$new_bin"
+  if [ "$CV_DOWNLOAD" = "1" ]; then
+    rm -rf "$HOME_DIR/cosmovisor/upgrades/${UPGRADE_VERSION_TITLE}"
+    echo "E: genesis=$old_bin (no pre-placed upgrades/${UPGRADE_VERSION_TITLE}; Cosmovisor will download)"
+  else
+    local new_bin
+    new_bin=$(command -v "$NEW_BIND")
+    mkdir -p "$HOME_DIR/cosmovisor/upgrades/${UPGRADE_VERSION_TITLE}/bin"
+    cp "$new_bin" "$HOME_DIR/cosmovisor/upgrades/${UPGRADE_VERSION_TITLE}/bin/terpd"
+    chmod +x "$HOME_DIR/cosmovisor/upgrades/${UPGRADE_VERSION_TITLE}/bin/terpd"
+    echo "E: genesis=$old_bin upgrades/${UPGRADE_VERSION_TITLE}=$new_bin (pre-placed)"
+  fi
 }
 
 cleanup() { kill "${CV_PID:-}" 2>/dev/null || true; }
 trap cleanup EXIT
 
-if [ "${SKIP_INSTALL:-0}" = "1" ]; then
+if [ "$CV_DOWNLOAD" = "1" ]; then
+  echo "E: CV_DOWNLOAD=1 — skipping NEW_BIND install; Cosmovisor fetches S3 pack"
+elif [ "${SKIP_INSTALL:-0}" = "1" ]; then
   echo "E: SKIP_INSTALL=1 — using existing $NEW_BIND"
+  command -v "$NEW_BIND" >/dev/null || { echo "$NEW_BIND not on PATH"; exit 1; }
 else
   echo "E: make install NEW_BIND=$NEW_BIND"
   ( cd "$NEW_RELEASE_PATH" && make install )
+  command -v "$NEW_BIND" >/dev/null || { echo "$NEW_BIND not on PATH"; exit 1; }
 fi
-command -v "$NEW_BIND" >/dev/null || { echo "$NEW_BIND not on PATH"; exit 1; }
-echo "E: OLD=$OLD_BIND ($("$OLD_BIND" version | head -1)) NEW=$NEW_BIND ($("$NEW_BIND" version | head -1))"
+echo "E: OLD=$OLD_BIND ($("$OLD_BIND" version | head -1)) CV_DOWNLOAD=$CV_DOWNLOAD"
 
 if [ "$CLEAN" != "false" ]; then
   from_scratch
@@ -136,11 +161,16 @@ setup_cosmovisor
 
 export DAEMON_NAME=terpd
 export DAEMON_HOME="$HOME_DIR"
-export DAEMON_ALLOW_DOWNLOAD_BINARIES=false
 export DAEMON_RESTART_AFTER_UPGRADE=true
 export DAEMON_POLL_INTERVAL=300ms
 export UNSAFE_SKIP_BACKUP=true
 export DAEMON_DATA_BACKUP_DIR="$HOME_DIR/data-backup"
+if [ "$CV_DOWNLOAD" = "1" ]; then
+  export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
+  export DAEMON_DOWNLOAD_MUST_HAVE_CHECKSUM=true
+else
+  export DAEMON_ALLOW_DOWNLOAD_BINARIES=false
+fi
 mkdir -p "$DAEMON_DATA_BACKUP_DIR"
 
 : > "$CV_LOG"
@@ -153,28 +183,40 @@ H0=$(rpc_height)
 HALT=$((H0 + HALT_DELTA))
 echo "E: proposing $UPGRADE_VERSION_TITLE at height $HALT (now $H0) cv_pid=$CV_PID"
 
-cat > "$HOME_DIR/upgrade.json" <<JSON
-{
-  "messages": [
-    {
+if [ -n "$UPGRADE_INFO_URL" ]; then
+  PLAN_INFO="$UPGRADE_INFO_URL"
+elif [ "$CV_DOWNLOAD" = "1" ]; then
+  [ -f "$COSMOVISOR_JSON" ] || { echo "missing $COSMOVISOR_JSON"; exit 1; }
+  PLAN_INFO=$(jq -c . "$COSMOVISOR_JSON")
+  echo "E: plan.info from $COSMOVISOR_JSON"
+  echo "$PLAN_INFO" | jq -r '.binaries | keys[]' | sed 's/^/E:   binary /'
+else
+  PLAN_INFO="https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd"
+fi
+
+jq -n \
+  --arg name "$UPGRADE_VERSION_TITLE" \
+  --arg height "$HALT" \
+  --arg info "$PLAN_INFO" \
+  --arg denom "$DENOM" \
+  '{
+    messages: [{
       "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
-      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
-      "plan": {
-        "name": "$UPGRADE_VERSION_TITLE",
-        "time": "0001-01-01T00:00:00Z",
-        "height": "$HALT",
-        "info": "$UPGRADE_INFO_URL",
-        "upgraded_client_state": null
+      authority: "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      plan: {
+        name: $name,
+        time: "0001-01-01T00:00:00Z",
+        height: $height,
+        info: $info,
+        upgraded_client_state: null
       }
-    }
-  ],
-  "metadata": "",
-  "deposit": "5000000000$DENOM",
-  "title": "$UPGRADE_VERSION_TITLE",
-  "summary": "expedited v6; Cosmovisor must swap binaries",
-  "expedited": true
-}
-JSON
+    }],
+    metadata: "",
+    deposit: ("5000000000" + $denom),
+    title: $name,
+    summary: "v6 Cosmovisor auto-download from published pack",
+    expedited: true
+  }' > "$HOME_DIR/upgrade.json"
 
 "$OLD_BIND" tx gov submit-proposal "$HOME_DIR/upgrade.json" --from "$KEY" --home "$HOME_DIR" \
   --chain-id "$CHAIN_ID" --keyring-backend "$KEYRING" --node "$NODE" \
@@ -264,4 +306,13 @@ if [ -L "$HOME_DIR/cosmovisor/current" ]; then
   }
 fi
 
-echo "E: PASS Cosmovisor applied $UPGRADE_VERSION_TITLE at $APPLIED_H height=$h (pid $CV_PID still running)"
+DOWN_BIN="$HOME_DIR/cosmovisor/upgrades/${UPGRADE_VERSION_TITLE}/bin/terpd"
+if [ "$CV_DOWNLOAD" = "1" ]; then
+  [ -x "$DOWN_BIN" ] || { echo "E: Cosmovisor did not download $DOWN_BIN"; tail -80 "$CV_LOG"; exit 1; }
+  echo "E: downloaded $(file "$DOWN_BIN") sha=$(shasum -a 256 "$DOWN_BIN" | awk '{print $1}')"
+  if grep -q "downloaded\|Download" "$CV_LOG" 2>/dev/null; then
+    grep -E "download|Download|checksum" "$CV_LOG" | tail -8 | sed 's/^/E: log /'
+  fi
+fi
+
+echo "E: PASS Cosmovisor applied $UPGRADE_VERSION_TITLE at $APPLIED_H height=$h (pid $CV_PID still running) download=$CV_DOWNLOAD"
