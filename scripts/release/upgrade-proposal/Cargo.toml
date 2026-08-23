@@ -8,14 +8,29 @@ description = "cw-orch CLI to submit terp-core software-upgrade governance propo
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive", "env"] }
-cw-orch-core = "2"
-cw-orch-daemon = "0.29"
 dotenvy = "0.15"
 env_logger = "0.11"
 log = "0.4"
-prost = "0.13"
-prost-types = "0.13"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-cosmos-sdk-proto = { version = "0.27", default-features = false }
-cw-orch-traits = "0.25"
+prost-types = "0.14"
+
+# Local forks only (gitignored under crates/* except gitlinks).
+cw-orch-core = { path = "../../../crates/cw-orchestrator/packages/cw-orch-core" }
+cw-orch-daemon = { path = "../../../crates/cw-orchestrator/cw-orch-daemon" }
+cw-orch-traits = { path = "../../../crates/cw-orchestrator/packages/cw-orch-traits" }
+cosmos-sdk-proto = { path = "../../../crates/cosmos-rust/cosmos-sdk-proto", default-features = false }
+
+# Force every crates.io pull of the eco stack onto our forks.
+[patch.crates-io]
+cosmwasm-std = { path = "../../../crates/cosmwasm/packages/std" }
+cosmos-sdk-proto = { path = "../../../crates/cosmos-rust/cosmos-sdk-proto" }
+cosmrs = { path = "../../../crates/cosmos-rust/cosmrs" }
+tendermint = { path = "../../../crates/tendermint-rs/tendermint" }
+tendermint-proto = { path = "../../../crates/tendermint-rs/proto" }
+tendermint-rpc = { path = "../../../crates/tendermint-rs/rpc" }
+ibc-proto = { path = "../../../crates/ibc-proto-rs" }
+cw-orch-core = { path = "../../../crates/cw-orchestrator/packages/cw-orch-core" }
+cw-orch-daemon = { path = "../../../crates/cw-orchestrator/cw-orch-daemon" }
+cw-orch-traits = { path = "../../../crates/cw-orchestrator/packages/cw-orch-traits" }
+cw-orch-networks = { path = "../../../crates/cw-orchestrator/packages/cw-orch-networks" }

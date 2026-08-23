@@ -32,3 +32,18 @@ make upgrade-proposal BROADCAST=1
 # or
 cargo run --release -- --env-file ../.env --broadcast
 ```
+
+## Local forks (required)
+
+This crate does **not** use crates.io for CosmWasm / Cosmos / cw-orch.
+It path-depends on the gitignored forks under `crates/`:
+
+- `crates/cw-orchestrator`
+- `crates/cosmos-rust`
+- `crates/cosmwasm`
+- `crates/tendermint-rs`
+- `crates/ibc-proto-rs`
+- `crates/clone-cw-multi-test`
+
+Those must be present on the machine that builds (groot-wan).
+
