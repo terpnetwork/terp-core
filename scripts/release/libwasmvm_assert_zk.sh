@@ -18,10 +18,22 @@ if [ ! -f "$FILE" ]; then
   exit 1
 fi
 
-blob="$(strings -a "$FILE" 2>/dev/null || strings "$FILE")"
+# Static archives keep names in the ELF/Mach-O symbol table; `strings` on the
+# .a often misses them. Prefer nm, then llvm-nm, then strings.
+symtab=""
+if command -v nm >/dev/null 2>&1; then
+  symtab="$(nm -g "$FILE" 2>/dev/null || nm "$FILE" 2>/dev/null || true)"
+fi
+if [ -z "$symtab" ] && command -v llvm-nm >/dev/null 2>&1; then
+  symtab="$(llvm-nm -g "$FILE" 2>/dev/null || true)"
+fi
+if [ -z "$symtab" ]; then
+  symtab="$(strings -a "$FILE" 2>/dev/null || strings "$FILE" 2>/dev/null || true)"
+fi
+
 missing=0
 for sym in "${REQUIRED[@]}"; do
-  if ! printf '%s\n' "$blob" | grep -q -F "$sym"; then
+  if ! printf '%s\n' "$symtab" | grep -Eq " (_)?${sym}$"; then
     echo "ERROR: $FILE missing ZK symbol $sym" >&2
     missing=1
   fi
