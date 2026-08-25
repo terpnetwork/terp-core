@@ -18,22 +18,23 @@ if [ ! -f "$FILE" ]; then
   exit 1
 fi
 
-# Static archives keep names in the ELF/Mach-O symbol table; `strings` on the
-# .a often misses them. Prefer nm, then llvm-nm, then strings.
-symtab=""
-if command -v nm >/dev/null 2>&1; then
-  symtab="$(nm -g "$FILE" 2>/dev/null || nm "$FILE" 2>/dev/null || true)"
-fi
-if [ -z "$symtab" ] && command -v llvm-nm >/dev/null 2>&1; then
-  symtab="$(llvm-nm -g "$FILE" 2>/dev/null || true)"
-fi
-if [ -z "$symtab" ]; then
-  symtab="$(strings -a "$FILE" 2>/dev/null || strings "$FILE" 2>/dev/null || true)"
-fi
+has_sym() {
+  local sym="$1"
+  # Defined text/data only (not U). Mach-O prefixes underscore.
+  if command -v nm >/dev/null 2>&1; then
+    if nm -g "$FILE" 2>/dev/null | grep -qE " [TDB] (_)?${sym}$"; then return 0; fi
+    if nm -gD "$FILE" 2>/dev/null | grep -qE " [TDB] (_)?${sym}$"; then return 0; fi
+    if nm "$FILE" 2>/dev/null | grep -qE " [TDB] (_)?${sym}$"; then return 0; fi
+  fi
+  if command -v llvm-nm >/dev/null 2>&1; then
+    if llvm-nm -g "$FILE" 2>/dev/null | grep -qE " [TDB] (_)?${sym}$"; then return 0; fi
+  fi
+  return 1
+}
 
 missing=0
 for sym in "${REQUIRED[@]}"; do
-  if ! printf '%s\n' "$symtab" | grep -Eq " (_)?${sym}$"; then
+  if ! has_sym "$sym"; then
     echo "ERROR: $FILE missing ZK symbol $sym" >&2
     missing=1
   fi
