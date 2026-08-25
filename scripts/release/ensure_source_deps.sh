@@ -129,12 +129,12 @@ if need_gomod crates/zk-wasmvm; then
   install_muslc wasmvm-muslc-aarch64 crates/zk-wasmvm/internal/api/libwasmvm_muslc.aarch64.a
   for so in crates/zk-wasmvm/internal/api/libwasmvm.x86_64.so \
             crates/zk-wasmvm/internal/api/libwasmvm.aarch64.so; do
-    if [ -f "$so" ] && ! bash "$ROOT/scripts/release/libwasmvm_assert_zk.sh" "$so"; then
+    if [ -f "$so" ] && ! bash "$ROOT/scripts/release/libwasmvm_assert_zk.sh" "$so" >/dev/null 2>&1; then
       echo "ensure-source-deps: removing stale $so (use muslc .a + -tags muslc on Linux)"
       rm -f "$so"
     fi
   done
-  if [ -f crates/zk-wasmvm/internal/api/libwasmvm.dylib ]; then
+  if [ "$(uname -s)" = Darwin ] && [ -f crates/zk-wasmvm/internal/api/libwasmvm.dylib ]; then
     bash "$ROOT/scripts/release/libwasmvm_assert_zk.sh" crates/zk-wasmvm/internal/api/libwasmvm.dylib \
       || echo "ensure-source-deps: WARN dylib missing ZK symbols"
   fi
