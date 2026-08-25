@@ -14,7 +14,8 @@ ibc-hooks  https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v1
 # `make install` / `make build` run scripts/release/ensure_source_deps.sh
 # (git submodule update --init, or clone the SHAs above; ibc-hooks from tarball).
 
-# Static libwasmvm muslc used by WASMVM_SOURCE=local / github:
-#   https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/
-#   libwasmvm_muslc.x86_64.a   sha256:4f4880e1655d34c098729df52db22c9253bec87d2b3185669ff015a340b76d49
-#   libwasmvm_muslc.aarch64.a  sha256:0687e59140c967a752b0b0ede98e71a3c859fb4f6b94fc26883792d381eb4716
+# Static libwasmvm muslc (ZK FFI). Overlay these into crates/zk-wasmvm/internal/api.
+# The glibc libwasmvm.x86_64.so committed in wasmvm git at this pin is stock CosmWasm
+# and MUST NOT be used to link terpd (missing store_param / STWO / pin sync).
+wasmvm-muslc-x86_64  https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/libwasmvm_muslc.x86_64.a   archive  4f4880e1655d34c098729df52db22c9253bec87d2b3185669ff015a340b76d49
+wasmvm-muslc-aarch64 https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/libwasmvm_muslc.aarch64.a  archive  0687e59140c967a752b0b0ede98e71a3c859fb4f6b94fc26883792d381eb4716

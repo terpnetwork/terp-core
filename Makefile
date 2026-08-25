@@ -103,6 +103,11 @@ endif
 ifeq ($(WITH_CLEVELDB),yes)
   build_tags += gcc
 endif
+# Linux glibc libwasmvm.x86_64.so in zk-wasmvm git is stock CosmWasm (no ZK FFI).
+# Release and CI link the pinned muslc archive instead (ensure_source_deps overlays it).
+ifeq ($(shell uname -s),Linux)
+  build_tags += muslc
+endif
 build_tags += $(BUILD_TAGS)
 build_tags := $(strip $(build_tags))
 

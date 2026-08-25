@@ -36,10 +36,16 @@ if [ "$copied" -eq 0 ]; then
   exit 1
 fi
 
-# Prefer ZK muslc we just built (has store_code_with_circuit)
-if command -v strings >/dev/null && ! strings "$OUT"/libwasmvm_muslc.aarch64.a 2>/dev/null | grep -q store_code_with_circuit; then
-  echo "WARN: libwasmvm_muslc.aarch64.a missing store_code_with_circuit (not a ZK muslc)" >&2
-fi
+# Every shipped archive/shared lib must export the ZK FFI. The glibc
+# libwasmvm.x86_64.so in the wasmvm git tree has been stock CosmWasm.
+assert="$ROOT/scripts/release/libwasmvm_assert_zk.sh"
+for f in "$OUT"/libwasmvm*; do
+  [ -f "$f" ] || continue
+  case "$f" in
+    *.txt|SHA256SUMS|VERSIONS.txt) continue ;;
+  esac
+  bash "$assert" "$f"
+done
 
 (
   cd "$OUT"

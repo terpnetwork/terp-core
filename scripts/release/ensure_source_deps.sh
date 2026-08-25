@@ -99,6 +99,47 @@ if [ "${ENSURE_COSMWASM:-0}" = "1" ]; then
   fi
 fi
 
+# Overlay release muslc (ZK FFI) and drop stale glibc shared objects.
+# Default `go build` on Linux links -lwasmvm.x86_64; that .so at the wasmvm
+# git pin is stock CosmWasm. Linux builds must use -tags muslc + these .a files.
+install_muslc() {
+  local name="$1" dest="$2"
+  local url sha tmp got
+  url="$(pin_url "$name")"
+  sha="$(pin_sha "$name")"
+  [ -n "$url" ] && [ -n "$sha" ] || {
+    echo "ERROR: no SOURCE_DEPS pin for $name" >&2
+    exit 1
+  }
+  mkdir -p "$(dirname "$dest")"
+  tmp="$(mktemp)"
+  echo "ensure-source-deps: fetch $name"
+  curl -fsSL -o "$tmp" "$url"
+  got="$(shasum -a 256 "$tmp" | awk '{print $1}')"
+  if [ "$got" != "$sha" ]; then
+    echo "ERROR: $name checksum $got != $sha" >&2
+    exit 1
+  fi
+  mv "$tmp" "$dest"
+  bash "$ROOT/scripts/release/libwasmvm_assert_zk.sh" "$dest"
+}
+
+if need_gomod crates/zk-wasmvm; then
+  install_muslc wasmvm-muslc-x86_64 crates/zk-wasmvm/internal/api/libwasmvm_muslc.x86_64.a
+  install_muslc wasmvm-muslc-aarch64 crates/zk-wasmvm/internal/api/libwasmvm_muslc.aarch64.a
+  for so in crates/zk-wasmvm/internal/api/libwasmvm.x86_64.so \
+            crates/zk-wasmvm/internal/api/libwasmvm.aarch64.so; do
+    if [ -f "$so" ] && ! bash "$ROOT/scripts/release/libwasmvm_assert_zk.sh" "$so"; then
+      echo "ensure-source-deps: removing stale $so (use muslc .a + -tags muslc on Linux)"
+      rm -f "$so"
+    fi
+  done
+  if [ -f crates/zk-wasmvm/internal/api/libwasmvm.dylib ]; then
+    bash "$ROOT/scripts/release/libwasmvm_assert_zk.sh" crates/zk-wasmvm/internal/api/libwasmvm.dylib \
+      || echo "ensure-source-deps: WARN dylib missing ZK symbols"
+  fi
+fi
+
 # Path-replace in go.mod; not a gitlink. Fetched from the release tarball pin.
 HOOKS_URL="${IBC_HOOKS_URL:-$(pin_url ibc-hooks)}"
 HOOKS_SHA256="${IBC_HOOKS_SHA256:-$(pin_sha ibc-hooks)}"

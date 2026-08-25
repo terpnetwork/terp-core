@@ -40,7 +40,8 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-      - run: go build ./...
+      # muslc: pinned ZK libwasmvm_muslc.x86_64.a (glibc .so in wasmvm git lacks ZK FFI)
+      - run: go build -tags "netgo ledger muslc" ./...
 
   test:
     runs-on: ubuntu-latest
@@ -57,7 +58,7 @@ jobs:
       - name: Init Go path-replace crates
         run: bash scripts/release/ensure_source_deps.sh
       - name: Test
-        run: go test ./...
+        run: go test -tags "netgo ledger muslc" ./...
 
   tidy:
     runs-on: ubuntu-latest
@@ -74,9 +75,13 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
       - run: |
           go mod tidy
-          CHANGES_IN_REPO=$(git status --porcelain)
-          if [[ -n "$CHANGES_IN_REPO" ]]; then
-            echo "Repository is dirty. Showing 'git status' and 'git --no-pager diff' for debugging now:"
-            git status && git --no-pager diff
-            exit 1
+          if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            CHANGES_IN_REPO=$(git status --porcelain)
+            if [[ -n "$CHANGES_IN_REPO" ]]; then
+              echo "Repository is dirty. Showing 'git status' and 'git --no-pager diff' for debugging now:"
+              git status && git --no-pager diff
+              exit 1
+            fi
+          else
+            echo "skip git status (not a git work tree)"
           fi

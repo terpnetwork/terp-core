@@ -37,6 +37,8 @@ mkdir -p /tmp/muslc-check
 curl -fsSL -o /tmp/muslc-check/libwasmvm_muslc.x86_64.a "$MUSLC_BASE/libwasmvm_muslc.x86_64.a"
 curl -fsSL -o /tmp/muslc-check/libwasmvm_muslc.aarch64.a "$MUSLC_BASE/libwasmvm_muslc.aarch64.a"
 (cd /tmp/muslc-check && shasum -a 256 -c /tmp/SHA256SUMS.muslc)
+bash "$ROOT/scripts/release/libwasmvm_assert_zk.sh" /tmp/muslc-check/libwasmvm_muslc.x86_64.a
+bash "$ROOT/scripts/release/libwasmvm_assert_zk.sh" /tmp/muslc-check/libwasmvm_muslc.aarch64.a
 
 echo "==> 4 ELF / Stwo"
 info="$(file "$DEST/terpd-linux-amd64")"
