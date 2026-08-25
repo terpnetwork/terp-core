@@ -19,16 +19,17 @@ if [ ! -f "$FILE" ]; then
 fi
 
 has_sym() {
-  local sym="$1"
+  local sym="$1" st
+  # grep -q closes the pipe early; with pipefail nm's SIGPIPE looks like failure.
+  set +o pipefail
   # Defined text/data only (not U). Mach-O prefixes underscore.
   if command -v nm >/dev/null 2>&1; then
-    if nm -g "$FILE" 2>/dev/null | grep -qE " [TDB] (_)?${sym}$"; then return 0; fi
-    if nm -gD "$FILE" 2>/dev/null | grep -qE " [TDB] (_)?${sym}$"; then return 0; fi
-    if nm "$FILE" 2>/dev/null | grep -qE " [TDB] (_)?${sym}$"; then return 0; fi
+    nm -g "$FILE" 2>/dev/null | grep -E " [TDB] ${sym}$| [TDB] _${sym}$" >/dev/null && st=0 || st=1
+    if [ "$st" -eq 0 ]; then set -o pipefail; return 0; fi
+    nm -gD "$FILE" 2>/dev/null | grep -E " [TDB] ${sym}$| [TDB] _${sym}$" >/dev/null && st=0 || st=1
+    if [ "$st" -eq 0 ]; then set -o pipefail; return 0; fi
   fi
-  if command -v llvm-nm >/dev/null 2>&1; then
-    if llvm-nm -g "$FILE" 2>/dev/null | grep -qE " [TDB] (_)?${sym}$"; then return 0; fi
-  fi
+  set -o pipefail
   return 1
 }
 
