@@ -107,6 +107,7 @@ endif
 # Release and CI link the pinned muslc archive instead (ensure_source_deps overlays it).
 ifeq ($(shell uname -s),Linux)
   build_tags += muslc
+  export CGO_LDFLAGS += -lm
 endif
 build_tags += $(BUILD_TAGS)
 build_tags := $(strip $(build_tags))
