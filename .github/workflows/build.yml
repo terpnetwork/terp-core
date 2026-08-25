@@ -79,13 +79,12 @@ jobs:
           cache: false
       - run: |
           go mod tidy
-          if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-            CHANGES_IN_REPO=$(git status --porcelain)
-            if [[ -n "$CHANGES_IN_REPO" ]]; then
-              echo "Repository is dirty. Showing 'git status' and 'git --no-pager diff' for debugging now:"
-              git status && git --no-pager diff
-              exit 1
-            fi
+          # ensure_source_deps overlays muslc into crates/zk-wasmvm; that submodule
+          # dirt is expected. Only go.mod / go.sum must stay tidy.
+          if git diff --exit-code -- go.mod go.sum; then
+            echo "go.mod/go.sum tidy"
           else
-            echo "skip git status (not a git work tree)"
+            echo "go mod tidy changed go.mod or go.sum:"
+            git diff -- go.mod go.sum
+            exit 1
           fi
