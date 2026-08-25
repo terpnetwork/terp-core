@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
-# Populate go.mod path-replaces (zk-wasmd, zk-wasmvm, ibc-hooks-v11, cosmwasm)
-# so `make install` works after a plain `git clone` without --recurse-submodules.
+# Populate go.mod path-replaces (zk-wasmd, zk-wasmvm, ibc-hooks-v11)
+# so `make install` / CI `go build ./...` work after a plain `git clone`.
+#
+# Do NOT init crates/cosmwasm here. That tree is Cargo plus packages/go-gen
+# fixtures that are not valid Go (no package clause). Nested under this
+# module they make `go build ./...` fail with:
+#   expected 'package', found 'type'
+# CosmWasm is optional (ENSURE_COSMWASM=1). terpd links libwasmvm via zk-wasmvm.
 #
 # Pins: scripts/release/SOURCE_DEPS.txt (same SHAs as the v6.0.0 release pack).
 # Skip: SKIP_SOURCE_DEPS=1
@@ -72,22 +78,25 @@ checkout_sha() {
 echo "ensure-source-deps: using $DEPS_FILE"
 
 if [ -d "$ROOT/.git" ] || [ -f "$ROOT/.git" ]; then
-  echo "ensure-source-deps: git submodule update --init"
-  git -C "$ROOT" submodule update --init --recursive -- crates/cosmwasm crates/zk-wasmd crates/zk-wasmvm \
-    || git -C "$ROOT" submodule update --init --recursive || true
+  echo "ensure-source-deps: git submodule update --init (zk-wasmd, zk-wasmvm)"
+  git -C "$ROOT" submodule update --init --depth 1 -- crates/zk-wasmd crates/zk-wasmvm || true
 fi
 
 WASMD_SHA="$(pin_sha wasmd)"
 WASMVM_SHA="$(pin_sha wasmvm)"
-COSMWASM_SHA="$(pin_sha cosmwasm)"
 WASMD_URL="$(pin_url wasmd)"
 WASMVM_URL="$(pin_url wasmvm)"
-COSMWASM_URL="$(pin_url cosmwasm)"
 
 need_gomod crates/zk-wasmd || checkout_sha crates/zk-wasmd "$WASMD_URL" "$WASMD_SHA" "merge/upstream-wasmd-v0.70"
 need_gomod crates/zk-wasmvm || checkout_sha crates/zk-wasmvm "$WASMVM_URL" "$WASMVM_SHA" "v3.0.7-zk"
-if ! need_cosmwasm crates/cosmwasm; then
-  echo "ensure-source-deps: WARN crates/cosmwasm not checked out (optional for make install)"
+
+if [ "${ENSURE_COSMWASM:-0}" = "1" ]; then
+  COSMWASM_SHA="$(pin_sha cosmwasm)"
+  COSMWASM_URL="$(pin_url cosmwasm)"
+  git -C "$ROOT" submodule update --init --depth 1 -- crates/cosmwasm || true
+  if ! need_cosmwasm crates/cosmwasm; then
+    echo "ensure-source-deps: WARN crates/cosmwasm not checked out"
+  fi
 fi
 
 # Path-replace in go.mod; not a gitlink. Fetched from the release tarball pin.
@@ -114,5 +123,5 @@ fi
 echo "ensure-source-deps: ok"
 echo "  zk-wasmd       $(git -C crates/zk-wasmd rev-parse --short HEAD 2>/dev/null || echo present)"
 echo "  zk-wasmvm      $(git -C crates/zk-wasmvm rev-parse --short HEAD 2>/dev/null || echo present)"
-echo "  cosmwasm       $(git -C crates/cosmwasm rev-parse --short HEAD 2>/dev/null || echo missing)"
+echo "  cosmwasm       $(git -C crates/cosmwasm rev-parse --short HEAD 2>/dev/null || echo skipped)"
 echo "  ibc-hooks-v11  $(test -f crates/ibc-hooks-v11/go.mod && echo present)"

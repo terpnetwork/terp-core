@@ -20,8 +20,9 @@ env:
   GO_VERSION: 1.25
 
 # Monorepo submodule policy:
-# - go.mod path-replaces CosmWasm → ./crates/zk-wasmd, ./crates/zk-wasmvm
-#   and ibc-hooks → ./crates/ibc-hooks-v11
+# - go.mod path-replaces wasmd/wasmvm/ibc-hooks → ./crates/{zk-wasmd,zk-wasmvm,ibc-hooks-v11}
+# - Do not init crates/cosmwasm: Cargo tree + go-gen fixtures are not a Go module
+#   (go-gen tests lack `package`; `go build ./...` then fails).
 # - SKIP full recursive checkout (60+ crates) to avoid runner bloat
 # - ensure_source_deps.sh inits the gitlinks + ibc-hooks tarball if missing
 
