@@ -127,7 +127,7 @@ require (
 require (
 	cosmossdk.io/collections v1.4.0
 	cosmossdk.io/depinject v1.2.1 // indirect
-	github.com/CosmWasm/wasmvm/v3 v3.0.7-zk
+	github.com/CosmWasm/wasmvm/v3 v3.0.7
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/iavl v1.2.8 // indirect

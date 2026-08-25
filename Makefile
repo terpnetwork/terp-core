@@ -20,7 +20,7 @@ help:
 	@echo "To run commands, use:"
 	@echo "    make [command]"
 	@echo ""
-	@echo "  make install               Install terpd binary"
+	@echo "  make install               Install terpd (fetches zk-wasmd/wasmvm/ibc-hooks if missing)"
 	@echo "  make build                 Build terpd binary"
 	@echo "  make build-help            Show advanced available build commands"
 	@echo "  make deps                  Show available deps commands"
@@ -132,7 +132,7 @@ ldflags := $(strip $(ldflags))
  
 BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 
-build: build-check-version go.sum
+build: build-check-version ensure-source-deps go.sum
 	@if [ -n "$(SDK_HASH)" ] || [ -n "$(COMET_HASH)" ]; then \
 		cp go.mod go.mod.backup; \
 		cp go.sum go.sum.backup; \
@@ -157,7 +157,7 @@ distclean: clean
 
 
 .PHONY: all build-linux install install-debug \
-	go-mod-cache draw-deps clean build \
+	go-mod-cache draw-deps clean build ensure-source-deps \
 	build-docker localnet-start localnet-stop test-docker test-docker-push \
 	test test-all test-cover
  

@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# Populate go.mod path-replaces (zk-wasmd, zk-wasmvm, ibc-hooks-v11, cosmwasm)
+# so `make install` works after a plain `git clone` without --recurse-submodules.
+#
+# Pins: scripts/release/SOURCE_DEPS.txt (same SHAs as the v6.0.0 release pack).
+# Skip: SKIP_SOURCE_DEPS=1
+set -euo pipefail
+
+if [ "${SKIP_SOURCE_DEPS:-0}" = "1" ]; then
+  echo "ensure-source-deps: SKIP_SOURCE_DEPS=1"
+  exit 0
+fi
+
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$ROOT"
+DEPS_FILE="${SOURCE_DEPS_FILE:-$ROOT/scripts/release/SOURCE_DEPS.txt}"
+
+need_gomod() {
+  [ -f "$1/go.mod" ]
+}
+
+need_cosmwasm() {
+  [ -f "$1/Cargo.toml" ] || [ -f "$1/packages/std/Cargo.toml" ]
+}
+
+pin_sha() {
+  local name="$1"
+  awk -v n="$name" '$1==n {print $NF; exit}' "$DEPS_FILE"
+}
+
+pin_url() {
+  local name="$1"
+  awk -v n="$name" '$1==n {print $2; exit}' "$DEPS_FILE"
+}
+
+checkout_sha() {
+  local dest="$1" url="$2" sha="$3" ref="${4:-}"
+  if need_gomod "$dest"; then
+    local cur
+    cur="$(git -C "$dest" rev-parse HEAD 2>/dev/null || true)"
+    if [ -n "$cur" ] && [ "$cur" = "$sha" ]; then
+      echo "ensure-source-deps: $dest already at $sha"
+      return 0
+    fi
+    if [ -n "$cur" ] && [ -n "$sha" ]; then
+      echo "ensure-source-deps: $dest at $cur (want $sha); fetching pin"
+      git -C "$dest" fetch --depth 1 origin "$sha" 2>/dev/null || git -C "$dest" fetch origin "$sha" || true
+      git -C "$dest" checkout --detach "$sha" 2>/dev/null && return 0
+    fi
+    if need_gomod "$dest"; then
+      echo "ensure-source-deps: WARN $dest present but not at $sha; using existing tree"
+      return 0
+    fi
+  fi
+
+  echo "ensure-source-deps: clone $url @ $sha -> $dest"
+  rm -rf "$dest"
+  mkdir -p "$(dirname "$dest")"
+  if [ -n "$ref" ] && git clone --filter=blob:none --branch "$ref" --single-branch "$url" "$dest" 2>/dev/null; then
+    git -C "$dest" checkout --detach "$sha" 2>/dev/null || git -C "$dest" checkout "$sha"
+  else
+    git clone --filter=blob:none "$url" "$dest"
+    git -C "$dest" fetch --depth 1 origin "$sha" 2>/dev/null || git -C "$dest" fetch origin "$sha"
+    git -C "$dest" checkout --detach "$sha"
+  fi
+  need_gomod "$dest" || {
+    echo "ERROR: $dest missing go.mod after checkout $sha" >&2
+    exit 1
+  }
+}
+
+echo "ensure-source-deps: using $DEPS_FILE"
+
+if [ -d "$ROOT/.git" ] || [ -f "$ROOT/.git" ]; then
+  echo "ensure-source-deps: git submodule update --init"
+  git -C "$ROOT" submodule update --init --recursive -- crates/cosmwasm crates/zk-wasmd crates/zk-wasmvm \
+    || git -C "$ROOT" submodule update --init --recursive || true
+fi
+
+WASMD_SHA="$(pin_sha wasmd)"
+WASMVM_SHA="$(pin_sha wasmvm)"
+COSMWASM_SHA="$(pin_sha cosmwasm)"
+WASMD_URL="$(pin_url wasmd)"
+WASMVM_URL="$(pin_url wasmvm)"
+COSMWASM_URL="$(pin_url cosmwasm)"
+
+need_gomod crates/zk-wasmd || checkout_sha crates/zk-wasmd "$WASMD_URL" "$WASMD_SHA" "merge/upstream-wasmd-v0.70"
+need_gomod crates/zk-wasmvm || checkout_sha crates/zk-wasmvm "$WASMVM_URL" "$WASMVM_SHA" "v3.0.7-zk"
+if ! need_cosmwasm crates/cosmwasm; then
+  echo "ensure-source-deps: WARN crates/cosmwasm not checked out (optional for make install)"
+fi
+
+# Path-replace in go.mod; not a gitlink. Fetched from the release tarball pin.
+HOOKS_URL="${IBC_HOOKS_URL:-$(pin_url ibc-hooks)}"
+HOOKS_SHA256="${IBC_HOOKS_SHA256:-$(pin_sha ibc-hooks)}"
+if ! need_gomod crates/ibc-hooks-v11; then
+  echo "ensure-source-deps: fetch ibc-hooks-v11 tarball"
+  tmp="$(mktemp)"
+  curl -fsSL -o "$tmp" "$HOOKS_URL"
+  got="$(shasum -a 256 "$tmp" | awk '{print $1}')"
+  if [ "$got" != "$HOOKS_SHA256" ]; then
+    echo "ERROR: ibc-hooks-v11 checksum $got != $HOOKS_SHA256" >&2
+    exit 1
+  fi
+  mkdir -p crates
+  tar -C crates -xzf "$tmp"
+  rm -f "$tmp"
+  need_gomod crates/ibc-hooks-v11 || {
+    echo "ERROR: tarball did not produce crates/ibc-hooks-v11/go.mod" >&2
+    exit 1
+  }
+fi
+
+echo "ensure-source-deps: ok"
+echo "  zk-wasmd       $(git -C crates/zk-wasmd rev-parse --short HEAD 2>/dev/null || echo present)"
+echo "  zk-wasmvm      $(git -C crates/zk-wasmvm rev-parse --short HEAD 2>/dev/null || echo present)"
+echo "  cosmwasm       $(git -C crates/cosmwasm rev-parse --short HEAD 2>/dev/null || echo missing)"
+echo "  ibc-hooks-v11  $(test -f crates/ibc-hooks-v11/go.mod && echo present)"

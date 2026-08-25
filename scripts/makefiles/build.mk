@@ -29,7 +29,12 @@ build-check-version:
 		exit 1; \
 	fi
 
-install: build-check-version go.sum
+# Clone gitlinked CosmWasm forks + ibc-hooks so path-replaces in go.mod resolve.
+# SKIP_SOURCE_DEPS=1 to skip. See scripts/release/SOURCE_DEPS.txt.
+ensure-source-deps:
+	@bash scripts/release/ensure_source_deps.sh
+
+install: build-check-version ensure-source-deps go.sum
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/terpd
 
 build-linux: go.sum
