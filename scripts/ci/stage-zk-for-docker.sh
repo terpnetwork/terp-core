@@ -11,7 +11,8 @@ WASMD_REPO="${WASMD_REPO:-https://github.com/permissionlessweb/wasmd.git}"
 WASMD_REF="${WASMD_REF:-merge/upstream-wasmd-v0.70}"
 WASMVM_REPO="${WASMVM_REPO:-https://github.com/permissionlessweb/wasmvm.git}"
 ARCH="${WASMVM_ARCH:-x86_64}"
-HOOKS_URL="${IBC_HOOKS_URL:-https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v11.tar.gz}"
+HOOKS_REPO="${IBC_HOOKS_REPO:-https://github.com/cosmos/ibc-apps.git}"
+HOOKS_REF="${IBC_HOOKS_REF:-modules/ibc-hooks/v11.0.0}"
 
 if [ -z "$VER" ]; then
   echo "ERROR: could not parse wasmvm version from go.mod" >&2
@@ -44,10 +45,11 @@ if [ ! -f build/zk-deps/zk-wasmd/go.mod ]; then
   git clone --depth 1 --branch "$WASMD_REF" "$WASMD_REPO" build/zk-deps/zk-wasmd
 fi
 if [ ! -f build/zk-deps/ibc-hooks-v11/go.mod ]; then
-  echo "==> fetch ibc-hooks-v11 tarball"
-  rm -rf build/zk-deps/ibc-hooks-v11
-  curl -fsSL -o /tmp/ibc-hooks-v11.tar.gz "$HOOKS_URL"
-  tar -C build/zk-deps -xzf /tmp/ibc-hooks-v11.tar.gz
+  echo "==> clone $HOOKS_REPO @$HOOKS_REF (modules/ibc-hooks)"
+  rm -rf build/zk-deps/ibc-hooks-v11 /tmp/ibc-apps-src
+  git clone --filter=blob:none --depth 1 --branch "$HOOKS_REF" "$HOOKS_REPO" /tmp/ibc-apps-src
+  cp -a /tmp/ibc-apps-src/modules/ibc-hooks build/zk-deps/ibc-hooks-v11
+  rm -rf /tmp/ibc-apps-src
 fi
 mkdir -p build/zk-deps/zk-wasmvm/internal/api
 cp -f "build/wasmvm/libwasmvm_muslc.$ARCH.a" \

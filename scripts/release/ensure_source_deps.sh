@@ -39,6 +39,11 @@ pin_url() {
   awk -v n="$name" '$1==n {print $2; exit}' "$DEPS_FILE"
 }
 
+pin_ref() {
+  local name="$1"
+  awk -v n="$name" '$1==n {print $3; exit}' "$DEPS_FILE"
+}
+
 checkout_sha() {
   local dest="$1" url="$2" sha="$3" ref="${4:-}"
   if need_gomod "$dest"; then
@@ -71,6 +76,39 @@ checkout_sha() {
   fi
   need_gomod "$dest" || {
     echo "ERROR: $dest missing go.mod after checkout $sha" >&2
+    exit 1
+  }
+}
+
+# ibc-hooks lives in cosmos/ibc-apps (monorepo). Do not vendor it in terp-core;
+# clone the pin and copy modules/ibc-hooks into the go.mod replace path.
+checkout_ibc_hooks() {
+  local dest="$1" url="$2" sha="$3" ref="${4:-}" subdir="${5:-modules/ibc-hooks}"
+  if need_gomod "$dest"; then
+    echo "ensure-source-deps: $dest already present"
+    return 0
+  fi
+  echo "ensure-source-deps: clone $url @ $sha ($subdir) -> $dest"
+  local tmp
+  tmp="$(mktemp -d)"
+  if [ -n "$ref" ] && git clone --filter=blob:none --branch "$ref" --single-branch "$url" "$tmp" 2>/dev/null; then
+    git -C "$tmp" checkout --detach "$sha" 2>/dev/null || git -C "$tmp" checkout "$sha"
+  else
+    git clone --filter=blob:none "$url" "$tmp"
+    git -C "$tmp" fetch --depth 1 origin "$sha" 2>/dev/null || git -C "$tmp" fetch origin "$sha"
+    git -C "$tmp" checkout --detach "$sha"
+  fi
+  if [ ! -f "$tmp/$subdir/go.mod" ]; then
+    echo "ERROR: $url @ $sha missing $subdir/go.mod" >&2
+    rm -rf "$tmp"
+    exit 1
+  fi
+  mkdir -p "$(dirname "$dest")"
+  rm -rf "$dest"
+  cp -a "$tmp/$subdir" "$dest"
+  rm -rf "$tmp"
+  need_gomod "$dest" || {
+    echo "ERROR: $dest missing go.mod after checkout" >&2
     exit 1
   }
 }
@@ -140,26 +178,12 @@ if need_gomod crates/zk-wasmvm; then
   fi
 fi
 
-# Path-replace in go.mod; not a gitlink. Fetched from the release tarball pin.
-HOOKS_URL="${IBC_HOOKS_URL:-$(pin_url ibc-hooks)}"
-HOOKS_SHA256="${IBC_HOOKS_SHA256:-$(pin_sha ibc-hooks)}"
-if ! need_gomod crates/ibc-hooks-v11; then
-  echo "ensure-source-deps: fetch ibc-hooks-v11 tarball"
-  tmp="$(mktemp)"
-  curl -fsSL -o "$tmp" "$HOOKS_URL"
-  got="$(shasum -a 256 "$tmp" | awk '{print $1}')"
-  if [ "$got" != "$HOOKS_SHA256" ]; then
-    echo "ERROR: ibc-hooks-v11 checksum $got != $HOOKS_SHA256" >&2
-    exit 1
-  fi
-  mkdir -p crates
-  tar -C crates -xzf "$tmp"
-  rm -f "$tmp"
-  need_gomod crates/ibc-hooks-v11 || {
-    echo "ERROR: tarball did not produce crates/ibc-hooks-v11/go.mod" >&2
-    exit 1
-  }
-fi
+need_gomod crates/ibc-hooks-v11 || checkout_ibc_hooks \
+  crates/ibc-hooks-v11 \
+  "$(pin_url ibc-hooks)" \
+  "$(pin_sha ibc-hooks)" \
+  "$(pin_ref ibc-hooks)" \
+  modules/ibc-hooks
 
 echo "ensure-source-deps: ok"
 echo "  zk-wasmd       $(git -C crates/zk-wasmd rev-parse --short HEAD 2>/dev/null || echo present)"

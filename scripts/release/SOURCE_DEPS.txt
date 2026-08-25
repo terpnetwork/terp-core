@@ -9,7 +9,9 @@ terp-core  https://github.com/terpnetwork/terp-core.git                 v6.0.0-d
 cosmwasm   https://github.com/permissionlessweb/cosmwasm.git            v3.1.0-zk.0                 682b1e93f83f87d348ab0891bc9b934e695aec56
 wasmd      https://github.com/permissionlessweb/wasmd.git               merge/upstream-wasmd-v0.70  2d5821c114ca2650a8d13a67b3d5d0a5431d0f94
 wasmvm     https://github.com/permissionlessweb/wasmvm.git              v3.0.7-zk                   13443df96851d0d48ada4915470e725ae72199a8
-ibc-hooks  https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v11.tar.gz  tarball  1b31faa98bedb7e388eef97ed031143a851b0d8a799b52d7b1b3ab78c898a312
+# ibc-hooks is NOT vendored. make install clones cosmos/ibc-apps and copies
+# modules/ibc-hooks into ./crates/ibc-hooks-v11 (gitignored path-replace).
+ibc-hooks  https://github.com/cosmos/ibc-apps.git  modules/ibc-hooks/v11.0.0  3764c957804ee8c60fca019aed5aabd2c402c79b
 
 # `make install` / `make build` run scripts/release/ensure_source_deps.sh
 # (git submodule update --init, or clone the SHAs above; ibc-hooks from tarball).
