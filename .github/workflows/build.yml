@@ -40,7 +40,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache: ${{ env.ACT == '' }}
+          cache: false
       # muslc: pinned ZK libwasmvm_muslc.x86_64.a (glibc .so in wasmvm git lacks ZK FFI)
       # -lm: rust muslc archive references libm (log)
       - run: CGO_ENABLED=1 CGO_LDFLAGS="-lm" go build -tags "netgo ledger muslc" ./...
@@ -53,7 +53,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache: ${{ env.ACT == '' }}
+          cache: false
       - name: Checkout code
         uses: actions/checkout@v6
         with:
@@ -76,7 +76,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache: ${{ env.ACT == '' }}
+          cache: false
       - run: |
           go mod tidy
           if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
