@@ -95,6 +95,5 @@ _review/
 *.local.*
 SENTRY_SETUP.md
 oline-ui.md
-docs/
 .grok
 artifacts/
