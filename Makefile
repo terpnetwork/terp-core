@@ -109,6 +109,13 @@ ifeq ($(shell uname -s),Linux)
   build_tags += muslc
   export CGO_LDFLAGS += -lm
 endif
+# Darwin: static libwasmvm when libwasmvmstatic_darwin.a is present
+# (make -C crates/zk-wasmvm release-build-macos-static-arm64).
+ifeq ($(shell uname -s),Darwin)
+  ifneq ($(wildcard crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a),)
+    build_tags += static_wasm
+  endif
+endif
 build_tags += $(BUILD_TAGS)
 build_tags := $(strip $(build_tags))
 
