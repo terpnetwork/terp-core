@@ -37,7 +37,7 @@ make install
 ```sh
 # to view all go package testing commands
 make test
-# to view all interchaintest commands
+# ict-rs / cw-orch e2e (CI uses .github/workflows/interchaintest-E2E.yml)
 make e2e
 # to view all manual bash script test commands
 make tsh

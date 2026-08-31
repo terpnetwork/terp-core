@@ -1,0 +1,5 @@
+{
+  "binaries": {
+    "linux/amd64": "file://$HOME/go/bin/terpd-testnet-v61"
+  }
+}

@@ -24,6 +24,7 @@ import (
 	packetforwardtypes "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
+	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
 	cwhookstypes "github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
 	driptypes "github.com/terpnetwork/terp-core/v6/x/drip/types"
 	feesharetypes "github.com/terpnetwork/terp-core/v6/x/feeshare/types"
@@ -65,6 +66,9 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		tokenfactorytypes.StoreKey,
 		hashmerchanttypes.StoreKey,
 		cwhookstypes.StoreKey,
+		iavlhash.BankB3,
+		iavlhash.StakingB3,
+		iavlhash.AuthB3,
 	)
 
 	appKeepers.tkeys = storetypes.NewTransientStoreKeys(paramstypes.TStoreKey)

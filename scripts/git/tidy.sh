@@ -15,6 +15,3 @@ function runTidy() {
 }
 
 runTidy
-
-cd tests/interchaintest/
-runTidy

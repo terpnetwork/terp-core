@@ -12,7 +12,14 @@ import (
 
 // OpenTree opens an IAVL v2 Tree backed by SQLite files under dir
 // (changelog.sqlite + tree.sqlite). Caller must Close the tree.
+// Hashing defaults to SHA-256; pass TreeOptions{UseBlake3: true} via
+// OpenTreeWithOptions for BLAKE3-256 node hashes.
 func OpenTree(dir string) (*iavl.Tree, error) {
+	return OpenTreeWithOptions(dir, iavl.DefaultTreeOptions())
+}
+
+// OpenTreeWithOptions is OpenTree with TreeOptions (UseBlake3, checkpoints).
+func OpenTreeWithOptions(dir string, opts iavl.TreeOptions) (*iavl.Tree, error) {
 	if dir == "" {
 		return nil, fmt.Errorf("iavlv2: empty sqlite dir")
 	}
@@ -24,7 +31,7 @@ func OpenTree(dir string) (*iavl.Tree, error) {
 	if err != nil {
 		return nil, err
 	}
-	return iavl.NewTree(sql, pool, iavl.DefaultTreeOptions()), nil
+	return iavl.NewTree(sql, pool, opts), nil
 }
 
 // OpenMultiTree mounts one SQLite tree per store key under root.

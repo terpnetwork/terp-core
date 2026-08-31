@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6.1",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "0",
+        "info": "120u-1 soak. Fill height from live RPC status + soak delta. Do not broadcast until asked. Binaries staged locally (no S3 checksums yet).",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "50000000uterp",
+  "title": "Software Upgrade v6.1 (circuits + IAVL dual-store)",
+  "summary": "120u-1 plan v6.1. CircuitUploadAccess Nobody, copy bank/staking/acc into b3-* IAVL trees (BLAKE3 dest once store/v2 hasher patch is compiled in). IBC stays SHA-256. Pre-place binary at cosmovisor/upgrades/v6.1/bin/terpd.",
+  "expedited": true
+}

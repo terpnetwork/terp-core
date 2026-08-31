@@ -125,6 +125,8 @@ var maccPerms = map[string][]string{
 	icatypes.ModuleName:            nil,
 	globalfee.ModuleName:           nil,
 	wasmtypes.ModuleName:           {authtypes.Burner},
+	wasmtypes.CircuitValPoolName:   nil,
+	wasmtypes.CircuitDevPoolName:   {authtypes.Staking},
 	tokenfactorytypes.ModuleName:   {authtypes.Minter, authtypes.Burner},
 	hashmerchanttypes.ModuleName:   nil,
 }
@@ -509,7 +511,10 @@ func NewAppKeepers(
 		wasmtypes.VMConfig{},
 		wasmCapabilities,
 		govModAddress,
-		append(wasmOpts, wasmkeeper.WithWasmEngine(wasmVm))...,
+		append(wasmOpts,
+			wasmkeeper.WithWasmEngine(wasmVm),
+			wasmkeeper.WithCircuitDepositYearly(sdk.NewInt64Coin(appparams.BaseCoinUnit, 1_000_000)),
+		)...,
 	)
 	appKeepers.WasmKeeper = &wasmKeeper
 

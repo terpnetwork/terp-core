@@ -1,0 +1,19 @@
+# Pins for v6.1 / feat/6.1.0-dev (120u-1 soak).
+# Path-replaces in go.mod:
+#   wasmd     -> ./crates/zk-wasmd   (gitlink below)
+#   wasmvm/v3 -> ./crates/zk-wasmvm  (unchanged v3.0.7-zk gitlink)
+#
+# Plan name: v6.1
+# Do not mix stock CosmWasm wasmvm with ZK muslc.
+# BLAKE3 IAVL hasher + patched store/v2 are local (gitignored); apply with
+# scripts/release/curate_v61.sh. Do not set IAVL DefaultOptions to BLAKE3.
+
+terp-core  https://github.com/terpnetwork/terp-core.git                 feat/6.1.0-dev
+wasmd      https://github.com/permissionlessweb/wasmd.git               feat/6.1.0-dev               626eb209ba92c6f4fe69fc461d51328d12a1e3d8
+wasmvm     https://github.com/permissionlessweb/wasmvm.git              v3.0.7-zk                    13443df96851d0d48ada4915470e725ae72199a8
+cosmwasm   https://github.com/permissionlessweb/cosmwasm.git            v3.1.0-zk.0                  682b1e93f83f87d348ab0891bc9b934e695aec56
+iavl/v2    github.com/permissionlessweb/iavl/v2                         feat/blake3-native-v2       e5686bb83c1c
+
+# store/v2 hasher (opt-in, not in this git tree):
+#   github.com/cosmos/cosmos-sdk/store/v2@v2.0.0 + app/iavlhash/store-v2-hasher.patch
+# Dual-store dest names: b3-bank b3-staking b3-acc. IBC stores stay SHA-256.

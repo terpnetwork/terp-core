@@ -59,7 +59,7 @@ Also missing for a honest `CommitKVStore` adapter:
 - **Snapshots / state-sync.** SDK snapshotter streams IAVL v1 `Exporter` nodes. v2 has a different snapshot format.
 - **Pruning.** `DeleteVersionsTo` posts prune signals to SQLite writers; not wired to store/v2 pruning manager / `iavl-sync-pruning`.
 - **Historical RPC.** `CacheMultiStoreWithVersion` calls `GetImmutable`.
-- **Hasher policy.** Terp v1 fork can BLAKE3/Poseidon per store. This v2 worktree is SHA-256; `feat/blake3-native-v2` is the hashing worktree and must not be assumed complete.
+- **Hasher policy.** Terp v1 fork can BLAKE3/Poseidon per store. IAVL v2 on `feat/blake3-native-v2` (`e5686bb`) adds `TreeOptions.UseBlake3` as a digest swap on `writeHashBytes`. Default remains SHA-256. `migrate/v0` still checks v2 root against v1 SHA-256 `WorkingHash`.
 - **CGO.** Backend is `github.com/bvinc/go-sqlite-lite` (CGO libsqlite3), not cosmos-db.
 
 A CommitKVStore adapter would therefore need: Tree method wrappers, ICS23 (or a new proof spec + counterparty clients), historical load, rollback, snapshot export/import, pruning, and a **rootmulti replacement** (or IAVLX-style CMS) because the bytes are not in `application.db`.
@@ -81,13 +81,7 @@ Do not equate: store/v2 ≠ IAVL v2 ≠ IAVLX.
 ## Experimental support in this repo
 
 - Package `app/iavlv2` can open a v2 `Tree` / `MultiTree` against a SQLite directory. **Nothing in `NewTerpApp` / `BaseApp` imports it.**
-- `go.mod` requires `github.com/cosmos/iavl/v2` (pseudo-version of `origin/release/v2.0.x`). Local hashing worktree (gitignored):
-
-```
-replace github.com/cosmos/iavl/v2 => ./crates/cosmos/iavl/.worktrees/blake3-native-v2
-```
-
-`crates/cosmos/iavl/.worktrees/` is gitignored. Do not land that replace on the default branch until the tree is a tracked checkout or a published commit. `feat/blake3-native-v2` currently points at the same commit as `origin/release/v2.0.x` until hashing lands.
+- `go.mod` requires `github.com/cosmos/iavl/v2`, replaced to `github.com/permissionlessweb/iavl@e5686bb` (`feat/blake3-native-v2`). Default node hash is SHA-256; `app/iavlv2.OpenTreeWithOptions(..., TreeOptions{UseBlake3: true})` selects BLAKE3-256. Not imported by `NewTerpApp`.
 
 ## Staged path (no fantasy)
 

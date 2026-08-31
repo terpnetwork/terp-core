@@ -83,7 +83,7 @@ if [ "${SKIP_ICT:-0}" != "1" ]; then
       bash -lc "/ict/ict-ci run $1"
   }
   run_ict ibc_transfer
-  if [ -f tests/interchaintest/contracts/polytone_note.wasm ]; then
+  if [ -f artifacts/polytone_note.wasm ]; then
     run_ict polytone
   fi
 else

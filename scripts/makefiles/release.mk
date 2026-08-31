@@ -260,6 +260,10 @@ release-dev: release-bundle release-s3
 # ZK libwasmvm artifact pack (checksums + version pairing)
 ###############################################################################
 
-.PHONY: wasmvm-curate
+.PHONY: wasmvm-curate curate-v61
 wasmvm-curate:
 	@./scripts/release/curate_wasmvm_artifacts.sh
+
+# Pins + patched store/v2 + wasm checksums for 120u-1 v6.1 soak (no upload).
+curate-v61:
+	@./scripts/release/curate_v61.sh
