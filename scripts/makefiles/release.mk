@@ -37,7 +37,7 @@ release-help:
 	@echo "  create-checksums         Generate build/sha256sum.txt for raw binaries only"
 	@echo "  release-prep             Create tarballs + unified sha256sum.txt (binaries + tarballs)"
 	@echo "  create-binaries-json     Generate cosmovisor-compatible binaries JSON"
-@echo "  verify-artifacts        Fetch S3 pack, checksum, load image, ict/tsh"
+	@echo "  verify-artifacts         Fetch S3 pack, checksum, load image, ict/tsh"
 	@echo "  create-upgrade-guide     Generate upgrade guide (rolling or coordinated)"
 	@echo "  release-proposal         Dry-run v6 gov proposal via cw-orch (scripts/release/.env)"
 	@echo "  upgrade-proposal         Same as release-proposal; add BROADCAST=1 to submit"

@@ -16,6 +16,7 @@ tsh-help:
 	@echo "  tsh-upgrade 		     Run sh test for upgrade proposal & performance sanity"
 	@echo "  tsh-upgrade-v61          morocco-1 snapshot/statesync in-place-testnet → v6.1 IAVL dual-store + IAVL v2 ingest"
 	@echo "  tsh-upgrade-120u-1       120u-1: stage v6.1 binary + fill proposal (no broadcast)"
+	@echo "  tsh-upgrade-zero-cv      120u-1 export --for-zero-height, 2m gov, Cosmovisor + pre-placed v6.1"
 	@echo "  tsh-upgrade-wasm 	     Run sh test: existing wasm guests survive v6 bulk_memory VM"
 	@echo "  tsh-upgrade-cv 	     Run sh test: Cosmovisor auto-swap at v6 halt"
 	@echo "  tsh-zk 			 	 Run sh test for zk-wasmvm module (rick)"
@@ -34,6 +35,8 @@ tsh-upgrade-v61:
 tsh-upgrade-blake3-iavl: tsh-upgrade-v61
 tsh-upgrade-120u-1:
 	cd tests/tsh/upgrade && sh 120u-1.sh
+tsh-upgrade-zero-cv:
+	cd tests/tsh/upgrade && sh zero-cv-v61.sh
 tsh-upgrade-wasm:
 	cd tests/tsh/upgrade && sh d.sh
 tsh-upgrade-cv:

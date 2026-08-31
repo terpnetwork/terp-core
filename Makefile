@@ -55,7 +55,7 @@ TENDERMINT_VERSION := $(shell go list -m github.com/cometbft/cometbft | sed 's:.
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 
-GO_MODULE := $(shell cat go.mod | grep "module " | cut -d ' ' -f 2)
+GO_MODULE := $(shell awk '/^module /{print $$2; exit}' go.mod)
 GO_VERSION := $(shell cat go.mod | grep -E 'go [0-9].[0-9]+' | cut -d ' ' -f 2)
 GO_MAJOR_VERSION = $(shell go version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f1)
 GO_MINOR_VERSION = $(shell go version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f2)
