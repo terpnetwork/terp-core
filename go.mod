@@ -131,6 +131,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/iavl v1.2.8 // indirect
+	github.com/cosmos/iavl/v2 v2.0.0-20240325212632-78a118484472 // experimental; unused by CommitMultiStore
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v1.0.0 // indirect
 	github.com/zondax/hid v0.9.2 // indirect
@@ -210,9 +211,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.19 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.10 // indirect
 	github.com/aws/smithy-go v1.24.3 // indirect
+	github.com/aybabtme/uniplot v0.0.0-20151203143629-039c559e5e7e // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/bgentry/speakeasy v0.2.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
+	github.com/bvinc/go-sqlite-lite v0.6.1 // indirect
 	github.com/bytedance/gopkg v0.1.4 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
@@ -248,6 +251,7 @@ require (
 	github.com/ipfs/go-cid v0.5.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
+	github.com/kocubinski/costor-api v1.1.1 // indirect
 	github.com/koron/go-ssdp v0.0.6 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -397,3 +401,8 @@ replace (
 exclude github.com/gogo/protobuf v1.3.3
 
 replace github.com/cosmos/ibc-apps/modules/ibc-hooks/v11 => ./crates/ibc-hooks-v11
+
+// IAVL v2 is a separate module (SQLite). Live CMS stays v1.
+// Local hashing worktree is gitignored (.worktrees/). Use only when that
+// checkout exists; otherwise the module cache commit (origin/release/v2.0.x):
+// replace github.com/cosmos/iavl/v2 => ./crates/cosmos/iavl/.worktrees/blake3-native-v2

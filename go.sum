@@ -136,6 +136,8 @@ github.com/aws/aws-sdk-go-v2/service/sts v1.41.10 h1:p8ogvvLugcR/zLBXTXrTkj0RYBU
 github.com/aws/aws-sdk-go-v2/service/sts v1.41.10/go.mod h1:60dv0eZJfeVXfbT1tFJinbHrDfSJ2GZl4Q//OSSNAVw=
 github.com/aws/smithy-go v1.24.3 h1:XgOAaUgx+HhVBoP4v8n6HCQoTRDhoMghKqw4LNHsDNg=
 github.com/aws/smithy-go v1.24.3/go.mod h1:YE2RhdIuDbA5E5bTdciG9KrW3+TiEONeUWCqxX9i1Fc=
+github.com/aybabtme/uniplot v0.0.0-20151203143629-039c559e5e7e h1:dSeuFcs4WAJJnswS8vXy7YY1+fdlbVPuEVmDAfqvFOQ=
+github.com/aybabtme/uniplot v0.0.0-20151203143629-039c559e5e7e/go.mod h1:uh71c5Vc3VNIplXOFXsnDy21T1BepgT32c5X/YPrOyc=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/benbjohnson/clock v1.3.5 h1:VvXlSJBzZpA/zum6Sj74hxwYI2DIxRWuNIoXAzHZz5o=
 github.com/benbjohnson/clock v1.3.5/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
@@ -154,6 +156,8 @@ github.com/btcsuite/btcd/btcec/v2 v2.3.5 h1:dpAlnAwmT1yIBm3exhT1/8iUSD98RDJM5vqJ
 github.com/btcsuite/btcd/btcec/v2 v2.3.5/go.mod h1:m22FrOAiuxl/tht9wIqAoGHcbnCCaPWyauO8y2LGGtQ=
 github.com/btcsuite/btcd/btcutil v1.1.6 h1:zFL2+c3Lb9gEgqKNzowKUPQNb8jV7v5Oaodi/AYFd6c=
 github.com/btcsuite/btcd/btcutil v1.1.6/go.mod h1:9dFymx8HpuLqBnsPELrImQeTQfKBQqzqGbbV3jK55aE=
+github.com/bvinc/go-sqlite-lite v0.6.1 h1:JU8Rz5YAOZQiU3WEulKF084wfXpytRiqD2IaW2QjPz4=
+github.com/bvinc/go-sqlite-lite v0.6.1/go.mod h1:2GiE60NUdb0aNhDdY+LXgrqAVDpi2Ijc6dB6ZMp9x6s=
 github.com/bytedance/gopkg v0.1.4 h1:oZnQwnX82KAIWb7033bEwtxvTqXcYMxDBaQxo5JJHWM=
 github.com/bytedance/gopkg v0.1.4/go.mod h1:v1zWfPm21Fb+OsyXN2VAHdL6TBb2L88anLQgdyje6R4=
 github.com/bytedance/sonic v1.15.0 h1:/PXeWFaR5ElNcVE84U0dOHjiMHQOwNIx3K4ymzh/uSE=
@@ -244,6 +248,10 @@ github.com/cosmos/gogoproto v1.7.2 h1:5G25McIraOC0mRFv9TVO139Uh3OklV2hczr13KKVHC
 github.com/cosmos/gogoproto v1.7.2/go.mod h1:8S7w53P1Y1cHwND64o0BnArT6RmdgIvsBuco6uTllsk=
 github.com/cosmos/iavl v1.2.8 h1:55F96BGUJ7KT7h+Ky/cEqS+pEvhFqsU4O8Th3F0N1js=
 github.com/cosmos/iavl v1.2.8/go.mod h1:FRHN4tO+6crf0p2zsqye+nAbsMgiwdkxpWm18DyP6+Y=
+github.com/cosmos/iavl-bench/bench v0.0.4 h1:J6zQPiBqF4CXMM3QBsLqZgQEBGY0taX85vLIZMhmAfQ=
+github.com/cosmos/iavl-bench/bench v0.0.4/go.mod h1:j2rLae77EffacWcp7mmj3Uaa4AOAmZA7ymvhsuBQKKI=
+github.com/cosmos/iavl/v2 v2.0.0-20240325212632-78a118484472 h1:Xgd548u8mmiGWCSsF4XuAsM1SAgxOeIEEQkQQYuG5Vs=
+github.com/cosmos/iavl/v2 v2.0.0-20240325212632-78a118484472/go.mod h1:GYIxUmmGaR5CdQSNzs0AJK2dXgogyc3ELCdihiaK7WM=
 github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11 v11.1.0 h1:VY3Cf+cnUtUAkt5lp3MW+WBOsJjjyNz4Icb10t7WM6k=
 github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11 v11.1.0/go.mod h1:xVfp07w1TsMtcoPyKvNzqJqqTIrqikq5nQl63JxGrc4=
 github.com/cosmos/ibc-go/v11 v11.2.0 h1:CgCJYCwf3FlA9U3IovQq/q7lfTJ0pll3GgqWAwWO0wY=
@@ -585,6 +593,8 @@ github.com/klauspost/compress v1.19.1 h1:VsB4HPswih7mmZ8WleSFQ75c/Ui1M4trX5oAsJn
 github.com/klauspost/compress v1.19.1/go.mod h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=
 github.com/klauspost/cpuid/v2 v2.3.0 h1:S4CRMLnYUhGeDFDqkGriYKdfoFlDnMtqTiI/sFzhA9Y=
 github.com/klauspost/cpuid/v2 v2.3.0/go.mod h1:hqwkgyIinND0mEev00jJYCxPNVRVXFQeu1XKlok6oO0=
+github.com/kocubinski/costor-api v1.1.1 h1:sgfJA7T/8IfZ59zxiMrED0xdjerAFuPNBTqyO90GiEE=
+github.com/kocubinski/costor-api v1.1.1/go.mod h1:ESMBMDkKfN+9vvvhhNVdKLhbOmzI3O/i16iXvRM9Tuc=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/koron/go-ssdp v0.0.6 h1:Jb0h04599eq/CY7rB5YEqPS83HmRfHP2azkxMN2rFtU=
