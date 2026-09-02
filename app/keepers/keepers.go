@@ -76,10 +76,6 @@ import (
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
-	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	paramproposal "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
@@ -115,20 +111,21 @@ var (
 
 // module account permissions
 var maccPerms = map[string][]string{
-	authtypes.FeeCollectorName:     nil,
-	distrtypes.ModuleName:          nil,
-	minttypes.ModuleName:           {authtypes.Minter},
-	stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
-	stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
-	govtypes.ModuleName:            {authtypes.Burner},
-	ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
-	icatypes.ModuleName:            nil,
-	globalfee.ModuleName:           nil,
-	wasmtypes.ModuleName:           {authtypes.Burner},
-	wasmtypes.CircuitValPoolName:   nil,
-	wasmtypes.CircuitDevPoolName:   {authtypes.Staking},
-	tokenfactorytypes.ModuleName:   {authtypes.Minter, authtypes.Burner},
-	hashmerchanttypes.ModuleName:   nil,
+	authtypes.FeeCollectorName:          nil,
+	distrtypes.ModuleName:               nil,
+	minttypes.ModuleName:                {authtypes.Minter},
+	stakingtypes.BondedPoolName:         {authtypes.Burner, authtypes.Staking},
+	stakingtypes.NotBondedPoolName:      {authtypes.Burner, authtypes.Staking},
+	govtypes.ModuleName:                 {authtypes.Burner},
+	ibctransfertypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
+	icatypes.ModuleName:                 nil,
+	globalfee.ModuleName:                nil,
+	wasmtypes.ModuleName:                {authtypes.Burner},
+	wasmtypes.CircuitValPoolName:        nil,
+	wasmtypes.CircuitDevPoolName:        {authtypes.Staking},
+	tokenfactorytypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
+	hashmerchanttypes.ModuleName:        nil,
+	stakingtypes.KeyRotationFeePoolName: {authtypes.Burner},
 }
 
 type AppKeepers struct {
@@ -149,7 +146,6 @@ type AppKeepers struct {
 	GovKeeper             *govkeeper.Keeper
 	CrisisKeeper          *crisiskeeper.Keeper
 	UpgradeKeeper         *upgradekeeper.Keeper
-	ParamsKeeper          paramskeeper.Keeper
 	EvidenceKeeper        *evidencekeeper.Keeper
 	FeeGrantKeeper        *feegrantkeeper.Keeper
 	ConsensusParamsKeeper *consensusparamkeeper.Keeper
@@ -195,14 +191,6 @@ func NewAppKeepers(
 	// Set keys KVStoreKey, TransientStoreKey, MemoryStoreKey
 	appKeepers.GenerateKeys()
 	keys := appKeepers.GetKVStoreKey()
-	tkeys := appKeepers.GetTransientStoreKey()
-
-	appKeepers.ParamsKeeper = initParamsKeeper(
-		appCodec,
-		cdc,
-		keys[paramstypes.StoreKey],
-		tkeys[paramstypes.TStoreKey],
-	)
 
 	govModAddress := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
@@ -278,7 +266,7 @@ func NewAppKeepers(
 	smartAccountKeeper := smartaccountkeeper.NewKeeper(
 		appCodec,
 		appKeepers.keys[smartaccounttypes.StoreKey],
-		authtypes.NewModuleAddress(govtypes.ModuleName), appKeepers.GetSubspace(smartaccounttypes.ModuleName),
+		authtypes.NewModuleAddress(govtypes.ModuleName),
 		appKeepers.AuthenticatorManager,
 		*appKeepers.FeeGrantKeeper,
 	)
@@ -352,8 +340,7 @@ func NewAppKeepers(
 
 	// Register the proposal types
 	govRouter := govv1beta1.NewRouter()
-	govRouter.AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler).
-		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(appKeepers.ParamsKeeper))
+	govRouter.AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler)
 
 	govConfig := govtypes.DefaultConfig()
 
@@ -453,7 +440,6 @@ func NewAppKeepers(
 
 	tfKeeper := tokenfactorykeeper.NewKeeper(
 		appKeepers.keys[tokenfactorytypes.StoreKey],
-		appKeepers.GetSubspace(tokenfactorytypes.ModuleName),
 		maccPerms,
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
@@ -631,41 +617,6 @@ func NewAppKeepers(
 	appKeepers.IBCKeeper.SetRouterV2(ibcRouterV2)
 
 	return appKeepers
-}
-
-// initParamsKeeper init params keeper and its subspaces
-func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino, key, tkey storetypes.StoreKey) paramskeeper.Keeper {
-	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
-
-	paramsKeeper.Subspace(authtypes.ModuleName)
-	paramsKeeper.Subspace(banktypes.ModuleName)
-	paramsKeeper.Subspace(stakingtypes.ModuleName) // Used for GlobalFee
-	paramsKeeper.Subspace(minttypes.ModuleName)
-	paramsKeeper.Subspace(distrtypes.ModuleName)
-	paramsKeeper.Subspace(slashingtypes.ModuleName)
-	paramsKeeper.Subspace(govtypes.ModuleName)
-	paramsKeeper.Subspace(crisistypes.ModuleName)
-	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
-	paramsKeeper.Subspace(ibcexported.ModuleName)
-	paramsKeeper.Subspace(tokenfactorytypes.ModuleName).WithKeyTable(tokenfactorytypes.ParamKeyTable())
-	paramsKeeper.Subspace(icahosttypes.SubModuleName)
-	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
-	paramsKeeper.Subspace(packetforwardtypes.ModuleName)
-	paramsKeeper.Subspace(globalfee.ModuleName)
-	paramsKeeper.Subspace(ibchookstypes.ModuleName)
-	paramsKeeper.Subspace(feesharetypes.ModuleName).WithKeyTable(feesharetypes.ParamKeyTable())
-	paramsKeeper.Subspace(smartaccounttypes.ModuleName).WithKeyTable(smartaccounttypes.ParamKeyTable())
-	paramsKeeper.Subspace(wasmtypes.ModuleName)
-
-	return paramsKeeper
-}
-
-// GetSubspace returns a param subspace for a given module name.
-//
-// NOTE: This is solely to be used for testing purposes.
-func (app *AppKeepers) GetSubspace(moduleName string) paramstypes.Subspace {
-	subspace, _ := app.ParamsKeeper.GetSubspace(moduleName)
-	return subspace
 }
 
 // GetStakingKeeper implements the TestingApp interface.

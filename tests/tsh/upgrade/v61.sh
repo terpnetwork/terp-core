@@ -2,24 +2,25 @@
 ####################################################################
 # TSH: morocco-1 snapshot → in-place testnet → v6.1 IAVL dual-store
 #
-# OLD_BIND (mainnet, no v6.1 handler) loads packed appstate or statesync,
-# produces blocks until UPGRADE NEEDED, then NEW_BIND (this tree) applies
-# v6.1: copies bank/staking/acc into b3-* IAVL trees. IBC stays SHA-256.
+# OLD_BIND is terpd-v6 (post-v6 binary). The tar is data/ + wasm/ only;
+# genesis is fetched separately (GENESIS_URL). Default SNAPSHOT_URL is
+# snapshot.json latest. Do not use 5.2.0 (dies: expected 22911849 got 0).
+# Do not use pruned 22807932 or archive 22749033 (pre-v6).
 #
-# Then exercises IAVL v2 ingest (off CMS) via iavl-v2.sh.
-#
-#   STATE_SYNC=0  unpack SNAPSHOT_PATH or SNAPSHOT_URL (default: minio pruned latest)
-#   STATE_SYNC=1  short statesync from live RPC then isolate
+# After halt, NEW_BIND (this tree) applies plan v6.1, then query-all-params
+# and iavl-v2 ingest.
 #
 #   make tsh-upgrade-v61
-#   STATE_SYNC=0 SNAPSHOT_PATH=/path/to/pruned.tar.lz4 sh v61.sh
+#   STATE_SYNC=0 sh tests/tsh/upgrade/v61.sh
+#   STATE_SYNC=0 SNAPSHOT_URL='https://minio.terp.network/snapshots/mainnet/morocco-1/pruned/morocco-1_22911849_2026-09-02T03-49-50Z.tar.lz4' \
+#     sh tests/tsh/upgrade/v61.sh
 ####################################################################
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 export UPGRADE_VERSION="${UPGRADE_VERSION:-v6.1}"
 export STATE_SYNC="${STATE_SYNC:-0}"
-export OLD_BIND="${OLD_BIND:-terp-mainnet}"
+export OLD_BIND="${OLD_BIND:-terpd-v6}"
 export NEW_BIND="${NEW_BIND:-terpd}"
 export CHAINID="${CHAINID:-test-1}"
 export NEW_RELEASE_PATH="${NEW_RELEASE_PATH:-../../../}"
@@ -28,6 +29,17 @@ export SNAPSHOT_INDEX="${SNAPSHOT_INDEX:-https://minio.terp.network/snapshots/ma
 export OLD_LOG="${OLD_LOG:-/tmp/tsh-v61-old.log}"
 export NEW_LOG="${NEW_LOG:-/tmp/tsh-v61-new.log}"
 export POST_BLOCKS="${POST_BLOCKS:-3}"
+
+if ! command -v "$OLD_BIND" >/dev/null; then
+  echo "OLD_BIND=$OLD_BIND not on PATH. Install the v6 terpd as terpd-v6 (post-v6 snapshot). Do not use 5.2.0."
+  exit 1
+fi
+_oldver="$("$OLD_BIND" version 2>/dev/null | head -1 || true)"
+if echo "$_oldver" | grep -qE '^5\.'; then
+  echo "OLD_BIND=$OLD_BIND is $_oldver — v6.1 TSH must start from the v6 binary, not 5.x"
+  exit 1
+fi
+echo "v61: OLD_BIND=$OLD_BIND (${_oldver:-v6 pack, version string empty})"
 
 if [ -z "${SNAPSHOT_PATH:-}" ] && [ -z "${SNAPSHOT_URL:-}" ] && [ "$STATE_SYNC" = "0" ]; then
   echo "resolving pruned snapshot from $SNAPSHOT_INDEX"
@@ -59,6 +71,11 @@ if grep -q "refusing to rehash IBC-facing store" "$NEW_LOG"; then
   exit 1
 fi
 echo "v6.1 TSH ok (applied=$UPGRADE_VERSION)"
+
+echo "v6.1: querying every module params after migration"
+# a.sh leaves NEW_BIND running and exports VAL1HOME / ports.
+# shellcheck disable=SC1091
+source "$ROOT/query-all-params.sh"
 
 # IAVL v2 ingest (not CMS). Uses snapshot/statesync home when present.
 export VAL1HOME="${VAL1HOME:-}"

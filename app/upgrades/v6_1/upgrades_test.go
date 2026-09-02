@@ -16,9 +16,14 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/std"
+
 	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/keepers"
 	"github.com/terpnetwork/terp-core/v6/app/testutils"
 	v61 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_1"
+	tokenfactorytypes "github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
 )
 
 const v61UpgradeHeight = int64(5)
@@ -108,6 +113,41 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 
 	s.Require().Nil(s.App.GetKey("b3-ibc"), "no IBC dest tree")
 	s.Require().NotNil(s.commitStore(ibcexported.StoreKey), "IBC IAVL store still mounted")
+}
+
+func (s *UpgradeTestSuite) TestLegacySubspaceCopiedIntoModuleStore() {
+	s.SetupTest()
+	s.Require().NotNil(s.App.GetKey(keepers.LegacyParamsStoreKey), "params store must stay mounted for the copy")
+
+	tfKey := s.App.GetKey(tokenfactorytypes.StoreKey)
+	s.Ctx.KVStore(tfKey).Delete(tokenfactorytypes.ParamsKey)
+
+	amino := codec.NewLegacyAmino()
+	std.RegisterLegacyAminoCodec(amino)
+	want := sdk.NewCoins(sdk.NewInt64Coin("uterp", 42))
+	bz, err := amino.MarshalJSON(want)
+	s.Require().NoError(err)
+	gas := uint64(7)
+	gbz, err := amino.MarshalJSON(gas)
+	s.Require().NoError(err)
+
+	ps := s.Ctx.KVStore(s.App.GetKey(keepers.LegacyParamsStoreKey))
+	ps.Set(append([]byte("tokenfactory/"), tokenfactorytypes.KeyDenomCreationFee...), bz)
+	ps.Set(append([]byte("tokenfactory/"), tokenfactorytypes.KeyDenomCreationGasConsume...), gbz)
+
+	s.scheduleUpgrade()
+	s.Require().NotPanics(func() {
+		_, err := s.preModule.PreBlock(s.Ctx)
+		s.Require().NoError(err)
+	})
+
+	got := s.App.TokenFactoryKeeper.GetParams(s.Ctx)
+	s.Require().True(want.Equal(got.DenomCreationFee), "subspace fee must win over defaults: got %s", got.DenomCreationFee)
+	s.Require().Equal(uint64(7), got.DenomCreationGasConsume)
+
+	it := s.Ctx.KVStore(s.App.GetKey(keepers.LegacyParamsStoreKey)).Iterator(nil, nil)
+	defer it.Close()
+	s.Require().False(it.Valid(), "legacy params keys must be wiped after copy")
 }
 
 func (s *UpgradeTestSuite) scheduleUpgrade() {

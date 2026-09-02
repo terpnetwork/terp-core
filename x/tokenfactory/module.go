@@ -26,7 +26,6 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
 	"github.com/terpnetwork/terp-core/v6/x/tokenfactory/client/cli"
-	"github.com/terpnetwork/terp-core/v6/x/tokenfactory/exported"
 	"github.com/terpnetwork/terp-core/v6/x/tokenfactory/keeper"
 	simulation "github.com/terpnetwork/terp-core/v6/x/tokenfactory/simulation"
 	"github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
@@ -117,24 +116,18 @@ type AppModule struct {
 	keeper        *keeper.Keeper
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
-
-	legacySubspace exported.Subspace
 }
 
 func NewAppModule(
 	keeper *keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
-
-	// legacySubspace is used solely for migration of x/params managed parameters
-	legacySubspace exported.Subspace,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(),
 		keeper:         keeper,
 		accountKeeper:  accountKeeper,
 		bankKeeper:     bankKeeper,
-		legacySubspace: legacySubspace,
 	}
 }
 

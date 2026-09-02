@@ -5,13 +5,12 @@ import (
 	"strconv"
 
 	"cosmossdk.io/log/v2"
-	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
-	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
 	gogotypes "github.com/cosmos/gogoproto/types"
 
 	errorsmod "cosmossdk.io/errors"
@@ -28,7 +27,6 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 type Keeper struct {
 	storeKey                storetypes.StoreKey
 	cdc                     codec.BinaryCodec
-	paramSpace              paramtypes.Subspace
 	CircuitBreakerGovernor  sdk.AccAddress
 	isSmartAccountActiveBz  []byte
 	isSmartAccountActiveVal bool
@@ -41,20 +39,18 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	StoreKey storetypes.StoreKey,
 	govModuleAddr sdk.AccAddress,
-	ps paramtypes.Subspace,
 	authenticatorManager *authenticator.AuthenticatorManager,
 	feegrantKeeper feegrantkeeper.Keeper,
 ) Keeper {
-	// set KeyTable if it has not already been set
-	if !ps.HasKeyTable() {
-		ps = ps.WithKeyTable(types.ParamKeyTable())
-	}
+	// // set KeyTable if it has not already been set
+	// if !ps.HasKeyTable() {
+	// 	ps = ps.WithKeyTable(types.ParamKeyTable())
+	// }
 
 	return Keeper{
 		storeKey:               StoreKey,
 		cdc:                    cdc,
 		CircuitBreakerGovernor: govModuleAddr,
-		paramSpace:             ps,
 		AuthenticatorManager:   authenticatorManager,
 		FeegrantKeeper:         feegrantKeeper,
 	}

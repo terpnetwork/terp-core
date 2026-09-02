@@ -20,5 +20,11 @@ var Upgrade = upgrades.Upgrade{
 			iavlhash.StakingB3,
 			iavlhash.AuthB3,
 		},
+		Deleted: []string{
+			// x/params stays mounted for this upgrade so the handler can copy
+			// leftover subspace values. Keys are wiped in the handler.
+			// Unmount in a later upgrade.
+			"protocolpool",
+		},
 	},
 }

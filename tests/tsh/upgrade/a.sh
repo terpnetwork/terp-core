@@ -8,7 +8,7 @@
 #   3. NEW_BIND (this tree, v6 handler) starts on the same home
 #   4. Require applied v6 and heights after the halt
 #
-#   OLD_BIND        default terp-mainnet  (v5.2.0)
+#   OLD_BIND        default terp-mainnet for plan v6; v61.sh overrides to terpd-v6
 #   NEW_BIND        default terpd         (make install of this tree)
 #   STATE_SYNC=0    use SNAPSHOT_PATH (packed appstate)
 #   STATE_SYNC=1    short-lived statesync on OLD_BIND, then isolate
@@ -97,7 +97,7 @@ isolate_p2p() {
   sed -i.bak "/^\[grpc\]/,/^\[/ s/address.*/address = \"localhost:$VAL1_GRPC_PORT\"/" "$VAL1HOME/config/app.toml" || true
 }
 
-command -v "$OLD_BIND" >/dev/null || { echo "$OLD_BIND not on PATH (install mainnet as terp-mainnet)"; exit 1; }
+command -v "$OLD_BIND" >/dev/null || { echo "$OLD_BIND not on PATH (v6.1: install v6 as terpd-v6)"; exit 1; }
 echo "A: OLD_BIND=$OLD_BIND ($("$OLD_BIND" version 2>/dev/null | head -1))"
 echo "A: make install NEW_BIND=$NEW_BIND from current tree"
 ( cd "$NEW_RELEASE_PATH" && make install )

@@ -1,18 +1,14 @@
 package exported
 
-import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-)
+import sdk "github.com/cosmos/cosmos-sdk/types"
 
-type (
-	ParamSet = paramtypes.ParamSet
+// ParamSet is the leftover x/params surface used only by the 1→2 migrator.
+type ParamSet interface {
+	Validate() error
+}
 
-	// Subspace defines an interface that implements the legacy x/params Subspace
-	// type.
-	//
-	// NOTE: This is used solely for migration of x/params managed parameters.
-	Subspace interface {
-		GetParamSet(ctx sdk.Context, ps ParamSet)
-	}
-)
+// Subspace is the leftover x/params Subspace used only by the 1→2 migrator.
+// Pass nil on SDK 0.55 (params already live in the feeshare store).
+type Subspace interface {
+	GetParamSet(ctx sdk.Context, ps ParamSet)
+}

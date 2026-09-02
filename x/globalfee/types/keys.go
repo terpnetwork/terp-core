@@ -1,6 +1,11 @@
 package types
 
-var ParamsKey = []byte{0x00}
+var (
+	ParamsKey = []byte{0x00}
+
+	// ParamStoreKeyMinGasPrices is the legacy x/params key for MinimumGasPrices.
+	ParamStoreKeyMinGasPrices = []byte("MinimumGasPricesParam")
+)
 
 const (
 	// ModuleName is the name of the this module

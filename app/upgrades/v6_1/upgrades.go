@@ -28,8 +28,12 @@ func CreateUpgradeHandler(
 	return func(goCtx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		ctx := sdk.UnwrapSDKContext(goCtx)
 		logger := ctx.Logger().With("upgrade", UpgradeName)
-		logger.Info("v6.1: running module migrations first")
+		logger.Info("v6.1: copying leftover x/params subspace values into module stores")
+		if err := migrateLegacyParams(ctx, keepers); err != nil {
+			return nil, err
+		}
 
+		logger.Info("v6.1: running module migrations (SDK 0.55 / CometBFT 0.40)")
 		migrations, err := mm.RunMigrations(ctx, configurator, vm)
 		if err != nil {
 			return nil, err

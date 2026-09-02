@@ -5,6 +5,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/v6/x/feeshare/exported"
 	v2 "github.com/terpnetwork/terp-core/v6/x/feeshare/migrations/v2"
+	"github.com/terpnetwork/terp-core/v6/x/feeshare/types"
 )
 
 // Migrator is a struct for handling in-place state migrations.
@@ -25,5 +26,11 @@ func NewMigrator(k *Keeper, ss exported.Subspace) Migrator {
 // and managed by the x/params modules and stores them directly into the x/feeshare
 // module state.
 func (m Migrator) Migrate1to2(ctx sdk.Context) error {
+	if m.legacySubspace == nil {
+		if bz := ctx.KVStore(m.keeper.storeKey).Get(types.ParamsKey); len(bz) == 0 {
+			return m.keeper.SetParams(ctx, types.DefaultParams())
+		}
+		return nil
+	}
 	return v2.Migrate(ctx, ctx.KVStore(m.keeper.storeKey), m.legacySubspace, m.keeper.cdc)
 }
