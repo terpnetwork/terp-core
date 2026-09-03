@@ -29,7 +29,7 @@ _HOST_ARCH := $(shell uname -m | sed 's/arm64/aarch64/; s/x86_64/x86_64/')
 
 # Dev / testnet ZK release tag (see scripts/release/README.md)
 RELEASE_TAG ?= v5.3.0-dev
-IMAGE_REPO ?= ghcr.io/terpnetwork/terp-core
+IMAGE_REPO ?= registry.terp.network/terp-core
 LOCAL_REPO ?= terpnetwork/terp-core
 
 docker-help:
