@@ -71,18 +71,23 @@ _docker-stage-all-libs:
 	@rm -f build/wasmvm/libwasmvm_muslc.*.a
 	@src="$(ZK_WASMVM_DIR)/internal/api"; \
 	if [ ! -d "$$src" ]; then echo "ERROR: missing $$src"; exit 1; fi; \
-	cp -f $$src/libwasmvm_muslc.aarch64.a $$src/libwasmvm_muslc.x86_64.a build/wasmvm/ 2>/dev/null || true; \
+	host="$$(uname -m | sed 's/arm64/aarch64/')"; \
 	n=0; \
-	for f in build/wasmvm/libwasmvm_muslc.aarch64.a build/wasmvm/libwasmvm_muslc.x86_64.a; do \
-	  [ -f "$$f" ] || continue; \
-	  n=$$((n+1)); \
-	  if ! grep -a -q -F verify_stwo_host_proof "$$f"; then \
-	    echo "ERROR: $$f has no verify_stwo_host_proof — rebuild muslc (make -C crates/zk-wasmvm release-build-alpine-custom) then restage. Do not use August artifacts/ or github muslc against current Go bindings."; \
-	    exit 1; \
+	for arch in aarch64 x86_64; do \
+	  srcf="$$src/libwasmvm_muslc.$$arch.a"; \
+	  [ -f "$$srcf" ] || continue; \
+	  if ! grep -a -q -F verify_stwo_host_proof "$$srcf"; then \
+	    echo "ERROR: $$srcf has no verify_stwo_host_proof (stale muslc vs Go bindings). Do not copy artifacts/. Rebuild that arch (nightly/STWO muslc), not release-build-alpine on stable 1.88."; \
+	    if [ "$$arch" = "$$host" ]; then exit 1; fi; \
+	    echo "skipping $$arch (not host $$host)"; \
+	    continue; \
 	  fi; \
-	  echo "ok STWO $$(basename $$f) $$(ls -lh $$f | awk '{print $$5}')"; \
+	  cp -f "$$srcf" build/wasmvm/; \
+	  n=$$((n+1)); \
+	  echo "ok STWO libwasmvm_muslc.$$arch.a $$(ls -lh $$srcf | awk '{print $$5}')"; \
 	done; \
-	if [ "$$n" = 0 ]; then echo "ERROR: no libwasmvm_muslc.*.a in $$src"; exit 1; fi
+	if [ "$$n" = 0 ]; then echo "ERROR: no STWO muslc in $$src for this host"; exit 1; fi; \
+	if [ ! -f "build/wasmvm/libwasmvm_muslc.$$host.a" ]; then echo "ERROR: host muslc libwasmvm_muslc.$$host.a missing STWO"; exit 1; fi
 	@echo "Staged libs:"
 	@ls -lh build/wasmvm/
 
