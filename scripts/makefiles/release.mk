@@ -46,6 +46,7 @@ release-help:
 	@echo "  release-bundle           Deterministic source.tar.gz + manifest.json"
 	@echo "  release-s3               Upload to releases/\$$PROJECT/\$$TAG/ (MINIO_ALIAS=$(MINIO_ALIAS))"
 	@echo "  wasmvm-curate            Pack libwasmvm artifacts + SHA256SUMS + VERSIONS.txt"
+	@echo "  preflight-upgrade       Gate Cosmovisor plan + local tarballs + ZK muslc (no upload)"
 	@echo "  release-dev              bundle + s3 for RELEASE_TAG (default $(RELEASE_TAG))"
 	@echo "  docker-publish-dev       (docker.mk) ZK image tagged RELEASE_TAG"
 	@echo "  docker-push-dev          (docker.mk) push IMAGE_REPO:RELEASE_TAG"
@@ -159,14 +160,16 @@ create-checksums:
 	@echo "Checksums written to $(BUILDDIR)/sha256sum.txt"
 
 release-prep:
-	@./scripts/release/prep.sh $(if $(RELEASE_TAG),$(patsubst v%,%,$(RELEASE_TAG)))
+	@ALLOW_PARTIAL=$(or $(ALLOW_PARTIAL),0) PLAN=$(PLAN) TAG=$(or $(RELEASE_TAG),) \
+		./scripts/release/prep.sh $(if $(RELEASE_TAG),$(patsubst v%,%,$(RELEASE_TAG)))
 
 ###############################################################################
 # Binaries JSON (cosmovisor-compatible)
 ###############################################################################
 
 verify-artifacts:
-	@RELEASE_TAG=$(or $(RELEASE_TAG),v6.0.0) bash scripts/release/verify_artifacts.sh
+	@RELEASE_TAG=$(or $(RELEASE_TAG),v6.0.0) LOCAL=$(or $(LOCAL),0) PLAN=$(or $(PLAN),v6.1) \
+		bash scripts/release/verify_artifacts.sh
 
 create-binaries-json:
 ifndef RELEASE_TAG
@@ -260,10 +263,17 @@ release-dev: release-bundle release-s3
 # ZK libwasmvm artifact pack (checksums + version pairing)
 ###############################################################################
 
-.PHONY: wasmvm-curate curate-v61
+.PHONY: wasmvm-curate curate-v61 preflight-upgrade
 wasmvm-curate:
 	@./scripts/release/curate_wasmvm_artifacts.sh
 
 # Pins + patched store/v2 + wasm checksums for 120u-1 v6.1 soak (no upload).
 curate-v61:
 	@./scripts/release/curate_v61.sh
+
+# Local Cosmovisor / static-asset gate. WRITE=1 rewrites networks/upgrades/PLAN/cosmovisor.json
+# from checksummed tarballs (never file://). Does not upload.
+preflight-upgrade:
+	@PLAN=$(or $(PLAN),v6.1) TAG=$(or $(RELEASE_TAG),v6.1.0-dev) WRITE=$(or $(WRITE),0) \
+		ALLOW_PARTIAL=$(or $(ALLOW_PARTIAL),1) \
+		bash scripts/release/preflight_upgrade.sh

@@ -43,7 +43,8 @@ LOCAL_CHECKSUMS_PATH = "build/sha256sum.txt"
 
 
 def validate_tag(tag):
-    pattern = r'^v[0-9]+\.[0-9]+\.[0-9]+$'
+    # vX.Y.Z plus optional prerelease (v6.1.0-dev)
+    pattern = r'^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$'
     return bool(re.match(pattern, tag))
 
 
@@ -78,65 +79,78 @@ def get_checksums(tag=None, checksums_url=None):
     return download_checksums(s3_url)
 
 
-def checksums_to_binaries_json(checksums, tag):
+TARBALL_RE = re.compile(
+    r"^terpd-(.+)-(linux|darwin|windows)-(amd64|arm64)(?:-cv)?\.tar\.gz$"
+)
+
+
+def checksums_to_binaries_json(checksums, tag, base_url=None):
     binaries = {}
+    base_url = (base_url or f"https://s3.terp.network/releases/terp-core/{tag}").rstrip("/")
 
     for line in checksums.splitlines():
         line = line.strip()
         if not line:
             continue
 
-        parts = line.split('  ', 1)
+        parts = line.split("  ", 1)
         if len(parts) != 2:
             continue
         checksum, filename = parts
+        filename = os.path.basename(filename)
 
         # Only process versioned tarballs — these are what get uploaded to s3.terp.network
-        if not filename.endswith('.tar.gz') or not filename.startswith('terpd-'):
+        if not filename.endswith(".tar.gz") or not filename.startswith("terpd-"):
             continue
 
-        # Strip extension and parse: terpd-VERSION-PLATFORM-ARCH
-        base = filename[:-len('.tar.gz')]
-        segments = base.split('-')
-        if len(segments) != 4:
+        m = TARBALL_RE.match(filename)
+        if not m:
             print(f"Warning: skipping unexpected filename format: {filename}", file=sys.stderr)
             continue
 
-        _, version, platform, arch = segments
-
-        if arch == 'all' or platform == 'windows':
+        _version, platform, arch = m.group(1), m.group(2), m.group(3)
+        if arch == "all" or platform == "windows":
             continue
 
-        url = (
-            f"https://s3.terp.network/releases/terp-core/{tag}"
-            f"/{filename}?checksum=sha256:{checksum}"
-        )
+        url = f"{base_url}/{filename}?checksum=sha256:{checksum}"
         binaries[f"{platform}/{arch}"] = url
 
     if not binaries:
         print("Error: no matching tarball entries found in checksums file.", file=sys.stderr)
         sys.exit(1)
 
-    return json.dumps({"binaries": binaries}, indent=2)
+    return json.dumps({"binaries": binaries}, indent=2) + "\n"
 
 
 def main():
     parser = argparse.ArgumentParser(description="Generate cosmovisor-compatible binaries JSON")
-    parser.add_argument('--tag', type=str, help='Release tag (e.g. v5.1.0)')
+    parser.add_argument('--tag', type=str, help='Release tag (e.g. v5.1.0 or v6.1.0-dev)')
     parser.add_argument('--checksums_url', type=str, help='Direct URL to sha256sum.txt')
+    parser.add_argument('--checksums_file', type=str, help='Local sha256sum.txt (overrides build/sha256sum.txt)')
+    parser.add_argument('--base-url', type=str, dest='base_url', help='Prefix for tarball URLs')
+    parser.add_argument('--out', type=str, help='Write JSON to this path instead of stdout')
     args = parser.parse_args()
 
     if args.tag and not validate_tag(args.tag):
-        print("Error: tag must follow the 'vX.Y.Z' format.")
+        print("Error: tag must follow 'vX.Y.Z' or 'vX.Y.Z-prerelease'.")
         sys.exit(1)
 
-    if not bool(args.tag) ^ bool(args.checksums_url):
+    sources = [bool(args.tag), bool(args.checksums_url)]
+    if sum(sources) != 1:
         parser.error("Specify exactly one of --tag or --checksums_url")
 
     tag = args.tag
-    checksums = get_checksums(tag=tag, checksums_url=args.checksums_url)
-    binaries_json = checksums_to_binaries_json(checksums, tag)
-    print(binaries_json)
+    if args.checksums_file:
+        checksums = read_local_checksums(args.checksums_file)
+    else:
+        checksums = get_checksums(tag=tag, checksums_url=args.checksums_url)
+    binaries_json = checksums_to_binaries_json(checksums, tag, base_url=args.base_url)
+    if args.out:
+        with open(args.out, "w") as f:
+            f.write(binaries_json)
+        print(f"wrote {args.out}", file=sys.stderr)
+    else:
+        print(binaries_json, end="")
 
 
 if __name__ == "__main__":

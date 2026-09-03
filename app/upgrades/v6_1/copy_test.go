@@ -76,10 +76,12 @@ func TestCopyKVStoreCommitHashesSoundAndUnsound(t *testing.T) {
 }
 
 func TestRefuseIBCRehashPolicy(t *testing.T) {
-	for _, name := range []string{"ibc", "transfer", "icahost", "icacontroller"} {
+	for _, name := range []string{"ibc", "transfer", "icahost", "icacontroller", "08-wasm"} {
 		require.Equal(t, "sha256", iavlhash.AlgorithmName(name), name)
 	}
 	for _, p := range iavlhash.DualStorePairs() {
 		require.NotEqual(t, "sha256", iavlhash.AlgorithmName(p[0]), p[0])
+		require.NotEqual(t, "08-wasm", p[0])
+		require.NotEqual(t, "params", p[0])
 	}
 }

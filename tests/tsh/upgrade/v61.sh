@@ -7,8 +7,8 @@
 # snapshot.json latest. Do not use 5.2.0 (dies: expected 22911849 got 0).
 # Do not use pruned 22807932 or archive 22749033 (pre-v6).
 #
-# After halt, NEW_BIND (this tree) applies plan v6.1, then query-all-params
-# and iavl-v2 ingest.
+# After halt, NEW_BIND (this tree) applies plan v6.1. Optional CHAIN_V62=1
+# then halts this binary on plan v6.2 and starts V62_BIND (feat/6.2.0-dev).
 #
 #   make tsh-upgrade-v61
 #   STATE_SYNC=0 sh tests/tsh/upgrade/v61.sh
@@ -71,6 +71,12 @@ if grep -q "refusing to rehash IBC-facing store" "$NEW_LOG"; then
   exit 1
 fi
 echo "v6.1 TSH ok (applied=$UPGRADE_VERSION)"
+
+# Upgrade B is a different binary (feat/6.2.0-dev worktree). This checkout
+# must not register plan v6.2.
+export VAL1ADDR VAL1HOME VAL1_RPC_PORT CHAINID NEW_PID NEW_BIND OLD_LOG
+# shellcheck disable=SC1091
+source "$ROOT/chain-v62.sh"
 
 echo "v6.1: querying every module params after migration"
 # a.sh leaves NEW_BIND running and exports VAL1HOME / ports.

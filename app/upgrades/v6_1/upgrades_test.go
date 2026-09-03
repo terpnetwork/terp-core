@@ -81,23 +81,37 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 		s.Require().NoError(err)
 	})
 
+	// Dest is a KV snapshot of src at handler copy (after RunMigrations, before EndBlocker).
+	for _, sn := range snaps {
+		got := s.dumpStore(sn.dst)
+		live := s.dumpStore(sn.src)
+		s.Require().Equal(len(live), len(got), "%s: dest key count vs src after handler", sn.name)
+		for k, v := range live {
+			s.Require().Equal(v, got[k], "%s: dest missing or mismatch key %q", sn.name, k)
+		}
+	}
+
+	_, err := s.App.EndBlocker(s.Ctx)
+	s.Require().NoError(err)
+
 	// Handler writes go to the block cache. Flush so IAVL WorkingHash sees new nodes.
 	if cms, ok := s.Ctx.MultiStore().(storetypes.CacheMultiStore); ok {
 		cms.Write()
 	}
 
-	_, err := s.App.UpgradeKeeper.GetUpgradePlan(s.Ctx)
-	s.Require().Error(err, "upgrade plan should be cleared after v6.1 runs")
+	armed, err := s.App.UpgradeKeeper.GetUpgradePlan(s.Ctx)
+	s.Require().NoError(err, "v6.1 EndBlocker arms v6.2 two blocks later")
+	s.Require().Equal("v6.2", armed.Name)
+	s.Require().Equal(v61UpgradeHeight+2, armed.Height)
 
 	for _, sn := range snaps {
-		got := s.dumpStore(sn.dst)
-		s.Require().Equal(len(sn.keys), len(got), "%s: dest key count", sn.name)
-		for k, v := range sn.keys {
-			s.Require().Equal(v, got[k], "%s: dest missing or mismatch key %q", sn.name, k)
-		}
-
 		dstWorking := s.commitStore(sn.dst).WorkingHash()
 		s.Require().Len(dstWorking, 32, "%s: dest IAVL working hash", sn.name)
+		if len(sn.keys) == 0 {
+			s.Require().NotEqual("ibc", sn.src)
+			s.Require().NotEqual("ibc", sn.dst)
+			continue
+		}
 		s.Require().False(bytes.Equal(dstWorking, sn.dstHash),
 			"%s: dest working hash must change as inner nodes are rebuilt", sn.name)
 
@@ -112,7 +126,9 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 	}
 
 	s.Require().Nil(s.App.GetKey("b3-ibc"), "no IBC dest tree")
+	s.Require().Nil(s.App.GetKey("b3-08-wasm"), "no 08-wasm dest tree")
 	s.Require().NotNil(s.commitStore(ibcexported.StoreKey), "IBC IAVL store still mounted")
+	s.Require().Equal(len(iavlhash.DualStorePairs()), len(snaps))
 }
 
 func (s *UpgradeTestSuite) TestLegacySubspaceCopiedIntoModuleStore() {

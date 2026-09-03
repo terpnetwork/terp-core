@@ -5,8 +5,8 @@
 # Default: measure height, write proposal JSON, stage NEW binary,
 # print the tx commands. Does NOT broadcast or swap the running process.
 #
-#   SKIP_INSTALL=1 sh tests/tsh/upgrade/120u-1.sh
-#   SUBMIT=1 KEY=<key> sh tests/tsh/upgrade/120u-1.sh   # only when asked
+#   SKIP_INSTALL=1 bash tests/tsh/upgrade/120u-1.sh
+#   SUBMIT=1 KEY=<key> bash tests/tsh/upgrade/120u-1.sh   # only when asked
 ####################################################################
 set -euo pipefail
 
@@ -36,14 +36,25 @@ fi
 command -v "$OLD_BIND" >/dev/null || { echo "$OLD_BIND not on PATH"; exit 1; }
 command -v jq >/dev/null || { echo "jq required"; exit 1; }
 
-if [ "$SKIP_INSTALL" != "1" ]; then
-  echo "120u-1: GOWORK=off go install → $HOME/go/bin/$NEW_BIND"
-  ( cd "$NEW_RELEASE_PATH" && GOWORK=off go install -mod=mod -tags "netgo ledger" -o "$HOME/go/bin/$NEW_BIND" ./cmd/terpd )
+PLAN="${PLAN:-v6.1}" TAG="${TAG:-${RELEASE_TAG:-v6.1.0-dev}}" ALLOW_PARTIAL="${ALLOW_PARTIAL:-1}" \
+  SKIP_WASMVM_CURATE="${SKIP_WASMVM_CURATE:-0}" \
+  bash "$ROOT/scripts/release/preflight_upgrade.sh"
+
+RELEASE_ELF="${RELEASE_ELF:-$ROOT/build/terpd-linux-amd64}"
+if [ -x "$RELEASE_ELF" ]; then
+  echo "120u-1: using release ELF $RELEASE_ELF"
+  NEW_BIN="$RELEASE_ELF"
+elif [ "$SKIP_INSTALL" != "1" ]; then
+  echo "120u-1: GOWORK=off go build → $HOME/go/bin/$NEW_BIND"
+  ( cd "$NEW_RELEASE_PATH" && GOWORK=off go build -mod=mod -tags "netgo ledger" -o "$HOME/go/bin/$NEW_BIND" ./cmd/terpd )
+  NEW_BIN="$(command -v "$NEW_BIND" 2>/dev/null || echo "$HOME/go/bin/$NEW_BIND")"
+else
+  command -v "$NEW_BIND" >/dev/null || [ -x "$HOME/go/bin/$NEW_BIND" ] || {
+    echo "$NEW_BIND not built"; exit 1
+  }
+  NEW_BIN="$(command -v "$NEW_BIND" 2>/dev/null || echo "$HOME/go/bin/$NEW_BIND")"
 fi
-command -v "$NEW_BIND" >/dev/null || [ -x "$HOME/go/bin/$NEW_BIND" ] || {
-  echo "$NEW_BIND not built"; exit 1
-}
-NEW_BIN="$(command -v "$NEW_BIND" 2>/dev/null || echo "$HOME/go/bin/$NEW_BIND")"
+[ -x "$NEW_BIN" ] || { echo "$NEW_BIN not built"; exit 1; }
 
 H="$(curl -sf "http://127.0.0.1:${RPC}/status" | jq -r '.result.sync_info.latest_block_height')"
 NET="$(curl -sf "http://127.0.0.1:${RPC}/status" | jq -r '.result.node_info.network')"

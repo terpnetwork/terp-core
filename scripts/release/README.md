@@ -70,6 +70,8 @@ make docker-push-dev RELEASE_TAG=v6.0.0-dev
 
 After publishing a tag pack: `make verify-artifacts RELEASE_TAG=v6.0.0` (S3 checksums, muslc, docker image == ELF, ict-rs).
 
+Before a Cosmovisor upgrade (local artifacts, no S3): `WRITE=1 PLAN=v6.1 make preflight-upgrade RELEASE_TAG=v6.1.0-dev`. That rejects `file://` plans, requires tarball member `terpd`, and records per-arch libwasmvm checksums.
+
 
 | Script | Purpose |
 |--------|---------|

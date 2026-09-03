@@ -36,7 +36,7 @@ make tsh-upgrade-cv
 
 `make tsh-upgrade-v61` curls `pruned/snapshot.json` `latest` unless `SNAPSHOT_PATH` / `SNAPSHOT_URL` is set. Genesis is pulled separately (`GENESIS_URL` default: morocco-1 genesis). The tar is **`data/` + `wasm/` only**.
 
-Start the in-place net with **`terpd-v6`**, not 5.2.0. A 5.2.0 load of a post-v6 pack dies (`expected 22911849 got 0`). After halt, this tree’s `terpd` applies plan `v6.1`. Then `query-all-params.sh` and `iavl-v2.sh`.
+Start the in-place net with **`terpd-v6`**, not 5.2.0. A 5.2.0 load of a post-v6 pack dies (`expected 22911849 got 0`). After halt, this tree’s `terpd` applies plan `v6.1`. Then, if `V62_BIND` (`terpd-v62` from `.worktrees/terp-core-v6.2`) is on PATH, `chain-v62.sh` halts this binary on plan `v6.2` and starts the v6.2 worktree binary. `feat/6.1.0-dev` must not register v6.2. Then `query-all-params.sh` and `iavl-v2.sh`.
 
 ```sh
 # PATH has terpd-v6 (v6) and terpd (this tree)
