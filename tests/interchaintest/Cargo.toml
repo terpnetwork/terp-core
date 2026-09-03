@@ -54,6 +54,10 @@ name = "circuit_deposit"
 path = "../../crates/ict-rs/examples/circuit_deposit.rs"
 
 [[bin]]
+name = "circuit_runway_epoch"
+path = "../../crates/ict-rs/examples/circuit_runway_epoch.rs"
+
+[[bin]]
 name = "tokenfactory"
 path = "src/bin/tokenfactory.rs"
 

@@ -14,6 +14,7 @@ e2e-help:
 	@echo "  make e2e-drip               TestTerpDrip (mock)"
 	@echo "  make e2e-clock              TestTerpClock (mock)"
 	@echo "  make e2e-circuit-deposit    circuit runway pay/query (mock)"
+	@echo "  make e2e-circuit-runway     3-val epoch settle (ICT_MOCK=1 smoke; omit for Docker local-zk)"
 	@echo "  make e2e-ibc                TestTerpGaiaIBCTransfer (docker)"
 	@echo "  make e2e-ibchooks           TestTerpIBCHooks"
 	@echo "  make e2e-pfm                TestPacketForwardMiddlewareRouter"
@@ -42,6 +43,13 @@ e2e-clock:
 
 e2e-circuit-deposit:
 	ICT_MOCK=1 $(E2E_RUN) --bin circuit_deposit
+
+e2e-circuit-runway:
+	@echo "==> mock: ICT_MOCK=1  docker: make build-zk-local && make e2e-circuit-runway-docker"
+	ICT_MOCK=1 $(E2E_RUN) --bin circuit_runway_epoch
+
+e2e-circuit-runway-docker:
+	$(E2E_RUN) --bin circuit_runway_epoch
 
 e2e-ibc:
 	$(E2E_RUN) --bin ibc
@@ -78,5 +86,6 @@ e2e-ict-rs-from-tarball:
 	bash scripts/ci/run-e2e-from-tarball.sh $(TARBALL) $(SUITE)
 
 .PHONY: e2e e2e-help e2e-basic e2e-tokenfactory e2e-feeshare e2e-drip e2e-clock e2e-circuit-deposit \
+	e2e-circuit-runway e2e-circuit-runway-docker \
 	e2e-ibc e2e-ibchooks e2e-pfm e2e-polytone e2e-statesync e2e-upgrade e2e-zk \
 	e2e-ict-rs-build e2e-ict-rs-pack e2e-ict-rs-docker e2e-ict-rs-from-tarball

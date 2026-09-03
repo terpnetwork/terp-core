@@ -32,5 +32,6 @@ From repo root: `make e2e` then `make e2e-basic`, `make e2e-ibc`, …
 | `TestTerpDrip` | `drip` | `src/bin/drip.rs` |
 | `TestTerpClock` | `clock` | `src/bin/clock.rs` |
 | (new) | `circuit_deposit` | `circuit_deposit.rs` |
+| (new) | `circuit_runway_epoch` | 3-val Docker epoch settle (`make e2e-circuit-runway-docker`, image `terpnetwork/terp-core:local-zk`) |
 
 Contract wasm for polytone/zk lives in `contracts/` and `circuits/` (copied from `artifacts/`).
