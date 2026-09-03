@@ -1,5 +1,5 @@
 {
   "binaries": {
-    "linux/amd64": "file://$HOME/go/bin/terpd-testnet-v61"
+    "linux/amd64": "https://s3.terp.network/releases/terp-core/v6.1.0-dev/terpd-6.1.0-dev-linux-amd64.tar.gz?checksum=sha256:6b1bc069309a696a05283fdcb4e81652660c41e0ac34adf2adda05ba13f743cc"
   }
 }

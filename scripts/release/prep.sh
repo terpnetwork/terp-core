@@ -16,6 +16,8 @@ set -euo pipefail
 VERSION="${1:-$(git describe --tags 2>/dev/null | sed 's/^v//' || echo "unknown")}"
 BUILD_DIR="build"
 CHECKSUM_FILE="$BUILD_DIR/sha256sum.txt"
+ALLOW_PARTIAL="${ALLOW_PARTIAL:-0}"
+PLAN="${PLAN:-}"
 
 echo "Preparing release artifacts for version: $VERSION"
 echo ""
@@ -23,19 +25,33 @@ echo ""
 # ------------------------------------------------------------------
 # Verify binaries
 # ------------------------------------------------------------------
+present=()
 for arch in amd64 arm64; do
-    if [[ ! -f "$BUILD_DIR/terpd-linux-$arch" ]]; then
-        echo "Error: $BUILD_DIR/terpd-linux-$arch not found."
-        echo "Run 'make create-binaries' first."
-        exit 1
+    if [[ -f "$BUILD_DIR/terpd-linux-$arch" ]]; then
+        present+=("$arch")
+    else
+        echo "WARN: $BUILD_DIR/terpd-linux-$arch not found."
     fi
 done
+if [[ ${#present[@]} -eq 0 ]]; then
+    echo "Error: no linux ELFs in $BUILD_DIR/. Run 'make create-binaries' first."
+    exit 1
+fi
+if [[ ${#present[@]} -lt 2 && "$ALLOW_PARTIAL" != "1" ]]; then
+    echo "Error: both linux amd64 and arm64 are required (set ALLOW_PARTIAL=1 for a single-arch soak pack)."
+    exit 1
+fi
 
 # ------------------------------------------------------------------
-# Checksum raw binaries
+# Checksum raw binaries (only files that exist)
 # ------------------------------------------------------------------
 echo "Checksumming raw binaries..."
-(cd "$BUILD_DIR" && sha256sum terpd-linux-amd64 terpd-linux-arm64 terpd-darwin-arm64 > sha256sum.txt)
+raw=()
+for arch in "${present[@]}"; do
+    raw+=("terpd-linux-$arch")
+done
+[[ -f "$BUILD_DIR/terpd-darwin-arm64" ]] && raw+=("terpd-darwin-arm64")
+(cd "$BUILD_DIR" && sha256sum "${raw[@]}" > sha256sum.txt)
 
 # ------------------------------------------------------------------
 # Create versioned tarballs and append their checksums
@@ -50,10 +66,15 @@ pack_cv_tarball() {
     rm -rf "$stage"
 }
 
-for arch in amd64 arm64; do
+for arch in "${present[@]}"; do
     tarball="terpd-$VERSION-linux-$arch.tar.gz"
     echo "Creating $BUILD_DIR/$tarball (member terpd)..."
     pack_cv_tarball "$BUILD_DIR/terpd-linux-$arch" "$BUILD_DIR/$tarball"
+    members="$(tar tzf "$BUILD_DIR/$tarball")"
+    if ! printf '%s\n' "$members" | grep -qx 'terpd' && ! printf '%s\n' "$members" | grep -qx './terpd'; then
+        echo "Error: $tarball missing root member terpd" >&2
+        exit 1
+    fi
 
     echo "Checksumming $tarball..."
     (cd "$BUILD_DIR" && sha256sum "$tarball" >> sha256sum.txt)
@@ -75,3 +96,10 @@ ls -lh "$BUILD_DIR"/*.tar.gz "$BUILD_DIR"/terpd-linux-* 2>/dev/null
 echo ""
 echo "Checksums written to $CHECKSUM_FILE:"
 cat "$CHECKSUM_FILE"
+
+if [[ -n "$PLAN" ]]; then
+    echo ""
+    echo "Writing Cosmovisor plan $PLAN from local tarballs..."
+    PLAN="$PLAN" TAG="${TAG:-v$VERSION}" WRITE=1 ALLOW_PARTIAL="$ALLOW_PARTIAL" \
+      bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/preflight_upgrade.sh"
+fi

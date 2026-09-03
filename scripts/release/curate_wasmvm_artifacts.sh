@@ -36,10 +36,20 @@ if [ "$copied" -eq 0 ]; then
   exit 1
 fi
 
-# Prefer ZK muslc we just built (has store_code_with_circuit)
-if command -v strings >/dev/null && ! strings "$OUT"/libwasmvm_muslc.aarch64.a 2>/dev/null | grep -q store_code_with_circuit; then
-  echo "WARN: libwasmvm_muslc.aarch64.a missing store_code_with_circuit (not a ZK muslc)" >&2
-fi
+# ZK muslc must export store_code_with_circuit. STWO is optional until that muslc is rebuilt.
+# grep -a: macOS strings(1) misses symbols in ELF/.a; search the bytes.
+for muslc in "$OUT"/libwasmvm_muslc.*.a; do
+  [ -f "$muslc" ] || continue
+  base="$(basename "$muslc")"
+  if ! grep -a -q -F store_code_with_circuit "$muslc"; then
+    echo "ERROR: $base missing store_code_with_circuit (not a ZK muslc)" >&2
+    exit 1
+  fi
+  if ! grep -a -q -F verify_stwo_host_proof "$muslc"; then
+    echo "WARN: $base missing verify_stwo_host_proof (STWO not in this muslc)" >&2
+  fi
+  echo "OK $base store_code_with_circuit"
+done
 
 (
   cd "$OUT"
@@ -64,11 +74,18 @@ if [ -z "$rust_ver" ] || [ -z "$go_ver" ]; then
   exit 1
 fi
 if ! printf '%s' "$go_ver" | grep -q -F "$rust_ver"; then
-  echo "ERROR: rust $rust_ver is not a substring of go $go_ver" >&2
-  echo "       CheckLibwasmVersion fails on tagged builds (path-replace is (devel) only)." >&2
-  exit 1
+  if grep -q 'github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm' "$ROOT/go.mod"; then
+    echo "WARN: rust $rust_ver is not a substring of go $go_ver" >&2
+    echo "      path replace reports (devel) so CheckLibwasmVersion is a no-op locally." >&2
+    echo "      tagged releases must require v${rust_ver} (or matching) in go.mod." >&2
+  else
+    echo "ERROR: rust $rust_ver is not a substring of go $go_ver" >&2
+    echo "       CheckLibwasmVersion fails on tagged builds (path-replace is (devel) only)." >&2
+    exit 1
+  fi
+else
+  echo "OK: rust $rust_ver is a substring of go $go_ver"
 fi
-echo "OK: rust $rust_ver is a substring of go $go_ver"
 
 echo "==> curated $copied artifacts in $OUT"
 ls -lh "$OUT"

@@ -7,7 +7,7 @@
         "name": "v6.1",
         "time": "0001-01-01T00:00:00Z",
         "height": "0",
-        "info": "120u-1 soak. Fill height from live RPC status + soak delta. Do not broadcast until asked. Binaries staged locally (no S3 checksums yet).",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.1.0-dev/terpd-6.1.0-dev-linux-amd64.tar.gz?checksum=sha256:6b1bc069309a696a05283fdcb4e81652660c41e0ac34adf2adda05ba13f743cc\"}}",
         "upgraded_client_state": null
       }
     }

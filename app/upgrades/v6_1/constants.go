@@ -15,15 +15,11 @@ var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
 	CreateUpgradeHandler: CreateUpgradeHandler,
 	StoreUpgrades: store.StoreUpgrades{
-		Added: []string{
-			iavlhash.BankB3,
-			iavlhash.StakingB3,
-			iavlhash.AuthB3,
-		},
+		Added: iavlhash.DestStores(),
 		Deleted: []string{
 			// x/params stays mounted for this upgrade so the handler can copy
 			// leftover subspace values. Keys are wiped in the handler.
-			// Unmount in a later upgrade.
+			// Unmount in feat/6.2.0-dev (plan v6.2), not this binary.
 			"protocolpool",
 		},
 	},

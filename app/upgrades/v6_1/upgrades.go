@@ -15,9 +15,9 @@ import (
 	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 )
 
-// CreateUpgradeHandler copies live module stores into the Added b3-* trees
-// IBC-facing stores are not in Added and stay
-// SHA-256. A later upgrade deletes the old names after soak.
+// CreateUpgradeHandler copies every migratable IAVL store into its Added
+// b3-* dest (iavlhash.MigratableStores). IBC-facing stores and 08-wasm stay
+// SHA-256. Upgrade B is plan v6.2 on feat/6.2.0-dev (separate worktree).
 func CreateUpgradeHandler(
 	mm *module.Manager,
 	configurator module.Configurator,

@@ -39,7 +39,7 @@ import (
 const LegacyParamsStoreKey = "params"
 
 func (appKeepers *AppKeepers) GenerateKeys() {
-	appKeepers.keys = storetypes.NewKVStoreKeys(
+	names := []string{
 		authtypes.StoreKey,
 		banktypes.StoreKey,
 		stakingtypes.StoreKey,
@@ -53,7 +53,6 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		feegrant.StoreKey,
 		evidencetypes.StoreKey,
 		authzkeeper.StoreKey,
-		// non sdk store keys
 		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
 		wasmtypes.StoreKey,
@@ -69,11 +68,10 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		tokenfactorytypes.StoreKey,
 		hashmerchanttypes.StoreKey,
 		cwhookstypes.StoreKey,
-		iavlhash.BankB3,
-		iavlhash.StakingB3,
-		iavlhash.AuthB3,
 		LegacyParamsStoreKey,
-	)
+	}
+	names = append(names, iavlhash.DestStores()...)
+	appKeepers.keys = storetypes.NewKVStoreKeys(names...)
 
 	appKeepers.tkeys = storetypes.NewTransientStoreKeys()
 }

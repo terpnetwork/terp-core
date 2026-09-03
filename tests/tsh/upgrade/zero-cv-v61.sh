@@ -8,7 +8,7 @@
 #   # stop is required so export reads a quiescent app DB
 #   HOME_DIR=$HOME/.terpd-testnet RPC=36657 KEY=validator \
 #     NEW_BIND=terpd-testnet-v61 OLD_BIND=terpd-testnet-v6 \
-#     sh tests/tsh/upgrade/zero-cv-v61.sh
+#     bash tests/tsh/upgrade/zero-cv-v61.sh
 #
 # SUBMIT=1 also files the v6.1 software-upgrade after blocks start.
 ####################################################################
@@ -89,12 +89,23 @@ patch_genesis() {
     ' "$src" > "$dest"
 }
 
-if [ "$SKIP_INSTALL" != "1" ]; then
-  echo "Z: install $NEW_BIND from $NEW_RELEASE_PATH"
+PLAN="${PLAN:-v6.1}" TAG="${TAG:-${RELEASE_TAG:-v6.1.0-dev}}" ALLOW_PARTIAL="${ALLOW_PARTIAL:-1}" \
+  SKIP_WASMVM_CURATE="${SKIP_WASMVM_CURATE:-0}" \
+  bash "$ROOT/scripts/release/preflight_upgrade.sh"
+
+RELEASE_ELF="${RELEASE_ELF:-$ROOT/build/terpd-linux-amd64}"
+if [ -x "$RELEASE_ELF" ]; then
+  echo "Z: using release ELF $RELEASE_ELF (skip host go build)"
+  NEW_BIN="$RELEASE_ELF"
+elif [ "$SKIP_INSTALL" != "1" ]; then
+  echo "Z: go build $NEW_BIND from $NEW_RELEASE_PATH"
   ( cd "$NEW_RELEASE_PATH" && GOTOOLCHAIN=auto GOWORK=off CGO_ENABLED=1 go build -mod=mod -tags "netgo ledger" -o "$HOME/go/bin/$NEW_BIND" ./cmd/terpd )
+  NEW_BIN="$(command -v "$NEW_BIND" 2>/dev/null || echo "$HOME/go/bin/$NEW_BIND")"
+else
+  command -v "$NEW_BIND" >/dev/null || [ -x "$HOME/go/bin/$NEW_BIND" ] || { echo "$NEW_BIND missing"; exit 1; }
+  NEW_BIN="$(command -v "$NEW_BIND" 2>/dev/null || echo "$HOME/go/bin/$NEW_BIND")"
 fi
-command -v "$NEW_BIND" >/dev/null || [ -x "$HOME/go/bin/$NEW_BIND" ] || { echo "$NEW_BIND missing"; exit 1; }
-NEW_BIN="$(command -v "$NEW_BIND" 2>/dev/null || echo "$HOME/go/bin/$NEW_BIND")"
+[ -x "$NEW_BIN" ] || { echo "$NEW_BIN missing"; exit 1; }
 OLD_BIN="$(command -v "$OLD_BIND")"
 if ! command -v "$CV_BIND" >/dev/null; then
   echo "Z: installing cosmovisor v1.7.1"

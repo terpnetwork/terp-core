@@ -61,7 +61,7 @@ Do these in order. **Do not upload, tag, or broadcast** until asked.
 
 OLD_BIND is **v6** (`terpd-v6`), never 5.2.0. `make tsh-upgrade-v61` curls `https://minio.terp.network/snapshots/mainnet/morocco-1/pruned/snapshot.json` `latest` (or pin `SNAPSHOT_URL`). Genesis is separate (`GENESIS_URL`). The tar is `data/` + `wasm/` only. Known-good pack: `morocco-1_22911849_2026-09-02T03-49-50Z.tar.lz4` (height 22911849 ≥ v6 halt 22810000). Do not use pruned `22807932` or archive `22749033` (pre-v6). A 5.2.0 load of the post-v6 pack dies (`expected 22911849 got 0`).
 - `CircuitUploadAccess = AllowNobody` (upload is ACL or circuit deposit).
-- Copy `bank`/`staking`/`acc` → `b3-bank`/`b3-staking`/`b3-acc` (Upgrade A). IBC stays SHA-256.
+- Copy every migratable IAVL store → `b3-<name>` (Upgrade A: bank, staking, acc, dist, slashing, mint, gov, wasm, app modules, …). IBC / 08-wasm stay SHA-256.
 - Does **not** re-add `hashmerchant` / `cw-hooks` if they already exist in genesis.
 - Upgrade B (later) switches module keys and deletes the SHA-256 copies.
 

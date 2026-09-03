@@ -14,25 +14,70 @@ var SHA256Stores = map[string]struct{}{
 	"packetfowardmiddleware":  {},
 	"packetforwardmiddleware": {},
 	"ibc-hooks":               {},
+	"08-wasm":                 {},
 	"capability":              {},
 }
 
-// Dual-store names for the v6.1 upgrade.
-// Names must not share a prefix with existing StoreKeys (SDK panics:
-// bank vs bank_b3, acc vs acc_b3, staking vs staking_b3).
+// DestName is the Added dual-store tree for a live keeper name.
+// Prefix form (b3-bank) — not a suffix (bank_b3): SDK panics if two keys share a prefix.
+func DestName(src string) string {
+	return "b3-" + src
+}
+
+// Dual-store aliases for the original three trees (tests / logs).
 const (
 	BankB3    = "b3-bank"
 	StakingB3 = "b3-staking"
 	AuthB3    = "b3-acc"
 )
 
+// MigratableStores is every live IAVL name Upgrade A copies into a b3-* dest.
+// Not in this list: SHA256Stores (ICS-23), 08-wasm (IBC light client), leftover x/params,
+// and upgrade (handler writes applied/armed plans into that store during A).
+// bank is first so tests that treat snaps[0] as bank stay valid.
+func MigratableStores() []string {
+	return []string{
+		"bank",
+		"staking",
+		"acc",
+		"crisis",
+		"mint",
+		"distribution",
+		"slashing",
+		"gov",
+		"consensus",
+		"feegrant",
+		"evidence",
+		"authz",
+		"wasm",
+		"feeshare",
+		"globalfee",
+		"drip",
+		"smartaccount",
+		"tokenfactory",
+		"hashmerchant",
+		"cw-hooks",
+	}
+}
+
+// DestStores is Added in v6.1 StoreUpgrades (same order as MigratableStores).
+func DestStores() []string {
+	src := MigratableStores()
+	out := make([]string, len(src))
+	for i, s := range src {
+		out[i] = DestName(s)
+	}
+	return out
+}
+
 // DualStorePairs is src store → dest b3-* store for v6.1 (Upgrade A).
 func DualStorePairs() [][2]string {
-	return [][2]string{
-		{"bank", BankB3},
-		{"staking", StakingB3},
-		{"acc", AuthB3},
+	src := MigratableStores()
+	out := make([][2]string, len(src))
+	for i, s := range src {
+		out[i] = [2]string{s, DestName(s)}
 	}
+	return out
 }
 
 // AlgorithmName is "sha256" or "blake3".
