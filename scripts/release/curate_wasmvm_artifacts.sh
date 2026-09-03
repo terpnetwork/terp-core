@@ -46,7 +46,8 @@ for muslc in "$OUT"/libwasmvm_muslc.*.a; do
     exit 1
   fi
   if ! grep -a -q -F verify_stwo_host_proof "$muslc"; then
-    echo "WARN: $base missing verify_stwo_host_proof (STWO not in this muslc)" >&2
+    echo "ERROR: $base missing verify_stwo_host_proof (stale muslc vs Go bindings; rebuild release-build-alpine-custom)" >&2
+    exit 1
   fi
   echo "OK $base store_code_with_circuit"
 done

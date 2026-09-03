@@ -43,7 +43,11 @@ RUN if [ "$WASMVM_SOURCE" = "github" ]; then \
       wget -q "$BASE/$WASMVM_VERSION/libwasmvm_muslc.$ARCH.a" \
            -O /lib/libwasmvm_muslc.$ARCH.a && \
       wget -q "$BASE/$WASMVM_VERSION/SHA256SUMS" -O /tmp/SHA256SUMS && \
-      sha256sum /lib/libwasmvm_muslc.$ARCH.a | grep $(grep libwasmvm_muslc.$ARCH /tmp/SHA256SUMS | awk '{print $1}'); \
+      sha256sum /lib/libwasmvm_muslc.$ARCH.a | grep $(grep libwasmvm_muslc.$ARCH /tmp/SHA256SUMS | awk '{print $1}') && \
+      if ! grep -a -q -F verify_stwo_host_proof /lib/libwasmvm_muslc.$ARCH.a; then \
+        echo "ERROR: downloaded muslc missing verify_stwo_host_proof (wrong wasmvm vs Go bindings)"; \
+        exit 1; \
+      fi; \
     else \
       echo "==> Skipping GitHub download (WASMVM_SOURCE=$WASMVM_SOURCE)"; \
     fi
@@ -78,6 +82,10 @@ RUN ARCH=$(uname -m) && \
         exit 1; \
       fi && \
       # Ensure muslc .a is present where cgo LDFLAGS ${SRCDIR} looks (internal/api)
+      if ! grep -a -q -F verify_stwo_host_proof /code/build/wasmvm/libwasmvm_muslc.$ARCH.a; then \
+        echo "ERROR: staged muslc missing verify_stwo_host_proof (wrong libwasmvm vs Go bindings)"; \
+        exit 1; \
+      fi && \
       cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a \
          /code/build/zk-deps/zk-wasmvm/internal/api/libwasmvm_muslc.$ARCH.a && \
       sed -i 's|=> \./crates/zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
