@@ -23,7 +23,6 @@ import (
 	packetforwardtypes "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
 	cwhookstypes "github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
 	driptypes "github.com/terpnetwork/terp-core/v6/x/drip/types"
 	feesharetypes "github.com/terpnetwork/terp-core/v6/x/feeshare/types"
@@ -39,7 +38,7 @@ import (
 const LegacyParamsStoreKey = "params"
 
 func (appKeepers *AppKeepers) GenerateKeys() {
-	names := []string{
+	appKeepers.keys = storetypes.NewKVStoreKeys(
 		authtypes.StoreKey,
 		banktypes.StoreKey,
 		stakingtypes.StoreKey,
@@ -53,6 +52,7 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		feegrant.StoreKey,
 		evidencetypes.StoreKey,
 		authzkeeper.StoreKey,
+		// non sdk store keys
 		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
 		wasmtypes.StoreKey,
@@ -68,10 +68,11 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		tokenfactorytypes.StoreKey,
 		hashmerchanttypes.StoreKey,
 		cwhookstypes.StoreKey,
+		// b3-* are not mounted on this binary. v6.1 Added dest trees; v6.2
+		// leaves keepers on bank/staking/acc and omits unmounted dests from
+		// CommitInfo. Remounting here would panic on restart.
 		LegacyParamsStoreKey,
-	}
-	names = append(names, iavlhash.DestStores()...)
-	appKeepers.keys = storetypes.NewKVStoreKeys(names...)
+	)
 
 	appKeepers.tkeys = storetypes.NewTransientStoreKeys()
 }

@@ -1,0 +1,31 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6.1",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "22911859",
+        "info": "",
+        "upgraded_client_state": null
+      }
+    },
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6.2",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "22911861",
+        "info": "",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "50000000uterp",
+  "title": "v6.1 then v6.2 (Upgrade A then B)",
+  "summary": "Two MsgSoftwareUpgrade in one proposal. x/upgrade keeps one plan (last wins). v6.1 handler re-arms v6.2 at height+2. Cosmovisor pre-places both plan dirs.",
+  "expedited": true
+}

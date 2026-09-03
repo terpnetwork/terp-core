@@ -1,0 +1,5 @@
+{
+  "binaries": {
+    "darwin/arm64": "https://s3.terp.network/releases/terp-core/v6.2.0-dev/terpd-6.2.0-dev-darwin-arm64.tar.gz?checksum=sha256:3d888702cf13ebbe29b3074db037bcfd363077e26694fa81b934d0eedb235e3a"
+  }
+}

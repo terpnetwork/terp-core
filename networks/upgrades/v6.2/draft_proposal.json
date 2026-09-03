@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6.2",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "0",
+        "info": "{\"binaries\":{\"darwin/arm64\":\"https://s3.terp.network/releases/terp-core/v6.2.0-dev/terpd-6.2.0-dev-darwin-arm64.tar.gz?checksum=sha256:3d888702cf13ebbe29b3074db037bcfd363077e26694fa81b934d0eedb235e3a\"}}",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "50000000uterp",
+  "title": "Software Upgrade v6.2 (IAVL dual-store B)",
+  "summary": "Second halt after v6.1. Recopy live SHA-256 bank/staking/acc into b3-* then rename those trees onto the keeper names. IBC stays SHA-256. Requires the feat/6.2.0-dev binary, not feat/6.1.0-dev.",
+  "expedited": true
+}
