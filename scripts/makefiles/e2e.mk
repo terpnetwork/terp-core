@@ -51,6 +51,9 @@ e2e-circuit-runway:
 e2e-circuit-runway-docker:
 	$(E2E_RUN) --bin circuit_runway_epoch
 
+# Mock-only local gate (no Docker). Docker suites need terpnetwork/terp-core:local-zk.
+e2e-all-mock: e2e-basic e2e-tokenfactory e2e-feeshare e2e-drip e2e-clock e2e-circuit-deposit e2e-circuit-runway
+
 e2e-ibc:
 	$(E2E_RUN) --bin ibc
 
@@ -86,6 +89,6 @@ e2e-ict-rs-from-tarball:
 	bash scripts/ci/run-e2e-from-tarball.sh $(TARBALL) $(SUITE)
 
 .PHONY: e2e e2e-help e2e-basic e2e-tokenfactory e2e-feeshare e2e-drip e2e-clock e2e-circuit-deposit \
-	e2e-circuit-runway e2e-circuit-runway-docker \
+	e2e-circuit-runway e2e-circuit-runway-docker e2e-all-mock \
 	e2e-ibc e2e-ibchooks e2e-pfm e2e-polytone e2e-statesync e2e-upgrade e2e-zk \
 	e2e-ict-rs-build e2e-ict-rs-pack e2e-ict-rs-docker e2e-ict-rs-from-tarball

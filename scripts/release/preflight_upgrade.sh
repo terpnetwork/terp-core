@@ -105,7 +105,7 @@ do
     note "OK $(basename "$f") store_code_with_circuit"
   fi
   if ! has_sym "$f" verify_stwo_host_proof; then
-    wrn "$(basename "$f") missing verify_stwo_host_proof (STWO not in this muslc)"
+    err "$(basename "$f") missing verify_stwo_host_proof (stale muslc vs Go bindings)"
   fi
 done
 
@@ -146,7 +146,7 @@ for arch in amd64 arm64; do
     note "OK terpd-linux-$arch store_code_with_circuit"
   fi
   if ! has_sym "$elf" verify_stwo_host_proof; then
-    wrn "$elf missing verify_stwo_host_proof"
+    err "$elf missing verify_stwo_host_proof (linked stale muslc)"
   fi
 done
 

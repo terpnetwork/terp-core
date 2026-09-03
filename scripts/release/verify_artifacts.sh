@@ -63,7 +63,8 @@ echo "ok store_code_with_circuit"
 if grep -a -q -F verify_stwo_host_proof "$DEST/terpd-linux-amd64"; then
   echo "ok verify_stwo_host_proof"
 else
-  echo "WARN: verify_stwo_host_proof not in ELF (STWO muslc not linked)"
+  echo "ERROR: verify_stwo_host_proof not in ELF (stale muslc vs Go bindings)" >&2
+  exit 1
 fi
 
 if [ "${SKIP_IMAGE:-0}" != "1" ] && [ -f "$DEST/terp-core-local-linux-amd64.tar" ]; then
