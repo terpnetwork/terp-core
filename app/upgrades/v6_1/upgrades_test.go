@@ -59,6 +59,9 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 		dstHash  []byte
 		dstLast  []byte
 	}
+	if s.App.GetKey(iavlhash.DestStores()[0]) == nil {
+		s.T().Skip("v6.2 binary does not mount dest trees; v6.1 copy is applied by the v6.1 binary")
+	}
 	snaps := make([]snap, 0, len(iavlhash.DualStorePairs()))
 	for _, p := range iavlhash.DualStorePairs() {
 		snaps = append(snaps, snap{
