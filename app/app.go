@@ -98,6 +98,7 @@ import (
 
 	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 	v61 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_1"
+	v62 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_2"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
@@ -124,7 +125,8 @@ var (
 	EmptyWasmOpts []wasmkeeper.Option
 
 	Upgrades = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,v4_1.Upgrade, v5.Upgrade, v520.Upgrade, v6.Upgrade,
-		v61.Upgrade,
+		v61.Upgrade, // still needed if this binary applies a leftover v6.1 halt
+		v62.Upgrade, // empty StoreUpgrades; not registered on the v6.1 binary
 	}
 )
 
