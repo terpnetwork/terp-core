@@ -60,10 +60,10 @@ echo "$info" | grep -E "ELF 64-bit LSB executable, x86-64" >/dev/null
 echo "$info" | grep -i "statically linked" >/dev/null
 grep -a -q -F store_code_with_circuit "$DEST/terpd-linux-amd64"
 echo "ok store_code_with_circuit"
-if grep -a -q -F verify_stwo_host_proof "$DEST/terpd-linux-amd64"; then
-  echo "ok verify_stwo_host_proof"
+if grep -a -q -F 'stwo: Dummy DSTW rejected' "$DEST/terpd-linux-amd64"; then
+  echo "ok Path A STWO host"
 else
-  echo "ERROR: verify_stwo_host_proof not in ELF (stale muslc vs Go bindings)" >&2
+  echo "ERROR: Path A STWO host not in ELF (muslc without STWO_HOST_VERIFY)" >&2
   exit 1
 fi
 

@@ -51,7 +51,7 @@ Muslc is **not** in git. Host must have STWO archives:
 `crates/zk-wasmvm/internal/api/libwasmvm_muslc.aarch64.a`  
 `crates/zk-wasmvm/internal/api/libwasmvm_muslc.x86_64.a`
 
-Each must `grep -a -F verify_stwo_host_proof`. Expected sha256 of those `.a` files (cut host):
+Each must contain Path A STWO host (`grep -a -F 'stwo: Dummy DSTW rejected'`). There is no `verify_stwo_host_proof` C ABI on release wasmvm (that experiment is `feat/stwo-host-cgo-abci`). Expected sha256 of those `.a` files (cut host, until muslc is rebuilt without the C symbol):
 
 ```
 0687e59140c967a752b0b0ede98e71a3c859fb4f6b94fc26883792d381eb4716  libwasmvm_muslc.aarch64.a
@@ -90,7 +90,7 @@ PLAN=v6.2 ./scripts/release/recurate_upgrade_binaries.sh
 
 v6.1 lock file is also on `feat/6.1.0-dev` at `f5558cc` (pack commit). ELF identity remains `10ea0bc`.
 
-The script fails closed if HEAD ≠ `binary_commit`, if the tree is dirty, if muslc lacks `verify_stwo_host_proof`, or if rebuilt sha256 ≠ lock.
+The script fails closed if HEAD ≠ `binary_commit`, if the tree is dirty, if muslc lacks Path A STWO host, or if rebuilt sha256 ≠ lock.
 
 Manual equivalent:
 
@@ -171,7 +171,7 @@ Proposal JSON (expedited, height `0` until ops fill it):
 1. Clean checkout of each `binary_commit`.
 2. `PLAN=v6.1` recurate prints `OK` for both linux ELFs and both linux tarballs.
 3. `PLAN=v6.2` same.
-4. `file build/terpd-linux-*` is statically linked; `grep -a verify_stwo_host_proof` hits.
+4. `file build/terpd-linux-*` is statically linked; Path A STWO host string hits (`stwo: Dummy DSTW rejected`). `verify_stwo_host_proof` must **not** be a required C ABI.
 5. You can explain, from `git show $COMMIT` + `go.mod` replaces + muslc sha256, why the ELF hash is that hash.
 
 If hashes diverge: first check muslc sha256, Go image digest (`golang:1.26.5-alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2`), dirty tree, and that you did not recurate a pack-only commit.
@@ -183,6 +183,6 @@ If hashes diverge: first check muslc sha256, Go image digest (`golang:1.26.5-alp
 | Field | Value |
 |-------|--------|
 | **Title** | v6.1 + v6.2 bit-for-bit Cosmovisor recuration |
-| **lex** | `binary_commit ARTIFACT_LOCK recurate WASMVM_SOURCE=local verify_stwo_host_proof` |
+| **lex** | `binary_commit ARTIFACT_LOCK recurate WASMVM_SOURCE=local proof_instance_verify STWO_HOST_VERIFY` |
 | **vec** | How do we prove the upgrade ELF is the git tree we published? |
 | **Anti-claim** | Matching a Docker tag is not ELF recuration; S3 URLs are not checksums until objects exist |

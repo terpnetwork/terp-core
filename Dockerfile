@@ -44,8 +44,8 @@ RUN if [ "$WASMVM_SOURCE" = "github" ]; then \
            -O /lib/libwasmvm_muslc.$ARCH.a && \
       wget -q "$BASE/$WASMVM_VERSION/SHA256SUMS" -O /tmp/SHA256SUMS && \
       sha256sum /lib/libwasmvm_muslc.$ARCH.a | grep $(grep libwasmvm_muslc.$ARCH /tmp/SHA256SUMS | awk '{print $1}') && \
-      if ! grep -a -q -F verify_stwo_host_proof /lib/libwasmvm_muslc.$ARCH.a; then \
-        echo "ERROR: downloaded muslc missing verify_stwo_host_proof (wrong wasmvm vs Go bindings)"; \
+      if ! grep -a -q -F 'stwo: Dummy DSTW rejected' /lib/libwasmvm_muslc.$ARCH.a; then \
+        echo "ERROR: downloaded muslc missing Path A STWO host (proof_instance_verify)"; \
         exit 1; \
       fi; \
     else \
@@ -82,8 +82,8 @@ RUN ARCH=$(uname -m) && \
         exit 1; \
       fi && \
       # Ensure muslc .a is present where cgo LDFLAGS ${SRCDIR} looks (internal/api)
-      if ! grep -a -q -F verify_stwo_host_proof /code/build/wasmvm/libwasmvm_muslc.$ARCH.a; then \
-        echo "ERROR: staged muslc missing verify_stwo_host_proof (wrong libwasmvm vs Go bindings)"; \
+      if ! grep -a -q -F 'stwo: Dummy DSTW rejected' /code/build/wasmvm/libwasmvm_muslc.$ARCH.a; then \
+        echo "ERROR: staged muslc missing Path A STWO host (proof_instance_verify)"; \
         exit 1; \
       fi && \
       cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a \
