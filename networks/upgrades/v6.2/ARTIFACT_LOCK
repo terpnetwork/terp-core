@@ -1,9 +1,12 @@
 plan: v6.2
 binary_tag: v6.2.0-dev
-binary_commit: c2747e9981eb3737de7d801e7880b61b7ec3766a
-dirty: v6.0.0-13-gc2747e9-dirty
+binary_commit: d3d3bcd1d73b4c81f0fae88b00f30eb61969b631
+dirty: v6.0.0-31-gd3d3bcd-dirty
 s3_binaries_intended: https://s3.terp.network/releases/terp-core/v6.2.0-dev/
 published: false
 note: checksums are of local tarballs; do not upload until asked.
 
-3d888702cf13ebbe29b3074db037bcfd363077e26694fa81b934d0eedb235e3a  terpd-6.2.0-dev-darwin-arm64.tar.gz
+71dda7c4424362fb6b34d21a4078ee774a14d4b6aa17e9c64d30cedff4fba19f  terpd-6.2.0-dev-linux-amd64.tar.gz
+11e32ab051eea559299f85832816cbb28d3f0278039be42d0005abc2f14808f4  terpd-6.2.0-dev-linux-arm64.tar.gz
+0b67c5efc16a68ba39fff4270b03af8366289660481d65c28b07d39154183570  terpd-linux-amd64
+6b7f54349b651f5ab8c7fd19d2f7beb03fd33aad918499bd3463ce957b32e2bd  terpd-linux-arm64

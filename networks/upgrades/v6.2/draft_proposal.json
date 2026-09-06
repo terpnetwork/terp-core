@@ -7,14 +7,14 @@
         "name": "v6.2",
         "time": "0001-01-01T00:00:00Z",
         "height": "0",
-        "info": "{\"binaries\":{\"darwin/arm64\":\"https://s3.terp.network/releases/terp-core/v6.2.0-dev/terpd-6.2.0-dev-darwin-arm64.tar.gz?checksum=sha256:3d888702cf13ebbe29b3074db037bcfd363077e26694fa81b934d0eedb235e3a\"}}",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.2.0-dev/terpd-6.2.0-dev-linux-amd64.tar.gz?checksum=sha256:71dda7c4424362fb6b34d21a4078ee774a14d4b6aa17e9c64d30cedff4fba19f\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.2.0-dev/terpd-6.2.0-dev-linux-arm64.tar.gz?checksum=sha256:11e32ab051eea559299f85832816cbb28d3f0278039be42d0005abc2f14808f4\"}}",
         "upgraded_client_state": null
       }
     }
   ],
   "metadata": "",
   "deposit": "50000000uterp",
-  "title": "Software Upgrade v6.2 (IAVL dual-store B)",
-  "summary": "Second halt after v6.1. Recopy live SHA-256 bank/staking/acc into b3-* then rename those trees onto the keeper names. IBC stays SHA-256. Requires the feat/6.2.0-dev binary, not feat/6.1.0-dev.",
+  "title": "Software Upgrade v6.2 (v6.2.0-dev)",
+  "summary": "Plan v6.2 after v6.1. Keepers stay bank/staking/acc; unmounted b3-* dest trees drop from CommitInfo. IBC stays SHA-256. Bounded sudo gas already in the v6.1 binary (HashMerchant consensus 2, contract_gas_limit 100663296). Halt height TBD. Pre-place Cosmovisor at cosmovisor/upgrades/v6.2/bin/terpd. S3 objects are not public until upload is asked.",
   "expedited": true
 }

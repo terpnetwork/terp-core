@@ -6,8 +6,8 @@
       "plan": {
         "name": "v6.1",
         "time": "0001-01-01T00:00:00Z",
-        "height": "22911859",
-        "info": "",
+        "height": "0",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.1.0-dev/terpd-6.1.0-dev-linux-amd64.tar.gz?checksum=sha256:f30fa00ed7b4d6233313cf6009c5af1baad8107228ef6dfd6b3f2f99af172b16\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.1.0-dev/terpd-6.1.0-dev-linux-arm64.tar.gz?checksum=sha256:c7c858afe5c7a73f90333e5092ad1d6c103bdbc79e4a7356c4ccb47a1dcf3f05\"}}",
         "upgraded_client_state": null
       }
     },
@@ -17,8 +17,8 @@
       "plan": {
         "name": "v6.2",
         "time": "0001-01-01T00:00:00Z",
-        "height": "22911861",
-        "info": "",
+        "height": "0",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.2.0-dev/terpd-6.2.0-dev-linux-amd64.tar.gz?checksum=sha256:71dda7c4424362fb6b34d21a4078ee774a14d4b6aa17e9c64d30cedff4fba19f\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.2.0-dev/terpd-6.2.0-dev-linux-arm64.tar.gz?checksum=sha256:11e32ab051eea559299f85832816cbb28d3f0278039be42d0005abc2f14808f4\"}}",
         "upgraded_client_state": null
       }
     }
@@ -26,6 +26,6 @@
   "metadata": "",
   "deposit": "50000000uterp",
   "title": "v6.1 then v6.2 (Upgrade A then B)",
-  "summary": "Two MsgSoftwareUpgrade in one proposal. x/upgrade keeps one plan (last wins). v6.1 handler re-arms v6.2 at height+2. Cosmovisor pre-places both plan dirs.",
+  "summary": "Two MsgSoftwareUpgrade in one proposal (heights TBD). x/upgrade keeps one plan (last wins). The v6.1 handler re-arms v6.2 at BlockHeight()+2. Cosmovisor pre-places upgrades/v6.1 and upgrades/v6.2. Do not broadcast until heights are filled. S3 URLs are intended locations until upload is asked.",
   "expedited": true
 }
