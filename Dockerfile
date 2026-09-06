@@ -8,6 +8,10 @@ ARG WASMVM_SOURCE=github
 ARG WASMVM_BASE_URL=https://minio.terp.network/releases/zk-wasmvm
 
 FROM golang:${GO_VERSION}-alpine AS go-builder
+# Stamped into terpd via make VERSION=/COMMIT= (.git is dockerignored).
+# Must be vX.Y.Z for Cosmovisor packs — not git-describe.
+ARG GIT_VERSION=
+ARG GIT_COMMIT=
 
 SHELL ["/bin/sh", "-ecuxo", "pipefail"]
 # this comes from standard alpine nightly file
@@ -113,7 +117,7 @@ RUN ARCH=$(uname -m) && \
 # NOTE: never `go mod tidy` here — tests/ibctesting and other test-only packages
 # are intentionally excluded from the docker context; tidy would try to resolve
 # them and fail. go.mod/go.sum are already tidy on the host.
-RUN go mod download && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build
+RUN go mod download && VERSION="${GIT_VERSION}" COMMIT="${GIT_COMMIT}" LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build
 RUN echo "Ensuring binary is statically linked ..." \
   && (file /code/build/terpd | grep "statically linked")
 

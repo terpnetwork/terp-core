@@ -2,7 +2,7 @@
 # Local upgrade-pack gate. Complements verify_artifacts.sh (published S3).
 # Does not upload, tag, or broadcast.
 #
-#   PLAN=v6.1 TAG=v6.1.0-dev ./scripts/release/preflight_upgrade.sh
+#   PLAN=v6.1 TAG=v6.1.0 ./scripts/release/preflight_upgrade.sh
 #   WRITE=1  ...   rewrite networks/upgrades/$PLAN/cosmovisor.json from local tarballs
 #
 # Cosmovisor auto-download needs compact plan.info:
@@ -14,7 +14,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 PLAN="${PLAN:-v6.1}"
-TAG="${TAG:-${RELEASE_TAG:-v6.1.0-dev}}"
+TAG="${TAG:-${RELEASE_TAG:-}}"
+if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+  echo "ERROR: TAG/RELEASE_TAG must be vX.Y.Z (got '${TAG:-<empty>}'). Cosmovisor packs use the git tag, not -dev or git-describe." >&2
+  exit 1
+fi
 VER="${TAG#v}"
 PACK="${PACK:-$ROOT/networks/upgrades/${PLAN}}"
 BUILD_DIR="${BUILD_DIR:-$ROOT/build}"
@@ -217,11 +221,12 @@ if [ "$WRITE" = "1" ]; then
     {
       echo "plan: $PLAN"
       echo "binary_tag: $TAG"
-      echo "binary_commit: $(git rev-parse HEAD)"
+      echo "binary_commit: $(git rev-parse "$TAG^{commit}" 2>/dev/null || git rev-parse HEAD)"
+      echo "pack_branch: release/$TAG"
       echo "dirty: $(git describe --tags --always --dirty)"
       echo "s3_binaries_intended: $S3_BASE/"
       echo "published: false"
-      echo "note: checksums are of local tarballs; do not upload until asked."
+      echo "note: ELF identity is git tag $TAG. Pack files belong on release/$TAG and must not move the tag."
       if [ -s "$sums_tmp" ]; then
         echo
         cat "$sums_tmp"
