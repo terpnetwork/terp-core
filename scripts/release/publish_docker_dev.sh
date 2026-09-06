@@ -1,22 +1,18 @@
 #!/usr/bin/env bash
 # Build (or retag) the testnet ZK alpine image and apply version-aligned tags.
 #
-# Tags applied (local + registry names):
-#   terpnetwork/terp-core:local-zk
-#   terpnetwork/terp-core:<RELEASE_TAG>
-#   <IMAGE_REPO>:<RELEASE_TAG>          (default containers.terp.network/terp-core)
+# Tags applied:
+#   <IMAGE_REPO>:<RELEASE_TAG>   (default registry.terp.network/terp-core)
 #
 # Usage:
-#   ./scripts/release/publish_docker_dev.sh
-#   RELEASE_TAG=v5.3.0-dev SKIP_BUILD=1 ./scripts/release/publish_docker_dev.sh
-#   make docker-publish-dev RELEASE_TAG=v5.3.0-dev
+#   RELEASE_TAG=v6.1.0-dev ./scripts/release/publish_docker_dev.sh
+#   make docker-publish-dev RELEASE_TAG=v6.1.0-dev
 #
 # Env:
 #   RELEASE_TAG     (default: v5.3.0-dev)
-#   IMAGE_REPO      (default: containers.terp.network/terp-core)
-#   LOCAL_REPO      (default: terpnetwork/terp-core)
+#   IMAGE_REPO      (default: registry.terp.network/terp-core)
 #   WASMVM_SOURCE   (default: local) — must be local for ZK monorepo build
-#   SKIP_BUILD      (default: 0) — if 1, retag existing :local-zk without rebuild
+#   SKIP_BUILD      (default: 0) — if 1, retag existing IMAGE_REPO:RELEASE_TAG
 #   DOCKER_PLATFORM optional e.g. linux/amd64
 set -euo pipefail
 
@@ -24,13 +20,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 RELEASE_TAG="${RELEASE_TAG:-v5.3.0-dev}"
-IMAGE_REPO="${IMAGE_REPO:-containers.terp.network/terp-core}"
-LOCAL_REPO="${LOCAL_REPO:-terpnetwork/terp-core}"
+IMAGE_REPO="${IMAGE_REPO:-registry.terp.network/terp-core}"
 WASMVM_SOURCE="${WASMVM_SOURCE:-local}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
-LOCAL_ZK="${LOCAL_REPO}:local-zk"
-TAGGED_LOCAL="${LOCAL_REPO}:${RELEASE_TAG}"
-TAGGED_GHCR="${IMAGE_REPO}:${RELEASE_TAG}"
+TAGGED="${IMAGE_REPO}:${RELEASE_TAG}"
 
 GIT_COMMIT="$(git rev-parse HEAD)"
 GIT_TREE="$(git rev-parse HEAD^{tree})"
@@ -60,26 +53,21 @@ if [ ! -d "./crates/zk-wasmvm" ]; then
 fi
 
 if [ "$SKIP_BUILD" = "1" ]; then
-  if ! docker image inspect "$LOCAL_ZK" >/dev/null 2>&1; then
-    echo "ERROR: SKIP_BUILD=1 but image $LOCAL_ZK not found. Build first." >&2
+  if ! docker image inspect "$TAGGED" >/dev/null 2>&1; then
+    echo "ERROR: SKIP_BUILD=1 but image $TAGGED not found. Build first." >&2
     exit 1
   fi
-  echo "==> SKIP_BUILD=1 — reusing existing $LOCAL_ZK"
+  echo "==> SKIP_BUILD=1 — reusing existing $TAGGED"
 else
-  echo "==> Building ZK alpine image via make build-zk-local (WASMVM_SOURCE=local)"
+  echo "==> Building ZK alpine image via make build-zk-local TERP_IMAGE_VERSION=$RELEASE_TAG"
   # shellcheck disable=SC2086
-  make build-zk-local WASMVM_SOURCE=local ${DOCKER_PLATFORM:+DOCKER_DEFAULT_PLATFORM=$DOCKER_PLATFORM}
+  make build-zk-local WASMVM_SOURCE=local TERP_IMAGE_VERSION="$RELEASE_TAG" IMAGE_REPO="$IMAGE_REPO" \
+    ${DOCKER_PLATFORM:+DOCKER_DEFAULT_PLATFORM=$DOCKER_PLATFORM}
 fi
-
-echo "==> Tagging"
-docker tag "$LOCAL_ZK" "$TAGGED_LOCAL"
-docker tag "$LOCAL_ZK" "$TAGGED_GHCR"
-# Keep local-zk as the oline/dev alias of the same digest
-docker tag "$LOCAL_ZK" "$LOCAL_ZK"
 
 echo ""
 echo "Images:"
-for ref in "$LOCAL_ZK" "$TAGGED_LOCAL" "$TAGGED_GHCR"; do
+for ref in "$TAGGED"; do
   id="$(docker image inspect "$ref" --format '{{.Id}}' 2>/dev/null || echo missing)"
   created="$(docker image inspect "$ref" --format '{{.Created}}' 2>/dev/null || true)"
   echo "  $ref"
@@ -96,9 +84,7 @@ mkdir -p "$LABEL_DIR"
   echo "git_tree=${GIT_TREE}"
   echo "dirty=${DIRTY}"
   echo "wasmvm_source=${WASMVM_SOURCE}"
-  echo "local_zk=${LOCAL_ZK}"
-  echo "tagged_local=${TAGGED_LOCAL}"
-  echo "tagged_ghcr=${TAGGED_GHCR}"
+  echo "image=${TAGGED}"
   echo "image_id=$(docker image inspect "$LOCAL_ZK" --format '{{.Id}}')"
   echo "created_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } >"$LABEL_DIR/docker-build.env"

@@ -56,6 +56,9 @@ func migrateLegacyParams(ctx sdk.Context, k *keepers.AppKeepers) error {
 	if err := migrateWasm(ctx, k, pstore, amino); err != nil {
 		return err
 	}
+	if err := migrateHashMerchant(ctx, k); err != nil {
+		return err
+	}
 
 	n := wipeStore(pstore)
 	logger.Info("v6.1: legacy params subspace copied and wiped", "keys_removed", n)
@@ -170,6 +173,21 @@ func migrateWasm(ctx sdk.Context, k *keepers.AppKeepers, pstore storetypes.KVSto
 	}
 	ctx.Logger().Info("v6.1: wasm params written to module store")
 	return k.WasmKeeper.SetParams(ctx, p)
+}
+
+func migrateHashMerchant(ctx sdk.Context, k *keepers.AppKeepers) error {
+	if k == nil || k.HashMerchantKeeper == nil {
+		return nil
+	}
+	if err := k.HashMerchantKeeper.EnsureSudoGasLimit(ctx); err != nil {
+		return err
+	}
+	p, err := k.HashMerchantKeeper.GetParams(ctx)
+	if err != nil {
+		return err
+	}
+	ctx.Logger().Info("v6.1: hashmerchant sudo gas limit", "contract_gas_limit", p.SudoGasLimit())
+	return nil
 }
 
 func wasmHasParams(ctx sdk.Context, wk *wasmkeeper.Keeper) (ok bool) {

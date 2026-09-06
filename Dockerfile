@@ -110,7 +110,10 @@ RUN ARCH=$(uname -m) && \
     fi
 
 # force it to use static lib (from above) not standard libgo_cosmwasm.so file
-RUN go mod tidy && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build
+# NOTE: never `go mod tidy` here — tests/ibctesting and other test-only packages
+# are intentionally excluded from the docker context; tidy would try to resolve
+# them and fail. go.mod/go.sum are already tidy on the host.
+RUN go mod download && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build
 RUN echo "Ensuring binary is statically linked ..." \
   && (file /code/build/terpd | grep "statically linked")
 
