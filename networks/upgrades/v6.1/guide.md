@@ -12,6 +12,8 @@ Coordinated software upgrade on **120u-1**. Plan name **`v6.1`**. This is **not*
 
 Includes: CosmWasm circuits (deposit runway, `CircuitUploadAccess=Nobody`), IAVL Upgrade A dual-store copy (`b3-*` dest trees; IBC SHA-256).
 
+**Contract authors:** submessage **actions still happen**; `reply.events` no longer includes bank/`instantiate` plumbing. Audit list: [`CONTRACT-BREAKING.md`](./CONTRACT-BREAKING.md).
+
 ## Cosmovisor
 
 Plan directory name **must** equal `v6.1`:

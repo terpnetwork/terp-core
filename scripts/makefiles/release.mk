@@ -8,7 +8,7 @@ WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}')
 .PHONY: release release-help release-publish release-dry-run release-snapshot \
 	create-binaries create-checksums release-prep create-binaries-json \
 	create-upgrade-guide release-proposal upgrade-proposal \
-	release-bundle release-s3 release-dev
+	release-bundle release-s3 release-dev release-control
 
 # Shared with docker.mk for version-aligned testnet/ZK releases
 RELEASE_TAG ?= v6.0.0-dev
@@ -149,8 +149,21 @@ release-snapshot:
 # Binary build targets
 ###############################################################################
 
+# Exact vX.Y.Z only (v6.1.0). Rejects -dev, -rc, git-describe.
+define require_exact_release_tag
+	@if ! echo "$(RELEASE_TAG)" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
+	  echo "ERROR: RELEASE_TAG must be vX.Y.Z (got '$(or $(RELEASE_TAG),<empty)>'). No -dev, -rc, or commit describe."; \
+	  echo "ELF identity is git tag \$$RELEASE_TAG; Cosmovisor pack lives on release/\$$RELEASE_TAG after the tag."; \
+	  exit 1; \
+	fi
+endef
+
 create-binaries:
 	$(MAKE) build-reproducible
+
+release-control:
+	@RELEASE_TAG=$(RELEASE_TAG) BINARY_COMMIT=$(or $(BINARY_COMMIT),) \
+		bash scripts/release/ensure_release_control.sh
 
 create-checksums:
 	@mkdir -p $(BUILDDIR)
@@ -160,8 +173,9 @@ create-checksums:
 	@echo "Checksums written to $(BUILDDIR)/sha256sum.txt"
 
 release-prep:
-	@ALLOW_PARTIAL=$(or $(ALLOW_PARTIAL),0) PLAN=$(PLAN) TAG=$(or $(RELEASE_TAG),) \
-		./scripts/release/prep.sh $(if $(RELEASE_TAG),$(patsubst v%,%,$(RELEASE_TAG)))
+	$(require_exact_release_tag)
+	@ALLOW_PARTIAL=$(or $(ALLOW_PARTIAL),0) PLAN=$(PLAN) TAG=$(RELEASE_TAG) \
+		./scripts/release/prep.sh $(patsubst v%,%,$(RELEASE_TAG))
 
 ###############################################################################
 # Binaries JSON (cosmovisor-compatible)
@@ -274,6 +288,7 @@ curate-v61:
 # Local Cosmovisor / static-asset gate. WRITE=1 rewrites networks/upgrades/PLAN/cosmovisor.json
 # from checksummed tarballs (never file://). Does not upload.
 preflight-upgrade:
-	@PLAN=$(or $(PLAN),v6.1) TAG=$(or $(RELEASE_TAG),v6.1.0-dev) WRITE=$(or $(WRITE),0) \
+	$(require_exact_release_tag)
+	@PLAN=$(or $(PLAN),v6.1) TAG=$(RELEASE_TAG) WRITE=$(or $(WRITE),0) \
 		ALLOW_PARTIAL=$(or $(ALLOW_PARTIAL),1) \
 		bash scripts/release/preflight_upgrade.sh

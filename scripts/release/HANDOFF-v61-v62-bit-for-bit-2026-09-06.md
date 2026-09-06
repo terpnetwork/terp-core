@@ -4,7 +4,9 @@
 **Audience:** an objective teammate who did not cut these ELFs.  
 **Goal:** From the git SHAs we communicate, rebuild `terpd` linux/amd64 and linux/arm64 and show the sha256 matches `networks/upgrades/{v6.1,v6.2}/ARTIFACT_LOCK`. That is how operators know the Cosmovisor binary is the source we named.
 
-Do **not** upload S3, tag a GitHub release, or broadcast gov. Heights stay TBD.
+Do **not** upload S3 or broadcast gov. Heights stay TBD.
+
+**Release control (v6.0.0 pattern):** ELF identity is git tag `v6.1.0` / `v6.2.0`. Pack files (`ARTIFACT_LOCK`, proposals) live on `release/v6.1.0` / `release/v6.2.0` and **must not move the tag**. Recurate checks out `binary_commit` (= the tag), not pack-branch HEAD. `terpd version` must print `6.1.0` / `6.2.0`, not a `-dev` or git-describe string.
 
 ---
 

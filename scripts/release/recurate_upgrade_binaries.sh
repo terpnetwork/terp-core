@@ -53,9 +53,13 @@ else
 fi
 mkdir -p "$WT/crates/zk-wasmvm/internal/api"
 cp -f "$MUSLC_SRC"/libwasmvm_muslc.aarch64.a "$MUSLC_SRC"/libwasmvm_muslc.x86_64.a "$WT/crates/zk-wasmvm/internal/api/"
+if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+  echo "ERROR: binary_tag $TAG is not vX.Y.Z — recurate the tagged ELF, not a -dev describe" >&2
+  exit 1
+fi
 echo "==> recurate PLAN=$PLAN TAG=$TAG COMMIT=$COMMIT worktree=$WT"
-( cd "$WT" && WASMVM_SOURCE=local make create-binaries )
-( cd "$WT" && ALLOW_PARTIAL=1 PLAN="$PLAN" make release-prep RELEASE_TAG="$TAG" )
+( cd "$WT" && RELEASE_TAG="$TAG" WASMVM_SOURCE=local make create-binaries )
+( cd "$WT" && ALLOW_PARTIAL=1 PLAN="$PLAN" RELEASE_TAG="$TAG" make release-prep )
 
 fail=0
 while read -r want name; do
