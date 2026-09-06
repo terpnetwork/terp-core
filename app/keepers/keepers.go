@@ -469,6 +469,8 @@ func NewAppKeepers(
 
 	wasmCapabilities := append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0", "bn254", "hash-blake")
 	// Both x/wasm and 08-wasm use the local zk-wasmvm (wasmvm v3).
+	// Each NewVM gets MemoryCacheSize (default 100 MiB); two VMs ≈ 200 MiB resident LRU.
+	// LRU is node-local and gas-neutral — pin hot codeIDs via gov MsgPinCodes, not hottest-N.
 	wasmVm, err := wasmvm.NewVM(wasmDir, wasmCapabilities, 32, wasmConfig.ContractDebugMode, wasmConfig.MemoryCacheSize)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create terp wasm vm: %s", err))

@@ -15,6 +15,7 @@ The `x/hashmerchant` module parameters are stored at KVStore prefix `0x05` and c
 | `escrow_denom` | `string` | `uterp` | Token denomination accepted for escrow payments |
 | `min_escrow_amount` | `math.Int` | `1000000` | Minimum escrow deposit (1 TERP = 1,000,000 uterp) |
 | `market_mode` | `MarketMode` | `OPEN` | Who can provide attestations |
+| `contract_gas_limit` | `uint64` | `100663296` | SDK gas per sudo callback (`32 MiB * compile cost 3 gas/byte`) |
 
 ## quorum_fraction
 
@@ -63,6 +64,18 @@ Controls who can submit vote extension attestations:
 | `0` | `MARKET_MODE_UNSPECIFIED` | Invalid / not set |
 | `1` | `MARKET_MODE_OPEN` | Any active validator may attest (default) |
 | `2` | `MARKET_MODE_CLOSED` | Only governance-whitelisted providers may attest |
+
+## contract_gas_limit
+
+SDK gas budget for one CosmWasm sudo callback. Equal to compiling a 32 MiB wasm blob at `DefaultCompileCost` (3 gas/byte), the same 32 MiB cap as wasmd instance memory.
+
+Zero in stored params (legacy genesis) is treated as this default at execution time.
+
+## Wasm pin policy (gov allowlist)
+
+HashMerchant sudo callbacks (and similarly cw-hooks listeners and CosmWasm authenticators) are pinned via governance `MsgPinCodes`, not via node-local LRU and not via a process-local hottest-N. The wasm LRU (`defaultMemoryCacheSize` = 100 MiB per VM; x/wasm + 08-wasm ≈ 200 MiB resident) is node-local and must stay gas-neutral.
+
+The pinned cache (`SyncPinnedCodes` / `InitializePinnedCodes`) is unbounded: keep the allowlist under 10 hot code IDs. Pinning hundreds of codes will OOM. Operators should watch `size_pinned_memory_cache` via `get_pinned_metrics`. There is no EndBlocker auto-pin.
 
 ## Updating Parameters
 

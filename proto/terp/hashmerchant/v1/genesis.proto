@@ -25,6 +25,10 @@ message Params {
   ];
   // market_mode selects open or closed attestation market.
   MarketMode market_mode = 5;
+  // contract_gas_limit is SDK gas charged to one sudo callback.
+  // Default is 32 MiB * wasm compile cost (3 gas/byte), matching wasmd's
+  // 32 MiB instance memory limit.
+  uint64 contract_gas_limit = 6;
 }
 
 // GenesisState defines the x/hashmerchant module genesis.

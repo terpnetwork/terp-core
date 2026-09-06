@@ -2,17 +2,37 @@ package types
 
 import (
 	"cosmossdk.io/math"
+
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+)
+
+// Wasm instance memory is 32 MiB (wasmd keeper contractMemoryLimit).
+// DefaultCompileCost is SDK gas per bytecode byte. The sudo budget is the
+// compile cost of a max-size blob so the number is recoverable from gas.go.
+const (
+	SudoMemoryLimitBytes    = 32 << 20 // 32 MiB
+	DefaultContractGasLimit = SudoMemoryLimitBytes * wasmtypes.DefaultCompileCost
 )
 
 // DefaultParams returns the default module parameters.
 func DefaultParams() Params {
 	return Params{
-		QuorumFraction:  math.LegacyMustNewDecFromStr("0.667"),
-		PruneInterval:   1000,
-		EscrowDenom:     "uterp",
-		MinEscrowAmount: math.NewInt(1_000_000), // 1 TERP
-		MarketMode:      MarketMode_MARKET_MODE_OPEN,
+		QuorumFraction:   math.LegacyMustNewDecFromStr("0.667"),
+		PruneInterval:    1000,
+		EscrowDenom:      "uterp",
+		MinEscrowAmount:  math.NewInt(1_000_000), // 1 TERP
+		MarketMode:       MarketMode_MARKET_MODE_OPEN,
+		ContractGasLimit: DefaultContractGasLimit,
 	}
+}
+
+// SudoGasLimit is the SDK gas meter cap for one sudo callback.
+// Zero (legacy params) uses DefaultContractGasLimit.
+func (p Params) SudoGasLimit() uint64 {
+	if p.ContractGasLimit == 0 {
+		return DefaultContractGasLimit
+	}
+	return p.ContractGasLimit
 }
 
 // Validate checks that Params fields are sane.
