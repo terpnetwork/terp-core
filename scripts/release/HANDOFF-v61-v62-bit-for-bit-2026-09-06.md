@@ -16,8 +16,8 @@ Two coordinated halts, two binaries, two Cosmovisor plan directories.
 
 | Plan | Branch | Binary commit (ELF identity) | What the handler does |
 |------|--------|------------------------------|------------------------|
-| **v6.1** | `feat/6.1.0-dev` | `240e1f7c3420f09153c9bc8733ec15db1a9799d0` | Upgrade A: copy migratable IAVL → `b3-*`. HashMerchant consensus **2**, sudo cap **100663296**. CosmWasm halt/gas isolation. wasmvm pin **93d4bce** (no `verify_stwo_host_proof` C ABI). IBC stays SHA-256. |
-| **v6.2** | `feat/6.2.0-dev` | `ca3f7ac8ed0c6027cfd6683f29db94b9b53ad218` | Upgrade B: keepers stay `bank`/`staking`/`acc`; unmounted `b3-*` dest trees drop from CommitInfo. Same CosmWasm pins as v6.1. IBC stays SHA-256. |
+| **v6.1** | tag `v6.1.0` / pack `release/v6.1.0` | `69b34350aec61681275d3bc8f985cb8456531dcc` | Upgrade A. `terpd version` = **6.1.0**. Pack files after this SHA live only on `release/v6.1.0`. |
+| **v6.2** | tag `v6.2.0` / pack `release/v6.2.0` | `393ebd2fc0950fae4ff62e85946575820bf739f0` | Upgrade B. `terpd version` = **6.2.0**. Pack files after this SHA live only on `release/v6.2.0`. |
 
 `x/upgrade` stores **one** plan. A dual gov tx can carry both messages; the last `ScheduleUpgrade` wins. The v6.1 handler re-arms v6.2 at `BlockHeight()+2`. Cosmovisor must pre-place **both** plan dirs.
 
@@ -36,8 +36,8 @@ github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
 
 | Repo | SHA | Notes |
 |------|-----|--------|
-| terp-core v6.1 ELF | `240e1f7` | sound-hash + wasmvm without host C ABI |
-| terp-core v6.2 ELF | `ca3f7ac` | Upgrade B + same wasmvm pin |
+| terp-core v6.1 ELF | tag `v6.1.0` = `69b3435` | freeze source; pack is `release/v6.1.0` |
+| terp-core v6.2 ELF | tag `v6.2.0` = `393ebd2` | freeze source; pack is `release/v6.2.0` |
 | zk-wasmd | `5567942a` | nil-Ok including migrate; wasm-only reply |
 | cosmwasm (packages/vm) | `d742487ff` | `used_internally_is_cache_oblivious` |
 | zk-wasmvm | `93d4bce` | Path A only; C ABI lives on `feat/stwo-host-cgo-abci` |
@@ -80,17 +80,17 @@ If your `.a` files differ, you are not compiling the same CGO waist.
 
 Toolchain: Docker buildx, Go **1.26.5** via `golang:1.26.5-alpine` in `Dockerfile`, `WASMVM_SOURCE=local`.
 
-From a clone that has both branches and the recurate script (tip of `feat/6.2.0-dev` after this handoff). The script checks out `binary_commit` in a throwaway worktree; you do not recurate from a pack-only commit.
+From pack branch (has ARTIFACT_LOCK). Script checks out **tag / binary_commit**, not pack HEAD.
 
 ```sh
-git fetch origin feat/6.1.0-dev feat/6.2.0-dev
-git checkout feat/6.2.0-dev
-# STWO muslc already in crates/zk-wasmvm/internal/api/ (or set MUSLC_SRC)
+git fetch origin tag v6.1.0 tag v6.2.0
+git fetch origin release/v6.1.0 release/v6.2.0
+git checkout release/v6.2.0   # locks + recurate script
 PLAN=v6.1 ./scripts/release/recurate_upgrade_binaries.sh
 PLAN=v6.2 ./scripts/release/recurate_upgrade_binaries.sh
 ```
 
-v6.1 lock file is on `feat/6.1.0-dev` (pack commit after `240e1f7`). ELF identity remains `240e1f7`. v6.2 ELF identity remains `ca3f7ac`.
+Build inside the worktree uses `RELEASE_TAG=v6.1.0` / `v6.2.0` so `terpd version` is exact.
 
 The script fails closed if HEAD ≠ `binary_commit`, if the tree is dirty, if muslc lacks Path A STWO host, or if rebuilt sha256 ≠ lock.
 
@@ -116,31 +116,29 @@ That archive is the **git tree**, not the ELF. ELF identity is the lock sha256.
 
 ## 5. Expected checksums (cut host, 2026-09-06)
 
-### v6.1 (`240e1f7`)
+### v6.1 (tag `v6.1.0` = `69b3435`)
 
 | File | sha256 |
 |------|--------|
-| `terpd-linux-amd64` | `c11af8d8bdf1a8fe51a9ab8241c59d30b6c110fba96e8c8f8d2b5b2c09418160` |
-| `terpd-linux-arm64` | `c9f7ef4e096a2ab48f2fce2b6c8c5783934feef28f666b56ee60a52e06c3a45f` |
-| `terpd-6.1.0-dev-linux-amd64.tar.gz` | `663c15949182cac66459ad5f45d5d0a612a78d829d9cd1e77ecfee62bd21db87` |
-| `terpd-6.1.0-dev-linux-arm64.tar.gz` | `1b027568836bb6fa172b8d3ebf43d24db3c1485572507c321c307b066b1988d5` |
+| `terpd-linux-amd64` | `c4cd06d95f38bef37401dadafb539570c4cc3dd59bb60b41601fe9f311f2105b` |
+| `terpd-linux-arm64` | `63834b070a8b4613f183b33c86da737b643c64b4fea41f2080a86c59855a6094` |
+| `terpd-6.1.0-linux-amd64.tar.gz` | `ab7e4bb907914b5cb256b69f7ff7f503393800d108b0d01791572c281de5dcb0` |
+| `terpd-6.1.0-linux-arm64.tar.gz` | `0b7351db40d9d5180a4aec4ab00a75f96a3096b3f2bede55d7bafda3bccfeb8c` |
 
-GNU BuildID (amd64): `d805714b8475db0037000805388730bbee291e29`  
-GNU BuildID (arm64): `9925d55cd0273719d4933eda4c1871c52c7f3e49`
+`terpd version` contains **6.1.0** and commit `69b3435…`. GNU BuildID amd64 `499197d1…` arm64 `65a8c30e…`.
 
-### v6.2 (`ca3f7ac`)
+### v6.2 (tag `v6.2.0` = `393ebd2`)
 
 | File | sha256 |
 |------|--------|
-| `terpd-linux-amd64` | `2cc658ae71fc0efd78eb31ae75e025694b80627b3ad445ce2bf8232099639388` |
-| `terpd-linux-arm64` | `7cc729795fbcb045c938030f4c7a3ea6ed96226cab8b175fa8cb12710a74e738` |
-| `terpd-6.2.0-dev-linux-amd64.tar.gz` | `3ec11bc7ec2886c4631f9573e790ada32e813f1d82017360255576614146f0eb` |
-| `terpd-6.2.0-dev-linux-arm64.tar.gz` | `7fdfc0468387ac557f8acdd6d7388dcb76c1c6671b637f104056995e1862ba63` |
+| `terpd-linux-amd64` | `7d57502bb13f5e84ca5b18d10ff7def1ab129407b217b39e8a139d42b5c5ae5c` |
+| `terpd-linux-arm64` | `e9152c4650fa5d2cb18c2584eb0907d095131de464e98c62256fcd06672fa256` |
+| `terpd-6.2.0-linux-amd64.tar.gz` | `bdd6583528deac0d579f8f8e65045b438536135995c96a4e73a4456c6e55426a` |
+| `terpd-6.2.0-linux-arm64.tar.gz` | `f804d18de9ba179a725163e4b1682e721eb29e14adb643ad9691cda64a497921` |
 
-GNU BuildID (amd64): `68ff7ccf400f0ff11f63880d9d7e3b8eb9e76a10`  
-GNU BuildID (arm64): `2ba50839cd17229e435156ea8985af2b2ffafe91`
+`terpd version` contains **6.2.0** and commit `393ebd2…`. GNU BuildID amd64 `ed293cf0…` arm64 `8c7b13b4…`.
 
-No darwin pin this cut (Cosmovisor linux only). Stale `*-darwin-arm64.tar.gz` leftovers must not be in `plan.info`.
+No darwin pin (Cosmovisor linux only).
 
 Tarball **member name must be `terpd`**. Cosmovisor `DAEMON_NAME=terpd`.
 
