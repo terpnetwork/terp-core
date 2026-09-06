@@ -104,8 +104,8 @@ do
   else
     note "OK $(basename "$f") store_code_with_circuit"
   fi
-  if ! has_sym "$f" verify_stwo_host_proof; then
-    err "$(basename "$f") missing verify_stwo_host_proof (stale muslc vs Go bindings)"
+  if ! has_sym "$f" 'stwo: Dummy DSTW rejected'; then
+    err "$(basename "$f") missing Path A STWO host (proof_instance_verify)"
   fi
 done
 
@@ -145,8 +145,8 @@ for arch in amd64 arm64; do
   else
     note "OK terpd-linux-$arch store_code_with_circuit"
   fi
-  if ! has_sym "$elf" verify_stwo_host_proof; then
-    err "$elf missing verify_stwo_host_proof (linked stale muslc)"
+  if ! has_sym "$elf" 'stwo: Dummy DSTW rejected'; then
+    err "$elf missing Path A STWO host (linked muslc without STWO_HOST_VERIFY)"
   fi
 done
 

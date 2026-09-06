@@ -45,8 +45,8 @@ for muslc in "$OUT"/libwasmvm_muslc.*.a; do
     echo "ERROR: $base missing store_code_with_circuit (not a ZK muslc)" >&2
     exit 1
   fi
-  if ! grep -a -q -F verify_stwo_host_proof "$muslc"; then
-    echo "ERROR: $base missing verify_stwo_host_proof (stale muslc vs Go bindings; rebuild release-build-alpine-custom)" >&2
+  if ! grep -a -q -F 'stwo: Dummy DSTW rejected' "$muslc"; then
+    echo "ERROR: $base missing Path A STWO host (rebuild release-build-alpine-custom)" >&2
     exit 1
   fi
   echo "OK $base store_code_with_circuit"

@@ -90,8 +90,8 @@ _docker-stage-all-libs:
 	for arch in aarch64 x86_64; do \
 	  srcf="$$src/libwasmvm_muslc.$$arch.a"; \
 	  [ -f "$$srcf" ] || continue; \
-	  if ! grep -a -q -F verify_stwo_host_proof "$$srcf"; then \
-	    echo "ERROR: $$srcf has no verify_stwo_host_proof (host cgo waist of Path A / proof-instance-verify). Do not copy artifacts/. Rebuild that arch with nightly STWO muslc."; \
+	  if ! grep -a -q -F 'stwo: Dummy DSTW rejected' "$$srcf"; then \
+	    echo "ERROR: $$srcf has no Path A STWO host (proof_instance_verify / STWO_HOST_VERIFY). Do not copy artifacts/. Rebuild that arch with nightly STWO muslc."; \
 	    if [ "$$arch" = "$$host" ]; then exit 1; fi; \
 	    echo "not staging $$arch (not host $$host); e2e uses this host image, not a second guest FFI"; \
 	    continue; \

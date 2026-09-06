@@ -37,8 +37,8 @@ for arch in aarch64 x86_64; do
     echo "ERROR: missing $f (STWO muslc, not git)" >&2
     exit 1
   fi
-  if ! grep -a -q -F verify_stwo_host_proof "$f"; then
-    echo "ERROR: $f has no verify_stwo_host_proof" >&2
+  if ! grep -a -q -F 'stwo: Dummy DSTW rejected' "$f"; then
+    echo "ERROR: $f has no Path A STWO host (proof_instance_verify)" >&2
     exit 1
   fi
 done
