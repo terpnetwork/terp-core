@@ -19,8 +19,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 RELEASE_TAG="${RELEASE_TAG:-v5.3.0-dev}"
-IMAGE_REPO="${IMAGE_REPO:-containers.terp.network/terp-core}"
-LOCAL_REPO="${LOCAL_REPO:-terpnetwork/terp-core}"
+IMAGE_REPO="${IMAGE_REPO:-registry.terp.network/terp-core}"
+TERP_IMAGE_VERSION="${TERP_IMAGE_VERSION:-${RELEASE_TAG}}"
 NETWORK="${NETWORK:-testnet}"
 CHAIN_ID="${CHAIN_ID:-120u-1}"
 LINEAGE="${LINEAGE:-}"
@@ -130,8 +130,7 @@ record_image() {
 
 echo "==> Recording docker images"
 for ref in \
-  "${LOCAL_REPO}:local-zk" \
-  "${LOCAL_REPO}:${RELEASE_TAG}" \
+  "${IMAGE_REPO}:${TERP_IMAGE_VERSION}" \
   "${IMAGE_REPO}:${RELEASE_TAG}"; do
   record_image "$ref"
 done
@@ -143,6 +142,18 @@ if [ -f build/sha256sum.txt ]; then
   cp build/sha256sum.txt "$OUT_DIR_ABS/sha256sum.txt"
   echo "==> Copied build/sha256sum.txt"
 fi
+# Cosmovisor tarballs from this prep (overwrite stale leftovers in OUT_DIR).
+for f in \
+  "terpd-${RELEASE_TAG#v}-linux-amd64.tar.gz" \
+  "terpd-${RELEASE_TAG#v}-linux-arm64.tar.gz" \
+  "terpd-${RELEASE_TAG#v}-darwin-arm64.tar.gz" \
+  terpd-linux-amd64 terpd-linux-arm64 \
+  binaries.json; do
+  if [ -f "build/$f" ]; then
+    cp -f "build/$f" "$OUT_DIR_ABS/$f"
+    echo "==> Copied build/$f"
+  fi
+done
 
 # ---------------------------------------------------------------------------
 # manifest.json
