@@ -7,8 +7,9 @@
 # snapshot.json latest. Do not use 5.2.0 (dies: expected 22911849 got 0).
 # Do not use pruned 22807932 or archive 22749033 (pre-v6).
 #
-# After halt, NEW_BIND (this tree) applies plan v6.1. Optional CHAIN_V62=1
-# then halts this binary on plan v6.2 and starts V62_BIND (feat/6.2.0-dev).
+# After halt, Cosmovisor (USE_COSMOVISOR=1, default) starts upgrades/v6.1/bin/terpd.
+# v6.1 arms plan v6.2 at height+2; Cosmovisor auto-swaps to upgrades/v6.2/bin/terpd.
+# Set USE_COSMOVISOR=0 to use the old manual NEW_BIND / chain-v62 in-place-testnet path.
 #
 #   make tsh-upgrade-v61
 #   STATE_SYNC=0 sh tests/tsh/upgrade/v61.sh
@@ -29,6 +30,9 @@ export SNAPSHOT_INDEX="${SNAPSHOT_INDEX:-https://minio.terp.network/snapshots/ma
 export OLD_LOG="${OLD_LOG:-/tmp/tsh-v61-old.log}"
 export NEW_LOG="${NEW_LOG:-/tmp/tsh-v61-new.log}"
 export POST_BLOCKS="${POST_BLOCKS:-3}"
+export USE_COSMOVISOR="${USE_COSMOVISOR:-1}"
+export V62_BIND="${V62_BIND:-terpd-v62}"
+export CV_BIND="${CV_BIND:-cosmovisor}"
 
 if ! command -v "$OLD_BIND" >/dev/null; then
   echo "OLD_BIND=$OLD_BIND not on PATH. Install the v6 terpd as terpd-v6 (post-v6 snapshot). Do not use 5.2.0."
@@ -40,6 +44,12 @@ if echo "$_oldver" | grep -qE '^5\.'; then
   exit 1
 fi
 echo "v61: OLD_BIND=$OLD_BIND (${_oldver:-v6 pack, version string empty})"
+if [ "${USE_COSMOVISOR:-0}" = "1" ]; then
+  command -v "${CV_BIND:-cosmovisor}" >/dev/null || { echo "USE_COSMOVISOR=1 needs cosmovisor on PATH"; exit 1; }
+  command -v "${V62_BIND:-terpd-v62}" >/dev/null || { echo "USE_COSMOVISOR=1 needs $V62_BIND (upgrades/v6.2/bin/terpd)"; exit 1; }
+  export CHAIN_V62=1
+  echo "v61: Cosmovisor auto-swap v6.1 then v6.2 (pre-placed bins)"
+fi
 
 if [ -z "${SNAPSHOT_PATH:-}" ] && [ -z "${SNAPSHOT_URL:-}" ] && [ "$STATE_SYNC" = "0" ]; then
   echo "resolving pruned snapshot from $SNAPSHOT_INDEX"

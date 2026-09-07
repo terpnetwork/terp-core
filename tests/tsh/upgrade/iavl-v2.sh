@@ -16,6 +16,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$ROOT/../../.." && pwd)"
 
+if [ "${SKIP_IAVL_V2:-0}" = "1" ]; then
+  echo "iavl-v2: skip (SKIP_IAVL_V2=1 — Cosmovisor artifact TSH, no Go ingest suite)"
+  return 0 2>/dev/null || exit 0
+fi
 echo "iavl-v2: hash-soundness tests (ingest SHA-256 ≠ BLAKE3)"
 (
   cd "$REPO"
