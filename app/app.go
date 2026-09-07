@@ -556,16 +556,10 @@ func (app *TerpApp) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
 	return app.mm.BeginBlock(ctx)
 }
 
-// EndBlocker application updates every end block
+// EndBlocker application updates every end block.
+// v6.1's MaybeArmV62 must not live here: the v6.1 binary arms plan v6.2 at apply.
 func (app *TerpApp) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
-	eb, err := app.mm.EndBlock(ctx)
-	if err != nil {
-		return eb, err
-	}
-	if err := v61.MaybeArmV62(ctx, app.UpgradeKeeper); err != nil {
-		return eb, err
-	}
-	return eb, nil
+	return app.mm.EndBlock(ctx)
 }
 
 // Precommitter application updates before the commital of a block after all transactions have been delivered.
