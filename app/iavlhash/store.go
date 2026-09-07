@@ -13,8 +13,7 @@ var SHA256Stores = map[string]struct{}{
 	"icacontroller":           {},
 	"packetfowardmiddleware":  {},
 	"packetforwardmiddleware": {},
-	"ibc-hooks":               {},
-	"hooks-for-ibc":           {}, // ibc-hooks StoreKey (avoids collision with "ibc")
+	"hooks-for-ibc":           {}, // ibchookstypes.StoreKey (not ModuleName)
 	"08-wasm":                 {},
 	"capability":              {},
 }
