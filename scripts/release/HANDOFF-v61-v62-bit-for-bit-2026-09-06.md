@@ -62,6 +62,8 @@ Each must contain Path A STWO host (`grep -a -F 'stwo: Dummy DSTW rejected'`). T
 
 If your `.a` files differ, you are not compiling the same CGO waist.
 
+`crates/ibc-hooks-v11` is gitignored. Recurate copies `HOOKS_SRC` (default that path) or fetches the pinned tarball (`scripts/ci/ibc-hooks-v11.sha256` = `1b31faa98bedb7e388eef97ed031143a851b0d8a799b52d7b1b3ab78c898a312`). Cosmovisor tarballs are packed with `pack_cv_tarball.py` (`SOURCE_DATE_EPOCH` = tag commit `%ct`: v6.1 `1788729561`, v6.2 `1788729565`). ELF sha256 is the consensus identity; tarball hashes are now reproducible under that packer.
+
 ---
 
 ## 3. Locked non-goals
@@ -122,8 +124,8 @@ That archive is the **git tree**, not the ELF. ELF identity is the lock sha256.
 |------|--------|
 | `terpd-linux-amd64` | `c4cd06d95f38bef37401dadafb539570c4cc3dd59bb60b41601fe9f311f2105b` |
 | `terpd-linux-arm64` | `63834b070a8b4613f183b33c86da737b643c64b4fea41f2080a86c59855a6094` |
-| `terpd-6.1.0-linux-amd64.tar.gz` | `ab7e4bb907914b5cb256b69f7ff7f503393800d108b0d01791572c281de5dcb0` |
-| `terpd-6.1.0-linux-arm64.tar.gz` | `0b7351db40d9d5180a4aec4ab00a75f96a3096b3f2bede55d7bafda3bccfeb8c` |
+| `terpd-6.1.0-linux-amd64.tar.gz` | `838e79432355cafac57b7038059d4c223f79189a7ee11c78f9eb933f7396efbe` |
+| `terpd-6.1.0-linux-arm64.tar.gz` | `a0ca105079f49cff3c042a860a75cb67adbf17f0cb0af4979641a065ccca8b36` |
 
 `terpd version` contains **6.1.0** and commit `69b3435…`. GNU BuildID amd64 `499197d1…` arm64 `65a8c30e…`.
 
@@ -133,12 +135,12 @@ That archive is the **git tree**, not the ELF. ELF identity is the lock sha256.
 |------|--------|
 | `terpd-linux-amd64` | `7d57502bb13f5e84ca5b18d10ff7def1ab129407b217b39e8a139d42b5c5ae5c` |
 | `terpd-linux-arm64` | `e9152c4650fa5d2cb18c2584eb0907d095131de464e98c62256fcd06672fa256` |
-| `terpd-6.2.0-linux-amd64.tar.gz` | `bdd6583528deac0d579f8f8e65045b438536135995c96a4e73a4456c6e55426a` |
-| `terpd-6.2.0-linux-arm64.tar.gz` | `f804d18de9ba179a725163e4b1682e721eb29e14adb643ad9691cda64a497921` |
+| `terpd-6.2.0-linux-amd64.tar.gz` | `612f351f8a4cd45d4bf5b41af92c9a2dece303d8bc664454c2a16aacbc87bb71` |
+| `terpd-6.2.0-linux-arm64.tar.gz` | `e36c1ccb69a5cf6edac63eb9440274b8419d11b1e7ea050c0449d2cccd5232a9` |
 
 `terpd version` contains **6.2.0** and commit `393ebd2…`. GNU BuildID amd64 `ed293cf0…` arm64 `8c7b13b4…`.
 
-No darwin pin (Cosmovisor linux only).
+No darwin pin (Cosmovisor linux only). Independent recuration (2026-09-07) matched all four linux ELF hashes. Tarball hashes above are the python packer, not `tar -czf`.
 
 Tarball **member name must be `terpd`**. Cosmovisor `DAEMON_NAME=terpd`.
 

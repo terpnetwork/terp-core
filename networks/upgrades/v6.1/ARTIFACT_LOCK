@@ -1,12 +1,14 @@
 plan: v6.1
-binary_tag: v6.1.0-dev
-binary_commit: 240e1f7c3420f09153c9bc8733ec15db1a9799d0
-dirty: v6.0.0-27-g240e1f7-dirty
-s3_binaries_intended: https://s3.terp.network/releases/terp-core/v6.1.0-dev/
+binary_tag: v6.1.0
+binary_commit: 69b34350aec61681275d3bc8f985cb8456531dcc
+pack_branch: release/v6.1.0
+dirty: v6.1.0-dirty
+s3_binaries_intended: https://s3.terp.network/releases/terp-core/v6.1.0/
 published: false
-note: checksums are of local tarballs; do not upload until asked.
+source_date_epoch: 1788729561
+note: ELF identity is git tag v6.1.0. Pack files belong on release/v6.1.0 and must not move the tag. Tarballs are pack_cv_tarball.py (SOURCE_DATE_EPOCH=tag %ct); ELF sha256 is the consensus identity.
 
-663c15949182cac66459ad5f45d5d0a612a78d829d9cd1e77ecfee62bd21db87  terpd-6.1.0-dev-linux-amd64.tar.gz
-1b027568836bb6fa172b8d3ebf43d24db3c1485572507c321c307b066b1988d5  terpd-6.1.0-dev-linux-arm64.tar.gz
-c11af8d8bdf1a8fe51a9ab8241c59d30b6c110fba96e8c8f8d2b5b2c09418160  terpd-linux-amd64
-c9f7ef4e096a2ab48f2fce2b6c8c5783934feef28f666b56ee60a52e06c3a45f  terpd-linux-arm64
+838e79432355cafac57b7038059d4c223f79189a7ee11c78f9eb933f7396efbe  terpd-6.1.0-linux-amd64.tar.gz
+a0ca105079f49cff3c042a860a75cb67adbf17f0cb0af4979641a065ccca8b36  terpd-6.1.0-linux-arm64.tar.gz
+c4cd06d95f38bef37401dadafb539570c4cc3dd59bb60b41601fe9f311f2105b  terpd-linux-amd64
+63834b070a8b4613f183b33c86da737b643c64b4fea41f2080a86c59855a6094  terpd-linux-arm64

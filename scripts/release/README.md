@@ -86,6 +86,10 @@ WRITE=1 PLAN=v6.1 RELEASE_TAG=v6.1.0 make release-prep
 # commit lock/proposal on release/v6.1.0 only — do not move tag v6.1.0
 ```
 
+Cosmovisor `tar.gz` files are packed by `pack_cv_tarball.py` (Python stdlib, not `tar -czf`): USTAR, `mtime=$SOURCE_DATE_EPOCH` (tag commit `%ct`), uid/gid 0, gzip `-9` with `mtime=0`. Same ELF → same tarball hash on macOS and Linux. Recurate runs this packer from the **pack branch**, not the tagged worktree.
+
+`crates/ibc-hooks-v11` is gitignored. Recurate copies `HOOKS_SRC` (default that path) or fetches a **sha256-pinned** tarball (`IBC_HOOKS_SHA256`). Submodule pin is the follow-up so a bare clone does not need MinIO.
+
 
 | Script | Purpose |
 |--------|---------|
@@ -93,7 +97,9 @@ WRITE=1 PLAN=v6.1 RELEASE_TAG=v6.1.0 make release-prep
 | [`make_release_bundle.sh`](./make_release_bundle.sh) | Deterministic `source.tar.gz`, git metadata, image digests, `manifest.json` |
 | [`publish_s3_release.sh`](./publish_s3_release.sh) | `mc cp` bundle → `releases/<project>/<tag>/` + snapshot pointer |
 | [`S3-LAYOUT.md`](./S3-LAYOUT.md) | Canonical multi-project MinIO layout |
-| [`prep.sh`](./prep.sh) | Goreleaser-era binary tarballs (mainnet-style) |
+| [`prep.sh`](./prep.sh) | Versioned Cosmovisor tarballs via `pack_cv_tarball.py` |
+| [`pack_cv_tarball.py`](./pack_cv_tarball.py) | Reproducible `terpd` member tarball (SOURCE_DATE_EPOCH) |
+| [`recurate_upgrade_binaries.sh`](./recurate_upgrade_binaries.sh) | Rebuild tagged ELF + compare `ARTIFACT_LOCK` |
 | [`ensure_release_control.sh`](./ensure_release_control.sh) | Create/verify tag `vX.Y.Z` + branch `release/vX.Y.Z` |
 
 ## Manifest (verifiability)
