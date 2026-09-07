@@ -4,7 +4,7 @@ binary_commit: 62dfd3167b2f44d54760d2368b58cdce2cedb2b2
 pack_branch: release/v6.2.0
 source_date_epoch: 1788744480
 s3_binaries_intended: https://s3.terp.network/releases/terp-core/v6.2.0/
-published: false
+published: true
 note: ELF identity is git tag v6.2.0 = 62dfd31 (no MaybeArmV62 EndBlocker). Pack files belong on release/v6.2.0. Tarballs pack_cv_tarball.py.
 
 4f85a408b805be7f02690873722734b45e09335178d4334b82c9aaff880cf7db  terpd-6.2.0-linux-amd64.tar.gz
