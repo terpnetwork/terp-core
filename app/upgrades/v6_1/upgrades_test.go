@@ -129,6 +129,7 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 	s.Require().Nil(s.App.GetKey("b3-08-wasm"), "no 08-wasm dest tree")
 	s.Require().NotNil(s.commitStore(ibcexported.StoreKey), "IBC IAVL store still mounted")
 	s.Require().Equal(len(iavlhash.DualStorePairs()), len(snaps))
+	s.Require().Equal(v61.FoundationDAOAddr, s.App.WasmKeeper.GetParams(s.Ctx).CircuitDevDestination)
 }
 
 func (s *UpgradeTestSuite) TestLegacySubspaceCopiedIntoModuleStore() {

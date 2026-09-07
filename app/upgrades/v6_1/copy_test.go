@@ -2,6 +2,7 @@ package v6_1
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
@@ -9,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/keepers"
 )
 
 func commitKV(t *testing.T, ms storetypes.MultiStore, key storetypes.StoreKey) storetypes.CommitKVStore {
@@ -73,6 +75,34 @@ func TestCopyKVStoreCommitHashesSoundAndUnsound(t *testing.T) {
 	require.Equal(t, dstWorking, committed.Hash,
 		"sound: after Commit, LastCommitID hash is the working hash we copied")
 	require.Equal(t, committed.Hash, dstC.LastCommitID().Hash)
+}
+
+func TestAllNonIBCAppStoresAreMigrated(t *testing.T) {
+	var k keepers.AppKeepers
+	k.GenerateKeys()
+	skip := map[string]struct{}{
+		"upgrade": {},
+		"params":  {},
+	}
+	for name := range iavlhash.SHA256Stores {
+		skip[name] = struct{}{}
+	}
+	migratable := map[string]struct{}{}
+	for _, s := range iavlhash.MigratableStores() {
+		migratable[s] = struct{}{}
+		require.NotNil(t, k.GetKey(s), "src %s must be mounted", s)
+		require.NotNil(t, k.GetKey(iavlhash.DestName(s)), "dest %s must be mounted", iavlhash.DestName(s))
+	}
+	for name := range k.GetKVStoreKey() {
+		if strings.HasPrefix(name, "b3-") {
+			continue
+		}
+		if _, ok := skip[name]; ok {
+			continue
+		}
+		_, ok := migratable[name]
+		require.True(t, ok, "non-IBC store %s is mounted but not in MigratableStores", name)
+	}
 }
 
 func TestRefuseIBCRehashPolicy(t *testing.T) {

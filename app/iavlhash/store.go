@@ -14,6 +14,7 @@ var SHA256Stores = map[string]struct{}{
 	"packetfowardmiddleware":  {},
 	"packetforwardmiddleware": {},
 	"ibc-hooks":               {},
+	"hooks-for-ibc":           {}, // ibc-hooks StoreKey (avoids collision with "ibc")
 	"08-wasm":                 {},
 	"capability":              {},
 }
