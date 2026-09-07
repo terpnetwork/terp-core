@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6.2",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "0",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.2.0-dev/terpd-6.2.0-dev-linux-amd64.tar.gz?checksum=sha256:3ec11bc7ec2886c4631f9573e790ada32e813f1d82017360255576614146f0eb\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.2.0-dev/terpd-6.2.0-dev-linux-arm64.tar.gz?checksum=sha256:7fdfc0468387ac557f8acdd6d7388dcb76c1c6671b637f104056995e1862ba63\"}}",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "50000000uterp",
+  "title": "Software Upgrade v6.2 (v6.2.0-dev)",
+  "summary": "Plan v6.2 after v6.1. Keepers stay bank/staking/acc; unmounted b3-* dest trees drop from CommitInfo. IBC stays SHA-256. Bounded sudo gas already in the v6.1 binary (HashMerchant consensus 2, contract_gas_limit 100663296). Halt height TBD. Pre-place Cosmovisor at cosmovisor/upgrades/v6.2/bin/terpd. S3 objects are not public until upload is asked.",
+  "expedited": true
+}

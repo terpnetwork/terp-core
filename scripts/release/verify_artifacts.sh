@@ -12,6 +12,14 @@ DEST="${DEST:-/tmp/terp-release-$TAG}"
 MUSLC_BASE="${MUSLC_BASE:-https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk}"
 export PATH="/usr/local/bin:/opt/homebrew/bin:/Applications/Docker.app/Contents/Resources/bin:${PATH}"
 
+if [ "${LOCAL:-0}" = "1" ]; then
+  echo "=== verify_artifacts LOCAL $TAG ==="
+  PLAN="${PLAN:-v6.1}" TAG="$TAG" ALLOW_PARTIAL="${ALLOW_PARTIAL:-1}" \
+    bash "$ROOT/scripts/release/preflight_upgrade.sh"
+  echo "=== verify_artifacts LOCAL $TAG OK ==="
+  exit 0
+fi
+
 echo "=== verify_artifacts $TAG ==="
 
 echo "==> 1 fetch"
@@ -30,22 +38,34 @@ echo "==> 2 sha256 vs published sha256sum.txt"
 got_amd64="$(shasum -a 256 "$DEST/terpd-linux-amd64" | awk '{print $1}')"
 echo "terpd-linux-amd64 $got_amd64"
 
-echo "==> 3 muslc from MinIO"
-curl -fsSL -o /tmp/SHA256SUMS.muslc "$MUSLC_BASE/SHA256SUMS"
-cat /tmp/SHA256SUMS.muslc
-mkdir -p /tmp/muslc-check
-curl -fsSL -o /tmp/muslc-check/libwasmvm_muslc.x86_64.a "$MUSLC_BASE/libwasmvm_muslc.x86_64.a"
-curl -fsSL -o /tmp/muslc-check/libwasmvm_muslc.aarch64.a "$MUSLC_BASE/libwasmvm_muslc.aarch64.a"
-(cd /tmp/muslc-check && shasum -a 256 -c /tmp/SHA256SUMS.muslc)
+echo "==> 3 muslc (MinIO, else local wasmvm-release)"
+if curl -fsSL -o /tmp/SHA256SUMS.muslc "$MUSLC_BASE/SHA256SUMS"; then
+  cat /tmp/SHA256SUMS.muslc
+  mkdir -p /tmp/muslc-check
+  curl -fsSL -o /tmp/muslc-check/libwasmvm_muslc.x86_64.a "$MUSLC_BASE/libwasmvm_muslc.x86_64.a"
+  curl -fsSL -o /tmp/muslc-check/libwasmvm_muslc.aarch64.a "$MUSLC_BASE/libwasmvm_muslc.aarch64.a"
+  (cd /tmp/muslc-check && shasum -a 256 -c /tmp/SHA256SUMS.muslc)
+elif [ -f "$ROOT/build/wasmvm-release/SHA256SUMS" ]; then
+  echo "MinIO muslc not published; checking local build/wasmvm-release"
+  (cd "$ROOT/build/wasmvm-release" && shasum -a 256 -c SHA256SUMS)
+else
+  echo "ERROR: muslc not at $MUSLC_BASE and no build/wasmvm-release" >&2
+  exit 1
+fi
 
-echo "==> 4 ELF / Stwo"
+echo "==> 4 ELF / ZK symbols"
 info="$(file "$DEST/terpd-linux-amd64")"
 echo "$info"
 echo "$info" | grep -E "ELF 64-bit LSB executable, x86-64" >/dev/null
 echo "$info" | grep -i "statically linked" >/dev/null
-strings "$DEST/terpd-linux-amd64" > /tmp/v6-terpd.strings
-grep -q verify_stwo_host_proof /tmp/v6-terpd.strings
-echo "ok verify_stwo_host_proof"
+grep -a -q -F store_code_with_circuit "$DEST/terpd-linux-amd64"
+echo "ok store_code_with_circuit"
+if grep -a -q -F 'stwo: Dummy DSTW rejected' "$DEST/terpd-linux-amd64"; then
+  echo "ok Path A STWO host"
+else
+  echo "ERROR: Path A STWO host not in ELF (muslc without STWO_HOST_VERIFY)" >&2
+  exit 1
+fi
 
 if [ "${SKIP_IMAGE:-0}" != "1" ] && [ -f "$DEST/terp-core-local-linux-amd64.tar" ]; then
   echo "==> 5 docker load; image terpd == S3 ELF"
@@ -83,7 +103,7 @@ if [ "${SKIP_ICT:-0}" != "1" ]; then
       bash -lc "/ict/ict-ci run $1"
   }
   run_ict ibc_transfer
-  if [ -f tests/interchaintest/contracts/polytone_note.wasm ]; then
+  if [ -f artifacts/polytone_note.wasm ]; then
     run_ict polytone
   fi
 else

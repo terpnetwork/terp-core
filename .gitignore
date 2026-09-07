@@ -31,6 +31,8 @@ client/lcd/keys/*
 mytestnet
 draft_metadata.json
 draft_proposal.json
+!networks/upgrades/**/draft_proposal.json
+!networks/upgrades/**/draft_metadata.json
 
 # Testing
 coverage.txt

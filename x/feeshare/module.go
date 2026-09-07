@@ -19,7 +19,6 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
 	"github.com/terpnetwork/terp-core/v6/x/feeshare/client/cli"
-	"github.com/terpnetwork/terp-core/v6/x/feeshare/exported"
 	"github.com/terpnetwork/terp-core/v6/x/feeshare/keeper"
 	"github.com/terpnetwork/terp-core/v6/x/feeshare/types"
 )
@@ -110,22 +109,17 @@ type AppModule struct {
 	AppModuleBasic
 	keeper *keeper.Keeper
 	ak     authkeeper.AccountKeeper
-
-	// legacySubspace is used solely for migration of x/params managed parameters
-	legacySubspace exported.Subspace
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(
 	k *keeper.Keeper,
 	ak authkeeper.AccountKeeper,
-	ss exported.Subspace,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		ak:             ak,
-		legacySubspace: ss,
 	}
 }
 
@@ -159,7 +153,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), am.keeper)
 	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQuerier(am.keeper))
 
-	m := keeper.NewMigrator(am.keeper, am.legacySubspace)
+	m := keeper.NewMigrator(am.keeper, nil)
 	if err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2); err != nil {
 		panic(fmt.Sprintf("failed to migrate x/%s from version 1 to 2: %v", types.ModuleName, err))
 	}

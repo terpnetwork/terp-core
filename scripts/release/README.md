@@ -70,6 +70,22 @@ make docker-push-dev RELEASE_TAG=v6.0.0-dev
 
 After publishing a tag pack: `make verify-artifacts RELEASE_TAG=v6.0.0` (S3 checksums, muslc, docker image == ELF, ict-rs).
 
+Before a Cosmovisor upgrade (local artifacts, no S3): `WRITE=1 PLAN=v6.1 make preflight-upgrade RELEASE_TAG=v6.1.0`. `RELEASE_TAG` must be **vX.Y.Z** (the git tag). That rejects `file://` plans, requires tarball member `terpd`, and records per-arch libwasmvm checksums.
+
+### Release control (same as v6.0.0)
+
+ELF identity is an **annotated git tag** `vX.Y.Z` on the frozen source commit. Cosmovisor checksums, `ARTIFACT_LOCK`, and proposal JSON live on branch **`release/vX.Y.Z`**, which may be ahead of the tag. Never retag. Never stamp `vX.Y.Z-dev`, `rc`, or git-describe into `terpd`.
+
+```bash
+# freeze source, then:
+RELEASE_TAG=v6.1.0 BINARY_COMMIT=<sha> make release-control
+git checkout v6.1.0
+RELEASE_TAG=v6.1.0 WASMVM_SOURCE=local make create-binaries
+git checkout release/v6.1.0
+WRITE=1 PLAN=v6.1 RELEASE_TAG=v6.1.0 make release-prep
+# commit lock/proposal on release/v6.1.0 only — do not move tag v6.1.0
+```
+
 
 | Script | Purpose |
 |--------|---------|
@@ -78,6 +94,7 @@ After publishing a tag pack: `make verify-artifacts RELEASE_TAG=v6.0.0` (S3 chec
 | [`publish_s3_release.sh`](./publish_s3_release.sh) | `mc cp` bundle → `releases/<project>/<tag>/` + snapshot pointer |
 | [`S3-LAYOUT.md`](./S3-LAYOUT.md) | Canonical multi-project MinIO layout |
 | [`prep.sh`](./prep.sh) | Goreleaser-era binary tarballs (mainnet-style) |
+| [`ensure_release_control.sh`](./ensure_release_control.sh) | Create/verify tag `vX.Y.Z` + branch `release/vX.Y.Z` |
 
 ## Manifest (verifiability)
 

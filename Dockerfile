@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.25
+ARG GO_VERSION=1.26.5
 ARG RUNNER_IMAGE=alpine:3.17
 
 # WASMVM_SOURCE controls where the static wasmvm library comes from:
@@ -8,6 +8,10 @@ ARG WASMVM_SOURCE=github
 ARG WASMVM_BASE_URL=https://minio.terp.network/releases/zk-wasmvm
 
 FROM golang:${GO_VERSION}-alpine AS go-builder
+# Stamped into terpd via make VERSION=/COMMIT= (.git is dockerignored).
+# Must be vX.Y.Z for Cosmovisor packs — not git-describe.
+ARG GIT_VERSION=
+ARG GIT_COMMIT=
 
 SHELL ["/bin/sh", "-ecuxo", "pipefail"]
 # this comes from standard alpine nightly file
@@ -43,7 +47,11 @@ RUN if [ "$WASMVM_SOURCE" = "github" ]; then \
       wget -q "$BASE/$WASMVM_VERSION/libwasmvm_muslc.$ARCH.a" \
            -O /lib/libwasmvm_muslc.$ARCH.a && \
       wget -q "$BASE/$WASMVM_VERSION/SHA256SUMS" -O /tmp/SHA256SUMS && \
-      sha256sum /lib/libwasmvm_muslc.$ARCH.a | grep $(grep libwasmvm_muslc.$ARCH /tmp/SHA256SUMS | awk '{print $1}'); \
+      sha256sum /lib/libwasmvm_muslc.$ARCH.a | grep $(grep libwasmvm_muslc.$ARCH /tmp/SHA256SUMS | awk '{print $1}') && \
+      if ! grep -a -q -F 'stwo: Dummy DSTW rejected' /lib/libwasmvm_muslc.$ARCH.a; then \
+        echo "ERROR: downloaded muslc missing Path A STWO host (proof_instance_verify)"; \
+        exit 1; \
+      fi; \
     else \
       echo "==> Skipping GitHub download (WASMVM_SOURCE=$WASMVM_SOURCE)"; \
     fi
@@ -78,6 +86,10 @@ RUN ARCH=$(uname -m) && \
         exit 1; \
       fi && \
       # Ensure muslc .a is present where cgo LDFLAGS ${SRCDIR} looks (internal/api)
+      if ! grep -a -q -F 'stwo: Dummy DSTW rejected' /code/build/wasmvm/libwasmvm_muslc.$ARCH.a; then \
+        echo "ERROR: staged muslc missing Path A STWO host (proof_instance_verify)"; \
+        exit 1; \
+      fi && \
       cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a \
          /code/build/zk-deps/zk-wasmvm/internal/api/libwasmvm_muslc.$ARCH.a && \
       sed -i 's|=> \./crates/zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
@@ -102,7 +114,10 @@ RUN ARCH=$(uname -m) && \
     fi
 
 # force it to use static lib (from above) not standard libgo_cosmwasm.so file
-RUN go mod tidy && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build
+# NOTE: never `go mod tidy` here — tests/ibctesting and other test-only packages
+# are intentionally excluded from the docker context; tidy would try to resolve
+# them and fail. go.mod/go.sum are already tidy on the host.
+RUN go mod download && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build VERSION="${GIT_VERSION}" COMMIT="${GIT_COMMIT}"
 RUN echo "Ensuring binary is statically linked ..." \
   && (file /code/build/terpd | grep "statically linked")
 

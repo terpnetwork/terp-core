@@ -29,7 +29,6 @@ import (
 	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	crisistypes "github.com/cosmos/cosmos-sdk/contrib/x/crisis/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	runtimeservices "github.com/cosmos/cosmos-sdk/runtime/services"
 	"github.com/cosmos/cosmos-sdk/server/config"
@@ -46,17 +45,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/consensus"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	mint "github.com/cosmos/cosmos-sdk/x/mint"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11"
 	packetforward "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware"
@@ -69,14 +63,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/contrib/x/crisis"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
-	txmodule "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/prometheus/client_golang/prometheus"
 
-	sigtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
-	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-
 	ibcwlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11"
+
 	// ibcwlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
 	ibcwlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 	ica "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts"
@@ -87,20 +78,16 @@ import (
 	ibcchanneltypes "github.com/cosmos/ibc-go/v11/modules/core/04-channel/types"
 	ibctm "github.com/cosmos/ibc-go/v11/modules/light-clients/07-tendermint"
 
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-
 	"github.com/spf13/cast"
 
 	terpabci "github.com/terpnetwork/terp-core/v6/app/abci"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
 	"github.com/terpnetwork/terp-core/v6/docs"
+	"github.com/terpnetwork/terp-core/v6/x/drip"
 	"github.com/terpnetwork/terp-core/v6/x/feeshare"
-	feesharetypes "github.com/terpnetwork/terp-core/v6/x/feeshare/types"
 	"github.com/terpnetwork/terp-core/v6/x/globalfee"
 	"github.com/terpnetwork/terp-core/v6/x/hashmerchant"
 	"github.com/terpnetwork/terp-core/v6/x/tokenfactory"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
 
 	"github.com/cosmos/cosmos-sdk/x/evidence"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
@@ -110,9 +97,8 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	"github.com/terpnetwork/terp-core/v6/app/upgrades"
-	v5 "github.com/terpnetwork/terp-core/v6/app/upgrades/v5"
-	v520 "github.com/terpnetwork/terp-core/v6/app/upgrades/v520"
-	v6 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6"
+	v61 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_1"
+	v62 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_2"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
@@ -138,10 +124,9 @@ var (
 	// EmptyWasmOpts defines a type alias for a list of wasm options.
 	EmptyWasmOpts []wasmkeeper.Option
 
-	Upgrades = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,v4_1.Upgrade,
-		v5.Upgrade,
-		v520.Upgrade,
-		v6.Upgrade,
+	Upgrades = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,v4_1.Upgrade, v5.Upgrade, v520.Upgrade, v6.Upgrade,
+		v61.Upgrade, // still needed if this binary applies a leftover v6.1 halt
+		v62.Upgrade, // empty StoreUpgrades; not registered on the v6.1 binary
 	}
 )
 
@@ -315,7 +300,7 @@ func NewTerpApp(
 		appCodec:          appCodec,
 		txConfig:          txConfig,
 		interfaceRegistry: interfaceRegistry,
-		tkeys:             storetypes.NewTransientStoreKeys(paramstypes.TStoreKey),
+		tkeys:             storetypes.NewTransientStoreKeys(),
 	}
 	app.homePath = homePath
 
@@ -358,10 +343,8 @@ func NewTerpApp(
 
 	app.keys = app.GetKVStoreKey()
 
-	enabledSignModes := append(authtx.DefaultSignModes, sigtypes.SignMode_SIGN_MODE_TEXTUAL)
 	txConfigOpts := authtx.ConfigOptions{
-		EnabledSignModes:           enabledSignModes,
-		TextualCoinMetadataQueryFn: txmodule.NewBankKeeperCoinMetadataQueryFn(app.BankKeeper),
+		EnabledSignModes: authtx.DefaultSignModes,
 	}
 	txConfig, err = authtx.NewTxConfigWithOptions(
 		appCodec,
@@ -399,25 +382,25 @@ func NewTerpApp(
 		app.BaseApp,
 		encodingConfig.TxConfig,
 	),
-		auth.NewAppModule(appCodec, *app.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
+		auth.NewAppModule(appCodec, *app.AccountKeeper, authsims.RandomGenesisAccounts),
 		vesting.NewAppModule(*app.AccountKeeper, app.BankKeeper),
-		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, app.GetSubspace(banktypes.ModuleName)),
+		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper),
 		feegrantmodule.NewAppModule(appCodec, app.AccountKeeper, app.BankKeeper, *app.FeeGrantKeeper, app.interfaceRegistry),
-		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
-		mint.NewAppModule(appCodec, *app.MintKeeper, app.AccountKeeper, nil, app.GetSubspace(minttypes.ModuleName)),
-		slashing.NewAppModule(appCodec, *app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(slashingtypes.ModuleName), app.interfaceRegistry),
-		distr.NewAppModule(appCodec, *app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
-		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(stakingtypes.ModuleName)),
+		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper),
+		mint.NewAppModule(appCodec, *app.MintKeeper, app.AccountKeeper, nil),
+		slashing.NewAppModule(appCodec, *app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.interfaceRegistry),
+		distr.NewAppModule(appCodec, *app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
+		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
 		upgrade.NewAppModule(app.UpgradeKeeper, addresscodec.NewBech32Codec(Bech32PrefixAccAddr)),
 		ibctm.NewAppModule(tmLightClientModule),
 		evidence.NewAppModule(*app.EvidenceKeeper),
-		params.NewAppModule(app.ParamsKeeper),
 		authzmodule.NewAppModule(appCodec, *app.AuthzKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 		consensus.NewAppModule(appCodec, *app.ConsensusParamsKeeper),
-		feeshare.NewAppModule(app.FeeShareKeeper, *app.AccountKeeper, app.GetSubspace(feesharetypes.ModuleName)),
+		feeshare.NewAppModule(app.FeeShareKeeper, *app.AccountKeeper),
+		drip.NewAppModule(app.DripKeeper, *app.AccountKeeper),
 		globalfee.NewAppModule(appCodec, app.GlobalFeeKeeper, bondDenom),
-		tokenfactory.NewAppModule(app.TokenFactoryKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(tokenfactorytypes.ModuleName)),
-		wasm.NewAppModule(appCodec, app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter(), app.GetSubspace(wasmtypes.ModuleName)),
+		tokenfactory.NewAppModule(app.TokenFactoryKeeper, app.AccountKeeper, app.BankKeeper),
+		wasm.NewAppModule(appCodec, app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.MsgServiceRouter()),
 		ibc.NewAppModule(app.IBCKeeper),
 		transfer.NewAppModule(app.TransferKeeper),
 		ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper),
@@ -427,7 +410,7 @@ func NewTerpApp(
 		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
 		hashmerchant.NewAppModule(app.HashMerchantKeeper),
 		cwhooksmodule.NewAppModule(appCodec, *app.CwHooksKeeper),
-		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
+		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants), // always be last to make sure that it checks for all invariants and not only part of them
 	)
 
 	// Upgrades from v0.50.x onwards happen in pre block
@@ -573,7 +556,8 @@ func (app *TerpApp) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
 	return app.mm.BeginBlock(ctx)
 }
 
-// EndBlocker application updates every end block
+// EndBlocker application updates every end block.
+// v6.1's MaybeArmV62 must not live here: the v6.1 binary arms plan v6.2 at apply.
 func (app *TerpApp) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
 	return app.mm.EndBlock(ctx)
 }
@@ -661,14 +645,6 @@ func (app *TerpApp) InterfaceRegistry() types.InterfaceRegistry {
 
 func (app *TerpApp) ModuleManager() module.Manager {
 	return *app.mm
-}
-
-// GetSubspace returns a param subspace for a given module name.
-//
-// NOTE: This is solely to be used for testing purposes.
-func (app *TerpApp) GetSubspace(moduleName string) paramstypes.Subspace {
-	subspace, _ := app.ParamsKeeper.GetSubspace(moduleName)
-	return subspace
 }
 
 // RegisterAPIRoutes registers all application module routes with the provided

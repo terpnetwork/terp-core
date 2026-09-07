@@ -285,3 +285,7 @@ func (h StakingHooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.A
 func (StakingHooks) AfterUnbondingInitiated(_ context.Context, _ uint64) error {
 	return nil
 }
+
+func (StakingHooks) AfterValidatorConsKeyUpdated(_ context.Context, _, _ sdk.ConsAddress, _ sdk.ValAddress) error {
+	return nil
+}

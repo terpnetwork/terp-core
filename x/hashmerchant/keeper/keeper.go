@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"cosmossdk.io/log/v2"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/v2/prefix"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/terpnetwork/terp-core/v6/x/hashmerchant/types"
@@ -84,6 +84,20 @@ func (k Keeper) SetParams(ctx context.Context, p types.Params) error {
 	}
 	sdkCtx.KVStore(k.storeKey).Set(types.KeyPrefixParams, bz)
 	return nil
+}
+
+// EnsureSudoGasLimit writes DefaultContractGasLimit when the stored param is zero
+// (pre-cap genesis / upgrade).
+func (k Keeper) EnsureSudoGasLimit(ctx context.Context) error {
+	p, err := k.GetParams(ctx)
+	if err != nil {
+		return err
+	}
+	if p.ContractGasLimit != 0 {
+		return nil
+	}
+	p.ContractGasLimit = types.DefaultContractGasLimit
+	return k.SetParams(ctx, p)
 }
 
 // ---------------------------------------------------------------------------

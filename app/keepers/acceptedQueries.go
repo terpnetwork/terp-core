@@ -2,6 +2,7 @@ package keepers
 
 import (
 	"github.com/cosmos/gogoproto/proto"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 	icacontrollertypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
@@ -84,5 +85,8 @@ func AcceptedQueries() map[string]func() proto.Message {
 		"/cosmos.staking.v1beta1.Query/Validator":           func() proto.Message { return &stakingtypes.QueryValidatorResponse{} },
 		"/cosmos.staking.v1beta1.Query/Params":              func() proto.Message { return &stakingtypes.QueryParamsResponse{} },
 		"/cosmos.staking.v1beta1.Query/Pool":                func() proto.Message { return &stakingtypes.QueryPoolResponse{} },
+
+		// circuit deposit (contracts can query coverage before Any-dispatching MsgPayCircuitDeposit)
+		"/cosmwasm.wasm.v1.CircuitDepositQuery/Deposit": func() proto.Message { return &wasmtypes.QueryCircuitDepositResponse{} },
 	}
 }

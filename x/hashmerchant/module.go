@@ -29,7 +29,7 @@ var (
 	_ appmodule.HasEndBlocker = (*AppModule)(nil)
 )
 
-const ConsensusVersion = 1
+const ConsensusVersion = 2
 
 // ---------------------------------------------------------------------------
 // AppModuleBasic
@@ -89,15 +89,20 @@ func NewAppModule(k *keeper.Keeper) AppModule {
 	}
 }
 
-func (am AppModule) Name() string               { return am.AppModuleBasic.Name() }
-func (am AppModule) IsAppModule()                {}
-func (am AppModule) IsOnePerModuleType()         {}
-func (AppModule) QuerierRoute() string           { return types.QuerierRoute }
-func (AppModule) ConsensusVersion() uint64       { return ConsensusVersion }
+func (am AppModule) Name() string          { return am.AppModuleBasic.Name() }
+func (am AppModule) IsAppModule()          {}
+func (am AppModule) IsOnePerModuleType()   {}
+func (AppModule) QuerierRoute() string     { return types.QuerierRoute }
+func (AppModule) ConsensusVersion() uint64 { return ConsensusVersion }
 
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(*am.keeper))
 	types.RegisterQueryServer(cfg.QueryServer(), *am.keeper)
+	if err := cfg.RegisterMigration(types.ModuleName, 1, func(ctx sdk.Context) error {
+		return am.keeper.EnsureSudoGasLimit(ctx)
+	}); err != nil {
+		panic(fmt.Sprintf("hashmerchant migrate 1->2: %v", err))
+	}
 }
 
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}

@@ -10,7 +10,6 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
 )
 
@@ -18,8 +17,6 @@ type (
 	Keeper struct {
 		storeKey  storetypes.StoreKey
 		permAddrs map[string]authtypes.PermissionsForAddress
-
-		paramSpace paramtypes.Subspace
 
 		accountKeeper       types.AccountKeeper
 		bankKeeper          types.BankKeeper
@@ -36,15 +33,11 @@ type (
 // NewKeeper returns a new instance of the x/tokenfactory keeper
 func NewKeeper(
 	storeKey storetypes.StoreKey,
-	paramSpace paramtypes.Subspace,
 	maccPerms map[string][]string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	communityPoolKeeper types.CommunityPoolKeeper,
 ) Keeper {
-	if !paramSpace.HasKeyTable() {
-		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
-	}
 
 	permAddrs := make(map[string]authtypes.PermissionsForAddress)
 	permAddrMap := make(map[string]bool)
@@ -55,9 +48,8 @@ func NewKeeper(
 	}
 
 	return Keeper{
-		storeKey:   storeKey,
-		paramSpace: paramSpace,
-		permAddrs:  permAddrs,
+		storeKey:  storeKey,
+		permAddrs: permAddrs,
 
 		accountKeeper:       accountKeeper,
 		bankKeeper:          bankKeeper,

@@ -19,7 +19,8 @@ The `x/feeshare` module enables the Terp to support splitting transaction fees b
 2. **[State](02_state.md)**
 3. **[State Transitions](03_state_transitions.md)**
 4. **[Transactions](04_transactions.md)**
-5. **[Hooks](05_hooks.md)**
+5. **[Ante](05_ante.md)**
 6. **[Events](06_events.md)**
 7. **[Parameters](07_parameters.md)**
 8. **[Clients](08_clients.md)**
+9. **[Circuit runway](09_circuit_runway.md)** — reuse feeshare split; do not add a second splitter

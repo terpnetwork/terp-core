@@ -1,26 +1,32 @@
 banner.png
-# Test directories - ignore all target and data directories
-tests/**/target/
-tests/**/data/
 
-# Rust build artifacts in staged zk-deps (if present)
-build/zk-deps/zk-wasmvm/libwasmvm/target/
+# Isolated worktrees (dot and underscore). Sending these is a multi-GB context bomb.
+.worktrees/
+_worktrees/
 
-# Git directories
-.git
-build/zk-deps/**/.git
-
-# Dependencies
-**/node_modules
+# Tests — exclude only the heavy e2e dirs. Keep tests/ibctesting (tiny, imported
+# by x/smart-account tests; `go mod tidy`/`go vet` resolve it) in context.
+tests/interchaintest/
+tests/tsh/
+**/target/
 **/target
+**/node_modules
 vendor/
 crates/
 websites/
+.git
+.git/
 
-# Isolated worktrees must not enter the image context (wasmvm .a I/O bombs).
-_worktrees/
+# Staged zk-deps: Go source only. muslc lives in build/wasmvm/.
+build/zk-deps/**/.git
+build/zk-deps/zk-wasmvm/libwasmvm/target/
+build/zk-deps/zk-wasmvm/artifacts/
+build/zk-deps/zk-wasmvm/testdata/
+build/zk-deps/zk-wasmvm/builders/
+build/zk-deps/zk-wasmvm/internal/api/*.a
+build/wasmvm-release/
 
-# Do not ship local artifacts into the reproducible-binary context
+# Do not ship local artifacts into the image context
 build/release/
 build/*.tar.gz
 build/terpd*
@@ -30,3 +36,5 @@ permissionless.money/
 terp.network/
 scripts/scenarios/
 app/upgrades/v520/upgradeHandlerDebug.json
+*.tar.gz
+*.tar.lz4

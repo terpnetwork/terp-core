@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6.1",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "0",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.1.0-dev/terpd-6.1.0-dev-linux-amd64.tar.gz?checksum=sha256:663c15949182cac66459ad5f45d5d0a612a78d829d9cd1e77ecfee62bd21db87\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.1.0-dev/terpd-6.1.0-dev-linux-arm64.tar.gz?checksum=sha256:1b027568836bb6fa172b8d3ebf43d24db3c1485572507c321c307b066b1988d5\"}}",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "50000000uterp",
+  "title": "Software Upgrade v6.1 (v6.1.0-dev)",
+  "summary": "Plan v6.1. HashMerchant consensus version 2 with bounded sudo gas for wasm callbacks (contract_gas_limit default 100663296). CircuitUploadAccess Nobody; copy migratable IAVL stores into b3-* (IBC stays SHA-256). Pin wasm via gov MsgPinCodes; LRU memory_cache_size stays 100 MiB per VM. Halt height TBD. Pre-place Cosmovisor binary at cosmovisor/upgrades/v6.1/bin/terpd. S3 objects are not public until upload is asked; DAEMON_ALLOW_DOWNLOAD_BINARIES=false until then.",
+  "expedited": true
+}

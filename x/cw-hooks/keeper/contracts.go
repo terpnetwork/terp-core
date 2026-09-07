@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/store/v2/prefix"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
@@ -65,21 +66,45 @@ func (k Keeper) DeleteContract(ctx context.Context, keyPrefix []byte, contractAd
 	loadedPrefix.Delete(contractAddr)
 }
 
+// ExecuteMessageOnContracts sudoes each registered contract on an isolated cache
+// and gas meter. Inner OOG and sudo errors are logged and skipped so staking/gov
+// hooks cannot abort DeliverTx. Spent gas is billed to the parent meter; parent
+// OOG is not recovered.
 func (k Keeper) ExecuteMessageOnContracts(ctx context.Context, keyPrefix []byte, msgBz []byte) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	p := k.GetParams(ctx)
+	limit := k.GetParams(ctx).ContractGasLimit
 
 	for _, c := range k.GetAllContracts(ctx, keyPrefix) {
-		gasLimitCtx := sdkCtx.WithGasMeter(storetypes.NewGasMeter(p.ContractGasLimit))
-		addr := sdk.AccAddress(c.Bytes())
-
-		var err error
-		_, err = k.GetContractKeeper().Sudo(gasLimitCtx, addr, msgBz)
-		if err != nil {
-			k.Logger(ctx).Error("ExecuteMessageOnContracts err", err, "contract", addr.String())
-			return err
-		}
+		k.sudoContract(sdkCtx, sdk.AccAddress(c.Bytes()), msgBz, limit)
 	}
 
 	return nil
+}
+
+// sudoContract runs wasm sudo on a cache ctx with a finite SDK gas meter.
+func (k Keeper) sudoContract(sdkCtx sdk.Context, addr sdk.AccAddress, msgBz []byte, limit uint64) {
+	cache, write := sdkCtx.CacheContext()
+	metered := cache.WithGasMeter(storetypes.NewGasMeter(limit))
+
+	err := func() (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				if _, ok := r.(storetypes.ErrorOutOfGas); ok {
+					err = fmt.Errorf("sudo gas limit %d exceeded", limit)
+					return
+				}
+				panic(r)
+			}
+		}()
+		_, err = k.GetContractKeeper().Sudo(metered, addr, msgBz)
+		return err
+	}()
+
+	spent := min(metered.GasMeter().GasConsumed(), limit)
+	if err != nil {
+		k.Logger(sdkCtx).Error("ExecuteMessageOnContracts err", "err", err, "contract", addr.String())
+	} else {
+		write()
+	}
+	sdkCtx.GasMeter().ConsumeGas(spent, "cw-hooks sudo")
 }

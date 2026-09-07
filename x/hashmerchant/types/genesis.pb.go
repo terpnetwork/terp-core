@@ -37,6 +37,8 @@ type Params struct {
 	MinEscrowAmount cosmossdk_io_math.Int `protobuf:"bytes,4,opt,name=min_escrow_amount,json=minEscrowAmount,proto3,customtype=cosmossdk.io/math.Int" json:"min_escrow_amount"`
 	// market_mode selects open or closed attestation market.
 	MarketMode MarketMode `protobuf:"varint,5,opt,name=market_mode,json=marketMode,proto3,enum=terp.hashmerchant.v1.MarketMode" json:"market_mode,omitempty"`
+	// contract_gas_limit is SDK gas charged to one sudo callback.
+	ContractGasLimit uint64 `protobuf:"varint,6,opt,name=contract_gas_limit,json=contractGasLimit,proto3" json:"contract_gas_limit,omitempty"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }
@@ -91,6 +93,13 @@ func (m *Params) GetMarketMode() MarketMode {
 		return m.MarketMode
 	}
 	return MarketMode_MARKET_MODE_UNSPECIFIED
+}
+
+func (m *Params) GetContractGasLimit() uint64 {
+	if m != nil {
+		return m.ContractGasLimit
+	}
+	return 0
 }
 
 // GenesisState defines the x/hashmerchant module genesis.
@@ -245,6 +254,11 @@ func (m *Params) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.ContractGasLimit != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.ContractGasLimit))
+		i--
+		dAtA[i] = 0x30
+	}
 	if m.MarketMode != 0 {
 		i = encodeVarintGenesis(dAtA, i, uint64(m.MarketMode))
 		i--
@@ -409,6 +423,9 @@ func (m *Params) Size() (n int) {
 	n += 1 + l + sovGenesis(uint64(l))
 	if m.MarketMode != 0 {
 		n += 1 + sovGenesis(uint64(m.MarketMode))
+	}
+	if m.ContractGasLimit != 0 {
+		n += 1 + sovGenesis(uint64(m.ContractGasLimit))
 	}
 	return n
 }
@@ -620,6 +637,25 @@ func (m *Params) Unmarshal(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.MarketMode |= MarketMode(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ContractGasLimit", wireType)
+			}
+			m.ContractGasLimit = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ContractGasLimit |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

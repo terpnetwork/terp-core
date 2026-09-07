@@ -4,8 +4,8 @@ import (
 	fmt "fmt"
 	"strings"
 
-	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	db "github.com/cosmos/cosmos-db"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
 )
@@ -37,10 +37,13 @@ var (
 	KeyNextAccountAuthenticatorIdPrefix = []byte{0x01}
 	KeyAccountAuthenticatorsPrefix      = []byte{0x02}
 
-	// Parameter keys
+	// Parameter keys (legacy x/params names; still used to read the subspace)
 	KeyMaximumUnauthenticatedGas = []byte("MaximumUnauthenticatedGas")
 	KeyIsSmartAccountActive      = []byte("IsSmartAccountActive")
 	KeyCircuitBreakerControllers = []byte("CircuitBreakerControllers")
+
+	// ParamsKey is the module-store blob for types.Params (not the subspace keys).
+	ParamsKey = []byte{0x00}
 )
 
 func KeyAccount(account sdk.AccAddress) []byte {

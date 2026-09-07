@@ -1,0 +1,75 @@
+[package]
+name = "terp-e2e"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Terp-core e2e binaries (ict-rs). Replaces the Go interchaintest package."
+
+[dependencies]
+async-trait = "0.1"
+ict-rs = { path = "../../crates/ict-rs/ict-rs", features = ["testing", "terp", "docker"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# --- former tests/interchaintest/*.go ---
+
+[[bin]]
+name = "basic"
+path = "../../crates/ict-rs/examples/integration_test.rs"
+
+[[bin]]
+name = "chain_start"
+path = "../../crates/ict-rs/examples/basic_cosmos.rs"
+
+[[bin]]
+name = "ibc"
+path = "../../crates/ict-rs/examples/ibc_transfer.rs"
+
+[[bin]]
+name = "ibchooks"
+path = "../../crates/ict-rs/examples/ibc_hooks.rs"
+
+[[bin]]
+name = "pfm"
+path = "../../crates/ict-rs/examples/pfm.rs"
+
+[[bin]]
+name = "polytone"
+path = "../../crates/ict-rs/examples/polytone.rs"
+
+[[bin]]
+name = "statesync"
+path = "../../crates/ict-rs/examples/state_sync.rs"
+
+[[bin]]
+name = "upgrade"
+path = "../../crates/ict-rs/examples/cosmos_upgrade.rs"
+
+[[bin]]
+name = "zk"
+path = "../../crates/ict-rs/examples/no_rick.rs"
+
+[[bin]]
+name = "circuit_deposit"
+path = "../../crates/ict-rs/examples/circuit_deposit.rs"
+
+[[bin]]
+name = "circuit_runway_epoch"
+path = "../../crates/ict-rs/examples/circuit_runway_epoch.rs"
+
+[[bin]]
+name = "tokenfactory"
+path = "src/bin/tokenfactory.rs"
+
+[[bin]]
+name = "feeshare"
+path = "src/bin/feeshare.rs"
+
+[[bin]]
+name = "drip"
+path = "src/bin/drip.rs"
+
+[[bin]]
+name = "clock"
+path = "src/bin/clock.rs"

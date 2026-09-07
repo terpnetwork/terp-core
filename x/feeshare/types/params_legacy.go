@@ -4,8 +4,6 @@ package types
 
 import (
 	"cosmossdk.io/math"
-
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 // Parameter store key
@@ -18,17 +16,3 @@ var (
 	ParamStoreKeyDeveloperShares = []byte("DeveloperShares")
 	ParamStoreKeyAllowedDenoms   = []byte("AllowedDenoms")
 )
-
-// ParamKeyTable returns the parameter key table.
-func ParamKeyTable() paramtypes.KeyTable {
-	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
-}
-
-// ParamSetPairs returns the parameter set pairs.
-func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
-	return paramtypes.ParamSetPairs{
-		paramtypes.NewParamSetPair(ParamStoreKeyEnableFeeShare, &p.EnableFeeShare, validateBool),
-		paramtypes.NewParamSetPair(ParamStoreKeyDeveloperShares, &p.DeveloperShares, validateShares),
-		paramtypes.NewParamSetPair(ParamStoreKeyAllowedDenoms, &p.AllowedDenoms, validateArray),
-	}
-}

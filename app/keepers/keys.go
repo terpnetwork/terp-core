@@ -13,7 +13,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
@@ -33,6 +32,11 @@ import (
 	tokenfactorytypes "github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
 )
 
+// LegacyParamsStoreKey is the historical x/params KV name. SDK 0.55 removed
+// the module; v6.1 still mounts this store so remaining subspace values can
+// be copied into module stores, then the keys are wiped.
+const LegacyParamsStoreKey = "params"
+
 func (appKeepers *AppKeepers) GenerateKeys() {
 	appKeepers.keys = storetypes.NewKVStoreKeys(
 		authtypes.StoreKey,
@@ -43,7 +47,6 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		distrtypes.StoreKey,
 		slashingtypes.StoreKey,
 		govtypes.StoreKey,
-		paramstypes.StoreKey,
 		consensusparamtypes.StoreKey,
 		upgradetypes.StoreKey,
 		feegrant.StoreKey,
@@ -65,9 +68,13 @@ func (appKeepers *AppKeepers) GenerateKeys() {
 		tokenfactorytypes.StoreKey,
 		hashmerchanttypes.StoreKey,
 		cwhookstypes.StoreKey,
+		// b3-* are not mounted on this binary. v6.1 Added dest trees; v6.2
+		// leaves keepers on bank/staking/acc and omits unmounted dests from
+		// CommitInfo. Remounting here would panic on restart.
+		LegacyParamsStoreKey,
 	)
 
-	appKeepers.tkeys = storetypes.NewTransientStoreKeys(paramstypes.TStoreKey)
+	appKeepers.tkeys = storetypes.NewTransientStoreKeys()
 }
 
 func (appKeepers *AppKeepers) GetKVStoreKey() map[string]*storetypes.KVStoreKey {

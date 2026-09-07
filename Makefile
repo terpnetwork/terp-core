@@ -45,6 +45,12 @@ PACKAGES_UNITTEST=$(shell go list ./... | grep -v '/simulation' | grep -v '/cli_
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT := $(shell git log -1 --format='%H')
+# Cosmovisor / GitHub release: stamp vX.Y.Z, never vX.Y.Z-dev or git-describe.
+ifneq ($(RELEASE_TAG),)
+  ifeq ($(shell echo "$(RELEASE_TAG)" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$'),$(RELEASE_TAG))
+    VERSION := $(patsubst v%,%,$(RELEASE_TAG))
+  endif
+endif
 
 LEDGER_ENABLED ?= true
 SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
@@ -55,7 +61,7 @@ TENDERMINT_VERSION := $(shell go list -m github.com/cometbft/cometbft | sed 's:.
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 
-GO_MODULE := $(shell cat go.mod | grep "module " | cut -d ' ' -f 2)
+GO_MODULE := $(shell awk '/^module /{print $$2; exit}' go.mod)
 GO_VERSION := $(shell cat go.mod | grep -E 'go [0-9].[0-9]+' | cut -d ' ' -f 2)
 GO_MAJOR_VERSION = $(shell go version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f1)
 GO_MINOR_VERSION = $(shell go version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f2)

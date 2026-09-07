@@ -27,10 +27,23 @@ _HOST_ARCH := $(shell uname -m | sed 's/arm64/aarch64/; s/x86_64/x86_64/')
 	_docker-stage _docker-stage-all-libs wasmvm-download-libs wasmvm-build-libs \
 	docker-publish-dev docker-push-dev
 
-# Dev / testnet ZK release tag (see scripts/release/README.md)
+# Canonical image: $(IMAGE_REPO):$(TERP_IMAGE_VERSION)
+# TERP_IMAGE_VERSION is required for build/e2e. No registry tag named local / local-zk.
 RELEASE_TAG ?= v5.3.0-dev
-IMAGE_REPO ?= ghcr.io/terpnetwork/terp-core
-LOCAL_REPO ?= terpnetwork/terp-core
+IMAGE_REPO ?= registry.terp.network/terp-core
+TERP_IMAGE_VERSION ?=
+export IMAGE_REPO
+export TERP_IMAGE_VERSION
+export TERP_IMAGE_REPO ?= $(IMAGE_REPO)
+export ICT_IMAGE_REPO = $(IMAGE_REPO)
+export ICT_IMAGE_VERSION = $(TERP_IMAGE_VERSION)
+
+define require_image_version
+	@if [ -z "$(TERP_IMAGE_VERSION)" ] || [ "$(TERP_IMAGE_VERSION)" = "local" ] || [ "$(TERP_IMAGE_VERSION)" = "local-zk" ]; then \
+	  echo "ERROR: set TERP_IMAGE_VERSION to a real tag (git sha, v6.1.0-dev, …). local / local-zk are retired."; \
+	  exit 1; \
+	fi
+endef
 
 docker-help:
 	@echo "docker subcommands"
@@ -56,7 +69,8 @@ docker-help:
 	@echo "Current config:"
 	@echo "  WASMVM_VERSION = $(WASMVM_VERSION)"
 	@echo "  RELEASE_TAG    = $(RELEASE_TAG)"
-	@echo "  IMAGE_REPO     = $(IMAGE_REPO)"
+	@echo "  IMAGE_REPO          = $(IMAGE_REPO)"
+	@echo "  TERP_IMAGE_VERSION  = $(TERP_IMAGE_VERSION)"
 	@echo "  Build dir libs: build/wasmvm/"
 
 docker: docker-help
@@ -66,14 +80,30 @@ docker: docker-help
 # ---------------------------------------------------------
 
 _docker-stage-all-libs:
-	@echo "==> Staging all wasmvm libraries to build/wasmvm/ ..."
+	@echo "==> Staging wasmvm muslc from zk-wasmvm internal/api (cgo SRCDIR) ..."
 	@mkdir -p build/wasmvm
-	# Copy any pre-existing libs from zk-wasmvm
-	@find $(ZK_WASMVM_DIR) -name 'libwasmvm_muslc.*.a' -exec cp {} build/wasmvm/ \; 2>/dev/null || true
-	# Also support artifacts/ dir convention
-	@find $(ZK_WASMVM_DIR)/libwasmvm/artifacts -name 'libwasmvm_muslc.*.a' -exec cp {} build/wasmvm/ \; 2>/dev/null || true
+	@rm -f build/wasmvm/libwasmvm_muslc.*.a
+	@src="$(ZK_WASMVM_DIR)/internal/api"; \
+	if [ ! -d "$$src" ]; then echo "ERROR: missing $$src"; exit 1; fi; \
+	host="$$(uname -m | sed 's/arm64/aarch64/')"; \
+	n=0; \
+	for arch in aarch64 x86_64; do \
+	  srcf="$$src/libwasmvm_muslc.$$arch.a"; \
+	  [ -f "$$srcf" ] || continue; \
+	  if ! grep -a -q -F 'stwo: Dummy DSTW rejected' "$$srcf"; then \
+	    echo "ERROR: $$srcf has no Path A STWO host (proof_instance_verify / STWO_HOST_VERIFY). Do not copy artifacts/. Rebuild that arch with nightly STWO muslc."; \
+	    if [ "$$arch" = "$$host" ]; then exit 1; fi; \
+	    echo "not staging $$arch (not host $$host); e2e uses this host image, not a second guest FFI"; \
+	    continue; \
+	  fi; \
+	  cp -f "$$srcf" build/wasmvm/; \
+	  n=$$((n+1)); \
+	  echo "ok STWO libwasmvm_muslc.$$arch.a $$(ls -lh $$srcf | awk '{print $$5}')"; \
+	done; \
+	if [ "$$n" = 0 ]; then echo "ERROR: no STWO muslc in $$src for this host"; exit 1; fi; \
+	if [ ! -f "build/wasmvm/libwasmvm_muslc.$$host.a" ]; then echo "ERROR: host muslc libwasmvm_muslc.$$host.a missing STWO"; exit 1; fi
 	@echo "Staged libs:"
-	@ls -lh build/wasmvm/ 2>/dev/null || echo "  (none)"
+	@ls -lh build/wasmvm/
 
 _docker-stage:
 	$(MAKE) _docker-stage-all-libs
@@ -85,8 +115,13 @@ endif
 	@mkdir -p build/zk-deps/zk-wasmvm build/zk-deps/zk-wasmd
 	@rsync -a --delete \
 		--exclude='target/' \
+		--exclude='**/target/' \
 		--exclude='.git/' \
-		--exclude='**/libwasmvm/target/' \
+		--exclude='artifacts/' \
+		--exclude='testdata/' \
+		--exclude='builders/' \
+		--exclude='libwasmvm/target/' \
+		--exclude='internal/api/*.a' \
 		$(ZK_WASMVM_DIR)/ build/zk-deps/zk-wasmvm/ 2>/dev/null || true
 	@rsync -a --delete \
 		--exclude='.git/' \
@@ -125,8 +160,9 @@ wasmvm-build-libs:
 # ---------------------------------------------------------
 
 docker-build: _docker-stage
+	$(require_image_version)
 	@DOCKER_BUILDKIT=1 docker build \
-		-t terpnetwork/terp-core:local \
+		-t $(IMAGE_REPO):$(TERP_IMAGE_VERSION) \
 		--target runtime \
 		--build-arg GO_VERSION=$(GO_VERSION) \
 		--build-arg RUNNER_IMAGE=$(RUNNER_BASE_IMAGE_DISTROLESS) \
@@ -176,8 +212,9 @@ docker-localterp: docker-build-localnet
 # ---------------------------------------------------------
 
 build-zk-local: _docker-stage-zk-lib
+	$(require_image_version)
 	@DOCKER_BUILDKIT=1 docker build \
-		-t terpnetwork/terp-core:local-zk \
+		-t $(IMAGE_REPO):$(TERP_IMAGE_VERSION) \
 		--target runtime \
 		--build-arg GO_VERSION=$(GO_VERSION) \
 		--build-arg RUNNER_IMAGE=$(RUNNER_BASE_IMAGE_ALPINE) \
@@ -185,6 +222,12 @@ build-zk-local: _docker-stage-zk-lib
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg WASMVM_SOURCE=${WASMVM_SOURCE} \
 		-f Dockerfile .
+
+.PHONY: docker-ensure-image
+docker-ensure-image:
+	$(require_image_version)
+	@IMAGE_REPO=$(IMAGE_REPO) TERP_IMAGE_VERSION=$(TERP_IMAGE_VERSION) BUILD=$(or $(BUILD),0) PUSH=$(or $(PUSH),0) \
+		./scripts/release/ensure_registry_terp_image.sh $(or $(TAG),$(TERP_IMAGE_VERSION))
 
 build-zk-local-localnet: _docker-stage-zk-lib
 	@DOCKER_BUILDKIT=1 docker buildx build \
@@ -208,9 +251,9 @@ docker-clean-zk: docker-clean
 # Version-aligned ZK publish (testnet lineage, e.g. v5.3.0-dev)
 # ---------------------------------------------------------
 
-# Build (or SKIP_BUILD=1 retag) and apply RELEASE_TAG + local-zk + ghcr tags.
+# Build (or SKIP_BUILD=1 retag) as IMAGE_REPO:RELEASE_TAG. No local-zk alias.
 docker-publish-dev:
-	@RELEASE_TAG=$(RELEASE_TAG) IMAGE_REPO=$(IMAGE_REPO) LOCAL_REPO=$(LOCAL_REPO) \
+	@RELEASE_TAG=$(RELEASE_TAG) IMAGE_REPO=$(IMAGE_REPO) TERP_IMAGE_VERSION=$(RELEASE_TAG) \
 		WASMVM_SOURCE=local SKIP_BUILD=$(or $(SKIP_BUILD),0) \
 		./scripts/release/publish_docker_dev.sh
 

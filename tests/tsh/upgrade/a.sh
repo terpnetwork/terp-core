@@ -8,7 +8,7 @@
 #   3. NEW_BIND (this tree, v6 handler) starts on the same home
 #   4. Require applied v6 and heights after the halt
 #
-#   OLD_BIND        default terp-mainnet  (v5.2.0)
+#   OLD_BIND        default terp-mainnet for plan v6; v61.sh overrides to terpd-v6
 #   NEW_BIND        default terpd         (make install of this tree)
 #   STATE_SYNC=0    use SNAPSHOT_PATH (packed appstate)
 #   STATE_SYNC=1    short-lived statesync on OLD_BIND, then isolate
@@ -97,10 +97,14 @@ isolate_p2p() {
   sed -i.bak "/^\[grpc\]/,/^\[/ s/address.*/address = \"localhost:$VAL1_GRPC_PORT\"/" "$VAL1HOME/config/app.toml" || true
 }
 
-command -v "$OLD_BIND" >/dev/null || { echo "$OLD_BIND not on PATH (install mainnet as terp-mainnet)"; exit 1; }
+command -v "$OLD_BIND" >/dev/null || { echo "$OLD_BIND not on PATH (v6.1: install v6 as terpd-v6)"; exit 1; }
 echo "A: OLD_BIND=$OLD_BIND ($("$OLD_BIND" version 2>/dev/null | head -1))"
-echo "A: make install NEW_BIND=$NEW_BIND from current tree"
-( cd "$NEW_RELEASE_PATH" && make install )
+if [ "${SKIP_MAKE_INSTALL:-0}" = "1" ]; then
+  echo "A: SKIP_MAKE_INSTALL=1 (use PATH $NEW_BIND)"
+else
+  echo "A: make install NEW_BIND=$NEW_BIND from current tree"
+  ( cd "$NEW_RELEASE_PATH" && make install )
+fi
 command -v "$NEW_BIND" >/dev/null || { echo "$NEW_BIND not on PATH"; exit 1; }
 echo "A: NEW_BIND=$NEW_BIND ($("$NEW_BIND" version 2>/dev/null | head -1))"
 
@@ -214,11 +218,47 @@ if ! grep -q "UPGRADE \"${UPGRADE_VERSION}\" NEEDED" "$OLD_LOG"; then
   exit 1
 fi
 
+setup_cosmovisor_upgrades() {
+  local cv="${CV_BIND:-cosmovisor}"
+  command -v "$cv" >/dev/null || { echo "A: USE_COSMOVISOR=1 but $cv not on PATH"; exit 1; }
+  mkdir -p "$VAL1HOME/cosmovisor/genesis/bin" \
+    "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin"
+  cp "$(command -v "$OLD_BIND")" "$VAL1HOME/cosmovisor/genesis/bin/terpd"
+  cp "$(command -v "$NEW_BIND")" "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin/terpd"
+  chmod +x "$VAL1HOME/cosmovisor/genesis/bin/terpd" \
+    "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin/terpd"
+  if command -v "${V62_BIND:-terpd-v62}" >/dev/null; then
+    mkdir -p "$VAL1HOME/cosmovisor/upgrades/v6.2/bin"
+    cp "$(command -v "${V62_BIND:-terpd-v62}")" "$VAL1HOME/cosmovisor/upgrades/v6.2/bin/terpd"
+    chmod +x "$VAL1HOME/cosmovisor/upgrades/v6.2/bin/terpd"
+    echo "A: Cosmovisor pre-place genesis=$OLD_BIND upgrades/${UPGRADE_VERSION}=$NEW_BIND upgrades/v6.2=${V62_BIND:-terpd-v62}"
+  else
+    echo "A: Cosmovisor pre-place genesis=$OLD_BIND upgrades/${UPGRADE_VERSION}=$NEW_BIND (no v6.2 bin)"
+  fi
+  # Halt already wrote upgrade-info.json; Cosmovisor must start on the plan bin
+  # (same as e.sh after UPGRADE NEEDED), then auto-swap when the next plan dumps.
+  ln -sfn "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}" "$VAL1HOME/cosmovisor/current"
+  export DAEMON_NAME=terpd
+  export DAEMON_HOME="$VAL1HOME"
+  export DAEMON_RESTART_AFTER_UPGRADE=true
+  export DAEMON_POLL_INTERVAL=300ms
+  export DAEMON_SHUTDOWN_GRACE=15s
+  export UNSAFE_SKIP_BACKUP=true
+  export DAEMON_ALLOW_DOWNLOAD_BINARIES=false
+}
+
 echo "A: NEW_BIND start (v6 handler) on same home"
 : > "$NEW_LOG"
-"$NEW_BIND" start --home "$VAL1HOME" \
-  --rpc.laddr "tcp://127.0.0.1:${VAL1_RPC_PORT}" \
-  ${WASMVM_SKIP:+--wasm.skip_wasmvm_version_check} >>"$NEW_LOG" 2>&1 &
+if [ "${USE_COSMOVISOR:-0}" = "1" ]; then
+  setup_cosmovisor_upgrades
+  "${CV_BIND:-cosmovisor}" run start --home "$VAL1HOME" \
+    --rpc.laddr "tcp://127.0.0.1:${VAL1_RPC_PORT}" \
+    ${WASMVM_SKIP:+--wasm.skip_wasmvm_version_check} >>"$NEW_LOG" 2>&1 &
+else
+  "$NEW_BIND" start --home "$VAL1HOME" \
+    --rpc.laddr "tcp://127.0.0.1:${VAL1_RPC_PORT}" \
+    ${WASMVM_SKIP:+--wasm.skip_wasmvm_version_check} >>"$NEW_LOG" 2>&1 &
+fi
 NEW_PID=$!
 
 wait_rpc

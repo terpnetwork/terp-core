@@ -61,3 +61,7 @@ if ! grep -q "const CircuitKeyLen" build/zk-deps/zk-wasmvm/lib.go; then
   echo "ERROR: staged wasmvm has no CircuitKeyLen (origin/v3.0.7-zk is behind local 5aab589+)." >&2
   exit 1
 fi
+if ! grep -a -q -F 'stwo: Dummy DSTW rejected' "build/wasmvm/libwasmvm_muslc.$ARCH.a"; then
+  echo "ERROR: muslc missing Path A STWO host — MinIO/object is older than Go bindings (need alpine-custom rebuild, not August artifacts)." >&2
+  exit 1
+fi

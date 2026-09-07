@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -31,6 +32,7 @@ type BootstrapConfig struct {
 	GenesisURL      string `mapstructure:"genesis-url"`
 	GenesisHash     string `mapstructure:"genesis-hash"`
 	SnapshotURL     string `mapstructure:"snapshot-url"`
+	SnapshotClass   string `mapstructure:"snapshot-class"`
 	StateSyncRPCs   string `mapstructure:"statesync-rpcs"`
 	TrustOffset     int64  `mapstructure:"trust-offset"`
 	MaxRetries      int    `mapstructure:"max-retries"`
@@ -65,10 +67,11 @@ var networkPresets = map[string]networkPreset{
 // DefaultBootstrapConfig returns sensible defaults for mainnet bootstrapping.
 func DefaultBootstrapConfig() BootstrapConfig {
 	return BootstrapConfig{
-		SyncMode:        "statesync",
+		SyncMode:        "snapshot",
 		GenesisURL:      "https://raw.githubusercontent.com/terpnetwork/networks/refs/heads/main/testnet/120u-1/genesis.json",
 		GenesisHash:     "",
 		SnapshotURL:     "",
+		SnapshotClass:   "light",
 		StateSyncRPCs:   "https://testnet-rpc.terp.network:443,https://testnet-rpc.terp.network:443",
 		TrustOffset:     1000,
 		MaxRetries:      6,
@@ -90,6 +93,7 @@ const BootstrapConfigTemplate = `
 [bootstrap]
 
 # Sync mode: "statesync" or "snapshot"
+# Private nodes cannot use statesync (PEX off, no inbound peers).
 sync-mode = "{{ .Bootstrap.SyncMode }}"
 
 # Genesis file download URL
@@ -100,6 +104,9 @@ genesis-hash = "{{ .Bootstrap.GenesisHash }}"
 
 # Snapshot tarball URL (used when sync-mode = "snapshot")
 snapshot-url = "{{ .Bootstrap.SnapshotURL }}"
+
+# Snapshot class when snapshot-url is empty: "light" (lightweight) or "pruned"
+snapshot-class = "{{ .Bootstrap.SnapshotClass }}"
 
 # State-sync RPC endpoints (comma-separated, tried in order on failure)
 statesync-rpcs = "{{ .Bootstrap.StateSyncRPCs }}"
@@ -117,8 +124,8 @@ seeds = "{{ .Bootstrap.Seeds }}"
 persistent-peers = "{{ .Bootstrap.PersistentPeers }}"
 
 # Private mode (default true): disables PEX gossip, rejects inbound peers,
-# only connects to configured persistent peers. Ideal for local state-sync
-# testing without participating in the network. Use --public to disable.
+# only connects to configured persistent peers. Cannot be combined with
+# statesync. Use --public to disable.
 private-mode = {{ .Bootstrap.PrivateMode }}
 `
 
@@ -151,10 +158,11 @@ func init() {
 	BootstrapCmd.Flags().String("moniker", "", "node moniker (auto-generated if empty)")
 	BootstrapCmd.Flags().String("chain-id", "morocco-1", "chain ID")
 	BootstrapCmd.Flags().String("network", "", "preset network config: morocco-1 (mainnet) or 120u-1 (testnet)")
-	BootstrapCmd.Flags().String("sync-mode", "", "override sync mode: statesync or snapshot")
+	BootstrapCmd.Flags().String("sync-mode", "", "override sync mode: statesync or snapshot (statesync is refused in private mode)")
 	BootstrapCmd.Flags().String("genesis-url", "", "override genesis download URL")
 	BootstrapCmd.Flags().String("genesis-hash", "", "override expected genesis SHA256 hash")
 	BootstrapCmd.Flags().String("snapshot-url", "", "override snapshot tarball URL")
+	BootstrapCmd.Flags().String("snapshot-class", "", "snapshot class when URL is empty: light or pruned")
 	BootstrapCmd.Flags().String("statesync-rpcs", "", "override state-sync RPC endpoints (comma-separated)")
 	BootstrapCmd.Flags().Int64("trust-offset", 0, "override trust offset")
 	BootstrapCmd.Flags().Int("max-retries", 0, "override max retries")
@@ -287,7 +295,14 @@ func runBootstrap(cmd *cobra.Command, args []string) error {
 	fmt.Printf("  Chain ID : %s\n", chainID)
 	fmt.Printf("  Moniker  : %s\n", moniker)
 	fmt.Printf("  Sync mode: %s\n", bsCfg.SyncMode)
+	if bsCfg.SyncMode == "snapshot" && bsCfg.SnapshotClass != "" {
+		fmt.Printf("  Snapshot : %s\n", bsCfg.SnapshotClass)
+	}
 	fmt.Printf("  P2P mode : %s\n\n", modeStr)
+
+	if err := denyPrivateStateSync(bsCfg.PrivateMode, bsCfg.SyncMode); err != nil {
+		return err
+	}
 
 	// ──── Step 1: Init if needed ────
 	genesisPath := filepath.Join(home, "config", "genesis.json")
@@ -338,7 +353,7 @@ func runBootstrap(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	case "snapshot":
-		if err := configureSnapshotBootstrap(home, cmtCfg, bsCfg); err != nil {
+		if err := configureSnapshotBootstrap(home, chainID, cmtCfg, bsCfg); err != nil {
 			return err
 		}
 	default:
@@ -460,8 +475,84 @@ func configureStateSyncBootstrap(cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) e
 
 // ──── Snapshot configuration ────
 
-func configureSnapshotBootstrap(home string, cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) error {
+type snapshotManifest struct {
+	Latest    string   `json:"latest"`
+	URL       string   `json:"url"`
+	Snapshots []string `json:"snapshots"`
+}
+
+func snapshotJSONCandidates(chainID, class string) []string {
+	net := "mainnet"
+	if chainID == "120u-1" {
+		net = "testnet"
+	}
+	base := fmt.Sprintf("https://minio.terp.network/snapshots/%s/%s", net, chainID)
+	switch strings.ToLower(class) {
+	case "pruned":
+		return []string{base + "/pruned/snapshot.json", base + "/snapshot.json"}
+	default: // light / lightweight
+		return []string{base + "/snapshot_light.json", base + "/pruned/snapshot.json"}
+	}
+}
+
+func fetchSnapshotLatest(jsonURL string) (string, error) {
+	resp, err := http.Get(jsonURL)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("%s: HTTP %d", jsonURL, resp.StatusCode)
+	}
+	var man snapshotManifest
+	if err := json.NewDecoder(resp.Body).Decode(&man); err != nil {
+		return "", err
+	}
+	if man.Latest != "" {
+		return man.Latest, nil
+	}
+	if man.URL != "" {
+		return man.URL, nil
+	}
+	if len(man.Snapshots) > 0 && man.Snapshots[0] != "" {
+		return man.Snapshots[0], nil
+	}
+	return "", fmt.Errorf("%s: no latest/url/snapshots", jsonURL)
+}
+
+func resolveSnapshotURL(chainID string, bsCfg BootstrapConfig) (string, error) {
+	if u := strings.TrimSpace(bsCfg.SnapshotURL); u != "" {
+		if strings.HasSuffix(u, "snapshot.json") || strings.HasSuffix(u, "snapshot_light.json") {
+			return fetchSnapshotLatest(u)
+		}
+		return u, nil
+	}
+	class := normalizeSnapshotClass(bsCfg.SnapshotClass)
+	var last error
+	for _, jsonURL := range snapshotJSONCandidates(chainID, class) {
+		latest, err := fetchSnapshotLatest(jsonURL)
+		if err == nil && latest != "" {
+			fmt.Printf("Resolved %s snapshot: %s\n", class, latest)
+			return latest, nil
+		}
+		last = err
+	}
+	if last == nil {
+		last = fmt.Errorf("no snapshot.json for class %s", class)
+	}
+	return "", last
+}
+
+func configureSnapshotBootstrap(home, chainID string, cmtCfg *cmtcfg.Config, bsCfg BootstrapConfig) error {
 	dataDir := filepath.Join(home, "data")
+
+	if bsCfg.SnapshotURL == "" {
+		if resolved, err := resolveSnapshotURL(chainID, bsCfg); err == nil {
+			bsCfg.SnapshotURL = resolved
+		} else {
+			fmt.Printf("No snapshot catalog resolved (%v).\n", err)
+		}
+	}
 
 	if bsCfg.SnapshotURL == "" {
 		// No URL — check if data dir already has content (SFTP delivery / pre-populated).
@@ -762,9 +853,25 @@ func loadCometConfig(home string) (*cmtcfg.Config, error) {
 
 // ──── P2P mode helpers ────
 
+func denyPrivateStateSync(private bool, syncMode string) error {
+	if private && strings.EqualFold(syncMode, "statesync") {
+		return fmt.Errorf("private node cannot use statesync (PEX off, no inbound peers). Use --sync-mode snapshot --snapshot-class light|pruned, or --public")
+	}
+	return nil
+}
+
+func normalizeSnapshotClass(class string) string {
+	switch strings.ToLower(strings.TrimSpace(class)) {
+	case "pruned", "prune":
+		return "pruned"
+	default:
+		return "light"
+	}
+}
+
 // applyPrivateMode locks down P2P so the node only connects to configured
 // persistent peers, rejects all inbound connections, and never gossips.
-// Ideal for pulling a local state-sync without participating in the network.
+// Private nodes must restore from a snapshot (statesync needs public P2P).
 func applyPrivateMode(cfg *cmtcfg.Config) {
 	cfg.P2P.PexReactor = false       // no peer exchange gossip
 	cfg.P2P.MaxNumInboundPeers = 0   // reject all inbound connections
@@ -788,6 +895,9 @@ func applyBootstrapFlagOverrides(cmd *cobra.Command, bsCfg *BootstrapConfig) {
 	}
 	if v, _ := cmd.Flags().GetString("snapshot-url"); v != "" {
 		bsCfg.SnapshotURL = v
+	}
+	if v, _ := cmd.Flags().GetString("snapshot-class"); v != "" {
+		bsCfg.SnapshotClass = normalizeSnapshotClass(v)
 	}
 	if v, _ := cmd.Flags().GetString("statesync-rpcs"); v != "" {
 		bsCfg.StateSyncRPCs = v

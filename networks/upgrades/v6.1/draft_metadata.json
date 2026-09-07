@@ -1,0 +1,8 @@
+{
+  "title": "v6.1 — circuits + IAVL BLAKE3 dual-store (120u-1)",
+  "authors": ["Terp Network"],
+  "summary": "120u-1 soak. Plan v6.1. Height is filled at submit time from live RPC. Not morocco-1 / not plan v6.",
+  "details": "Handler: RunMigrations, CircuitUploadAccess=Nobody, copy bank/staking/acc to b3-bank/b3-staking/b3-acc. IBC SHA-256. Compile with go.mod replaces wasmd→zk-wasmd, wasmvm→zk-wasmvm, iavl→crates/cosmos/iavl, store/v2→patched store-v2. Cosmovisor path: $DAEMON_HOME/cosmovisor/upgrades/v6.1/bin/terpd.",
+  "proposal_forum_url": "",
+  "vote_option_context": "YES schedules halt. Do not submit this draft until height is measured."
+}

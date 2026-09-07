@@ -96,14 +96,8 @@ func (k Keeper) verifyOracleAttestations(ctx sdk.Context, chainUID string, attes
 	return nil
 }
 
-// aggregateAttestationRoot is the domain-separated commitment over oracle
-// attestations. Source order MUST NOT affect the digest (Neutron-class VE
-// halt: unsorted map/slice iteration in ExtendVote produced different roots
-// on different validators). One attestation per SourceId; first after sort wins.
-func aggregateAttestationRoot(attestations []types.OracleAttestation) []byte {
-	if len(attestations) == 0 {
-		return nil
-	}
+// sortOracleAttestations copies and orders by SourceId, Value, Height, Timestamp.
+func sortOracleAttestations(attestations []types.OracleAttestation) []types.OracleAttestation {
 	sorted := append([]types.OracleAttestation(nil), attestations...)
 	sort.Slice(sorted, func(i, j int) bool {
 		if sorted[i].SourceId != sorted[j].SourceId {
@@ -117,13 +111,37 @@ func aggregateAttestationRoot(attestations []types.OracleAttestation) []byte {
 		}
 		return sorted[i].Timestamp < sorted[j].Timestamp
 	})
-	h := sha256.New()
-	seen := make(map[string]struct{}, len(sorted))
-	for _, att := range sorted {
+	return sorted
+}
+
+// dedupeOracleAttestationsBySourceID keeps the first attestation per SourceId.
+func dedupeOracleAttestationsBySourceID(attestations []types.OracleAttestation) []types.OracleAttestation {
+	if len(attestations) == 0 {
+		return attestations
+	}
+	out := make([]types.OracleAttestation, 0, len(attestations))
+	seen := make(map[string]struct{}, len(attestations))
+	for _, att := range attestations {
 		if _, ok := seen[att.SourceId]; ok {
 			continue
 		}
 		seen[att.SourceId] = struct{}{}
+		out = append(out, att)
+	}
+	return out
+}
+
+// aggregateAttestationRoot is the domain-separated commitment over oracle
+// attestations. Source order MUST NOT affect the digest (Neutron-class VE
+// halt: unsorted map/slice iteration in ExtendVote produced different roots
+// on different validators). One attestation per SourceId; first after sort wins.
+func aggregateAttestationRoot(attestations []types.OracleAttestation) []byte {
+	if len(attestations) == 0 {
+		return nil
+	}
+	sorted := dedupeOracleAttestationsBySourceID(sortOracleAttestations(attestations))
+	h := sha256.New()
+	for _, att := range sorted {
 		h.Write([]byte(att.SourceId))
 		h.Write(att.Value)
 		var heightBuf [8]byte
