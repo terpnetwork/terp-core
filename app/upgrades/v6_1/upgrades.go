@@ -40,12 +40,15 @@ func CreateUpgradeHandler(
 		}
 
 		// Circuit store/pin stays privileged (AllowNobody). ACL / deposit is the upload path.
+		// 50% circuit maintenance share → Foundation DAO (gov 56), not circuit_dev_pool.
 		if keepers != nil && keepers.WasmKeeper != nil {
 			params := keepers.WasmKeeper.GetParams(ctx)
 			params.CircuitUploadAccess = wasmtypes.AllowNobody
+			params.CircuitDevDestination = FoundationDAOAddr
 			if err := keepers.WasmKeeper.SetParams(ctx, params); err != nil {
 				return nil, err
 			}
+			logger.Info("v6.1: circuit_dev_destination", "addr", FoundationDAOAddr)
 		}
 
 		for _, p := range iavlhash.DualStorePairs() {
@@ -54,14 +57,12 @@ func CreateUpgradeHandler(
 				return nil, fmt.Errorf("refusing to rehash IBC-facing store %s", srcName)
 			}
 			if keepers == nil {
-				logger.Info("v6.1: no keepers, skip copy")
-				break
+				return nil, fmt.Errorf("v6.1: keepers required to copy %s", srcName)
 			}
 			srcKey := keepers.GetKey(srcName)
 			dstKey := keepers.GetKey(dstName)
 			if srcKey == nil || dstKey == nil {
-				logger.Info("v6.1: skip missing keys", "src", srcName, "dst", dstName)
-				continue
+				return nil, fmt.Errorf("missing dual-store keys %s -> %s", srcName, dstName)
 			}
 			n, err := copyKVStore(ctx, srcKey, dstKey)
 			if err != nil {
