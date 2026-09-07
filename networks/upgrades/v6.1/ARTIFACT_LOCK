@@ -4,7 +4,7 @@ binary_commit: 69b34350aec61681275d3bc8f985cb8456531dcc
 pack_branch: release/v6.1.0
 dirty: v6.1.0-dirty
 s3_binaries_intended: https://s3.terp.network/releases/terp-core/v6.1.0/
-published: false
+published: true
 source_date_epoch: 1788729561
 note: ELF identity is git tag v6.1.0. Pack files belong on release/v6.1.0 and must not move the tag. Tarballs are pack_cv_tarball.py (SOURCE_DATE_EPOCH=tag %ct); ELF sha256 is the consensus identity.
 
