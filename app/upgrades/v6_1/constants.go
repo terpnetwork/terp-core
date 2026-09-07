@@ -11,6 +11,12 @@ import (
 // SoftwareUpgrade proposal. TSH: make tsh-upgrade-v61.
 const UpgradeName = "v6.1"
 
+// FoundationDAOAddr is the TerpNET Foundation DAO core (DAO DAO).
+// Gov proposal 56 "Create TerpNET DAO" instantiate2 expect; confirmed
+// on morocco-1 (code 23, self-admin). Circuit 50% maintenance share
+// (params.circuit_dev_destination) is set here — not hardcoded in x/wasm.
+const FoundationDAOAddr = "terp14w2qva6dx6wcsmq5fvplh7cr7nvptejznyvpe5hp5mtyqhxxjamsz3kw2w"
+
 var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
 	CreateUpgradeHandler: CreateUpgradeHandler,
