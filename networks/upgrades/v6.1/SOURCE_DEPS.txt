@@ -11,3 +11,8 @@ replaces (go.mod at binary_commit):
 	github.com/CosmWasm/wasmd => ./crates/zk-wasmd
 	github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
 replace github.com/cosmos/iavl/v2 => github.com/permissionlessweb/iavl/v2 v2.0.0-20260831004022-e5686bb83c1c
+
+wasmvm muslc (do not rebuild; fetch + sha256, Path A STWO):
+  base https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/
+  0687e59140c967a752b0b0ede98e71a3c859fb4f6b94fc26883792d381eb4716  libwasmvm_muslc.aarch64.a
+  4f4880e1655d34c098729df52db22c9253bec87d2b3185669ff015a340b76d49  libwasmvm_muslc.x86_64.a

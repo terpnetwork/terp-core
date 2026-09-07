@@ -2,7 +2,7 @@ plan: v6.1
 binary_tag: v6.1.0
 binary_commit: 612ebf3b6a3a2b524033091fd6db6223760837c0
 pack_branch: release/v6.1.0
-dirty: v6.1.0-dirty
+dirty: v6.1.0
 s3_binaries_intended: https://s3.terp.network/releases/terp-core/v6.1.0/
 published: true
 source_date_epoch: 1788821369
@@ -12,3 +12,7 @@ note: ELF identity is git tag v6.1.0. Pack files belong on release/v6.1.0 and mu
 4249119ebdbf75535c6852226fb7dee477373d65d2b721708bbb5265e8fdd8b4  terpd-6.1.0-linux-arm64.tar.gz
 19bcfa3a68f09f18eb56242f6c65f0e34bade15fa1426b4f5b4658117454c390  terpd-linux-amd64
 8fe6adf12373ee257c1de68b8e0ca484d207ba78ece9c1c18a26c67cc60641cb  terpd-linux-arm64
+
+wasmvm_muslc_base: https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/
+0687e59140c967a752b0b0ede98e71a3c859fb4f6b94fc26883792d381eb4716  libwasmvm_muslc.aarch64.a
+4f4880e1655d34c098729df52db22c9253bec87d2b3185669ff015a340b76d49  libwasmvm_muslc.x86_64.a
