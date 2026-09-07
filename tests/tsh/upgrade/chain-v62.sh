@@ -32,6 +32,34 @@ command -v "$NEW_BIND" >/dev/null || { echo "NEW_BIND=$NEW_BIND missing"; exit 1
 : "${VAL1HOME:?}" "${VAL1ADDR:?}" "${VAL1_RPC_PORT:?}" "${CHAINID:?}" "${NEW_PID:?}"
 
 echo "v6.2: chaining on same home with $V62_BIND (plan $V62_PLAN)"
+if [ "${USE_COSMOVISOR:-0}" = "1" ]; then
+  echo "v6.2: Cosmovisor auto-swap — wait for applied $V62_PLAN (do not retrigger in-place-testnet)"
+  applied=""
+  for i in $(seq 1 180); do
+    applied=$("$V62_BIND" q upgrade applied "$V62_PLAN" \
+      --home "$VAL1HOME" --node "tcp://127.0.0.1:${VAL1_RPC_PORT}" \
+      -o json 2>/dev/null | jq -r '.height // empty' || true)
+    h=$(rpc_height || echo 0)
+    echo "  post-v6.2 h=$h applied=${applied:-none} try=$i"
+    if [ -n "${applied:-}" ] && [ "$applied" != "0" ]; then
+      break
+    fi
+    if ! kill -0 "$NEW_PID" 2>/dev/null; then
+      echo "v6.2: Cosmovisor pid=$NEW_PID died"
+      tail -80 "$NEW_LOG"
+      exit 1
+    fi
+    sleep 2
+  done
+  if [ -z "${applied:-}" ] || [ "$applied" = "0" ]; then
+    echo "v6.2: $V62_PLAN not applied (Cosmovisor did not swap)"
+    tail -80 "$NEW_LOG"
+    exit 1
+  fi
+  echo "v6.2 TSH ok (applied=$V62_PLAN at $applied) current=$(readlink "$VAL1HOME/cosmovisor/current" 2>/dev/null || echo no-cv)"
+  export NEW_BIND="$V62_BIND"
+  return 0 2>/dev/null || exit 0
+fi
 echo "v6.2: stopping v6.1 pid=$NEW_PID to reschedule via in-place-testnet"
 kill "$NEW_PID" 2>/dev/null || true
 wait "$NEW_PID" 2>/dev/null || true
