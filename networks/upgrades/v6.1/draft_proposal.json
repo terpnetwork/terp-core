@@ -7,14 +7,14 @@
         "name": "v6.1",
         "time": "0001-01-01T00:00:00Z",
         "height": "0",
-        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-amd64.tar.gz?checksum=sha256:c0defc03627d83a9524dd1febc1cb5c87c215dbf70e0c008139168d022a5f8f8\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-arm64.tar.gz?checksum=sha256:c41ab84a572ea4e6a7994433ef3e7861637286f79b25cc3bc3ce04329bc0c371\"}}",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-amd64.tar.gz?checksum=sha256:18a073f5d189f823987bd73d1ee6d410f9f48bbdcc92258fcbf8ae800780ebd2\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-arm64.tar.gz?checksum=sha256:4249119ebdbf75535c6852226fb7dee477373d65d2b721708bbb5265e8fdd8b4\"}}",
         "upgraded_client_state": null
       }
     }
   ],
   "metadata": "",
   "deposit": "50000000uterp",
-  "title": "Software Upgrade v6.1 (v6.1.0-dev)",
+  "title": "Software Upgrade v6.1 (v6.1.0)",
   "summary": "Plan v6.1. HashMerchant consensus version 2 with bounded sudo gas for wasm callbacks (contract_gas_limit default 100663296). CircuitUploadAccess Nobody; copy migratable IAVL stores into b3-* (IBC stays SHA-256). Pin wasm via gov MsgPinCodes; LRU memory_cache_size stays 100 MiB per VM. Halt height TBD. Pre-place Cosmovisor binary at cosmovisor/upgrades/v6.1/bin/terpd. S3 objects are not public until upload is asked; DAEMON_ALLOW_DOWNLOAD_BINARIES=false until then.",
   "expedited": true
 }
