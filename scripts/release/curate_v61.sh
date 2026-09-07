@@ -158,7 +158,7 @@ echo
 if command -v terpd >/dev/null; then
   echo "local terpd: $(command -v terpd)  $($(command -v terpd) version 2>/dev/null | head -1)"
 fi
-PLAN="${PLAN:-v6.1}" TAG="${TAG:-${RELEASE_TAG:-v6.1.0-dev}}" ALLOW_PARTIAL="${ALLOW_PARTIAL:-1}" \
+PLAN="${PLAN:-v6.1}" TAG="${TAG:-${RELEASE_TAG:-}}" ALLOW_PARTIAL="${ALLOW_PARTIAL:-1}" \
   bash "$ROOT/scripts/release/preflight_upgrade.sh"
 
 echo "OK curate complete. Do not submit gov. See $PACK/WORKFLOW.md"

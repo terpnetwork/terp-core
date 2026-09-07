@@ -1,0 +1,4 @@
+# Pinned MinIO object (store/v2-patched ibc-hooks). Verified ≡ working-tree crates/ibc-hooks-v11.
+# URL default still https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v11.tar.gz
+# Override: HOOKS_SRC, IBC_HOOKS_URL, IBC_HOOKS_SHA256
+1b31faa98bedb7e388eef97ed031143a851b0d8a799b52d7b1b3ab78c898a312  ibc-hooks-v11.tar.gz

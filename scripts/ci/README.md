@@ -12,6 +12,6 @@ Prebuilt-commit E2E. Design: [docs/workflows/prebuilt-e2e.md](../../docs/workflo
 | `pin-latest-prebuilts.sh` | Rewrite both pin files from newest MinIO `commits/<sha>/`. |
 | `list-ict-ci-suites.sh` | JSON array from pinned `ict-ci list` (GHA matrix). |
 | `fetch-ict-rs-bins.sh` | Download pin in `ict-rs-bins.env`. Works without `crates/ict-rs`. |
-| `stage-zk-for-docker.sh` | Stage muslc + forks for `WASMVM_SOURCE=local`. Origin wasmvm must have `CircuitKeyLen`. |
+| `stage-zk-for-docker.sh` | Stage muslc + forks for `WASMVM_SOURCE=local`. Origin wasmvm must have `CircuitKeyLen`. `ibc-hooks-v11` from `HOOKS_SRC` or sha256-pinned `IBC_HOOKS_URL` (default object still under `v6.0.0-dev/` until relocated). |
 
 Do not publish an arm64 ELF as `terpd-linux-amd64`.

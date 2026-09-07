@@ -14,10 +14,20 @@ set -euo pipefail
 # VERSION defaults to the current git tag (v-prefix stripped).
 
 VERSION="${1:-$(git describe --tags 2>/dev/null | sed 's/^v//' || echo "unknown")}"
-BUILD_DIR="build"
+BUILD_DIR="${BUILD_DIR:-build}"
 CHECKSUM_FILE="$BUILD_DIR/sha256sum.txt"
 ALLOW_PARTIAL="${ALLOW_PARTIAL:-0}"
 PLAN="${PLAN:-}"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# Tag commit author date. Recurate must pass SOURCE_DATE_EPOCH from binary_commit, not pack HEAD.
+if [ -z "${SOURCE_DATE_EPOCH:-}" ]; then
+  if echo "${TAG:-v$VERSION}" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+    SOURCE_DATE_EPOCH="$(git log -1 --format=%ct "${TAG}^{commit}" 2>/dev/null || true)"
+  fi
+  SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git log -1 --format=%ct)}"
+fi
+export SOURCE_DATE_EPOCH
+echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH (deterministic Cosmovisor tar.gz)"
 
 echo "Preparing release artifacts for version: $VERSION"
 echo ""
@@ -58,12 +68,8 @@ done
 # ------------------------------------------------------------------
 # Cosmovisor auto-download requires ./terpd in the archive (DAEMON_NAME).
 pack_cv_tarball() {
-    local src="$1" dest="$2" stage
-    stage="$(mktemp -d)"
-    cp "$src" "$stage/terpd"
-    chmod 755 "$stage/terpd"
-    COPYFILE_DISABLE=1 tar -C "$stage" -czf "$dest" terpd
-    rm -rf "$stage"
+    local src="$1" dest="$2"
+    python3 "$ROOT/scripts/release/pack_cv_tarball.py" "$src" "$dest" "$SOURCE_DATE_EPOCH"
 }
 
 for arch in "${present[@]}"; do
