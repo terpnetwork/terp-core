@@ -7,7 +7,7 @@
         "name": "v6.1",
         "time": "0001-01-01T00:00:00Z",
         "height": "0",
-        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.1.0-dev/terpd-6.1.0-dev-linux-amd64.tar.gz?checksum=sha256:663c15949182cac66459ad5f45d5d0a612a78d829d9cd1e77ecfee62bd21db87\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.1.0-dev/terpd-6.1.0-dev-linux-arm64.tar.gz?checksum=sha256:1b027568836bb6fa172b8d3ebf43d24db3c1485572507c321c307b066b1988d5\"}}",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-amd64.tar.gz?checksum=sha256:c0defc03627d83a9524dd1febc1cb5c87c215dbf70e0c008139168d022a5f8f8\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-arm64.tar.gz?checksum=sha256:c41ab84a572ea4e6a7994433ef3e7861637286f79b25cc3bc3ce04329bc0c371\"}}",
         "upgraded_client_state": null
       }
     },
@@ -18,7 +18,7 @@
         "name": "v6.2",
         "time": "0001-01-01T00:00:00Z",
         "height": "0",
-        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.2.0-dev/terpd-6.2.0-dev-linux-amd64.tar.gz?checksum=sha256:3ec11bc7ec2886c4631f9573e790ada32e813f1d82017360255576614146f0eb\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.2.0-dev/terpd-6.2.0-dev-linux-arm64.tar.gz?checksum=sha256:7fdfc0468387ac557f8acdd6d7388dcb76c1c6671b637f104056995e1862ba63\"}}",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-amd64.tar.gz?checksum=sha256:38c15e1f54bc8234d07883c05e665ded68fdc0434c1c9db08de796d15ef491f6\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-arm64.tar.gz?checksum=sha256:148eedb6e8f1dd97e2436bc1b36dfebdbc915d23c14e6bad483924b0a4052c3d\"}}",
         "upgraded_client_state": null
       }
     }
@@ -26,6 +26,6 @@
   "metadata": "",
   "deposit": "50000000uterp",
   "title": "v6.1 then v6.2 (Upgrade A then B)",
-  "summary": "Two MsgSoftwareUpgrade in one proposal (heights TBD). x/upgrade keeps one plan (last wins). The v6.1 handler re-arms v6.2 at BlockHeight()+2. Cosmovisor pre-places upgrades/v6.1 and upgrades/v6.2. Do not broadcast until heights are filled. S3 URLs are intended locations until upload is asked.",
+  "summary": "Two MsgSoftwareUpgrade in one proposal (heights TBD). x/upgrade keeps one plan (last wins). The v6.1 handler re-arms v6.2 at BlockHeight()+2. Cosmovisor pre-places upgrades/v6.1 and upgrades/v6.2. x/upgrade last-wins: do not broadcast this dual file. Submit only plan v6.1. S3 URLs match published v6.1.0/v6.2.0 tarballs.",
   "expedited": true
 }
