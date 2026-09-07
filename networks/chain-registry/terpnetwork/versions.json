@@ -230,9 +230,9 @@
       "name": "v6.1",
       "proposal": null,
       "height": null,
-      "recommended_version": "v6.1.0-dev",
+      "recommended_version": "v6.1.0",
       "compatible_versions": [
-        "v6.1.0-dev"
+        "v6.1.0"
       ],
       "consensus": {
         "type": "cometbft",
@@ -252,7 +252,41 @@
         "path": "$HOME/.terpd/data/wasm"
       },
       "next_version_name": "v6.2",
-      "binaries": {}
+      "binaries": {
+        "linux/amd64": "https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-amd64.tar.gz",
+        "linux/arm64": "https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-arm64.tar.gz"
+      }
+    },
+    {
+      "name": "v6.2",
+      "proposal": null,
+      "height": null,
+      "recommended_version": "v6.2.0",
+      "compatible_versions": [
+        "v6.2.0"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.40.0"
+      },
+      "sdk": {
+        "type": "cosmos",
+        "version": "0.55.0"
+      },
+      "ibc": {
+        "type": "go",
+        "version": "v11.2.0"
+      },
+      "cosmwasm": {
+        "version": "0.70.3-zk",
+        "enabled": true,
+        "path": "$HOME/.terpd/data/wasm"
+      },
+      "next_version_name": null,
+      "binaries": {
+        "linux/amd64": "https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-amd64.tar.gz",
+        "linux/arm64": "https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-arm64.tar.gz"
+      }
     }
   ]
 }
