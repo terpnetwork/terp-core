@@ -62,7 +62,7 @@ Each must contain Path A STWO host (`grep -a -F 'stwo: Dummy DSTW rejected'`). T
 
 If your `.a` files differ, you are not compiling the same CGO waist.
 
-`crates/ibc-hooks-v11` is gitignored. Recurate copies `HOOKS_SRC` (default that path) or fetches the pinned tarball (`scripts/ci/ibc-hooks-v11.sha256` = `1b31faa98bedb7e388eef97ed031143a851b0d8a799b52d7b1b3ab78c898a312`). Cosmovisor tarballs are packed with `pack_cv_tarball.py` (`SOURCE_DATE_EPOCH` = tag commit `%ct`: v6.1 `1788729561`, v6.2 `1788729565`). ELF sha256 is the consensus identity; tarball hashes are now reproducible under that packer.
+`crates/ibc-hooks-v11` is **git-locked** on the pack branch (store/v2 keeper patch) plus `scripts/ci/ibc-hooks-v11.tar.gz` (sha256 `1b31faa9…`). MinIO is not the source of truth. Cosmovisor tarballs use `pack_cv_tarball.py` (`SOURCE_DATE_EPOCH` = tag `%ct`: v6.1 `1788729561`, v6.2 `1788729565`). ELF sha256 is consensus identity; tarball hashes are reproducible.
 
 ---
 

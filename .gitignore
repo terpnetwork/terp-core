@@ -11,6 +11,7 @@ crates/*
 !crates/cosmwasm
 !crates/zk-wasmd
 !crates/zk-wasmvm
+!crates/ibc-hooks-v11
 websites/*
 tools/*
 # Build

@@ -88,7 +88,7 @@ WRITE=1 PLAN=v6.1 RELEASE_TAG=v6.1.0 make release-prep
 
 Cosmovisor `tar.gz` files are packed by `pack_cv_tarball.py` (Python stdlib, not `tar -czf`): USTAR, `mtime=$SOURCE_DATE_EPOCH` (tag commit `%ct`), uid/gid 0, gzip `-9` with `mtime=0`. Same ELF → same tarball hash on macOS and Linux. Recurate runs this packer from the **pack branch**, not the tagged worktree.
 
-`crates/ibc-hooks-v11` is gitignored. Recurate copies `HOOKS_SRC` (default that path) or fetches a **sha256-pinned** tarball (`IBC_HOOKS_SHA256`). Submodule pin is the follow-up so a bare clone does not need MinIO.
+`crates/ibc-hooks-v11` is tracked on `release/vX.Y.Z` (store/v2 patch). Recurate copies it into the tagged worktree. The same bytes are also `scripts/ci/ibc-hooks-v11.tar.gz` + `.sha256`. MinIO is not the source of truth (`IBC_HOOKS_ALLOW_FETCH=1` only).
 
 
 | Script | Purpose |
