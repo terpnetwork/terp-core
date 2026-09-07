@@ -102,10 +102,8 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 		cms.Write()
 	}
 
-	armed, err := s.App.UpgradeKeeper.GetUpgradePlan(s.Ctx)
-	s.Require().NoError(err, "v6.1 EndBlocker arms v6.2 two blocks later")
-	s.Require().Equal("v6.2", armed.Name)
-	s.Require().Equal(v61UpgradeHeight+2, armed.Height)
+	_, err = s.App.UpgradeKeeper.GetUpgradePlan(s.Ctx)
+	s.Require().Error(err, "v6.2 binary must not arm a follow-up plan from EndBlocker")
 
 	for _, sn := range snaps {
 		dstWorking := s.commitStore(sn.dst).WorkingHash()
