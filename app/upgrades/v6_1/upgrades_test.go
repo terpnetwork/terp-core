@@ -103,6 +103,7 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 	s.Require().NoError(err, "v6.1 EndBlocker arms v6.2 two blocks later")
 	s.Require().Equal("v6.2", armed.Name)
 	s.Require().Equal(v61UpgradeHeight+2, armed.Height)
+	s.Require().Equal(v61.FollowupPlanInfo, armed.Info, "v6.2 plan.info is the published Cosmovisor JSON URL, not inline checksums")
 
 	for _, sn := range snaps {
 		dstWorking := s.commitStore(sn.dst).WorkingHash()
