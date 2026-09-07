@@ -18,7 +18,7 @@
         "name": "v6.2",
         "time": "0001-01-01T00:00:00Z",
         "height": "0",
-        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-amd64.tar.gz?checksum=sha256:612f351f8a4cd45d4bf5b41af92c9a2dece303d8bc664454c2a16aacbc87bb71\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-arm64.tar.gz?checksum=sha256:e36c1ccb69a5cf6edac63eb9440274b8419d11b1e7ea050c0449d2cccd5232a9\"}}",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-amd64.tar.gz?checksum=sha256:4f85a408b805be7f02690873722734b45e09335178d4334b82c9aaff880cf7db\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-arm64.tar.gz?checksum=sha256:2f0157b032e32ae1bf7a88f1f384f00a02a729cf148aacf602298394234ecac0\"}}",
         "upgraded_client_state": null
       }
     }

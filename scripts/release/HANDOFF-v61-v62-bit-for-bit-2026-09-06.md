@@ -17,7 +17,7 @@ Two coordinated halts, two binaries, two Cosmovisor plan directories.
 | Plan | Branch | Binary commit (ELF identity) | What the handler does |
 |------|--------|------------------------------|------------------------|
 | **v6.1** | tag `v6.1.0` / pack `release/v6.1.0` | `69b34350aec61681275d3bc8f985cb8456531dcc` | Upgrade A. `terpd version` = **6.1.0**. Pack files after this SHA live only on `release/v6.1.0`. |
-| **v6.2** | tag `v6.2.0` / pack `release/v6.2.0` | `393ebd2fc0950fae4ff62e85946575820bf739f0` | Upgrade B. `terpd version` = **6.2.0**. Pack files after this SHA live only on `release/v6.2.0`. |
+| **v6.2** | tag `v6.2.0` / pack `release/v6.2.0` | `62dfd3167b2f44d54760d2368b58cdce2cedb2b2` | Upgrade B. No MaybeArmV62 in EndBlocker. `terpd version` = **6.2.0**. |
 
 `x/upgrade` stores **one** plan. A dual gov tx can carry both messages; the last `ScheduleUpgrade` wins. The v6.1 handler re-arms v6.2 at `BlockHeight()+2`. Cosmovisor must pre-place **both** plan dirs.
 
@@ -37,7 +37,7 @@ github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
 | Repo | SHA | Notes |
 |------|-----|--------|
 | terp-core v6.1 ELF | tag `v6.1.0` = `69b3435` | freeze source; pack is `release/v6.1.0` |
-| terp-core v6.2 ELF | tag `v6.2.0` = `393ebd2` | freeze source; pack is `release/v6.2.0` |
+| terp-core v6.2 ELF | tag `v6.2.0` = `62dfd31` | no MaybeArmV62; pack is `release/v6.2.0` |
 | zk-wasmd | `5567942a` | nil-Ok including migrate; wasm-only reply |
 | cosmwasm (packages/vm) | `d742487ff` | `used_internally_is_cache_oblivious` |
 | zk-wasmvm | `93d4bce` | Path A only; C ABI lives on `feat/stwo-host-cgo-abci` |
@@ -129,16 +129,16 @@ That archive is the **git tree**, not the ELF. ELF identity is the lock sha256.
 
 `terpd version` contains **6.1.0** and commit `69b3435…`. GNU BuildID amd64 `499197d1…` arm64 `65a8c30e…`.
 
-### v6.2 (tag `v6.2.0` = `393ebd2`)
+### v6.2 (tag `v6.2.0` = `62dfd31`)
 
 | File | sha256 |
 |------|--------|
-| `terpd-linux-amd64` | `7d57502bb13f5e84ca5b18d10ff7def1ab129407b217b39e8a139d42b5c5ae5c` |
-| `terpd-linux-arm64` | `e9152c4650fa5d2cb18c2584eb0907d095131de464e98c62256fcd06672fa256` |
-| `terpd-6.2.0-linux-amd64.tar.gz` | `612f351f8a4cd45d4bf5b41af92c9a2dece303d8bc664454c2a16aacbc87bb71` |
-| `terpd-6.2.0-linux-arm64.tar.gz` | `e36c1ccb69a5cf6edac63eb9440274b8419d11b1e7ea050c0449d2cccd5232a9` |
+| `terpd-linux-amd64` | `b87c8986c6aa50305b437a2ed87325346683fc493b65b28d99ac6c4c02bf6833` |
+| `terpd-linux-arm64` | `18e652532b316134d94d9631fb7b622432726c01acdcb5adc1773e857d42f151` |
+| `terpd-6.2.0-linux-amd64.tar.gz` | `4f85a408b805be7f02690873722734b45e09335178d4334b82c9aaff880cf7db` |
+| `terpd-6.2.0-linux-arm64.tar.gz` | `2f0157b032e32ae1bf7a88f1f384f00a02a729cf148aacf602298394234ecac0` |
 
-`terpd version` contains **6.2.0** and commit `393ebd2…`. GNU BuildID amd64 `ed293cf0…` arm64 `8c7b13b4…`.
+`terpd version` contains **6.2.0** and commit `62dfd31…`. GNU BuildID amd64 `af1fa10e…` arm64 `9b81fce8…`. No `armed plan v6.2` string in the ELF.
 
 No darwin pin (Cosmovisor linux only). Independent recuration (2026-09-07) matched all four linux ELF hashes. Tarball hashes above are the python packer, not `tar -czf`.
 
