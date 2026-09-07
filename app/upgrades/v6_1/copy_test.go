@@ -106,7 +106,7 @@ func TestAllNonIBCAppStoresAreMigrated(t *testing.T) {
 }
 
 func TestRefuseIBCRehashPolicy(t *testing.T) {
-	for _, name := range []string{"ibc", "transfer", "icahost", "icacontroller", "08-wasm"} {
+	for _, name := range []string{"ibc", "transfer", "icahost", "icacontroller", "08-wasm", "hooks-for-ibc"} {
 		require.Equal(t, "sha256", iavlhash.AlgorithmName(name), name)
 	}
 	for _, p := range iavlhash.DualStorePairs() {
