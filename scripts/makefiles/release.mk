@@ -8,7 +8,8 @@ WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}')
 .PHONY: release release-help release-publish release-dry-run release-snapshot \
 	create-binaries create-checksums release-prep create-binaries-json \
 	create-upgrade-guide release-proposal upgrade-proposal \
-	release-bundle release-s3 release-dev release-control
+	release-bundle release-s3 release-dev release-control \
+	sync-upgrade-pack verify-upgrade-pack test-upgrade-pack recurate-upgrade-binaries
 
 # Shared with docker.mk for version-aligned testnet/ZK releases
 RELEASE_TAG ?= v6.0.0-dev
@@ -47,6 +48,10 @@ release-help:
 	@echo "  release-s3               Upload to releases/\$$PROJECT/\$$TAG/ (MINIO_ALIAS=$(MINIO_ALIAS))"
 	@echo "  wasmvm-curate            Pack libwasmvm artifacts + SHA256SUMS + VERSIONS.txt"
 	@echo "  preflight-upgrade       Gate Cosmovisor plan + local tarballs + ZK muslc (no upload)"
+	@echo "  sync-upgrade-pack       Rewrite pack JSON/SOURCE_DEPS from ARTIFACT_LOCK (WRITE=1 from tarballs)"
+	@echo "  verify-upgrade-pack     Fail-closed: binaries.json == cosmovisor.json == proposal == lock"
+	@echo "  test-upgrade-pack       Drift regression (corrupt binaries.json must fail verify)"
+	@echo "  recurate-upgrade-binaries  Rebuild tagged ELF and compare ARTIFACT_LOCK"
 	@echo "  release-dev              bundle + s3 for RELEASE_TAG (default $(RELEASE_TAG))"
 	@echo "  docker-publish-dev       (docker.mk) ZK image tagged RELEASE_TAG"
 	@echo "  docker-push-dev          (docker.mk) push IMAGE_REPO:RELEASE_TAG"
@@ -247,7 +252,7 @@ upgrade-proposal:
 		exit 1; \
 	}
 	@cd scripts/release/upgrade-proposal && cargo run --release -- \
-		--proposal "$(CURDIR)/networks/upgrades/v6/draft_proposal.json" \
+		--proposal "$(or $(PROPOSAL),$(CURDIR)/networks/upgrades/v6.1/draft_proposal.json)" \
 		--env-file "$(CURDIR)/scripts/release/.env" \
 		$(if $(filter 1,$(BROADCAST)),--broadcast,)
 
@@ -277,18 +282,44 @@ release-dev: release-bundle release-s3
 # ZK libwasmvm artifact pack (checksums + version pairing)
 ###############################################################################
 
-.PHONY: wasmvm-curate curate-v61 preflight-upgrade
+.PHONY: wasmvm-curate curate-v61 preflight-upgrade \
+	sync-upgrade-pack verify-upgrade-pack test-upgrade-pack recurate-upgrade-binaries
 wasmvm-curate:
 	@./scripts/release/curate_wasmvm_artifacts.sh
 
 # Pins + patched store/v2 + wasm checksums for 120u-1 v6.1 soak (no upload).
+# SOURCE_DEPS comes from gitlinks at ARTIFACT_LOCK binary_commit (sync_upgrade_pack).
 curate-v61:
 	@./scripts/release/curate_v61.sh
 
-# Local Cosmovisor / static-asset gate. WRITE=1 rewrites networks/upgrades/PLAN/cosmovisor.json
-# from checksummed tarballs (never file://). Does not upload.
+# Local Cosmovisor / static-asset gate. WRITE=1 rewrites the whole pack
+# (lock, binaries.json, cosmovisor.json, proposal.info, SOURCE_DEPS). Does not upload.
 preflight-upgrade:
 	$(require_exact_release_tag)
 	@PLAN=$(or $(PLAN),v6.1) TAG=$(RELEASE_TAG) WRITE=$(or $(WRITE),0) \
 		ALLOW_PARTIAL=$(or $(ALLOW_PARTIAL),1) \
 		bash scripts/release/preflight_upgrade.sh
+
+# ARTIFACT_LOCK is source of truth unless WRITE=1 (then local linux tarballs are).
+# Do not pass makefile default RELEASE_TAG=v6.0.0-dev into verify/sync.
+sync-upgrade-pack:
+	@if [ "$(or $(WRITE),0)" = "1" ]; then \
+	  if ! echo "$(RELEASE_TAG)" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
+	    echo "ERROR: WRITE=1 requires RELEASE_TAG=vX.Y.Z (got '$(RELEASE_TAG)')"; \
+	    exit 1; \
+	  fi; \
+	  PLAN=$(or $(PLAN),v6.1) TAG=$(RELEASE_TAG) WRITE=1 bash scripts/release/sync_upgrade_pack.sh; \
+	else \
+	  PLAN=$(or $(PLAN),v6.1) bash scripts/release/sync_upgrade_pack.sh; \
+	fi
+
+verify-upgrade-pack:
+	@PLAN=$(or $(PLAN),v6.1) CHECK_S3=$(or $(CHECK_S3),0) \
+		bash scripts/release/verify_upgrade_pack.sh
+
+test-upgrade-pack:
+	@bash scripts/release/test_upgrade_pack.sh
+
+# Rebuild tagged ELF and compare to ARTIFACT_LOCK. Does not upload.
+recurate-upgrade-binaries:
+	@PLAN=$(or $(PLAN),v6.1) bash scripts/release/recurate_upgrade_binaries.sh
