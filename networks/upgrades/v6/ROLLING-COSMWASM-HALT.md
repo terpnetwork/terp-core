@@ -1,8 +1,11 @@
 # Rolling CosmWasm halt patch (v6.0 line)
 
 This is **not** the v6.1 / v6.2 coordinated upgrade. It is a **binary swap**
-on the live **v6.0.0** line so a CosmWasm `Ok == nil` result cannot panic the
-process (HashMerchant PreBlocker sudo, execute, migrate, IBC recv).
+on the live **v6.0.0** line so CosmWasm `Ok == nil` cannot panic the process
+(HashMerchant PreBlocker sudo, execute, migrate, IBC recv), HashMerchant sudo
+is gas-bounded, and cw-hooks sudo cannot abort DeliverTx. No module param
+writes; HashMerchant ConsensusVersion stays **1** (the v6.1 `ContractGasLimit`
+param + version 2 stays on the gov upgrade).
 
 morocco-1 today: **SDK 0.54.3**, **CometBFT 0.39.3**, **wasm consensus 4**,
 **wasmvm v3.0.7-zk**. Do **not** run the v6.1.0 / v6.2.0 binaries for this

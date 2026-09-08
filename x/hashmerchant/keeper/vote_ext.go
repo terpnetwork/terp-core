@@ -10,6 +10,7 @@ import (
 	"sort"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/terpnetwork/terp-core/v6/x/hashmerchant/types"
@@ -24,11 +25,11 @@ import (
 
 // sidecarAttestationJSON is a per-source attestation in the sidecar response.
 type sidecarAttestationJSON struct {
-	SourceID          string `json:"source_id"`
-	Value             string `json:"value"` // hex-encoded
-	Height            uint64 `json:"height"`
-	Timestamp         int64  `json:"timestamp"`
-	CustodySignature  string `json:"custody_signature"` // hex-encoded ed25519
+	SourceID         string `json:"source_id"`
+	Value            string `json:"value"` // hex-encoded
+	Height           uint64 `json:"height"`
+	Timestamp        int64  `json:"timestamp"`
+	CustodySignature string `json:"custody_signature"` // hex-encoded ed25519
 }
 
 // sidecarResponse is the JSON structure returned by the sidecar's
@@ -108,11 +109,11 @@ func (k Keeper) fetchSidecar(ctx sdk.Context) (*types.VoteExtensionHashData, err
 			return nil, fmt.Errorf("decoding custody signature hex for %q: %w", a.SourceID, err)
 		}
 		attestations = append(attestations, types.OracleAttestation{
-			SourceId:          a.SourceID,
-			Value:             valueBytes,
-			Height:            a.Height,
-			Timestamp:         a.Timestamp,
-			CustodySignature:  sigBytes,
+			SourceId:         a.SourceID,
+			Value:            valueBytes,
+			Height:           a.Height,
+			Timestamp:        a.Timestamp,
+			CustodySignature: sigBytes,
 		})
 	}
 
@@ -327,12 +328,10 @@ func (k Keeper) ProcessVoteExtensions(ctx sdk.Context, extCommitInfo abci.Extend
 
 	for _, w := range winners {
 		representative := w.votes[0]
-		sort.Slice(representative.attestations, func(i, j int) bool {
-			return representative.attestations[i].SourceId < representative.attestations[j].SourceId
-		})
-		protoAttestations := make([]*types.OracleAttestation, len(representative.attestations))
-		for i := range representative.attestations {
-			protoAttestations[i] = &representative.attestations[i]
+		canonical := dedupeOracleAttestationsBySourceID(sortOracleAttestations(representative.attestations))
+		protoAttestations := make([]*types.OracleAttestation, len(canonical))
+		for i := range canonical {
+			protoAttestations[i] = &canonical[i]
 		}
 		root := types.HashRoot{
 			ChainUid:         w.key.chainUID,
@@ -348,7 +347,7 @@ func (k Keeper) ProcessVoteExtensions(ctx sdk.Context, extCommitInfo abci.Extend
 			continue
 		}
 
-		k.dispatchSudoCallbacks(ctx, root, representative.attestations)
+		k.dispatchSudoCallbacks(ctx, root, canonical)
 
 		ctx.EventManager().EmitEvent(sdk.NewEvent(
 			"hashmerchant_root_confirmed",
@@ -378,17 +377,18 @@ type HashMerchantSudoOracleAttestation struct {
 }
 
 type HashMerchantSudoPayload struct {
-	ChainUID         string                            `json:"chain_uid"`
-	Algo             string                            `json:"algo"`
-	Height           uint64                            `json:"height"`
-	Root             []byte                            `json:"root"`
-	AttestationCount uint32                            `json:"attestation_count"`
-	BlockTime        int64                             `json:"block_time"`
+	ChainUID         string                              `json:"chain_uid"`
+	Algo             string                              `json:"algo"`
+	Height           uint64                              `json:"height"`
+	Root             []byte                              `json:"root"`
+	AttestationCount uint32                              `json:"attestation_count"`
+	BlockTime        int64                               `json:"block_time"`
 	OracleSources    []HashMerchantSudoOracleAttestation `json:"oracle_sources,omitempty"`
 }
 
 func (k Keeper) dispatchSudoCallbacks(ctx sdk.Context, root types.HashRoot, attestations []types.OracleAttestation) {
 	blockHeight := uint64(ctx.BlockHeight())
+	limit := types.DefaultContractGasLimit
 
 	k.IterateRegisteredContracts(ctx, func(c types.RegisteredContract) bool {
 		if c.ChainUid != root.ChainUid || !c.Enabled {
@@ -402,10 +402,7 @@ func (k Keeper) dispatchSudoCallbacks(ctx sdk.Context, root types.HashRoot, atte
 		}
 
 		var oracleSources []HashMerchantSudoOracleAttestation
-		sortedAtt := append([]types.OracleAttestation(nil), attestations...)
-		sort.Slice(sortedAtt, func(i, j int) bool {
-			return sortedAtt[i].SourceId < sortedAtt[j].SourceId
-		})
+		sortedAtt := dedupeOracleAttestationsBySourceID(sortOracleAttestations(attestations))
 		for _, att := range sortedAtt {
 			oracleSources = append(oracleSources, HashMerchantSudoOracleAttestation{
 				SourceID: att.SourceId,
@@ -436,7 +433,7 @@ func (k Keeper) dispatchSudoCallbacks(ctx sdk.Context, root types.HashRoot, atte
 			return false
 		}
 
-		if _, err := k.wasmKeeper.Sudo(ctx, contractAddr, bz); err != nil {
+		if err := k.sudoBounded(ctx, contractAddr, bz, limit); err != nil {
 			k.Logger(ctx).Error("sudo callback failed",
 				"contract", c.ContractAddr,
 				"chain_uid", root.ChainUid,
@@ -445,6 +442,30 @@ func (k Keeper) dispatchSudoCallbacks(ctx sdk.Context, root types.HashRoot, atte
 		}
 		return false
 	})
+}
+
+// sudoBounded runs wasm sudo on a cache ctx with a finite SDK gas meter.
+// Out-of-gas panics are converted to errors so PreBlocker cannot abort the block.
+func (k Keeper) sudoBounded(ctx sdk.Context, contractAddr sdk.AccAddress, bz []byte, limit uint64) (err error) {
+	if limit == 0 {
+		limit = types.DefaultContractGasLimit
+	}
+	cache, write := ctx.CacheContext()
+	metered := cache.WithGasMeter(storetypes.NewGasMeter(limit))
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(storetypes.ErrorOutOfGas); ok {
+				err = fmt.Errorf("sudo gas limit %d exceeded", limit)
+				return
+			}
+			panic(r)
+		}
+	}()
+	if _, err = k.wasmKeeper.Sudo(metered, contractAddr, bz); err != nil {
+		return err
+	}
+	write()
+	return nil
 }
 
 // ---------------------------------------------------------------------------

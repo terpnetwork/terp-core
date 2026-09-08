@@ -4,6 +4,14 @@ import (
 	"cosmossdk.io/math"
 )
 
+// Wasm instance memory is 32 MiB. DefaultCompileCost is 3 SDK gas per bytecode
+// byte. Used as the rolling-patch sudo meter cap without a params store write
+// (v6.1 ConsensusVersion 2 / ContractGasLimit stays on the gov upgrade).
+const (
+	SudoMemoryLimitBytes    = 32 << 20
+	DefaultContractGasLimit uint64 = SudoMemoryLimitBytes * 3
+)
+
 // DefaultParams returns the default module parameters.
 func DefaultParams() Params {
 	return Params{

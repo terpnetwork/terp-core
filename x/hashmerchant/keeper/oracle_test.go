@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"testing"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/terpnetwork/terp-core/v6/x/hashmerchant/types"
 )
@@ -274,6 +274,55 @@ func TestAggregateAttestationRootDeterministic(t *testing.T) {
 	}
 	onlyFirst := []types.OracleAttestation{{SourceId: "a", Value: []byte("aa"), Height: 1}}
 	require.Equal(t, aggregateAttestationRoot(onlyFirst), aggregateAttestationRoot(dups))
+}
+
+func sudoOracleSources(attestations []types.OracleAttestation) []HashMerchantSudoOracleAttestation {
+	canonical := dedupeOracleAttestationsBySourceID(sortOracleAttestations(attestations))
+	out := make([]HashMerchantSudoOracleAttestation, 0, len(canonical))
+	for _, att := range canonical {
+		out = append(out, HashMerchantSudoOracleAttestation{
+			SourceID: att.SourceId,
+			Value:    att.Value,
+			Height:   att.Height,
+		})
+	}
+	return out
+}
+
+func TestOracleAttestationDuplicateSourceIdCanonical(t *testing.T) {
+	high := types.OracleAttestation{SourceId: "src", Value: []byte("zz"), Height: 9, Timestamp: 2}
+	low := types.OracleAttestation{SourceId: "src", Value: []byte("aa"), Height: 1, Timestamp: 1}
+	other := types.OracleAttestation{SourceId: "other", Value: []byte("x"), Height: 3, Timestamp: 3}
+
+	orderHighFirst := []types.OracleAttestation{high, other, low}
+	orderLowFirst := []types.OracleAttestation{low, other, high}
+
+	canonHighFirst := dedupeOracleAttestationsBySourceID(sortOracleAttestations(orderHighFirst))
+	canonLowFirst := dedupeOracleAttestationsBySourceID(sortOracleAttestations(orderLowFirst))
+	want := []types.OracleAttestation{other, low}
+
+	require.Equal(t, want, canonHighFirst)
+	require.Equal(t, want, canonLowFirst)
+	require.Equal(t, canonHighFirst, canonLowFirst)
+	require.Len(t, canonHighFirst, 2, "duplicate SourceId must not appear twice")
+
+	digest := aggregateAttestationRoot(want)
+	require.Equal(t, digest, aggregateAttestationRoot(orderHighFirst))
+	require.Equal(t, digest, aggregateAttestationRoot(orderLowFirst))
+
+	sudoHighFirst := sudoOracleSources(orderHighFirst)
+	sudoLowFirst := sudoOracleSources(orderLowFirst)
+	require.Equal(t, sudoHighFirst, sudoLowFirst)
+	require.Len(t, sudoHighFirst, 2)
+	require.Equal(t, "other", sudoHighFirst[0].SourceID)
+	require.Equal(t, "src", sudoHighFirst[1].SourceID)
+	require.Equal(t, []byte("aa"), sudoHighFirst[1].Value)
+
+	bz1, err := json.Marshal(HashMerchantSudoPayload{OracleSources: sudoHighFirst})
+	require.NoError(t, err)
+	bz2, err := json.Marshal(HashMerchantSudoPayload{OracleSources: sudoLowFirst})
+	require.NoError(t, err)
+	require.Equal(t, bz1, bz2)
 }
 
 // ---------------------------------------------------------------------------
