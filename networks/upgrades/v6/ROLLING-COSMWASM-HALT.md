@@ -12,6 +12,7 @@ apply at the gov halt (`v6.1` plan, proposal 59).
 ## What this branch is
 
 - Branch: `patch/v6.0-cosmwasm-halt` (from tag `v6.0.0`)
+- ELF tag: **`v6.0.1`** (linux amd64/arm64 Cosmovisor tarballs)
 - wasmd: `permissionlessweb/wasmd` `patch/v0.70-sdk54-nil-ok` @ `d733e9b3`
   (live pin `2d5821c1` + nil-Ok guards only)
 - `x/wasm` **ConsensusVersion stays 4** (no store migration)

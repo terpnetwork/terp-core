@@ -8,6 +8,9 @@ ARG WASMVM_SOURCE=github
 ARG WASMVM_BASE_URL=https://minio.terp.network/releases/zk-wasmvm
 
 FROM golang:${GO_VERSION}-alpine AS go-builder
+# Stamped into terpd via make VERSION=/COMMIT= (.git is dockerignored).
+ARG GIT_VERSION=
+ARG GIT_COMMIT=
 
 SHELL ["/bin/sh", "-ecuxo", "pipefail"]
 # this comes from standard alpine nightly file
@@ -102,7 +105,7 @@ RUN ARCH=$(uname -m) && \
     fi
 
 # force it to use static lib (from above) not standard libgo_cosmwasm.so file
-RUN go mod tidy && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build
+RUN go mod tidy && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build VERSION="${GIT_VERSION}" COMMIT="${GIT_COMMIT}"
 RUN echo "Ensuring binary is statically linked ..." \
   && (file /code/build/terpd | grep "statically linked")
 
