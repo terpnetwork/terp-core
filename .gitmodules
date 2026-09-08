@@ -291,7 +291,7 @@
 [submodule "crates/zk-wasmd"]
 	path = crates/zk-wasmd
 	url = https://github.com/permissionlessweb/wasmd
-	branch = merge/upstream-wasmd-v0.70
+	branch = patch/v0.70-sdk54-nil-ok
 
 [submodule "crates/zk-wasmd.bak"]
 	path = crates/zk-wasmd.bak
