@@ -6,15 +6,15 @@
       "plan": {
         "name": "v6.1",
         "time": "0001-01-01T00:00:00Z",
-        "height": "0",
-        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.1.0-dev/terpd-6.1.0-dev-linux-amd64.tar.gz?checksum=sha256:663c15949182cac66459ad5f45d5d0a612a78d829d9cd1e77ecfee62bd21db87\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.1.0-dev/terpd-6.1.0-dev-linux-arm64.tar.gz?checksum=sha256:1b027568836bb6fa172b8d3ebf43d24db3c1485572507c321c307b066b1988d5\"}}",
+        "height": "23097500",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-amd64.tar.gz?checksum=sha256:18a073f5d189f823987bd73d1ee6d410f9f48bbdcc92258fcbf8ae800780ebd2\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-arm64.tar.gz?checksum=sha256:4249119ebdbf75535c6852226fb7dee477373d65d2b721708bbb5265e8fdd8b4\"}}",
         "upgraded_client_state": null
       }
     }
   ],
   "metadata": "",
-  "deposit": "50000000uterp",
-  "title": "Software Upgrade v6.1 (v6.1.0-dev)",
-  "summary": "Plan v6.1. HashMerchant consensus version 2 with bounded sudo gas for wasm callbacks (contract_gas_limit default 100663296). CircuitUploadAccess Nobody; copy migratable IAVL stores into b3-* (IBC stays SHA-256). Pin wasm via gov MsgPinCodes; LRU memory_cache_size stays 100 MiB per VM. Halt height TBD. Pre-place Cosmovisor binary at cosmovisor/upgrades/v6.1/bin/terpd. S3 objects are not public until upload is asked; DAEMON_ALLOW_DOWNLOAD_BINARIES=false until then.",
+  "deposit": "100000000000uterp",
+  "title": "Software Upgrade v6.1 (v6.1.0)",
+  "summary": "Expedited plan v6.1 at height 23097500 (~36h from 2026-09-08 06:07 UTC at ~3.54s/block; 12h after a 24h expedited vote). Binary tag v6.1.0 / 612ebf3. Cosmovisor required: pre-place upgrades/v6.1 and upgrades/v6.2 (linux amd64/arm64). The v6.1 handler arms plan v6.2 at apply+2 with plan.info https://s3.terp.network/upgrades/v6.2/cosmovisor.json. Operator note: networks/upgrades/PROVIDERS-v6.1-v6.2.md. IBC stays SHA-256. Submit only this v6.1 plan (do not dual-message).",
   "expedited": true
 }
