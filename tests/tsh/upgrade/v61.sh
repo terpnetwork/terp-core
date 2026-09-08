@@ -7,9 +7,10 @@
 # snapshot.json latest. Do not use 5.2.0 (dies: expected 22911849 got 0).
 # Do not use pruned 22807932 or archive 22749033 (pre-v6).
 #
-# After halt, Cosmovisor (USE_COSMOVISOR=1, default) starts upgrades/v6.1/bin/terpd.
-# v6.1 arms plan v6.2 at height+2; Cosmovisor auto-swaps to upgrades/v6.2/bin/terpd.
-# Set USE_COSMOVISOR=0 to use the old manual NEW_BIND / chain-v62 in-place-testnet path.
+# After halt, Cosmovisor (USE_COSMOVISOR=1, default) runs. CV_DOWNLOAD=1 (default)
+# fetches linux tarballs from published S3 URLs in upgrades/v6.1|v6.2/cosmovisor.json
+# (same as e.sh). CV_DOWNLOAD=0 pre-places NEW_BIND / V62_BIND.
+# Set USE_COSMOVISOR=0 for the old manual NEW_BIND / chain-v62 in-place-testnet path.
 #
 #   make tsh-upgrade-v61
 #   STATE_SYNC=0 sh tests/tsh/upgrade/v61.sh
@@ -31,8 +32,11 @@ export OLD_LOG="${OLD_LOG:-/tmp/tsh-v61-old.log}"
 export NEW_LOG="${NEW_LOG:-/tmp/tsh-v61-new.log}"
 export POST_BLOCKS="${POST_BLOCKS:-3}"
 export USE_COSMOVISOR="${USE_COSMOVISOR:-1}"
+export CV_DOWNLOAD="${CV_DOWNLOAD:-1}"
 export V62_BIND="${V62_BIND:-terpd-v62}"
 export CV_BIND="${CV_BIND:-cosmovisor}"
+export CV_JSON_V61="${CV_JSON_V61:-https://s3.terp.network/upgrades/v6.1/cosmovisor.json}"
+export CV_JSON_V62="${CV_JSON_V62:-https://s3.terp.network/upgrades/v6.2/cosmovisor.json}"
 
 if ! command -v "$OLD_BIND" >/dev/null; then
   echo "OLD_BIND=$OLD_BIND not on PATH. Install the v6 terpd as terpd-v6 (post-v6 snapshot). Do not use 5.2.0."
@@ -46,9 +50,14 @@ fi
 echo "v61: OLD_BIND=$OLD_BIND (${_oldver:-v6 pack, version string empty})"
 if [ "${USE_COSMOVISOR:-0}" = "1" ]; then
   command -v "${CV_BIND:-cosmovisor}" >/dev/null || { echo "USE_COSMOVISOR=1 needs cosmovisor on PATH"; exit 1; }
-  command -v "${V62_BIND:-terpd-v62}" >/dev/null || { echo "USE_COSMOVISOR=1 needs $V62_BIND (upgrades/v6.2/bin/terpd)"; exit 1; }
   export CHAIN_V62=1
-  echo "v61: Cosmovisor auto-swap v6.1 then v6.2 (pre-placed bins)"
+  if [ "${CV_DOWNLOAD:-1}" = "1" ]; then
+    export SKIP_MAKE_INSTALL="${SKIP_MAKE_INSTALL:-1}"
+    echo "v61: Cosmovisor S3 download v6.1 then v6.2 ($CV_JSON_V61 / $CV_JSON_V62)"
+  else
+    command -v "${V62_BIND:-terpd-v62}" >/dev/null || { echo "CV_DOWNLOAD=0 needs $V62_BIND"; exit 1; }
+    echo "v61: Cosmovisor auto-swap v6.1 then v6.2 (pre-placed bins)"
+  fi
 fi
 
 if [ -z "${SNAPSHOT_PATH:-}" ] && [ -z "${SNAPSHOT_URL:-}" ] && [ "$STATE_SYNC" = "0" ]; then

@@ -27,16 +27,30 @@ if [ "$CHAIN_V62" != "1" ]; then
   echo "      install feat/6.2.0-dev as $V62_BIND from .worktrees/terp-core-v6.2"
   return 0 2>/dev/null || exit 0
 fi
-command -v "$V62_BIND" >/dev/null || { echo "V62_BIND=$V62_BIND not on PATH"; exit 1; }
-command -v "$NEW_BIND" >/dev/null || { echo "NEW_BIND=$NEW_BIND missing"; exit 1; }
+if [ "${CV_DOWNLOAD:-0}" != "1" ]; then
+  command -v "$V62_BIND" >/dev/null || { echo "V62_BIND=$V62_BIND not on PATH"; exit 1; }
+  command -v "$NEW_BIND" >/dev/null || { echo "NEW_BIND=$NEW_BIND missing"; exit 1; }
+fi
 : "${VAL1HOME:?}" "${VAL1ADDR:?}" "${VAL1_RPC_PORT:?}" "${CHAINID:?}" "${NEW_PID:?}"
 
-echo "v6.2: chaining on same home with $V62_BIND (plan $V62_PLAN)"
+v62_query_bin() {
+  if [ -x "$VAL1HOME/cosmovisor/upgrades/v6.2/bin/terpd" ]; then
+    echo "$VAL1HOME/cosmovisor/upgrades/v6.2/bin/terpd"
+  elif [ -x "$VAL1HOME/cosmovisor/current/bin/terpd" ]; then
+    echo "$VAL1HOME/cosmovisor/current/bin/terpd"
+  elif command -v "$V62_BIND" >/dev/null; then
+    command -v "$V62_BIND"
+  else
+    command -v "$OLD_BIND"
+  fi
+}
+
+echo "v6.2: chaining on same home (plan $V62_PLAN)"
 if [ "${USE_COSMOVISOR:-0}" = "1" ]; then
   echo "v6.2: Cosmovisor auto-swap — wait for applied $V62_PLAN (do not retrigger in-place-testnet)"
   applied=""
   for i in $(seq 1 180); do
-    applied=$("$V62_BIND" q upgrade applied "$V62_PLAN" \
+    applied=$("$(v62_query_bin)" q upgrade applied "$V62_PLAN" \
       --home "$VAL1HOME" --node "tcp://127.0.0.1:${VAL1_RPC_PORT}" \
       -o json 2>/dev/null | jq -r '.height // empty' || true)
     h=$(rpc_height || echo 0)
@@ -57,7 +71,7 @@ if [ "${USE_COSMOVISOR:-0}" = "1" ]; then
     exit 1
   fi
   echo "v6.2 TSH ok (applied=$V62_PLAN at $applied) current=$(readlink "$VAL1HOME/cosmovisor/current" 2>/dev/null || echo no-cv)"
-  export NEW_BIND="$V62_BIND"
+  export NEW_BIND="$(v62_query_bin)"
   return 0 2>/dev/null || exit 0
 fi
 echo "v6.2: stopping v6.1 pid=$NEW_PID to reschedule via in-place-testnet"

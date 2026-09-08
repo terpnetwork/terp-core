@@ -54,9 +54,19 @@ catching_up() {
   curl -sf "http://127.0.0.1:${VAL1_RPC_PORT}/status" | jq -r '.result.sync_info.catching_up'
 }
 
+query_bin() {
+  if [ -x "$VAL1HOME/cosmovisor/current/bin/terpd" ]; then
+    echo "$VAL1HOME/cosmovisor/current/bin/terpd"
+  elif command -v "${NEW_BIND:-terpd}" >/dev/null; then
+    command -v "$NEW_BIND"
+  else
+    command -v "$OLD_BIND"
+  fi
+}
+
 # SDK returns { "height": "<halt>" } for a completed plan — no name field.
 applied_height() {
-  "$NEW_BIND" q upgrade applied "$UPGRADE_VERSION" \
+  "$(query_bin)" q upgrade applied "$UPGRADE_VERSION" \
     --home "$VAL1HOME" \
     --node "tcp://127.0.0.1:${VAL1_RPC_PORT}" \
     -o json 2>/dev/null | jq -r '.height // empty'
@@ -99,14 +109,19 @@ isolate_p2p() {
 
 command -v "$OLD_BIND" >/dev/null || { echo "$OLD_BIND not on PATH (v6.1: install v6 as terpd-v6)"; exit 1; }
 echo "A: OLD_BIND=$OLD_BIND ($("$OLD_BIND" version 2>/dev/null | head -1))"
-if [ "${SKIP_MAKE_INSTALL:-0}" = "1" ]; then
+if [ "${CV_DOWNLOAD:-0}" = "1" ]; then
+  echo "A: CV_DOWNLOAD=1 — skip NEW_BIND install (Cosmovisor fetches S3)"
+elif [ "${SKIP_MAKE_INSTALL:-0}" = "1" ]; then
   echo "A: SKIP_MAKE_INSTALL=1 (use PATH $NEW_BIND)"
+  command -v "$NEW_BIND" >/dev/null || { echo "$NEW_BIND not on PATH"; exit 1; }
 else
   echo "A: make install NEW_BIND=$NEW_BIND from current tree"
   ( cd "$NEW_RELEASE_PATH" && make install )
+  command -v "$NEW_BIND" >/dev/null || { echo "$NEW_BIND not on PATH"; exit 1; }
 fi
-command -v "$NEW_BIND" >/dev/null || { echo "$NEW_BIND not on PATH"; exit 1; }
-echo "A: NEW_BIND=$NEW_BIND ($("$NEW_BIND" version 2>/dev/null | head -1))"
+if command -v "${NEW_BIND:-}" >/dev/null; then
+  echo "A: NEW_BIND=$NEW_BIND ($("$NEW_BIND" version 2>/dev/null | head -1))"
+fi
 
 rm -rf "$VAL1HOME"
 mkdir -p "$CHAINDIR"
@@ -218,33 +233,134 @@ if ! grep -q "UPGRADE \"${UPGRADE_VERSION}\" NEEDED" "$OLD_LOG"; then
   exit 1
 fi
 
+# Fetch published Cosmovisor JSON (live bucket) into $1 from URL or existing file.
+fetch_cv_json() {
+  local dest="$1" src="$2"
+  mkdir -p "$(dirname "$dest")"
+  case "$src" in
+    https://*|http://*) curl -fsSL "$src" -o "$dest" ;;
+    *) cp "$src" "$dest" ;;
+  esac
+  jq -e '.binaries["linux/amd64"] and .binaries["linux/arm64"]' "$dest" >/dev/null \
+    || { echo "A: bad Cosmovisor JSON $src"; cat "$dest"; exit 1; }
+  if grep -q -- '-dev' "$dest"; then
+    echo "A: refuse -dev URLs in $dest"; cat "$dest"; exit 1
+  fi
+}
+
+# Download the linux tarball Cosmovisor would fetch (GOOS/GOARCH + sha256).
+fetch_cv_tarball() {
+  local name="$1" json="$2"
+  local key url bare want got tmp dest
+  case "$(uname -m)" in
+    aarch64|arm64) key="linux/arm64" ;;
+    x86_64|amd64) key="linux/amd64" ;;
+    *) echo "A: unsupported arch $(uname -m)"; exit 1 ;;
+  esac
+  url="$(jq -r --arg k "$key" '.binaries[$k] // empty' "$json")"
+  [ -n "$url" ] || { echo "A: no binary URL for $key in $json"; exit 1; }
+  echo "$url" | grep -q -- '-dev' && { echo "A: refuse -dev URL $url"; exit 1; }
+  want="$(echo "$url" | sed -n 's/.*checksum=sha256:\([0-9a-f]*\).*/\1/p')"
+  bare="${url%%\?*}"
+  tmp="$(mktemp -d)"
+  echo "A: fetching $key $bare"
+  curl -fL --retry 3 -o "$tmp/pkg.tar.gz" "$bare"
+  if command -v sha256sum >/dev/null; then
+    got="$(sha256sum "$tmp/pkg.tar.gz" | awk '{print $1}')"
+  else
+    got="$(shasum -a 256 "$tmp/pkg.tar.gz" | awk '{print $1}')"
+  fi
+  if [ -n "$want" ] && [ "$got" != "$want" ]; then
+    echo "A: checksum mismatch $key got=$got want=$want"; exit 1
+  fi
+  tar -tzf "$tmp/pkg.tar.gz" | grep -Eqx '\.?/?terpd' \
+    || { echo "A: tarball has no root terpd"; tar -tzf "$tmp/pkg.tar.gz" | head; exit 1; }
+  dest="$VAL1HOME/cosmovisor/upgrades/${name}/bin"
+  mkdir -p "$dest"
+  tar -xzf "$tmp/pkg.tar.gz" -C "$tmp"
+  if [ -f "$tmp/terpd" ]; then
+    cp "$tmp/terpd" "$dest/terpd"
+  elif [ -f "$tmp/./terpd" ]; then
+    cp "$tmp/./terpd" "$dest/terpd"
+  else
+    echo "A: extract missed terpd"; ls -la "$tmp"; exit 1
+  fi
+  chmod +x "$dest/terpd"
+  rm -rf "$tmp"
+  echo "A: installed $dest/terpd from S3 ($key sha256=$got)"
+}
+
+# in-place-testnet dumps upgrade-info without plan.info. Stamp published
+# binaries JSON so Cosmovisor can download (same as e.sh gov plan.info).
+stamp_upgrade_info() {
+  local name="$1" json="$2"
+  local file="$VAL1HOME/data/upgrade-info.json"
+  [ -f "$file" ] || return 1
+  [ -f "$json" ] || return 1
+  local n compact tmp
+  n="$(jq -r '.name // empty' "$file")"
+  [ "$n" = "$name" ] || return 0
+  compact="$(jq -c . "$json")"
+  tmp="$(mktemp)"
+  jq --arg info "$compact" '.info = $info' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  echo "A: stamped upgrade-info.json name=$name info from $json"
+}
+
 setup_cosmovisor_upgrades() {
   local cv="${CV_BIND:-cosmovisor}"
   command -v "$cv" >/dev/null || { echo "A: USE_COSMOVISOR=1 but $cv not on PATH"; exit 1; }
-  mkdir -p "$VAL1HOME/cosmovisor/genesis/bin" \
-    "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin"
+  mkdir -p "$VAL1HOME/cosmovisor/genesis/bin"
   cp "$(command -v "$OLD_BIND")" "$VAL1HOME/cosmovisor/genesis/bin/terpd"
-  cp "$(command -v "$NEW_BIND")" "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin/terpd"
-  chmod +x "$VAL1HOME/cosmovisor/genesis/bin/terpd" \
-    "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin/terpd"
-  if command -v "${V62_BIND:-terpd-v62}" >/dev/null; then
-    mkdir -p "$VAL1HOME/cosmovisor/upgrades/v6.2/bin"
-    cp "$(command -v "${V62_BIND:-terpd-v62}")" "$VAL1HOME/cosmovisor/upgrades/v6.2/bin/terpd"
-    chmod +x "$VAL1HOME/cosmovisor/upgrades/v6.2/bin/terpd"
-    echo "A: Cosmovisor pre-place genesis=$OLD_BIND upgrades/${UPGRADE_VERSION}=$NEW_BIND upgrades/v6.2=${V62_BIND:-terpd-v62}"
-  else
-    echo "A: Cosmovisor pre-place genesis=$OLD_BIND upgrades/${UPGRADE_VERSION}=$NEW_BIND (no v6.2 bin)"
-  fi
-  # Halt already wrote upgrade-info.json; Cosmovisor must start on the plan bin
-  # (same as e.sh after UPGRADE NEEDED), then auto-swap when the next plan dumps.
-  ln -sfn "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}" "$VAL1HOME/cosmovisor/current"
+  chmod +x "$VAL1HOME/cosmovisor/genesis/bin/terpd"
   export DAEMON_NAME=terpd
   export DAEMON_HOME="$VAL1HOME"
   export DAEMON_RESTART_AFTER_UPGRADE=true
   export DAEMON_POLL_INTERVAL=300ms
   export DAEMON_SHUTDOWN_GRACE=15s
   export UNSAFE_SKIP_BACKUP=true
-  export DAEMON_ALLOW_DOWNLOAD_BINARIES=false
+
+  if [ "${CV_DOWNLOAD:-0}" = "1" ]; then
+    rm -rf "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}" \
+      "$VAL1HOME/cosmovisor/upgrades/v6.2" \
+      "$VAL1HOME/cosmovisor/current"
+    fetch_cv_json "$VAL1HOME/cv-v61.json" \
+      "${CV_JSON_V61:-https://s3.terp.network/upgrades/v6.1/cosmovisor.json}"
+    stamp_upgrade_info "$UPGRADE_VERSION" "$VAL1HOME/cv-v61.json"
+    # Halt already wrote v6.1 upgrade-info, so Cosmovisor will not download
+    # that plan at start. Install v6.1 from S3 (or NEW_BIND if testing a
+    # recut handler). Do not pre-place v6.2 and do not stamp v6.2 info —
+    # the v6.1 binary writes plan.info as the published JSON URL.
+    if command -v "${NEW_BIND:-}" >/dev/null && [ "${CV_V61_FROM_PATH:-0}" = "1" ]; then
+      mkdir -p "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin"
+      cp "$(command -v "$NEW_BIND")" "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin/terpd"
+      chmod +x "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin/terpd"
+      echo "A: CV_V61_FROM_PATH=1 upgrades/${UPGRADE_VERSION}=$NEW_BIND (handler writes v6.2 URL)"
+    else
+      fetch_cv_tarball "$UPGRADE_VERSION" "$VAL1HOME/cv-v61.json"
+    fi
+    ln -sfn "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}" "$VAL1HOME/cosmovisor/current"
+    echo "A: CV_DOWNLOAD=1 v6.2 via Cosmovisor GET of plan.info URL (no operator stamp)"
+    echo "A: upgrade-info=$(cat "$VAL1HOME/data/upgrade-info.json")"
+    export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
+    # Pointer URL has no ?checksum= (v6.2 hashes are inside the JSON). Default
+    # Cosmovisor is false; tarball URLs in the JSON still carry sha256.
+    export DAEMON_DOWNLOAD_MUST_HAVE_CHECKSUM=false
+  else
+    mkdir -p "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin"
+    cp "$(command -v "$NEW_BIND")" "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin/terpd"
+    chmod +x "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}/bin/terpd"
+    if command -v "${V62_BIND:-terpd-v62}" >/dev/null; then
+      mkdir -p "$VAL1HOME/cosmovisor/upgrades/v6.2/bin"
+      cp "$(command -v "${V62_BIND:-terpd-v62}")" "$VAL1HOME/cosmovisor/upgrades/v6.2/bin/terpd"
+      chmod +x "$VAL1HOME/cosmovisor/upgrades/v6.2/bin/terpd"
+      echo "A: Cosmovisor pre-place genesis=$OLD_BIND upgrades/${UPGRADE_VERSION}=$NEW_BIND upgrades/v6.2=${V62_BIND:-terpd-v62}"
+    else
+      echo "A: Cosmovisor pre-place genesis=$OLD_BIND upgrades/${UPGRADE_VERSION}=$NEW_BIND (no v6.2 bin)"
+    fi
+    ln -sfn "$VAL1HOME/cosmovisor/upgrades/${UPGRADE_VERSION}" "$VAL1HOME/cosmovisor/current"
+    export DAEMON_ALLOW_DOWNLOAD_BINARIES=false
+  fi
 }
 
 echo "A: NEW_BIND start (v6 handler) on same home"
@@ -308,7 +424,7 @@ if [ "$h" -lt "$TARGET" ]; then
   exit 1
 fi
 
-"$NEW_BIND" q wasm params --home "$VAL1HOME" -o json | jq '.circuit_upload_access.permission // .'
-"$NEW_BIND" q tokenfactory params --home "$VAL1HOME" -o json | jq '.params // .'
-"$NEW_BIND" q ibc client states --home "$VAL1HOME" -o json | jq '.client_states | length'
+"$(query_bin)" q wasm params --home "$VAL1HOME" -o json | jq '.circuit_upload_access.permission // .'
+"$(query_bin)" q tokenfactory params --home "$VAL1HOME" -o json | jq '.params // .'
+"$(query_bin)" q ibc client states --home "$VAL1HOME" -o json | jq '.client_states | length'
 echo "A: upgrade workflow finished applied=$UPGRADE_VERSION at $APPLIED_H height=$h (halt info was $(cat "$VAL1HOME/data/upgrade-info.json"))"

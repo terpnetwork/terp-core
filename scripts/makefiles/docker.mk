@@ -141,13 +141,8 @@ docker-clean:
 # ---------------------------------------------------------
 
 wasmvm-download-libs:
-	@echo "==> Downloading official wasmvm musl libs for verification..."
-	@mkdir -p build/wasmvm
-	@for arch in x86_64 aarch64; do \
-		url="https://github.com/CosmWasm/wasmvm/releases/download/$(WASMVM_VERSION)/libwasmvm_muslc.$$arch.a"; \
-		echo "  $$arch -> $$url"; \
-		curl -L -f -o build/wasmvm/libwasmvm_muslc.$$arch.a $$url || echo "  Warning: Failed $$arch"; \
-	done
+	@echo "==> Fetching pinned STWO muslc (minio zk-wasmvm/v3.0.7-zk), not CosmWasm GitHub"
+	@./scripts/release/fetch_zk_muslc.sh build/wasmvm
 	@ls -lh build/wasmvm/
 
 wasmvm-build-libs:
