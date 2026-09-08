@@ -63,6 +63,7 @@ endef
 build-reproducible: build-reproducible-amd64 build-reproducible-arm64
 
 build-reproducible-amd64: go.sum
+	@if [ "$(WASMVM_SOURCE)" = "local" ]; then $(MAKE) _docker-stage; fi
 	mkdir -p $(BUILDDIR)
 	$(DOCKER) buildx create --name terpbuilder || true
 	$(DOCKER) buildx use terpbuilder
@@ -83,6 +84,7 @@ build-reproducible-amd64: go.sum
 	$(call extract_binary,terp-core:local-amd64,$(BUILDDIR)/terpd-linux-amd64)
 
 build-reproducible-arm64: go.sum
+	@if [ "$(WASMVM_SOURCE)" = "local" ]; then $(MAKE) _docker-stage; fi
 	mkdir -p $(BUILDDIR)
 	$(DOCKER) buildx create --name terpbuilder || true
 	$(DOCKER) buildx use terpbuilder
