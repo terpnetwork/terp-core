@@ -1,6 +1,6 @@
 # Morocco-1 software upgrade: v6.1 then v6.2
 
-**Status:** Expedited plan **`v6.1` at height `23097500`**. Voting period is **24 hours**. Halt is ~**12 hours after** voting ends (~**36 hours** from 2026-09-08 06:07 UTC at ~**3.5 s/block**). Between now and height `23097500`, every validator and sentry must run **`cosmovisor run start`**, not raw `terpd start`. Plan **`v6.2` is not a second proposal** — the v6.1 binary arms it at apply + 2.
+**Status:** Expedited plan **`v6.1` at height `23098000`**. Voting period is **24 hours**. Halt is ~**12 hours after** voting ends (~**36 hours** from 2026-09-08 06:13 UTC). Use **3.0–3.5 s/block** (live mean **3.53 s**, not 2.4 s). Between now and height `23098000`, every validator and sentry must run **`cosmovisor run start`**, not raw `terpd start`. Plan **`v6.2` is not a second proposal** — the v6.1 binary arms it at apply + 2.
 
 The chain will halt **twice**, about **two blocks** apart. Cosmovisor is how you make both swaps without sitting on the keyboard. This note does **not** describe a manual binary swap for the upgrade itself.
 
@@ -257,5 +257,5 @@ Tarballs (member terpd, linux only):
     https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-arm64.tar.gz
 Recommended: pre-place upgrades/v6.1/bin/terpd and upgrades/v6.2/bin/terpd, DAEMON_ALLOW_DOWNLOAD_BINARIES=false.
 Optional download: ALLOW_DOWNLOAD true, MUST_HAVE_CHECKSUM false, do not create empty upgrades/v6.2/.
-DAEMON_NAME=terpd DAEMON_RESTART_AFTER_UPGRADE=true. No darwin. Plan v6.1 halt height 23097500. v6.2 is apply+2 from the v6.1 binary.
+DAEMON_NAME=terpd DAEMON_RESTART_AFTER_UPGRADE=true. No darwin. Plan v6.1 halt height 23098000 (~3.0–3.5 s/block, not 2.4 s). v6.2 is apply+2 from the v6.1 binary.
 ```
