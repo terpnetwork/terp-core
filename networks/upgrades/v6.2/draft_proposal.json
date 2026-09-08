@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6.2",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "0",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-amd64.tar.gz?checksum=sha256:38c15e1f54bc8234d07883c05e665ded68fdc0434c1c9db08de796d15ef491f6\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-arm64.tar.gz?checksum=sha256:148eedb6e8f1dd97e2436bc1b36dfebdbc915d23c14e6bad483924b0a4052c3d\"}}",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "50000000uterp",
+  "title": "Software Upgrade v6.2 (v6.2.0)",
+  "summary": "Plan v6.2 after v6.1. Keepers stay bank/staking/acc; unmounted b3-* dest trees drop from CommitInfo. IBC stays SHA-256. Bounded sudo gas already in the v6.1 binary (HashMerchant consensus 2, contract_gas_limit 100663296). Halt height TBD. Pre-place Cosmovisor at cosmovisor/upgrades/v6.2/bin/terpd. Cosmovisor auto-download URLs are the published linux tarballs under releases/terp-core/v6.2.0/.",
+  "expedited": true
+}

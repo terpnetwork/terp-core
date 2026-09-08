@@ -58,8 +58,10 @@ if [ "$DRY_RUN" != "1" ]; then
 fi
 
 run_mc cp "$SRC/cosmovisor.json" "${DEST}/cosmovisor.json"
-if [ -f "$SRC/draft_proposal.json" ]; then
-  run_mc cp "$SRC/draft_proposal.json" "${DEST}/draft_proposal.json"
-fi
+for f in binaries.json draft_proposal.json ARTIFACT_LOCK guide.md sha256sum.txt; do
+  if [ -f "$SRC/$f" ]; then
+    run_mc cp "$SRC/$f" "${DEST}/$f"
+  fi
+done
 
 echo "  public: https://s3.terp.network/upgrades/${PLAN}/cosmovisor.json"

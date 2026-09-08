@@ -59,6 +59,9 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 		dstHash  []byte
 		dstLast  []byte
 	}
+	if s.App.GetKey(iavlhash.DestStores()[0]) == nil {
+		s.T().Skip("v6.2 binary does not mount dest trees; v6.1 copy is applied by the v6.1 binary")
+	}
 	snaps := make([]snap, 0, len(iavlhash.DualStorePairs()))
 	for _, p := range iavlhash.DualStorePairs() {
 		snaps = append(snaps, snap{
@@ -99,11 +102,8 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 		cms.Write()
 	}
 
-	armed, err := s.App.UpgradeKeeper.GetUpgradePlan(s.Ctx)
-	s.Require().NoError(err, "v6.1 EndBlocker arms v6.2 two blocks later")
-	s.Require().Equal("v6.2", armed.Name)
-	s.Require().Equal(v61UpgradeHeight+2, armed.Height)
-	s.Require().Equal(v61.FollowupPlanInfo, armed.Info, "v6.2 plan.info is the published Cosmovisor JSON URL, not inline checksums")
+	_, err = s.App.UpgradeKeeper.GetUpgradePlan(s.Ctx)
+	s.Require().Error(err, "v6.2 binary must not arm a follow-up plan from EndBlocker")
 
 	for _, sn := range snaps {
 		dstWorking := s.commitStore(sn.dst).WorkingHash()

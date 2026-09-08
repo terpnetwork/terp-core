@@ -14,7 +14,8 @@ tsh-help:
 	@echo "  tsh-polytone 			 Run sh test for ibc + wasm sanity"
 	@echo "  tsh-staking-hooks 		 Run sh test for staking hook sanity"
 	@echo "  tsh-upgrade 		     Run sh test for upgrade proposal & performance sanity"
-	@echo "  tsh-upgrade-v61          morocco-1 snapshot → v6.1; chain v6.2 if V62_BIND on PATH"
+	@echo "  tsh-upgrade-v61          morocco-1 snapshot → v6.1 (IAVL dual-store + query all module params)"
+	@echo "  tsh-upgrade-v62-cv       morocco-1 v6 snapshot → Cosmovisor v6.1 then v6.2 (2-block gap)"
 	@echo "  tsh-upgrade-120u-1       120u-1: stage v6.1 binary + fill proposal (no broadcast)"
 	@echo "  tsh-upgrade-zero-cv      120u-1 export --for-zero-height, 2m gov, Cosmovisor + pre-placed v6.1"
 	@echo "  tsh-upgrade-wasm 	     Run sh test: existing wasm guests survive v6 bulk_memory VM"
@@ -32,6 +33,8 @@ tsh-upgrade:
 	cd tests/tsh/upgrade && sh a.sh
 tsh-upgrade-v61:
 	cd tests/tsh/upgrade && sh v61.sh
+tsh-upgrade-v62-cv:
+	cd tests/tsh/upgrade && bash v62-cv.sh
 tsh-upgrade-blake3-iavl: tsh-upgrade-v61
 tsh-upgrade-120u-1:
 	cd tests/tsh/upgrade && bash 120u-1.sh

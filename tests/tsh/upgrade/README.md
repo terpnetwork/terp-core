@@ -36,7 +36,7 @@ make tsh-upgrade-cv
 
 `make tsh-upgrade-v61` curls `pruned/snapshot.json` `latest` unless `SNAPSHOT_PATH` / `SNAPSHOT_URL` is set. Genesis is pulled separately (`GENESIS_URL` default: morocco-1 genesis). The tar is **`data/` + `wasm/` only**.
 
-Start the in-place net with **`terpd-v6`**, not 5.2.0. A 5.2.0 load of a post-v6 pack dies (`expected 22911849 got 0`). After halt, this tree’s `terpd` applies plan `v6.1`. Then, if `V62_BIND` (`terpd-v62` from `.worktrees/terp-core-v6.2`) is on PATH, `chain-v62.sh` halts this binary on plan `v6.2` and starts the v6.2 worktree binary. `feat/6.1.0-dev` must not register v6.2. Then `query-all-params.sh` and `iavl-v2.sh`.
+Start the in-place net with **`terpd-v6`**, not 5.2.0. A 5.2.0 load of a post-v6 pack dies (`expected 22911849 got 0`). After halt, this tree’s `terpd` applies plan `v6.1`. Then `query-all-params.sh` and `iavl-v2.sh`.
 
 ```sh
 # PATH has terpd-v6 (v6) and terpd (this tree)
@@ -47,6 +47,16 @@ STATE_SYNC=0 SNAPSHOT_URL='https://minio.terp.network/snapshots/mainnet/morocco-
 ```
 
 Do not point at archive `22749033` or pruned `22807932` — those are pre-v6.
+
+## v6.2 — Cosmovisor dual halt (A then B, 2 blocks)
+
+`make tsh-upgrade-v62-cv`. Same snapshot pin. Cosmovisor genesis = `terpd-v6`, `upgrades/v6.1` = `terpd-v61` (`feat/6.1.0-dev`), `upgrades/v6.2` = this tree. v6.1 handler arms v6.2 at height+2 (`x/upgrade` keeps one plan). Dual-message proposal JSON is written for the operator tx; last `ScheduleUpgrade` would otherwise overwrite v6.1.
+
+```sh
+OLD_BIND=terpd-v6 V61_BIND=terpd-v61 SKIP_INSTALL=1 STATE_SYNC=0 \
+  SNAPSHOT_URL='https://minio.terp.network/snapshots/mainnet/morocco-1/pruned/morocco-1_22911849_2026-09-02T03-49-50Z.tar.lz4' \
+  make tsh-upgrade-v62-cv
+```
 
 ## 120u-1 soak (plan v6.1)
 
