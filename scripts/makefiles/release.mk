@@ -9,7 +9,8 @@ WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}')
 	create-binaries create-checksums release-prep create-binaries-json \
 	create-upgrade-guide release-proposal upgrade-proposal \
 	release-bundle release-s3 release-dev release-control \
-	sync-upgrade-pack verify-upgrade-pack test-upgrade-pack recurate-upgrade-binaries
+	sync-upgrade-pack verify-upgrade-pack test-upgrade-pack recurate-upgrade-binaries \
+	sync-chain-registry
 
 # Shared with docker.mk for version-aligned testnet/ZK releases
 RELEASE_TAG ?= v6.0.0-dev
@@ -255,6 +256,13 @@ upgrade-proposal:
 		--proposal "$(or $(PROPOSAL),$(CURDIR)/networks/upgrades/v6.1/draft_proposal.json)" \
 		--env-file "$(CURDIR)/scripts/release/.env" \
 		$(if $(filter 1,$(BROADCAST)),--broadcast,)
+
+###############################################################################
+# cosmos/chain-registry publish (SoT is networks/chain-registry/terpnetwork)
+###############################################################################
+
+sync-chain-registry:
+	@DEST=$(or $(DEST),$(CURDIR)/crates/chain-registry) bash scripts/release/sync_chain_registry.sh
 
 ###############################################################################
 # Deterministic source bundle + MinIO/S3 publish (testnet ZK lineage)

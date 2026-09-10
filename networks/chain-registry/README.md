@@ -1,12 +1,15 @@
 # Chain registry (SoT)
 
-This tree is the **only** in-repo copy of the Terp chain-registry draft.
+This tree is the **only** file we tune. Path: `networks/chain-registry/terpnetwork/{chain,versions}.json`.
 
-Path: `networks/chain-registry/terpnetwork/`
+GitHub cannot symlink `cosmos/chain-registry` at our terp-core files. After editing SoT, copy into a chain-registry clone and open a PR:
 
-Upstream `cosmos/chain-registry/terpnetwork` is updated by PR **after** a
-release is public on our hosts. Do not add a second copy at repo root,
-under `docs/`, or under `networks/upgrades/*/`.
+```
+make sync-chain-registry
+# or: DEST=/path/to/chain-registry make sync-chain-registry
+```
+
+Do not keep a second edited copy under `docs/` or `networks/upgrades/*/`. The `crates/chain-registry` checkout is gitignored (`crates/*`); it is only the publish clone.
 
 ## Where operators fetch artifacts
 
