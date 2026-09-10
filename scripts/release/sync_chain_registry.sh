@@ -32,7 +32,14 @@ for name in ("chain.json", "versions.json"):
             return [drop_null(x) for x in o]
         return o
     out = dest / name
-    out.write_text(json.dumps(drop_null(data), indent=2) + "\n")
+    # GitHub cannot store a symlink into terp-core. If a local clone
+    # used a symlink for one-file editing, replace it with real JSON.
+    if out.is_symlink() or out.exists():
+        out.unlink()
+    out.write_text(
+        json.dumps(drop_null(data), indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     print(f"copied {name} -> {out}")
 PY
 echo "SoT: $SRC"

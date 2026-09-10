@@ -53,6 +53,7 @@ release-help:
 	@echo "  verify-upgrade-pack     Fail-closed: binaries.json == cosmovisor.json == proposal == lock"
 	@echo "  test-upgrade-pack       Drift regression (corrupt binaries.json must fail verify)"
 	@echo "  recurate-upgrade-binaries  Rebuild tagged ELF and compare ARTIFACT_LOCK"
+	@echo "  sync-chain-registry      Copy networks/chain-registry/terpnetwork into a cosmos/chain-registry clone"
 	@echo "  release-dev              bundle + s3 for RELEASE_TAG (default $(RELEASE_TAG))"
 	@echo "  docker-publish-dev       (docker.mk) ZK image tagged RELEASE_TAG"
 	@echo "  docker-push-dev          (docker.mk) push IMAGE_REPO:RELEASE_TAG"

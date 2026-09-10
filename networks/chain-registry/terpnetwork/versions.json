@@ -210,7 +210,7 @@
       },
       "ibc": {
         "type": "go",
-        "version": "v11.1.0"
+        "version": "v11.2.0"
       },
       "cosmwasm": {
         "version": "0.70.3",
@@ -242,7 +242,7 @@
       },
       "ibc": {
         "type": "go",
-        "version": "v11.1.0"
+        "version": "v11.2.0"
       },
       "cosmwasm": {
         "version": "0.70.3",

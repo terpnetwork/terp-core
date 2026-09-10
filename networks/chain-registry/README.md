@@ -2,7 +2,7 @@
 
 This tree is the **only** file we tune. Path: `networks/chain-registry/terpnetwork/{chain,versions}.json`.
 
-GitHub cannot symlink `cosmos/chain-registry` at our terp-core files. After editing SoT, copy into a chain-registry clone and open a PR:
+A GitHub PR cannot contain a symlink into terp-core (the target does not exist in `cosmos/chain-registry`). Edit here, then copy into a chain-registry clone before the PR:
 
 ```
 make sync-chain-registry
