@@ -19,7 +19,9 @@ SHELL ["/bin/sh", "-ecuxo", "pipefail"]
 # this comes from standard alpine nightly file
 #  https://github.com/rust-lang/docker-rust-nightly/blob/master/alpine3.12/Dockerfile
 # with some changes to support our toolchain, etc
-RUN apk add --no-cache ca-certificates build-base git binutils-gold musl-dev gcc libc-dev
+# binutils provides ld.bfd. binutils-gold would otherwise own /usr/bin/ld and
+# drop the muslc wasmvm archive (see Makefile LINK_STATICALLY / -fuse-ld=bfd).
+RUN apk add --no-cache ca-certificates build-base git binutils binutils-gold musl-dev gcc libc-dev
 # NOTE: add these to run with LEDGER_ENABLED=true
 # RUN apk add libusb-dev linux-headers
 
