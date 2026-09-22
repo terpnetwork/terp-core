@@ -33,7 +33,6 @@ ac427205954409139f7c11252ee0e47e  terpd-5.1.0-linux-arm64.tar.gz
 """
 
 import os
-import requests
 import json
 import argparse
 import re
@@ -54,10 +53,11 @@ def read_local_checksums(path):
 
 
 def download_checksums(url):
-    response = requests.get(url)
-    if response.status_code != 200:
-        raise ValueError(f"Failed to fetch sha256sum.txt from {url}. Status code: {response.status_code}")
-    return response.text
+    import urllib.request
+    with urllib.request.urlopen(url) as response:
+        if response.status != 200:
+            raise ValueError(f"Failed to fetch sha256sum.txt from {url}. Status code: {response.status}")
+        return response.read().decode()
 
 
 def get_checksums(tag=None, checksums_url=None):

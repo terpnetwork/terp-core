@@ -4,6 +4,8 @@ package v6_3_test
 
 import (
 	"bytes"
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -210,5 +212,30 @@ func TestV63LayoutConstants(t *testing.T) {
 	}
 	if k.GetKey(iavlhash.BankB3) == nil {
 		t.Fatal("v6.3 ELF must mount b3-bank")
+	}
+}
+
+func TestNextUpgradeInfoCarriesV64Checksums(t *testing.T) {
+	info := v63.NextUpgradeInfo
+	if strings.HasPrefix(info, "http") {
+		t.Skip("NextUpgradeInfo not stamped from v6.4/cosmovisor.json yet")
+	}
+	var wrap struct {
+		Binaries map[string]string `json:"binaries"`
+	}
+	if err := json.Unmarshal([]byte(info), &wrap); err != nil {
+		t.Fatalf("NextUpgradeInfo must be compact Cosmovisor JSON: %v", err)
+	}
+	for _, plat := range []string{"linux/amd64", "linux/arm64"} {
+		u, ok := wrap.Binaries[plat]
+		if !ok {
+			t.Fatalf("missing %s in NextUpgradeInfo", plat)
+		}
+		if !strings.Contains(u, "checksum=sha256:") {
+			t.Fatalf("%s missing checksum: %s", plat, u)
+		}
+		if !strings.Contains(u, "terpd-6.4.0-linux-") {
+			t.Fatalf("%s must point at v6.4.0 tarball: %s", plat, u)
+		}
 	}
 }

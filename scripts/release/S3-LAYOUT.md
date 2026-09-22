@@ -118,16 +118,15 @@ Built with **our** `terpnetwork/zk-*-builder:4.0.0-zk` images, never
 ## Container images
 
 Binaries and manifests live on **S3**. Operator-facing **terpd** images live
-on the self-hosted registry:
+on the self-hosted registry (not GHCR):
 
 ```
-containers.terp.network/terp-core:<tag>
+registry.terp.network/terp-core:<tag>
 ```
 
-Example: `docker pull containers.terp.network/terp-core:v6.0.0`
+Example: `docker pull registry.terp.network/terp-core:v6.0.0`
 
-Do not publish operator-facing **terpd** image pins to
-`ghcr.io/terpnetwork/terp-core`.
-
-**libwasmvm builder** images (compile-time only, not Cosmovisor) are
-`ghcr.io/terpnetwork/zk-{alpine,debian,cross}-builder:4.0.0-zk`.
+CI on a release tag builds the compiled ELF / runtime image. Do **not**
+push libwasmvm **builder** images (`zk-*-builder`, multi-GB rustc) here —
+413 on large blob PUT; they stay local. See
+`networks/upgrades/v6.3/REGISTRY-HANDOFF.md`.

@@ -22,8 +22,9 @@ Linux **amd64** and **arm64** only. Do not put a darwin `terpd` under Cosmovisor
 
 **Do not start until v6.2 has applied.** v6.2 dropped dest; v6.3 is a new copy.
 
-Until `ARTIFACT_LOCK` says `published: true`, these S3 URLs are **intent**, not
-live bits. Curators: [`CURATE.md`](./CURATE.md) · [`SOURCE_DEPS.txt`](./SOURCE_DEPS.txt).
+`ARTIFACT_LOCK` is `published: true`. What this binary does, and the
+checksums it arms for v6.4, are in [`RELEASE.md`](./RELEASE.md).
+Curators: [`CURATE.md`](./CURATE.md) · [`SOURCE_DEPS.txt`](./SOURCE_DEPS.txt).
 
 ---
 
@@ -60,7 +61,8 @@ WasmVM on these ELFs is **4.0.0-zk** (Go import still `wasmvm/v3`): Path A
 fail-closed (no dummy Flock/DSTW placeholders), zakura Halo2 IPA.
 
 Host libs are built with **our** `terpnetwork/zk-*-builder:4.0.0-zk` images
-(`ghcr.io/terpnetwork/zk-*-builder:4.0.0-zk`), never
+(local compile; not published). Operator image is
+`registry.terp.network/terp-core:v6.3.0` / `:v6.4.0`. Never
 `cosmwasm/libwasmvm-builder:0103-*`. See
 [`../../../crates/zk-wasmvm/docs/BUILDERS.md`](../../../crates/zk-wasmvm/docs/BUILDERS.md).
 

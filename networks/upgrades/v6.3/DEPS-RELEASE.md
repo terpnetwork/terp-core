@@ -24,9 +24,7 @@ CosmWasm’s `libwasmvm-builder:0103-*`. See
 (cd crates/zk-wasmvm/builders && make docker-images-4.0.0-zk)
 make wasmvm-release-build
 make wasmvm-verify
-# optional: push images
-(cd crates/zk-wasmvm/builders && make docker-publish-4.0.0-zk)
-# muslc (+ .so) to the releases bucket
+# muslc (+ .so) to the releases bucket — do not push zk-*-builder images
 ./scripts/release/publish_zk_wasmvm.sh
 ```
 

@@ -1,4 +1,6 @@
-# Bit-for-bit pins on release tags. Does not upload S3.
+# Bit-for-bit pins on release tags. Builds the compiled linux ELF (not builder images).
+# Registry publish is registry.terp.network/terp-core:<tag> after prune; not GHCR.
+# Does not upload S3 (published: false until fresh-VM).
 # Local: act workflow_dispatch -W .github/workflows/repro-tag.yml -j wasmvm-lock
 name: repro-tag
 
