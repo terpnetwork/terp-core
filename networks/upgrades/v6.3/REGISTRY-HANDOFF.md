@@ -16,7 +16,7 @@ there is a ghost `zk-alpine-builder` repo from the aborted upload
 (`/_catalog` listed it; tags/list and manifests 404), and we need a clean
 namespace for `terp-core:v6.3.0` and `terp-core:v6.4.0` (~300MB, same class as
 `v6.0.1` / `v6.3.0-dev` which already live there). After prune, CI on those
-git tags builds the ELF (see `.github/workflows/repro-artifacts.yml`) and we push
+git tags builds the ELF (see `.github/workflows/ci-release.yml` and `release.yml`) and we push
 **only** `registry.terp.network/terp-core:v6.3.0` and `:v6.4.0` (v6.4 is
 `-tags v64`). Muslc `.a` stays on S3
 `releases/zk-wasmvm/v4.0.0-zk/`, not in the container registry.
