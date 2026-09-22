@@ -1,15 +1,10 @@
 name: ict-rs E2E
 
+# Called by ci-dev and ci-release after a code-owner gate.
+# Uses the published ict-ci tarball (scripts/ci/fetch-ict-rs-bins.sh). Does not compile ict-rs.
 on:
+  workflow_call:
   workflow_dispatch:
-  pull_request:
-  push:
-    tags:
-      - "**"
-    branches:
-      - "main"
-      - "master"
-      - "v6.0.0-dev"
 
 permissions:
   contents: read
@@ -110,72 +105,3 @@ jobs:
             /tmp/terp-prebuilt/terpd-linux-amd64.sha256
             /tmp/terp-prebuilt/SOURCE_COMMIT
           retention-days: 3
-
-  # Parallel: rebuild this commit. Must not block e2e-tests.
-  rebuild:
-    if: false
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-
-      - name: Stage zk muslc + forks
-        run: bash scripts/ci/stage-zk-for-docker.sh
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Rebuild image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          tags: terpnetwork/terp-core:rebuild
-          build-args: |
-            WASMVM_SOURCE=local
-            WASMVM_BASE_URL=https://minio.terp.network/releases/zk-wasmvm
-          outputs: type=docker,dest=/tmp/rebuild.tar
-
-      - name: Extract rebuilt terpd
-        run: |
-          set -euo pipefail
-          docker image load -i /tmp/rebuild.tar
-          cid=$(docker create terpnetwork/terp-core:rebuild)
-          docker cp "$cid":/usr/local/bin/terpd /tmp/terpd-rebuilt
-          docker rm "$cid"
-          sha256sum /tmp/terpd-rebuilt | awk '{print $1"  terpd-linux-amd64"}' > /tmp/terpd-rebuilt.sha256
-
-      - name: Upload rebuilt terpd
-        if: ${{ !env.ACT }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: rebuilt-terpd
-          path: |
-            /tmp/terpd-rebuilt
-            /tmp/terpd-rebuilt.sha256
-          retention-days: 3
-
-  assert-identical:
-    needs: [e2e-tests, rebuild]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-
-      - name: Download prebuilt terpd
-        uses: actions/download-artifact@v6
-        with:
-          name: prebuilt-terpd
-          path: /tmp/prebuilt
-
-      - name: Download rebuilt terpd
-        uses: actions/download-artifact@v6
-        with:
-          name: rebuilt-terpd
-          path: /tmp/rebuilt
-
-      - name: Assert identical bits
-        run: bash scripts/ci/assert-identical.sh /tmp/prebuilt/terpd-linux-amd64 /tmp/rebuilt/terpd-rebuilt
