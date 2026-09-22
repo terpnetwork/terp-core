@@ -8,67 +8,7 @@
 name: Marketplace parallel delta loop
 
 on:
-  push:
-    branches: [main, master, development]
-    paths:
-      - 'crates/ict-rs/examples/marketplace_inventory_offline.rs'
-      - 'crates/ict-rs/examples/marketplace-db/**'
-      - 'crates/ict-rs/docs/MARKETPLACE*.md'
-      - 'crates/ict-rs/docs/marketplace_harness.md'
-      - 'crates/ict-rs/docs/profiles/**'
-      - 'crates/ict-rs/scripts/run-marketplace-delta-loop-gates.sh'
-      - 'crates/terp-rs/contracts/hash-merchant/marketplace-mirror/**'
-      - 'websites/dao-dao-ui/packages/utils/mesh.ts'
-      - 'websites/dao-dao-ui/packages/utils/mesh.test.ts'
-      - 'websites/dao-dao-ui/packages/utils/marketplaceListings.ts'
-      - 'websites/dao-dao-ui/packages/utils/marketplaceListings.test.ts'
-      - 'websites/dao-dao-ui/packages/utils/marketplaceAuction.ts'
-      - 'websites/dao-dao-ui/packages/utils/marketplaceAuction.test.ts'
-      - 'websites/dao-dao-ui/packages/utils/daoNipRecords.ts'
-      - 'websites/dao-dao-ui/packages/utils/daoNipRecords.test.ts'
-      - 'websites/dao-dao-ui/packages/utils/calendarEvents.ts'
-      - 'websites/dao-dao-ui/packages/utils/calendarEvents.test.ts'
-      - 'websites/dao-dao-ui/packages/utils/embedFriction.ts'
-      - 'websites/dao-dao-ui/packages/utils/embedFriction.test.ts'
-      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Marketplace/**'
-      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Calendar/**'
-      - 'websites/dao-dao-ui/packages/stateful/modules/modules/EventHub/**'
-      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Buzz/**'
-      - 'websites/dao-dao-ui/packages/stateful/modules/modules/HermesOps/**'
-      - 'websites/dao-dao-ui/docs/superpowers/specs/AGENT-M3-ICT-DELTA-SYNC.md'
-      - 'websites/dao-dao-ui/docs/superpowers/specs/TESTING-HERMES-PROFILE-marketplace-parallel-delta-loop.md'
-      - 'websites/dao-dao-ui/.github/workflows/marketplace-delta-loop.yml'
-      - '.github/workflows/marketplace-delta-loop.yml'
-  pull_request:
-    paths:
-      - 'crates/ict-rs/examples/marketplace_inventory_offline.rs'
-      - 'crates/ict-rs/examples/marketplace-db/**'
-      - 'crates/ict-rs/docs/MARKETPLACE*.md'
-      - 'crates/ict-rs/docs/marketplace_harness.md'
-      - 'crates/ict-rs/docs/profiles/**'
-      - 'crates/ict-rs/scripts/run-marketplace-delta-loop-gates.sh'
-      - 'crates/terp-rs/contracts/hash-merchant/marketplace-mirror/**'
-      - 'websites/dao-dao-ui/packages/utils/mesh.ts'
-      - 'websites/dao-dao-ui/packages/utils/mesh.test.ts'
-      - 'websites/dao-dao-ui/packages/utils/marketplaceListings.ts'
-      - 'websites/dao-dao-ui/packages/utils/marketplaceListings.test.ts'
-      - 'websites/dao-dao-ui/packages/utils/marketplaceAuction.ts'
-      - 'websites/dao-dao-ui/packages/utils/marketplaceAuction.test.ts'
-      - 'websites/dao-dao-ui/packages/utils/daoNipRecords.ts'
-      - 'websites/dao-dao-ui/packages/utils/daoNipRecords.test.ts'
-      - 'websites/dao-dao-ui/packages/utils/calendarEvents.ts'
-      - 'websites/dao-dao-ui/packages/utils/calendarEvents.test.ts'
-      - 'websites/dao-dao-ui/packages/utils/embedFriction.ts'
-      - 'websites/dao-dao-ui/packages/utils/embedFriction.test.ts'
-      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Marketplace/**'
-      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Calendar/**'
-      - 'websites/dao-dao-ui/packages/stateful/modules/modules/EventHub/**'
-      - 'websites/dao-dao-ui/packages/stateful/modules/modules/Buzz/**'
-      - 'websites/dao-dao-ui/packages/stateful/modules/modules/HermesOps/**'
-      - 'websites/dao-dao-ui/docs/superpowers/specs/AGENT-M3-ICT-DELTA-SYNC.md'
-      - 'websites/dao-dao-ui/docs/superpowers/specs/TESTING-HERMES-PROFILE-marketplace-parallel-delta-loop.md'
-      - 'websites/dao-dao-ui/.github/workflows/marketplace-delta-loop.yml'
-      - '.github/workflows/marketplace-delta-loop.yml'
+  # Not part of terp-core product CI. Manual only.
   workflow_dispatch:
 
 concurrency:

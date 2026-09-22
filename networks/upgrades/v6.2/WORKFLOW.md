@@ -1,5 +1,10 @@
 # v6.2 upgrade ops (Upgrade B) — Cosmovisor + snapshot TSH
 
+**Validators (morocco-1):** use [`guide.md`](./guide.md) and
+[`../v6.1/guide.md`](../v6.1/guide.md). This WORKFLOW is soak / curator path.
+
+Fresh-VM recurate (all tags): `scripts/release/fresh-vm/run.sh`. v6.2 extras: `scripts/release/fresh-vm/releases/v6.2.0.sh`.
+
 Plan **`v6.2`**. Binary is **`feat/6.2.0-dev`**. Do not register this plan on `feat/6.1.0-dev`.
 
 `x/upgrade` stores **one** plan. A single gov tx may carry two `MsgSoftwareUpgrade`

@@ -184,7 +184,7 @@ func (app *TerpApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs [
 
 	// Iterate through validators by power descending, reset bond heights, and
 	// update bond intra-tx counters.
-	store := ctx.KVStore(app.GetKey(stakingtypes.StoreKey))
+	store := ctx.KVStore(app.KeeperKey(stakingtypes.StoreKey))
 	iter := storetypes.KVStoreReversePrefixIterator(store, stakingtypes.ValidatorsKey)
 	counter := int16(0)
 
@@ -267,7 +267,7 @@ func InitTerpAppForTestnet(app *TerpApp, newValAddr bytes.HexBytes, newValPubKey
 	}
 
 	// Remove all validators from power store
-	stakingKey := app.GetKey(stakingtypes.ModuleName)
+	stakingKey := app.KeeperKey(stakingtypes.ModuleName)
 	stakingStore := ctx.KVStore(stakingKey)
 	iterator, err := app.StakingKeeper.ValidatorsPowerStoreIterator(ctx)
 	if err != nil {

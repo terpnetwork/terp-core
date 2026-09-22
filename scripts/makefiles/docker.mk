@@ -130,6 +130,18 @@ endif
 	@mkdir -p build/zk-deps/ibc-hooks-v11
 	@rsync -a --delete --exclude='.git/' \
 		./crates/ibc-hooks-v11/ build/zk-deps/ibc-hooks-v11/ 2>/dev/null || true
+	@echo "==> Staging hasher iavl + store-v2 (crates/ is dockerignored) ..."
+	@mkdir -p build/zk-deps/cosmos-iavl build/zk-deps/cosmos-store-v2
+	@rsync -a --delete --exclude='.git/' --exclude='**/*_test.go' \
+		./crates/cosmos/iavl/ build/zk-deps/cosmos-iavl/
+	@rsync -a --delete --exclude='.git/' --exclude='**/*_test.go' \
+		./crates/cosmos/store-v2/ build/zk-deps/cosmos-store-v2/
+	@test -f build/zk-deps/cosmos-iavl/store_hasher.go
+	@test -f build/zk-deps/cosmos-store-v2/iavl/store.go
+	@echo "==> Staging ics23/go (BLAKE3 HashOp for IAVL proofs) ..."
+	@mkdir -p build/zk-deps/ics23-go
+	@rsync -a --delete --exclude='.git/' --exclude='**/*_test.go' \
+		./crates/ics23/go/ build/zk-deps/ics23-go/
 
 docker-clean:
 	@echo "==> Removing staged wasmvm + zk artifacts ..."

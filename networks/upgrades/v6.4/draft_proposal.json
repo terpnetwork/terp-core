@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6.4",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "0",
+        "info": "https://s3.terp.network/upgrades/v6.4/cosmovisor.json",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "50000000uterp",
+  "title": "v6.4",
+  "summary": "Do not broadcast. The v6.3 handler arms this plan at apply height + 2.",
+  "expedited": true
+}

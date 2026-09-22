@@ -16,7 +16,7 @@ func TestDualStorePairsCoverMigratableNotIBC(t *testing.T) {
 	for _, p := range pairs {
 		src, dst := p[0], p[1]
 		require.Equal(t, DestName(src), dst)
-		require.Equal(t, "blake3", AlgorithmName(src), src)
+		require.Equal(t, "sha256", AlgorithmName(src), src)
 		require.Equal(t, "blake3", AlgorithmName(dst), dst)
 		require.True(t, strings.HasPrefix(dst, "b3-"))
 		require.False(t, strings.HasPrefix(src, dst))

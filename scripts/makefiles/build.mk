@@ -12,6 +12,7 @@ build-help:
 	@echo "  build                        Build development version"
 	@echo "  install                      Install development build"
 	@echo "  build-linux                            Build for Linux"
+	@echo "  build-darwin-arm64                     Host darwin/arm64 with static wasmvm (installer)"
 	@echo "  build-reproducible                     Build reproducible binaries"
 	@echo "  build-reproducible-amd64               Build reproducible amd64 binary"
 	@echo "  build-reproducible-arm64               Build reproducible arm64 binary"
@@ -37,6 +38,27 @@ build-linux: go.sum
 
 build-windows: go.sum
 	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/terpd.exe ./cmd/terpd
+
+# Host darwin/arm64 for the public installer. Requires
+# crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a (arm64).
+# `otool -L` must not list libwasmvm.dylib.
+build-darwin-arm64: go.sum
+	@if [ "$$(uname -s)" != "Darwin" ] || [ "$$(uname -m)" != "arm64" ]; then \
+	  echo "ERROR: build-darwin-arm64 is host-native (this Mac, arm64)"; exit 1; \
+	fi
+	@if [ ! -f crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a ]; then \
+	  echo "ERROR: missing libwasmvmstatic_darwin.a — run crates/zk-wasmvm/builders/host/build_macos_static_arm64.sh"; \
+	  exit 1; \
+	fi
+	mkdir -p $(BUILDDIR)
+	GOWORK=off CGO_ENABLED=1 go build -mod=readonly $(BUILD_FLAGS) -o $(BUILDDIR)/terpd-darwin-arm64 $(GO_MODULE)/cmd/terpd
+	@if otool -L $(BUILDDIR)/terpd-darwin-arm64 | grep -q libwasmvm.dylib; then \
+	  echo "ERROR: $(BUILDDIR)/terpd-darwin-arm64 still links libwasmvm.dylib (need static_wasm)"; \
+	  otool -L $(BUILDDIR)/terpd-darwin-arm64; \
+	  exit 1; \
+	fi
+	@echo "ok $(BUILDDIR)/terpd-darwin-arm64 (static wasmvm)"
+	@$(BUILDDIR)/terpd-darwin-arm64 version
 
 build-dev-install: go.sum
 	GOWORK=off go install $(DEBUG_BUILD_FLAGS) $(GC_FLAGS) $(GO_MODULE)/cmd/terpd
@@ -73,6 +95,7 @@ build-reproducible-amd64: go.sum
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg WASMVM_VERSION=$(WASMVM_VERSION) \
 		--build-arg WASMVM_SOURCE=$(WASMVM_SOURCE) \
+		--build-arg BUILD_TAGS="$(strip muslc $(filter-out muslc static_wasm,$(BUILD_TAGS)))" \
 		--build-arg RUNNER_IMAGE=alpine:3.17 \
 		--platform linux/amd64 \
 		--target runtime \
@@ -93,6 +116,7 @@ build-reproducible-arm64: go.sum
 		--build-arg GIT_COMMIT=$(COMMIT) \
 		--build-arg WASMVM_VERSION=$(WASMVM_VERSION) \
 		--build-arg WASMVM_SOURCE=$(WASMVM_SOURCE) \
+		--build-arg BUILD_TAGS="$(strip muslc $(filter-out muslc static_wasm,$(BUILD_TAGS)))" \
 		--build-arg RUNNER_IMAGE=alpine:3.17 \
 		--platform linux/arm64 \
 		--target runtime \

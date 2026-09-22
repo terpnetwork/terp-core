@@ -53,7 +53,8 @@ jobs:
         id: list
         run: |
           set -euo pipefail
-          json=$(bash scripts/ci/list-ict-ci-suites.sh /tmp/ict-bins)
+          json=$(ICT_CI_ALLOWLIST="${ICT_CI_ALLOWLIST:-aa,pfm,ibchooks,hashmerchant,staking-hooks}" \
+            bash scripts/ci/list-ict-ci-suites.sh /tmp/ict-bins)
           echo "suites=$json" >> "$GITHUB_OUTPUT"
           echo "pinned ict-ci suites: $json"
 

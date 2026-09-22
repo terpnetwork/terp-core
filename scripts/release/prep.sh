@@ -50,6 +50,11 @@ raw=()
 for arch in "${present[@]}"; do
     raw+=("terpd-linux-$arch")
 done
+if [[ "$(uname -s)" == "Darwin" && ! -f "$BUILD_DIR/terpd-darwin-arm64" && "$ALLOW_PARTIAL" != "1" ]]; then
+    echo "Error: Darwin builder missing $BUILD_DIR/terpd-darwin-arm64. Run: RELEASE_TAG=v$VERSION make create-binaries" >&2
+    echo "(or ALLOW_PARTIAL=1 to pack linux-only)" >&2
+    exit 1
+fi
 [[ -f "$BUILD_DIR/terpd-darwin-arm64" ]] && raw+=("terpd-darwin-arm64")
 (cd "$BUILD_DIR" && sha256sum "${raw[@]}" > sha256sum.txt)
 
@@ -81,6 +86,11 @@ for arch in "${present[@]}"; do
 done
 
 if [[ -f "$BUILD_DIR/terpd-darwin-arm64" ]]; then
+    if command -v otool >/dev/null && otool -L "$BUILD_DIR/terpd-darwin-arm64" | grep -q libwasmvm.dylib; then
+        echo "Error: $BUILD_DIR/terpd-darwin-arm64 links libwasmvm.dylib (rpath to the build clone)." >&2
+        echo "Rebuild with: make build-darwin-arm64   # tags static_wasm" >&2
+        exit 1
+    fi
     echo "Creating $BUILD_DIR/terpd-$VERSION-darwin-arm64.tar.gz (member terpd)..."
     pack_cv_tarball "$BUILD_DIR/terpd-darwin-arm64" "$BUILD_DIR/terpd-$VERSION-darwin-arm64.tar.gz"
     cp "$BUILD_DIR/terpd-$VERSION-darwin-arm64.tar.gz" "$BUILD_DIR/terpd-darwin-arm64.tar.gz"

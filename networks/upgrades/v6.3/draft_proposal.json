@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6.3",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "TBD",
+        "info": "https://s3.terp.network/upgrades/v6.3/cosmovisor.json",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "5000000000uterp",
+  "title": "v6.3",
+  "summary": "v6.3 dest copy; handler arms v6.4 at +2",
+  "expedited": true
+}

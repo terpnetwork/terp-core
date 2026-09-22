@@ -1,0 +1,92 @@
+{
+  "image": "registry.terp.network/terp-core:v6.3.0-dev",
+  "topology": "A=blake3 B=hybrid C=sha256; TM B→C; 08-wasm A→C",
+  "lc_store_gas": 39742,
+  "a_tm_handshake": "skipped (08-wasm Hermes path; set HASHER_SKIP_TM_AC=0 to force)",
+  "hybrid_inclusion_gas": 0,
+  "hybrid_exclusion_gas": 0,
+  "a_inclusion_gas": 0,
+  "wasm_lc_contract": "",
+  "a_wasm_client": "08-wasm-1",
+  "a_wasm_path": "ok",
+  "legs": [
+    {
+      "variant": "H",
+      "image": "registry.terp.network/terp-core:v6.3.0-dev",
+      "n": 2,
+      "warmup": 1,
+      "packets_on": "07-tendermint",
+      "median_t_round_trip_ms": 5137,
+      "median_t_recv_packet_ms": 2278,
+      "median_gas_recv_packet": 174807,
+      "median_gas_recv": 174807,
+      "median_gas_update_client": 174807,
+      "median_proof_bytes_recv": 618,
+      "median_t_ack_ms": 3199,
+      "median_gas_ack": 116068,
+      "lc_store_gas": 0,
+      "lc_create_gas": 0,
+      "samples": [
+        {
+          "t_round_trip_ms": 5027,
+          "t_recv_packet_ms": 1999,
+          "t_update_client_ms": 1999,
+          "t_ack_ms": 1999,
+          "gas_recv_packet": 186994,
+          "gas_update_client": 186994,
+          "gas_ack": 116083,
+          "proof_bytes_recv": 596
+        },
+        {
+          "t_round_trip_ms": 5247,
+          "t_recv_packet_ms": 2558,
+          "t_update_client_ms": 2558,
+          "t_ack_ms": 4400,
+          "gas_recv_packet": 162620,
+          "gas_update_client": 162620,
+          "gas_ack": 116054,
+          "proof_bytes_recv": 640
+        }
+      ]
+    },
+    {
+      "variant": "F",
+      "image": "registry.terp.network/terp-core:v6.3.0-dev",
+      "n": 2,
+      "warmup": 1,
+      "packets_on": "08-wasm",
+      "median_t_round_trip_ms": 0,
+      "median_t_recv_packet_ms": 0,
+      "median_gas_recv_packet": 0,
+      "median_gas_recv": 0,
+      "median_gas_update_client": 0,
+      "median_proof_bytes_recv": 0,
+      "median_t_ack_ms": 0,
+      "median_gas_ack": 0,
+      "lc_store_gas": 0,
+      "lc_create_gas": 0,
+      "samples": [
+        {
+          "t_round_trip_ms": 0,
+          "t_recv_packet_ms": 0,
+          "t_update_client_ms": 0,
+          "t_ack_ms": 0,
+          "gas_recv_packet": 0,
+          "gas_update_client": 0,
+          "gas_ack": 0,
+          "proof_bytes_recv": 0
+        },
+        {
+          "t_round_trip_ms": 0,
+          "t_recv_packet_ms": 0,
+          "t_update_client_ms": 0,
+          "t_ack_ms": 0,
+          "gas_recv_packet": 0,
+          "gas_update_client": 0,
+          "gas_ack": 0,
+          "proof_bytes_recv": 0
+        }
+      ]
+    }
+  ]
+}

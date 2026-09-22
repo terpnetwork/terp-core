@@ -1,0 +1,122 @@
+# Gate for hasher two-step + CosmWasm/wasmvm 4.0.0-zk Path A.
+# Run locally: scripts/ci/act-hasher-zk.sh (fresh tree, no host cargo target).
+name: hasher-zk
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - feat/6.3.0-dev
+      - main
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.26.5"
+  GOTOOLCHAIN: local
+  CARGO_TERM_COLOR: never
+
+jobs:
+  hasher-go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+      - name: Init Go path-replace submodules
+        run: |
+          # Do not `submodule update` over a populated 4.0.0-zk tree: parent
+          # gitlink may still be 93d4bce (v3.0.7-zk) until the gitlink is committed.
+          for p in crates/zk-wasmd crates/zk-wasmvm; do
+            if [ -f "$p/go.mod" ]; then
+              echo "OK $p already populated ($(git -C "$p" rev-parse --short HEAD 2>/dev/null || echo working-tree))"
+            else
+              git submodule update --init --depth 1 "$p"
+            fi
+          done
+      - name: ibc-hooks-v11 (go.mod replace)
+        run: |
+          if [ ! -f crates/ibc-hooks-v11/go.mod ]; then
+            curl -fsSL -o /tmp/ibc-hooks-v11.tar.gz \
+              https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v11.tar.gz
+            echo "1b31faa98bedb7e388eef97ed031143a851b0d8a799b52d7b1b3ab78c898a312  /tmp/ibc-hooks-v11.tar.gz" | sha256sum -c
+            mkdir -p crates
+            tar -C crates -xzf /tmp/ibc-hooks-v11.tar.gz
+          fi
+          test -f crates/ibc-hooks-v11/go.mod
+      - name: Path-replace dirs present
+        run: |
+          for p in crates/cosmos/iavl crates/cosmos/store-v2 crates/ics23/go crates/zk-wasmd crates/zk-wasmvm crates/ibc-hooks-v11; do
+            test -f "$p/go.mod" || { echo "missing $p (gitignore or submodule)"; exit 1; }
+          done
+          if [ ! -f crates/zk-wasmvm/internal/api/libwasmvm_muslc.x86_64.a ]; then
+            echo "muslc gitignored — fetching releases/zk-wasmvm/v4.0.0-zk"
+            ./scripts/release/fetch_zk_muslc.sh crates/zk-wasmvm/internal/api
+          fi
+          test -f crates/zk-wasmvm/internal/api/libwasmvm_muslc.x86_64.a
+      - name: Hasher packaging (replaces in git)
+        run: ./scripts/release/curate_v63.sh
+      - name: Hasher unit tests
+        # muslc: link 4.0.0-zk .a from our alpine builder (not CosmWasm 0103).
+        # glibc .so is the same generation (verify-libwasmvm). Linux go test
+        # without -tags muslc links the .so.
+        run: go test -tags muslc ./app/iavlhash ./app/upgrades/v6_3
+      - name: v64 keepers
+        run: go test -tags 'muslc v64' ./app/upgrades/v6_4 ./app/keepers
+      - name: Smart account
+        # Skip x/smart-account root integration_test.go (ibc-go simapp vs SDK).
+        run: go test -tags muslc ./x/smart-account/ante ./x/smart-account/authenticator ./x/smart-account/keeper ./x/smart-account/post ./x/smart-account/types
+      - name: Build both ELFs
+        run: |
+          go build -tags muslc -o /tmp/terpd ./cmd/terpd
+          go build -tags 'muslc v64' -o /tmp/terpd-v64 ./cmd/terpd
+
+  cosmwasm-path-a:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: crates/cosmwasm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Path deps (zakura, flock)
+        working-directory: .
+        run: bash scripts/ci/fetch-zk-path-deps.sh
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.91.0
+      - name: poseidon377 crypto
+        run: cargo test -p cosmwasm-crypto --features hash-poseidon --lib poseidon::bls12_377
+      - name: poseidon377 vm
+        run: cargo test -p cosmwasm-vm --features hash-poseidon --lib do_poseidon377
+      - name: flock fail-closed
+        run: cargo test -p zk-cosmwasm --lib flock
+
+  wasmvm-path-a:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: crates/zk-wasmvm/libwasmvm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Path deps (zakura, flock, cosmwasm)
+        working-directory: .
+        run: |
+          for p in crates/cosmwasm crates/zk-wasmvm; do
+            if [ -f "$p/go.mod" ] || [ -f "$p/Cargo.toml" ]; then
+              echo "OK $p already populated"
+            else
+              git submodule update --init --depth 1 "$p"
+            fi
+          done
+          bash scripts/ci/fetch-zk-path-deps.sh
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          toolchain: nightly
+      - name: path_a_hosts (nightly; Stwo #![feature])
+        run: cargo test --lib path_a_hosts -- --test-threads=1

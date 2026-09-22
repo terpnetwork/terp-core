@@ -61,8 +61,8 @@ func TestCopyKVStoreCommitHashesSoundAndUnsound(t *testing.T) {
 	require.False(t, bytes.Equal(dstWorking, dstWorkingBefore),
 		"sound: dest working hash changes after copy")
 
-	require.Equal(t, srcWorking, dstWorking,
-		"sound: dest working hash matches src when both empty trees use SHA-256 and the same KV/versions")
+	require.False(t, bytes.Equal(srcWorking, dstWorking),
+		"dest b3-bank is BLAKE3; live bank is SHA-256 — same KV must not share a root")
 
 	require.False(t, bytes.Equal(dstLastBefore.Hash, dstWorking),
 		"unsound if dest LastCommitID (pre-copy) is used as the post-copy root")
@@ -108,9 +108,10 @@ func TestAllNonIBCAppStoresAreMigrated(t *testing.T) {
 func TestRefuseIBCRehashPolicy(t *testing.T) {
 	for _, name := range []string{"ibc", "transfer", "icahost", "icacontroller", "08-wasm", "hooks-for-ibc"} {
 		require.Equal(t, "sha256", iavlhash.AlgorithmName(name), name)
+		require.True(t, iavlhash.IsIBCStore(name), name)
 	}
 	for _, p := range iavlhash.DualStorePairs() {
-		require.NotEqual(t, "sha256", iavlhash.AlgorithmName(p[0]), p[0])
+		require.False(t, iavlhash.IsIBCStore(p[0]), p[0])
 		require.NotEqual(t, "08-wasm", p[0])
 		require.NotEqual(t, "params", p[0])
 	}

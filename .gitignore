@@ -11,6 +11,16 @@ crates/*
 !crates/cosmwasm
 !crates/zk-wasmd
 !crates/zk-wasmvm
+# Hasher (feat/6.3.0-dev): must be in git or Docker recurate misses it again.
+!crates/cosmos
+crates/cosmos/*
+!crates/cosmos/iavl
+!crates/cosmos/iavl/**
+!crates/cosmos/store-v2
+!crates/cosmos/store-v2/**
+!crates/ics23
+!crates/ics23/**
+crates/ics23/rust/target/
 websites/*
 tools/*
 # Build
