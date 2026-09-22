@@ -23,3 +23,7 @@ keeps that info true.
 
 Operators pre-place `upgrades/v6.4/bin/terpd` before the v6.3 height, or
 let Cosmovisor download it and check the sha256 in `plan.info`.
+
+The published tarball was linked with plain `-static`. Later release builds
+use `ld.bfd` and `-static-pie`. Do not replace the published object with a
+rebuild from that newer link unless you also move the checksum inside v6.3.
