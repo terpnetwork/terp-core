@@ -1,4 +1,0 @@
-# This folder is generated and updated by doc tests
-# (cargo test --doc write_api)
-# but not something we need to have versioned.
-schema/

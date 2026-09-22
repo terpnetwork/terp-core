@@ -1,0 +1,117 @@
+# Bit-for-bit pins on release tags. Builds the compiled linux ELF (not builder images).
+# Registry publish is registry.terp.network/terp-core:<tag> after prune; not GHCR.
+# Does not upload S3 (published: false until fresh-VM).
+# Local: act workflow_dispatch -W .github/workflows/repro-tag.yml -j wasmvm-lock
+name: repro-tag
+
+on:
+  push:
+    tags:
+      - "v6.3.*"
+      - "v6.4.*"
+  workflow_dispatch:
+
+concurrency:
+  group: repro-tag-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.26.5"
+  GOTOOLCHAIN: local
+
+jobs:
+  wasmvm-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Init wasmvm tree
+        run: |
+          if [ ! -f crates/zk-wasmvm/go.mod ]; then
+            git submodule update --init --depth 1 crates/zk-wasmvm
+          fi
+      - name: Fetch muslc (gitignored; S3 releases/zk-wasmvm/v4.0.0-zk)
+        run: |
+          if [ ! -f crates/zk-wasmvm/internal/api/libwasmvm_muslc.x86_64.a ]; then
+            ./scripts/release/fetch_zk_muslc.sh crates/zk-wasmvm/internal/api
+          fi
+      - name: One-generation libwasmvm (muslc + glibc .so + dylib)
+        run: make wasmvm-verify
+      - name: Hasher packaging + muslc sha256 vs ARTIFACT_LOCK
+        run: bash scripts/ci/repro-tag.sh
+        env:
+          REPRO_BUILD_TERPD: "0"
+
+  cosmovisor-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch muslc if needed
+        run: |
+          if [ ! -f crates/zk-wasmvm/go.mod ]; then
+            git submodule update --init --depth 1 crates/zk-wasmvm
+          fi
+          if [ ! -f crates/zk-wasmvm/internal/api/libwasmvm_muslc.x86_64.a ]; then
+            ./scripts/release/fetch_zk_muslc.sh crates/zk-wasmvm/internal/api
+          fi
+      - name: Pack lock == json (v6.3)
+        run: PLAN=v6.3 CHECK_S3=0 bash scripts/release/verify_upgrade_pack.sh
+      - name: Pack lock == json (v6.4)
+        run: PLAN=v6.4 CHECK_S3=0 bash scripts/release/verify_upgrade_pack.sh
+      - name: Live S3 if published
+        run: |
+          for p in v6.3 v6.4; do
+            pub=$(awk -F': ' '$1=="published"{print $2; exit}' networks/upgrades/$p/ARTIFACT_LOCK)
+            if [ "$pub" = "true" ]; then
+              PLAN=$p CHECK_S3=1 bash scripts/release/verify_upgrade_pack.sh
+            else
+              echo "OK $p published=false; skip S3"
+            fi
+          done
+
+  terpd-linux-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+      - name: Path replaces
+        run: |
+          for p in crates/zk-wasmd crates/zk-wasmvm; do
+            if [ ! -f "$p/go.mod" ]; then
+              git submodule update --init --depth 1 "$p"
+            fi
+          done
+          if [ ! -f crates/ibc-hooks-v11/go.mod ]; then
+            curl -fsSL -o /tmp/ibc-hooks-v11.tar.gz \
+              https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v11.tar.gz
+            tar -C crates -xzf /tmp/ibc-hooks-v11.tar.gz
+          fi
+          test -f crates/ics23/go/go.mod
+          if [ ! -f crates/zk-wasmvm/internal/api/libwasmvm_muslc.x86_64.a ]; then
+            ./scripts/release/fetch_zk_muslc.sh crates/zk-wasmvm/internal/api
+          fi
+          test -f crates/zk-wasmvm/internal/api/libwasmvm_muslc.x86_64.a
+      - name: Build terpd muslc amd64
+        run: |
+          go build -tags muslc -o /tmp/terpd-linux-amd64 ./cmd/terpd
+          shasum -a 256 /tmp/terpd-linux-amd64 | tee /tmp/terpd-linux-amd64.sha256
+      - name: Compare ARTIFACT_LOCK if filled
+        run: |
+          lock=networks/upgrades/v6.3/ARTIFACT_LOCK
+          if grep -qE '^[0-9a-f]{64}  terpd-linux-amd64$' "$lock"; then
+            want=$(awk '/terpd-linux-amd64$/{print $1}' "$lock")
+            got=$(awk '{print $1}' /tmp/terpd-linux-amd64.sha256)
+            [ "$got" = "$want" ] || { echo "ERROR: $got != $want"; exit 1; }
+            echo "OK terpd-linux-amd64 matches ARTIFACT_LOCK"
+          else
+            echo "OK lock terpd row TBD; recorded $(cat /tmp/terpd-linux-amd64.sha256)"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: terpd-linux-amd64-repro
+          path: |
+            /tmp/terpd-linux-amd64
+            /tmp/terpd-linux-amd64.sha256
+          retention-days: 14
