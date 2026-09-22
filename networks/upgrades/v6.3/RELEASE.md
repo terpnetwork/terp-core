@@ -31,6 +31,14 @@ Published:
 Linux amd64 and arm64 only. Height is still TBD. Do not start until v6.2
 has applied.
 
+## Linux link
+
+Cosmovisor ELFs are `LINK_STATICALLY=true`. The link uses `ld.bfd` and
+`-static-pie` so the muslc wasmvm archive is inside the binary. Alpine's
+default gold linker drops that archive. The **published** v6.3.0 and v6.4.0
+tarballs were built before this flag. A recurate after the flag will not
+match those sha256 values until you publish a new cut on purpose.
+
 ## How it was checked
 
 morocco-1 pruned snapshot, in-place-testnet: halt `v6.3` then `v6.4` two

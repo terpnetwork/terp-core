@@ -1,0 +1,99 @@
+# Release lines: release/**.
+# Pack identity vs S3, then a linux/amd64 rebuild of each published plan.
+# Interchain tests use the published ict-ci binary. No ict-rs rebuild.
+# Pull requests wait for a CODEOWNER approval (heavy-ci-gate).
+name: ci-release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "release/**"
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - "release/**"
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    if: |
+      github.event_name != 'pull_request_review' ||
+      startsWith(github.event.pull_request.base.ref, 'release/')
+    uses: ./.github/workflows/heavy-ci-gate.yml
+
+  published-bytes:
+    needs: gate
+    if: needs.gate.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+      - name: Chain forks at gitlink SHAs
+        run: git submodule update --init crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+      - name: Published muslc
+        run: ./scripts/release/fetch_zk_muslc.sh crates/zk-wasmvm/internal/api
+      - name: Each published upgrade pack matches S3
+        run: |
+          set -euo pipefail
+          found=0
+          for lock in networks/upgrades/*/ARTIFACT_LOCK; do
+            [ -f "$lock" ] || continue
+            pub="$(awk -F': ' '$1=="published"{print $2; exit}' "$lock")"
+            plan="$(awk -F': ' '$1=="plan"{print $2; exit}' "$lock")"
+            [ "$pub" = "true" ] || continue
+            found=1
+            echo "==> PLAN=$plan"
+            PLAN="$plan" CHECK_S3=1 bash scripts/release/verify_upgrade_pack.sh
+          done
+          [ "$found" = "1" ] || echo "no published ARTIFACT_LOCK (ok)"
+
+  linux-amd64:
+    needs: gate
+    if: needs.gate.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+      - name: Chain forks at gitlink SHAs
+        run: git submodule update --init crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+      - name: ibc-hooks path replace
+        run: |
+          if [ ! -f crates/ibc-hooks-v11/go.mod ]; then
+            curl -fsSL -o /tmp/ibc-hooks-v11.tar.gz \
+              https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v11.tar.gz
+            mkdir -p crates
+            tar -C crates -xzf /tmp/ibc-hooks-v11.tar.gz
+          fi
+      - name: Rebuild tagged amd64 ELF for each published plan
+        run: |
+          set -euo pipefail
+          for lock in networks/upgrades/*/ARTIFACT_LOCK; do
+            [ -f "$lock" ] || continue
+            pub="$(awk -F': ' '$1=="published"{print $2; exit}' "$lock")"
+            plan="$(awk -F': ' '$1=="plan"{print $2; exit}' "$lock")"
+            [ "$pub" = "true" ] || continue
+            echo "==> recurate PLAN=$plan arch=amd64"
+            RECURATE_ARCH=amd64 PLAN="$plan" bash scripts/release/recurate_upgrade_binaries.sh
+          done
+
+  ict:
+    needs: gate
+    if: needs.gate.outputs.proceed == 'true'
+    uses: ./.github/workflows/interchaintest-E2E.yml
+    permissions:
+      contents: read

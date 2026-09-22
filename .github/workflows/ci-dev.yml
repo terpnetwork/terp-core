@@ -1,0 +1,39 @@
+# Dev lines: dev/** and any branch named *-dev (feat/6.3.0-dev).
+# Interchain tests use the published ict-ci binary. No ict-rs rebuild.
+# Pull requests wait for a CODEOWNER approval (heavy-ci-gate).
+name: ci-dev
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "dev/**"
+      - "**/*-dev"
+  pull_request:
+    branches:
+      - "dev/**"
+      - "**/*-dev"
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    if: |
+      github.event_name != 'pull_request_review' ||
+      (startsWith(github.event.pull_request.base.ref, 'dev/') ||
+       endsWith(github.event.pull_request.base.ref, '-dev'))
+    uses: ./.github/workflows/heavy-ci-gate.yml
+  ict:
+    needs: gate
+    if: needs.gate.outputs.proceed == 'true'
+    uses: ./.github/workflows/interchaintest-E2E.yml
+    permissions:
+      contents: read

@@ -85,16 +85,27 @@ if [ "$(uname -s)" = Darwin ] && [ -f "$ROOT/crates/zk-wasmvm/internal/api/libwa
   cp -f "$ROOT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a" \
     "$WT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a"
 fi
-echo "==> recurate PLAN=$PLAN TAG=$TAG COMMIT=$COMMIT VERSION=$REC_VERSION BUILD_TAGS='$REC_BUILD_TAGS' EPOCH=$EPOCH worktree=$WT (clean $desc)"
-( cd "$WT" && RELEASE_TAG="$TAG" VERSION="$REC_VERSION" BUILD_TAGS="$REC_BUILD_TAGS" WASMVM_SOURCE=local make create-binaries )
-SOURCE_DATE_EPOCH="$EPOCH" BUILD_DIR="$WT/build" ALLOW_PARTIAL=0 PLAN="$PLAN" \
+# RECURATE_ARCH=amd64 skips arm64 (CI on ubuntu). Default builds both.
+RECURATE_ARCH="${RECURATE_ARCH:-both}"
+PARTIAL=0
+BUILD_TARGET=create-binaries
+if [ "$RECURATE_ARCH" = "amd64" ]; then
+  PARTIAL=1
+  BUILD_TARGET=build-reproducible-amd64
+fi
+echo "==> recurate PLAN=$PLAN TAG=$TAG COMMIT=$COMMIT VERSION=$REC_VERSION BUILD_TAGS='$REC_BUILD_TAGS' ARCH=$RECURATE_ARCH EPOCH=$EPOCH worktree=$WT (clean $desc)"
+( cd "$WT" && RELEASE_TAG="$TAG" VERSION="$REC_VERSION" BUILD_TAGS="$REC_BUILD_TAGS" WASMVM_SOURCE=local make "$BUILD_TARGET" )
+SOURCE_DATE_EPOCH="$EPOCH" BUILD_DIR="$WT/build" ALLOW_PARTIAL="$PARTIAL" PLAN="$PLAN" \
   TAG="$TAG" RELEASE_TAG="$TAG" bash "$ROOT/scripts/release/prep.sh" "${TAG#v}"
 
 fail=0
 while read -r want name; do
   [ -n "${want:-}" ] || continue
   case "$name" in
-    terpd-linux-amd64|terpd-linux-arm64|terpd-*-linux-amd64.tar.gz|terpd-*-linux-arm64.tar.gz) ;;
+    terpd-linux-amd64|terpd-*-linux-amd64.tar.gz) ;;
+    terpd-linux-arm64|terpd-*-linux-arm64.tar.gz)
+      [ "$RECURATE_ARCH" = "amd64" ] && continue
+      ;;
     *) continue ;;
   esac
   got="$(shasum -a 256 "$WT/build/$name" | awk '{print $1}')"
