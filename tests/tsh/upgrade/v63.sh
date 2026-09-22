@@ -118,14 +118,18 @@ applied() {
 }
 
 # After v6.3 ApplyUpgrade, plan v6.4 must carry Cosmovisor checksums (not a bare URL).
+# Live `q upgrade plan` is empty once v6.4 has halted; Cosmovisor wrote upgrade-info.json.
 check_v64_plan_info() {
-  local raw info
-  raw="$("$V63_BIN" q upgrade plan --home "$HOME_DIR" --node "tcp://127.0.0.1:${RPC}" -o json 2>/dev/null || true)"
-  info="$(printf '%s' "$raw" | jq -r '.plan.info // .info // empty' 2>/dev/null || true)"
+  local info=""
+  if [ -f "$HOME_DIR/data/upgrade-info.json" ]; then
+    info="$(jq -r '.info // empty' "$HOME_DIR/data/upgrade-info.json" 2>/dev/null || true)"
+  fi
+  if [ -z "$info" ]; then
+    info="$(grep -o 'armed plan v6.4 height=[0-9]* info=.*' "$NEW_LOG" | tail -1 || true)"
+  fi
   echo "v63: armed plan.info=${info:0:180}"
   echo "$info" | grep -q 'checksum=sha256:' || {
     echo "v63: plan.info must include v6.4 tarball sha256 (stamp_v63_next_info.sh)"
-    echo "$raw"
     return 1
   }
   echo "$info" | grep -q 'linux/amd64' || { echo "v63: plan.info missing linux/amd64"; return 1; }
@@ -312,7 +316,7 @@ for i in $(seq 1 180); do
   if grep -q "UPGRADE \"${PLAN_B}\" NEEDED" "$NEW_LOG" 2>/dev/null; then
     echo "v63: saw $PLAN_B NEEDED"
     if [ "$proved_a" = "0" ]; then
-      check_v64_plan_info || true
+      check_v64_plan_info
       BIND="$V63_BIN" NODE="tcp://127.0.0.1:${RPC}" HOME_DIR="$HOME_DIR" BANK_STORE=b3-bank \
         bash "$ROOT/hasher_proof.sh" || true
       proved_a=1
