@@ -1,6 +1,6 @@
 plan: v6.3
 binary_tag: v6.3.0
-binary_commit: 224419ac63c12a88223b4ac8380c9633ba8f9123
+binary_commit: dccfa944f1328b88468464ae5685240712f8225a
 pack_branch: release/v6.3.0
 dirty: feat/6.3.0-dev
 s3_binaries_intended: https://s3.terp.network/releases/terp-core/v6.3.0/
