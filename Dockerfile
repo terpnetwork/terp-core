@@ -89,10 +89,6 @@ RUN ARCH=$(uname -m) && \
         echo "ERROR: staged ibc-hooks-v11 missing under build/zk-deps." && \
         exit 1; \
       fi && \
-      if [ ! -f /code/build/zk-deps/cosmos-iavl/go.mod ] || [ ! -f /code/build/zk-deps/cosmos-store-v2/go.mod ]; then \
-        echo "ERROR: staged hasher crates missing (cosmos-iavl / cosmos-store-v2)." && \
-        exit 1; \
-      fi && \
       # Ensure muslc .a is present where cgo LDFLAGS ${SRCDIR} looks (internal/api)
       if ! grep -a -q -F 'stwo: Dummy DSTW rejected' /code/build/wasmvm/libwasmvm_muslc.$ARCH.a; then \
         echo "ERROR: staged muslc missing Path A STWO host (proof_instance_verify)"; \
@@ -103,9 +99,6 @@ RUN ARCH=$(uname -m) && \
       sed -i 's|=> \./crates/zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \./crates/zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \
       sed -i 's|=> \./crates/ibc-hooks-v11|=> /code/build/zk-deps/ibc-hooks-v11|g' /code/go.mod && \
-      sed -i 's|=> \./crates/cosmos/iavl|=> /code/build/zk-deps/cosmos-iavl|g' /code/go.mod && \
-      sed -i 's|=> \./crates/cosmos/store-v2|=> /code/build/zk-deps/cosmos-store-v2|g' /code/go.mod && \
-      sed -i 's|=> \./crates/ics23/go|=> /code/build/zk-deps/ics23-go|g' /code/go.mod && \
       # Also accept already-rewritten or alternate relative forms
       sed -i 's|=> \.\./zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \.\./zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \

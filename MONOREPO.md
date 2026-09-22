@@ -2,7 +2,7 @@
 
 This repository is a **Go monorepo** for the Terp Network chain (`terpd`, `x/*`, protos, Docker, tests) that also vendors a large set of **Rust / CosmWasm / IBC related repositories** under `crates/` as **git submodules**.
 
-x/wasm, CosmWasm, and wasmvm stay **submodules** (`crates/zk-wasmd`, `crates/cosmwasm`, `crates/zk-wasmvm`). Their history stays on those forks. Do not copy them into `x/` or commit their `.github` and builders into this tree. `go.mod` path replaces are for the working checkout. A release artifact is the tagged `terpd` plus its sha256 on S3, not a dirty local tree.
+x/wasm, CosmWasm, and wasmvm stay **submodules** (`crates/zk-wasmd`, `crates/cosmwasm`, `crates/zk-wasmvm`). Their history stays on those forks. Do not copy them into `x/` or commit their `.github` and builders into this tree. IAVL, `store/v2`, and ICS23 are remote module replaces (`permissionlessweb/iavl`, `permissionlessweb/store-v2`, `permissionlessweb/ics23`), not vendored trees. A release artifact is the tagged `terpd` plus its sha256 on S3, not a dirty local tree.
 
 CI by branch (not one hardcoded list of tags):
 
