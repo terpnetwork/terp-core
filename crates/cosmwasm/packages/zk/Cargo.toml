@@ -1,0 +1,110 @@
+[package]
+name = "zk-cosmwasm"
+version = { workspace = true }
+authors = [""]
+edition = "2021"
+description = "Zk-Circuit VM bindings to run cosmwams contracts"
+repository = "https://github.com/CosmWasm/cosmwasm/tree/main/packages/zk-cosmwasm"
+license = "Apache-2.0"
+
+[package.metadata.release]
+pre-release-hook = []
+pre-release-replacements = []
+
+[lib]
+bench = false
+
+[features]
+default = ["zk-tests"]
+interface = []
+zk-tests = []
+# Enable BN254 curve support in the ZkCurve trait + AnyVerifyingKey dispatch.
+# ark-groth16 0.5 + ark-bn254 0.5 (host verify; Phase B).
+bn254 = [
+    "dep:ark-bn254",
+    "dep:ark-groth16",
+    "dep:ark-ff",
+    "dep:ark-ec",
+    "dep:ark-serialize",
+    "dep:ark-crypto-primitives",
+    "dep:ark-relations",
+    "dep:ark-std",
+]
+# Optional GPU verify backend (CPU-golden accept/reject; CPU fallback).
+# Default OFF — no accelerator deps until G2 wires them under this feature only.
+# See docs/research/gpu-accel/DESIGN-G1-verifier-backend.md
+gpu = []
+# Axiom Halo2 KZG / SHPLONK on BN256 (curve_id 6; e.g. zkjwt passkey).
+# Default OFF — pulls halo2-axiom + halo2-base; host-side only, do not enable
+# for CosmWasm guest wasm32 builds (axiom enables multicore via halo2-base).
+# halo2_proofs/multicore keeps PSE batch.rs in sync with maybe-rayon/threads,
+# which halo2-base turns on transitively (mixed on/off fails to compile).
+halo2-kzg = ["dep:halo2-axiom", "dep:halo2-base", "halo2_proofs/multicore"]
+
+
+[dependencies]
+ark-bn254 = { version = "0.5.0", optional = true, default-features = false, features = ["curve"] }
+ark-groth16 = { version = "0.5.0", optional = true, default-features = false }
+ark-ff = { version = "0.5.0", optional = true, default-features = false }
+ark-ec = { version = "0.5.0", optional = true, default-features = false }
+ark-serialize = { version = "0.5.0", optional = true, default-features = false }
+# SNARK trait lives here in arkworks 0.5 (used by ark-groth16).
+ark-crypto-primitives = { version = "0.5.0", optional = true, default-features = false, features = ["snark"] }
+ark-relations = { version = "0.5.0", optional = true, default-features = false }
+ark-std = { version = "0.5.0", optional = true, default-features = false }
+base64 = "0.22"
+clap = { version = "4", features = ["derive"] }
+# Uses the path when built locally; uses the given version from crates.io when published
+cosmwasm-vm-derive = { workspace = true }
+group = "0.14"
+hex = "0.4"
+pasta_curves = { package = "zakura-pasta-curves", git = "https://github.com/permissionlessweb/common", rev = "5364d3d989640e5356351ee8c0d062ca18d4bfaa" }
+rand = "0.8"
+rand_core = { version = "0.6", features = ["getrandom"] }
+serde = { workspace = true }
+serde_json = "1.0.140"
+thiserror = "1.0.26"
+# Guest wasm: never enable halo2_proofs default (batch+multicore) — multicore breaks wasm32.
+halo2_gadgets = { package = "zakura-halo2-gadgets", git = "https://github.com/permissionlessweb/common", rev = "5364d3d989640e5356351ee8c0d062ca18d4bfaa", default-features = false }
+halo2_proofs = { package = "zakura-halo2-proofs", git = "https://github.com/permissionlessweb/common", rev = "5364d3d989640e5356351ee8c0d062ca18d4bfaa", default-features = false, features = ["batch"] }
+# Axiom KZG backend for `halo2-kzg` (curve_id 6). Same wasm32 rule as above:
+# no multicore — host-side verify only.
+halo2-axiom = { package = "halo2-axiom", git = "https://github.com/axiom-crypto/halo2", tag = "v0.5.1", optional = true, default-features = false, features = ["batch", "circuit-params"] }
+halo2-base = { package = "halo2-base", git = "https://github.com/axiom-crypto/halo2-lib", tag = "v0.4.1", optional = true, default-features = false, features = ["halo2-axiom"] }
+sha2 = "0.10"
+blake3 = "1"
+
+# Host-only: wasmer is for local circuit VM tooling, not for CosmWasm guest builds.
+# Target-gate so `cw-headstash` can compile to wasm32 (BridgeMintNote / ict_local_funded).
+# Pin versions: wasmer module layout can change between patch versions.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+wasmer = { version = "=5.0.6", default-features = false, features = ["singlepass"] }
+wasmer-middlewares = "=5.0.6"
+wasmer-types = "=5.0.6"
+
+
+[dev-dependencies]
+clap = "4"
+criterion = { version = "0.5.1", features = ["html_reports"] }
+glob = "0.3.1"
+hex-literal = "0.4.1"
+leb128 = "0.2"
+rand = "0.8"
+target-lexicon = "0.12"
+tempfile = "3.1.0"
+time = { version = "0.3.35", features = ["formatting"] }
+wasm-encoder = "0.205.0"
+wat = "1.0"
+
+[[bin]]
+name = "verify_gas_calibrate"
+path = "src/bin/verify_gas_calibrate.rs"
+required-features = ["bn254"]
+
+[[bench]]
+name = "verify_gas"
+harness = false
+required-features = ["bn254"]
+
+[profile.release]
+debug = 1

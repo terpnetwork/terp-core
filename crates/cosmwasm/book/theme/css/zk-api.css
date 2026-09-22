@@ -1,0 +1,48 @@
+/* Highlight new ZK-CosmWasm host entrypoints in reference tables */
+
+table.api-surface tr.api-new > td {
+  background: rgba(80, 250, 123, 0.12);
+}
+
+table.api-surface tr.api-new > td:first-child {
+  border-left: 3px solid #50fa7b;
+  font-weight: 600;
+}
+
+table.api-surface tr.api-new td .badge-new,
+.badge-new {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  color: #0b1f12;
+  background: #50fa7b;
+}
+
+/* Dark themes */
+.ayu table.api-surface tr.api-new > td,
+.navy table.api-surface tr.api-new > td,
+.coal table.api-surface tr.api-new > td {
+  background: rgba(80, 250, 123, 0.14);
+}
+
+.ayu table.api-surface tr.api-new td .badge-new,
+.navy table.api-surface tr.api-new td .badge-new,
+.coal table.api-surface tr.api-new td .badge-new {
+  color: #0b1f12;
+  background: #50fa7b;
+}
+
+table.api-surface caption,
+table.curve-ref caption,
+table.hash-ref caption {
+  caption-side: bottom;
+  text-align: left;
+  font-size: 0.9em;
+  opacity: 0.85;
+  padding-top: 0.5rem;
+}

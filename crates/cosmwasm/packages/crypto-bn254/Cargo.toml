@@ -1,0 +1,62 @@
+[package]
+name = "cosmwasm-crypto-bn254"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+description = "BN254 (alt_bn128) elliptic-curve host-function primitives for the CosmWasm VM. Mirrors EIP-196 / EIP-197 / EIP-1108 semantics and gas."
+license = "Apache-2.0"
+repository = "https://github.com/juno-claw/wasmvm-fork"
+categories = ["cryptography", "no-std", "wasm"]
+keywords = ["bn254", "alt_bn128", "cosmwasm", "groth16", "precompile"]
+
+[lib]
+name = "cosmwasm_crypto_bn254"
+path = "src/lib.rs"
+
+[features]
+default = ["std"]
+# With "std" the error type implements std::error::Error and we allocate
+# scratch buffers on the heap. Without it, the crate is no_std-compatible
+# so that it can be linked into Wasm builds of cosmwasm-vm host modules.
+std = []
+
+[dependencies]
+# Backend: arkworks BN254. Version matches the JunoClaw zk-verifier contract
+# so that precompile and pure-Wasm paths are bit-identical for differential
+# testing.
+ark-bn254     = { version = "0.5", default-features = false, features = ["curve"] }
+ark-ec        = { version = "0.5", default-features = false }
+ark-ff        = { version = "0.5", default-features = false }
+ark-serialize = { version = "0.5", default-features = false }
+ark-std       = { version = "0.5", default-features = false }
+
+[dev-dependencies]
+hex       = "0.4"
+criterion = { version = "0.5", default-features = false, features = ["cargo_bench_support"] }
+
+# MSRV note for dev tooling (does not affect downstream consumers):
+#
+# `cargo +1.78.0 test` against this crate requires the lockfile to pin
+# four transitive dev-deps to versions that don't use `edition = "2024"`
+# in their published manifests:
+#
+#   clap          = 4.5.20  (4.6.x requires Cargo >= 1.85 to parse)
+#   clap_builder  = 4.5.20  (cascaded with clap)
+#   clap_lex      = 0.7.7   (1.1.0 requires Cargo >= 1.85 to parse)
+#   half          = 2.4.1   (2.7.x requires rustc >= 1.81)
+#
+# These pins are encoded in `Cargo.lock`. If you bump them via
+# `cargo update`, also bump the matching `rust-toolchain.toml` in any
+# downstream cosmwasm/wasmvm checkout, or document a higher MSRV in the
+# upstream PR. The crate's own `rust-version` (1.70) reflects the
+# actual MSRV of the crypto code; the dev-deps just happen to pull
+# newer toolchain requirements. The published crate (no dev-deps)
+# compiles cleanly on rustc 1.70.
+
+[[bench]]
+name    = "bn254"
+harness = false
+
+[[test]]
+name = "vectors"
+path = "tests/vectors.rs"

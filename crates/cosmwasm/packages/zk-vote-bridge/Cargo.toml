@@ -1,0 +1,15 @@
+[package]
+name = "zk-vote-bridge"
+version = "0.1.0"
+edition = "2021"
+description = "Bridges vote-sdk Halo2 circuits into the CosmWasm VM's proof_instance_verify API via CircuitFooter serialization"
+
+[lib]
+
+[dependencies]
+shielded-vote-circuits = { path = "../../../vote-sdk/circuits" }
+zk-cosmwasm = { workspace = true }
+halo2_proofs = { git = "https://github.com/permissionlessweb/halo2", rev = "362ca361477bea76e30507b6f731a3abd5e85303" }
+sha2 = "0.10"
+pasta_curves = "0.5"
+group = "0.13"

@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Text file backups
+**/*.rs.bk
+
+# Build results
+target/
+artifacts/
+
+# IDEs
+.idea/
+*.iml
+
+# Auto-gen
+.cargo-ok
+
+# Log files (e.g. memory profiling)
+*.log
+dhat-heap.json
+
+# provinkg key binaries
+data/*

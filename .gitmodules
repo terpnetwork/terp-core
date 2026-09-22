@@ -48,11 +48,6 @@
 	url = https://github.com/permissionlessweb/cosmos-rust
 	branch = main
 
-[submodule "crates/cosmwasm"]
-	path = crates/cosmwasm
-	url = https://github.com/permissionlessweb/cosmwasm.git
-	branch = v3.1.0-zk.0
-
 [submodule "crates/cw-asset"]
 	path = crates/cw-asset
 	url = https://github.com/permissionlessweb/cw-asset
@@ -288,17 +283,7 @@
 	url = https://github.com/permissionlessweb/contracts
 	branch = cw3
 
-[submodule "crates/zk-wasmd"]
-	path = crates/zk-wasmd
-	url = https://github.com/permissionlessweb/wasmd
-	branch = merge/upstream-wasmd-v0.70
-
 [submodule "crates/zk-wasmd.bak"]
 	path = crates/zk-wasmd.bak
 	url = https://github.com/permissionlessweb/wasmd
 	branch = mvp
-
-[submodule "crates/zk-wasmvm"]
-	path = crates/zk-wasmvm
-	url = https://github.com/permissionlessweb/wasmvm
-	branch = v3.0.7-zk

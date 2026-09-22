@@ -1,0 +1,90 @@
+[package]
+name = "cosmwasm-crypto"
+version = { workspace = true }
+authors = ["Mauro Lacy <maurolacy@users.noreply.github.com>"]
+description = "Crypto bindings for CosmWasm contracts"
+repository = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+
+[lib]
+# See https://bheisler.github.io/criterion.rs/book/faq.html#cargo-bench-gives-unrecognized-option-errors-for-valid-command-line-options
+bench = false
+
+[dependencies]
+ark-bls12-381 = "0.5.0"
+ark-ec = { version = "0.5.0", features = ["parallel"] }
+ark-ff = { version = "0.5.0", features = ["asm", "parallel"] }
+ark-serialize = "0.5.0"
+cosmwasm-core = { workspace = true }
+digest = "0.10"
+ed25519-zebra = { version = "=4.2.0", default-features = false, features = ["std"] }
+k256 = { version = "0.13.3", default-features = false, features = ["ecdsa"] }
+num-traits = "0.2.18"
+p256 = { version = "0.13.2", default-features = false, features = ["ecdsa"] }
+ecdsa = "0.16.8" # Needed for RecoveryId in secp256r1_recover_pubkey, see https://github.com/RustCrypto/elliptic-curves/issues/1215
+rand_core = "0.6"
+rayon = "1.9.0"
+sha2 = "0.10"
+thiserror = "1.0.26"
+
+# Optional multi-curve / hash libraries (feature-gated — default stays light).
+# BN254 (EIP-196/197/1108) is vendored in-tree so CI never walks out to junoclaw.
+cosmwasm-crypto-bn254 = { path = "../crypto-bn254", optional = true, default-features = false, features = ["std"] }
+blake2 = { version = "0.10", optional = true, default-features = false }
+blake3 = { version = "1.5", optional = true, default-features = false }
+# Zcash / Halo2 Poseidon (P128Pow5T3) over Pasta pallas/vesta base fields.
+halo2_poseidon = { package = "zakura-halo2-poseidon", git = "https://github.com/permissionlessweb/common", rev = "5364d3d989640e5356351ee8c0d062ca18d4bfaa", optional = true }
+pasta_curves = { package = "zakura-pasta-curves", git = "https://github.com/permissionlessweb/common", rev = "5364d3d989640e5356351ee8c0d062ca18d4bfaa", optional = true }
+# Penumbra Poseidon over BLS12-377 scalar field (decaf377::Fq).
+poseidon377 = { version = "1.2.0", optional = true, default-features = false, features = ["arkworks"] }
+# group/ff used by Pasta Poseidon wrappers (also transitive via pasta_curves).
+group = { version = "0.14", optional = true }
+# RedPallas (Orchard/Pallas) + RedJubjub (Sapling/Jubjub) via Zcash Foundation reddsa.
+reddsa = { version = "0.5", optional = true, default-features = false }
+
+# Not directly used but bumps transitive dependency to avoid <RUSTSEC-2024-0344>
+curve25519-dalek = "4.1.3"
+# Not directly used, but needed to fix a compilation error
+num-bigint = { version = "0.4.2", default-features = false }
+
+[dev-dependencies]
+base64 = "0.22.0"
+base64-serde = "0.7.0"
+criterion = "0.5.1"
+rand_core = { version = "0.6", features = ["getrandom"] }
+# For RedPallas round-trip tests (signing only in tests).
+reddsa = { version = "0.5", features = ["std"] }
+serde = { version = "1.0.103", default-features = false, features = ["alloc", "derive"] }
+serde_json = "1.0.140"
+sha2 = "0.10"
+sha3 = "0.10"
+hex = { version = "0.4", features = ["serde"] }
+hex-literal = "0.4.1"
+english-numbers = "0.3"
+glob = "0.3.1"
+
+[features]
+default = ["std"]
+std = []
+# Multi-curve: BN254 host primitives (re-export cosmwasm-crypto-bn254).
+bn254 = ["dep:cosmwasm-crypto-bn254"]
+# Native deterministic BLAKE2b / BLAKE3 digests (CPU only — never GPU on consensus path).
+hash-blake = ["dep:blake2", "dep:blake3"]
+# Algebraic Poseidon: Zcash Pasta (P128Pow5T3) + Penumbra poseidon377 (BLS12-377).
+# CPU only — never GPU on consensus path.
+hash-poseidon = [
+    "dep:halo2_poseidon",
+    "dep:pasta_curves",
+    "dep:group",
+    "dep:poseidon377",
+]
+# RedPallas SpendAuth/Binding + RedJubjub SpendAuth/Binding (CPU only).
+redpallas = ["dep:reddsa"]
+# Convenience: all optional crypto libraries used for multi-curve demos.
+multi-curve = ["bn254", "hash-blake", "hash-poseidon", "redpallas"]
+
+[[bench]]
+name = "main"
+harness = false
+required-features = ["std"]

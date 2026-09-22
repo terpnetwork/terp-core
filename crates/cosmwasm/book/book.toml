@@ -1,0 +1,15 @@
+[book]
+authors = ["Permissionless Web"]
+language = "en"
+src = "src"
+title = "The ZK-CosmWasm Book"
+description = "End-user developer guide for the ZK-CosmWasm stack (active development)"
+
+[rust]
+edition = "2021"
+
+[output.html]
+git-repository-url = "https://github.com/permissionlessweb/cosmwasm"
+edit-url-template = "https://github.com/permissionlessweb/cosmwasm/edit/feat/zk-v2/book/{path}"
+site-url = "https://zk.permissionless.money/"
+additional-css = ["theme/css/zk-api.css"]

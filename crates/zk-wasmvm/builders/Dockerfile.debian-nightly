@@ -1,0 +1,40 @@
+# terpnetwork/zk-debian-builder:4.0.0-zk
+# Our glibc .so builder (libwasmvm.{x86_64,aarch64}.so).
+# Do NOT FROM cosmwasm/libwasmvm-builder:0103-*. Those are rustc 1.86 / no Path A.
+# Path A needs rustc nightly (portable_simd).
+#
+# --no-install-recommends does NOT pull libc6-dev-arm64-cross. Without it,
+# guest/build_gnu_aarch64.sh (clang --sysroot=/usr/aarch64-linux-gnu) fails:
+#   c/blake3_impl.h: fatal error: 'assert.h' file not found
+# 0103-debian got those headers via apt Recommends. We install them explicitly.
+FROM --platform=linux/amd64 debian:13-slim
+
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends \
+    ca-certificates wget clang make \
+    gcc g++ \
+    gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+    libc6-dev linux-libc-dev \
+    libc6-dev-arm64-cross linux-libc-dev-arm64-cross \
+  && test -f /usr/aarch64-linux-gnu/include/assert.h \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV RUSTUP_HOME=/usr/local/rustup \
+  CARGO_HOME=/usr/local/cargo \
+  PATH=/usr/local/cargo/bin:$PATH
+
+RUN wget --no-verbose "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init" \
+  && chmod +x rustup-init \
+  && ./rustup-init -y --no-modify-path --profile minimal --default-toolchain nightly \
+  && rm rustup-init \
+  && chmod -R a+w $RUSTUP_HOME $CARGO_HOME \
+  && rustup target add aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu \
+  && chmod -R 777 /usr/local/cargo
+
+WORKDIR /code
+COPY guest/*.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/*.sh
+RUN mkdir /.cargo && chmod +rx /.cargo
+COPY guest/cargo-config.toml /.cargo/config.toml
+
+CMD ["bash", "-c", "echo 'Pass a guest script (e.g. build_gnu_x86_64.sh)' && exit 1"]

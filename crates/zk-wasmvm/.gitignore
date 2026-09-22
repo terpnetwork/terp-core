@@ -1,0 +1,24 @@
+# Please also see libwasmvm/.gitignore for the Rust-specific ignored files.
+artifacts/*
+**/*.rs.bk
+*.iml
+.idea
+.vscode
+
+# no static libraries (35MB+)
+/internal/api/lib*.a
+
+# artifacts from compile tests
+/build/
+/demo
+tmp
+a.out
+vendor/
+
+# macOS
+.DS_Store
+
+# direnv Nix stuff
+.direnv/
+
+!artifacts/checksums.txt

@@ -1,0 +1,35 @@
+# terpnetwork/zk-cross-builder:4.0.0-zk
+# Our osxcross/mingw builder. Do NOT FROM cosmwasm/libwasmvm-builder:0103-cross.
+# Path A needs rustc nightly. Darwin recut on a Mac: make build-libwasmvm (native).
+FROM --platform=linux/amd64 rust:1.88.0-bookworm
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    clang gcc g++ zlib1g-dev libmpc-dev libmpfr-dev libgmp-dev build-essential cmake \
+    mingw-w64 libclang-dev llvm-dev wget git ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN rustup toolchain install nightly --profile minimal \
+  && rustup default nightly \
+  && rustup target add x86_64-apple-darwin aarch64-apple-darwin x86_64-pc-windows-gnu
+
+WORKDIR /opt
+RUN git clone https://github.com/tpoechtrager/osxcross \
+  && cd osxcross \
+  && wget -nc https://github.com/phracker/MacOSX-SDKs/releases/download/11.3/MacOSX11.3.sdk.tar.xz \
+  && mv MacOSX11.3.sdk.tar.xz tarballs/ \
+  && UNATTENDED=yes OSX_VERSION_MIN=10.15 ./build.sh \
+  && rm -r tarballs/
+RUN chmod -R +rx /opt/osxcross /opt/osxcross/target /opt/osxcross/target/bin
+RUN /opt/osxcross/target/bin/x86_64-apple-darwin20.4-clang --version \
+  && /opt/osxcross/target/bin/aarch64-apple-darwin20.4-clang --version
+
+RUN chmod -R 777 /usr/local/cargo
+
+WORKDIR /code
+COPY guest/*.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/*.sh
+RUN mkdir /.cargo && chmod +rx /.cargo
+COPY guest/cargo-config.toml /.cargo/config.toml
+
+CMD ["bash", "-c", "echo 'Pass a guest script (e.g. build_macos.sh)' && exit 1"]
