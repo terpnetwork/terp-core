@@ -22,8 +22,9 @@ Linux **amd64** and **arm64** only. Do not put a darwin `terpd` under Cosmovisor
 
 **Do not start until v6.2 has applied.** v6.2 dropped dest; v6.3 is a new copy.
 
-Until `ARTIFACT_LOCK` says `published: true`, these S3 URLs are **intent**, not
-live bits. Curators: [`CURATE.md`](./CURATE.md) · [`SOURCE_DEPS.txt`](./SOURCE_DEPS.txt).
+`ARTIFACT_LOCK` is `published: true`. What this binary does, and the
+checksums it arms for v6.4, are in [`RELEASE.md`](./RELEASE.md).
+Curators: [`CURATE.md`](./CURATE.md) · [`SOURCE_DEPS.txt`](./SOURCE_DEPS.txt).
 
 ---
 

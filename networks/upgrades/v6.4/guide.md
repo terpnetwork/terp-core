@@ -7,4 +7,5 @@ Operators: pre-place `upgrades/v6.4/bin/terpd` **before** the v6.3 height.
 See [`../v6.3/guide.md`](../v6.3/guide.md).
 
 Same 4.0.0-zk muslc as v6.3, built with `terpnetwork/zk-alpine-builder:4.0.0-zk`,
-never `cosmwasm/libwasmvm-builder:0103-*`.
+never `cosmwasm/libwasmvm-builder:0103-*`. What this binary is, and why its
+checksums live inside v6.3, is in [`RELEASE.md`](./RELEASE.md).
