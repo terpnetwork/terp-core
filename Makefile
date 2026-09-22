@@ -109,6 +109,16 @@ endif
 ifeq ($(WITH_CLEVELDB),yes)
   build_tags += gcc
 endif
+# Darwin installer/dev binaries must not rpath libwasmvm.dylib to this clone
+# (${SRCDIR} in crates/zk-wasmvm/internal/api/link_mac.go). Link the static
+# archive instead. Override with BUILD_TAGS= (empty) only for local dylib debug.
+ifeq ($(shell uname -s 2>/dev/null),Darwin)
+  ifneq ($(wildcard crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a),)
+    ifeq ($(filter static_wasm,$(BUILD_TAGS)),)
+      BUILD_TAGS += static_wasm
+    endif
+  endif
+endif
 build_tags += $(BUILD_TAGS)
 build_tags := $(strip $(build_tags))
 

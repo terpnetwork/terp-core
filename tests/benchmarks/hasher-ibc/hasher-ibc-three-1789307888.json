@@ -1,0 +1,63 @@
+{
+  "image": "registry.terp.network/terp-core:v6.3.0-dev",
+  "topology": "A=blake3 B=hybrid C=sha256; TM B→C; 08-wasm A→C",
+  "lc_store_gas": 39742,
+  "a_tm_handshake": "link_path: Relayer error on hermes: create channel produced no channel ids: a_side channel_id not found in: {\"result\":\"failed to spawn chain runtime: missing chain config for 'terp-a-1' in configuration file\",\"status\":\"error\"}; stdout={\"timestamp\":\"2026-09-13T13:55:55.877341Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"using default configuration from '/home/hermes/.hermes/config.toml'\"},\"threadId\":\"ThreadId(1)\"}\n{\"timestamp\":\"2026-09-13T13:55:55.877714Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"running Hermes v1.13.1\"},\"threadId\":\"ThreadId(1)\"}\n{\"result\":\"failed to spawn chain runtime: missing chain config for 'terp-a-1' in configuration file\",\"status\":\"error\"}\n; stderr=",
+  "hybrid_inclusion_gas": 0,
+  "hybrid_exclusion_gas": 0,
+  "a_inclusion_gas": 0,
+  "wasm_lc_contract": "",
+  "a_wasm_client": "",
+  "a_wasm_path": "Container exec failed (exit 1): Error: rpc error: code = Unknown desc = rpc error: code = Unknown desc = failed to execute message; message index: 0: channel is not OPEN (got STATE_INIT): invalid channel state [cosmos/ibc-go/v11@v11.2.0/modules/core/04-channel/keeper/packet.go:34] with gas used: '85093': unknown request\nUsage:\n  terpd tx ibc-transfer transfer [src-port] [src-channel] [receiver] [coin] [flags]\n\nExamples:\nterpd tx ibc-transfer transfer [src-port] [src-channel] [receiver] [coin]\n\nFlags:\n      --absolute-timeouts               Timeout flags are used as absolute timeouts.\n  -a, --account-number uint             The account number of the signing account (offline mode only)\n      --aux                             Generate aux signer data instead of sending a tx\n  -b, --broadcast-mode string           Transaction broadcasting mode (sync|async) (default \"sync\")\n      --chain-id string                 The network chain ID\n      --dry-run                         ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it (when enabled, the local Keybase is not accessible)\n      --fee-granter string              Fee granter grants fees for the transaction\n      --fee-payer string                Fee payer pays fees for the transaction instead of deducting from the signer\n      --fees string                     Fees to pay along with transaction; eg: 10uatom\n      --from string                     Name or address of private key with which to sign\n      --gas string                      gas limit to set per-transaction; set to \"auto\" to calculate sufficient gas automatically. Note: \"auto\" option doesn't always report accurate results. Set a valid coin value to adjust the result. Can be used instead of \"fees\". (default 200000)\n      --gas-adjustment float            adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored (default 1)\n      --gas-prices string               Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)\n      --generate-only                   Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase only accessed when providing a key name)\n  -h, --help                            help for transfer\n      --keyring-backend string          Select keyring's backend (os|file|kwallet|pass|test|memory) (default \"os\")\n      --keyring-dir string              The client Keyring directory; if omitted, the default 'home' directory will be used\n      --ledger                          Use a connected Ledger device\n      --memo string                     Memo to be sent along with the packet.\n      --node string                     <host>:<port> to CometBFT rpc interface for this chain (default \"tcp://localhost:26657\")\n      --note string                     Note to add a description to the transaction (previously --memo)\n      --offline                         Offline mode (does not allow any online functionality)\n  -o, --output string                   Output format (text|json) (default \"json\")\n      --packet-timeout-height string    Packet timeout block height in the format {revision}-{height}. (default \"0-0\")\n      --packet-timeout-timestamp uint   Packet timeout timestamp in nanoseconds from now. Default is 10 minutes. On IBC v1 protocol, either timeout timestamp or timeout height must be set. On IBC v2 protocol timeout timestamp must be set. (default 600000000000)\n  -s, --sequence uint                   The sequence number of the signing account (offline mode only)\n      --sign-mode string                Choose sign mode (direct|amino-json|direct-aux), this is an advanced feature\n      --timeout-duration duration       TimeoutDuration is the duration the transaction will be considered valid in the mempool. The transaction's unordered nonce will be set to the time of transaction creation + the duration value passed. If the transaction is still in the mempool, and the block time has passed the time of submission + TimeoutDuration, the transaction will be rejected.\n      --timeout-height uint             DEPRECATED: Please use --timeout-duration instead. Set a block timeout height to prevent the tx from being committed past a certain height\n      --tip string                      Tip is the amount that is going to be transferred to the fee payer on the target chain. This flag is only valid when used with --aux, and is ignored if the target chain didn't enable the TipDecorator\n      --unordered                       Enable unordered transaction delivery; must be used in conjunction with --timeout-duration\n  -y, --yes                             Skip tx broadcasting prompt confirmation\n\nGlobal Flags:\n      --home string                directory for config and data (default \"/terpd/.terpd\")\n      --log_format string          The logging format (json|plain) (default \"plain\")\n      --log_level string           The logging level (trace|debug|info|warn|error|fatal|panic|disabled or '*:<level>,<key>:<level>') (default \"info\")\n      --log_no_color               Disable colored logs\n      --trace                      print out full stack trace on errors\n      --verbose_log_level string   The logging level (trace|debug|info|warn|error|fatal|panic|disabled|none) to use when performing operations which require extra verbosity (such as upgrades). When enabled, verbose mode disables any custom log filters. Set this to none to make verbose mode equivalent to normal logging. (default \"debug\")\n\nrpc error: code = Unknown desc = rpc error: code = Unknown desc = failed to execute message; message index: 0: channel is not OPEN (got STATE_INIT): invalid channel state [cosmos/ibc-go/v11@v11.2.0/modules/core/04-channel/keeper/packet.go:34] with gas used: '85093': unknown request\n",
+  "legs": [
+    {
+      "variant": "H",
+      "image": "registry.terp.network/terp-core:v6.3.0-dev",
+      "n": 3,
+      "warmup": 0,
+      "packets_on": "07-tendermint",
+      "median_t_round_trip_ms": 4777,
+      "median_t_recv_packet_ms": 3114,
+      "median_gas_recv_packet": 186914,
+      "median_gas_recv": 186914,
+      "median_gas_update_client": 186914,
+      "median_proof_bytes_recv": 596,
+      "median_t_ack_ms": 3114,
+      "median_gas_ack": 116036,
+      "lc_store_gas": 0,
+      "lc_create_gas": 0,
+      "samples": [
+        {
+          "t_round_trip_ms": 5085,
+          "t_recv_packet_ms": 5085,
+          "t_update_client_ms": 5085,
+          "t_ack_ms": 0,
+          "gas_recv_packet": 186914,
+          "gas_update_client": 186914,
+          "gas_ack": 0,
+          "proof_bytes_recv": 596
+        },
+        {
+          "t_round_trip_ms": 4777,
+          "t_recv_packet_ms": 3114,
+          "t_update_client_ms": 3114,
+          "t_ack_ms": 3114,
+          "gas_recv_packet": 186914,
+          "gas_update_client": 186914,
+          "gas_ack": 116056,
+          "proof_bytes_recv": 596
+        },
+        {
+          "t_round_trip_ms": 3949,
+          "t_recv_packet_ms": 1378,
+          "t_update_client_ms": 1378,
+          "t_ack_ms": 3143,
+          "gas_recv_packet": 162540,
+          "gas_update_client": 162540,
+          "gas_ack": 116036,
+          "proof_bytes_recv": 640
+        }
+      ]
+    }
+  ]
+}

@@ -130,7 +130,7 @@ require (
 	github.com/CosmWasm/wasmvm/v3 v3.0.7
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
-	github.com/cosmos/iavl v1.2.8 // indirect
+	github.com/cosmos/iavl v1.2.8
 	github.com/cosmos/iavl/v2 v2.0.0-20260831004022-e5686bb83c1c // experimental; unused by CommitMultiStore; replaced to permissionlessweb/iavl feat/blake3-native-v2
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v1.0.0 // indirect
@@ -216,11 +216,16 @@ require (
 	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/bgentry/speakeasy v0.2.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.5 // indirect
+	github.com/btcsuite/btcd v0.21.0-beta.0.20201114000516-e9c7a5ac6401 // indirect
+	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/bvinc/go-sqlite-lite v0.6.1 // indirect
+	github.com/bwesterb/go-ristretto v1.2.3 // indirect
 	github.com/bytedance/gopkg v0.1.4 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
+	github.com/coinbase/kryptology v1.8.0 // indirect
+	github.com/consensys/gnark-crypto v0.18.1 // indirect
 	github.com/cosmos/btree v1.0.0 // indirect
 	github.com/danieljoos/wincred v1.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -402,8 +407,13 @@ exclude github.com/gogo/protobuf v1.3.3
 
 replace github.com/cosmos/ibc-apps/modules/ibc-hooks/v11 => ./crates/ibc-hooks-v11
 
-// IAVL v2 is a separate module (SQLite). Live CMS stays v1.
-// BLAKE3 option lives on permissionlessweb/iavl feat/blake3-native-v2 (e5686bb).
-// Local IAVL v1 hasher + patched store/v2 are applied by scripts/release/curate_v61.sh
-// (crates/cosmos/{iavl,store-v2} are gitignored). Do not replace DefaultOptions to BLAKE3.
+// IAVL v2 is unused by CommitMultiStore.
 replace github.com/cosmos/iavl/v2 => github.com/permissionlessweb/iavl/v2 v2.0.0-20260831004022-e5686bb83c1c
+
+// Live CMS IAVL v1 + store/v2 hasher (feat/6.3.0-dev). Do not flip DefaultOptions.
+replace github.com/cosmos/iavl => ./crates/cosmos/iavl
+
+replace github.com/cosmos/cosmos-sdk/store/v2 => ./crates/cosmos/store-v2
+
+replace github.com/coinbase/kryptology => github.com/permissionlessweb/kryptology v0.0.0-20260120180623-bb95dcb5aeea
+replace github.com/cosmos/ics23/go => ./crates/ics23/go

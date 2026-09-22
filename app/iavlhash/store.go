@@ -80,10 +80,21 @@ func DualStorePairs() [][2]string {
 	return out
 }
 
-// AlgorithmName is "sha256" or "blake3".
+// IsIBCStore reports IBC-facing names that must stay SHA-256 (never dual-copied).
+func IsIBCStore(storeName string) bool {
+	_, ok := SHA256Stores[storeName]
+	return ok
+}
+
+// AlgorithmName is "sha256" or "blake3" for the v6.3 / v6.4 ELFs.
+// Live migratable names keep SHA-256 history until keepers move onto dest.
+// Dest `b3-*` trees are BLAKE3. IBC names stay SHA-256.
 func AlgorithmName(storeName string) string {
-	if _, ok := SHA256Stores[storeName]; ok {
+	if IsIBCStore(storeName) {
 		return "sha256"
 	}
-	return "blake3"
+	if len(storeName) > 3 && storeName[:3] == "b3-" {
+		return "blake3"
+	}
+	return "sha256"
 }

@@ -15,7 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_VERSION: 1.25
+  GO_VERSION: 1.26.5
+  GOTOOLCHAIN: local
 
 # Monorepo submodule policy:
 # - go.mod path-replaces CosmWasm → ./crates/zk-wasmd and ./crates/zk-wasmvm
@@ -31,7 +32,23 @@ jobs:
         with:
           fetch-depth: 1
       - name: Init Go path-replace submodules
-        run: git submodule update --init --depth 1 crates/zk-wasmd crates/zk-wasmvm
+        run: |
+          for p in crates/zk-wasmd crates/zk-wasmvm; do
+            if [ -f "$p/go.mod" ]; then
+              echo "OK $p already populated"
+            else
+              git submodule update --init --depth 1 "$p"
+            fi
+          done
+      - name: ibc-hooks-v11
+        run: |
+          if [ ! -f crates/ibc-hooks-v11/go.mod ]; then
+            curl -fsSL -o /tmp/ibc-hooks-v11.tar.gz \
+              https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v11.tar.gz
+            tar -C crates -xzf /tmp/ibc-hooks-v11.tar.gz
+          fi
+      - name: Hasher packaging
+        run: ./scripts/release/curate_v63.sh
       - name: Setup go
         uses: actions/setup-go@v6
         with:
@@ -51,7 +68,23 @@ jobs:
         with:
           fetch-depth: 1
       - name: Init Go path-replace submodules
-        run: git submodule update --init --depth 1 crates/zk-wasmd crates/zk-wasmvm
+        run: |
+          for p in crates/zk-wasmd crates/zk-wasmvm; do
+            if [ -f "$p/go.mod" ]; then
+              echo "OK $p already populated"
+            else
+              git submodule update --init --depth 1 "$p"
+            fi
+          done
+      - name: ibc-hooks-v11
+        run: |
+          if [ ! -f crates/ibc-hooks-v11/go.mod ]; then
+            curl -fsSL -o /tmp/ibc-hooks-v11.tar.gz \
+              https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v11.tar.gz
+            tar -C crates -xzf /tmp/ibc-hooks-v11.tar.gz
+          fi
+      - name: Hasher packaging
+        run: ./scripts/release/curate_v63.sh
       - name: Test
         run: go test ./...
 
@@ -63,7 +96,14 @@ jobs:
         with:
           fetch-depth: 1
       - name: Init Go path-replace submodules
-        run: git submodule update --init --depth 1 crates/zk-wasmd crates/zk-wasmvm
+        run: |
+          for p in crates/zk-wasmd crates/zk-wasmvm; do
+            if [ -f "$p/go.mod" ]; then
+              echo "OK $p already populated"
+            else
+              git submodule update --init --depth 1 "$p"
+            fi
+          done
       - name: Setup go
         uses: actions/setup-go@v6
         with:

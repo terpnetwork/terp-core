@@ -6,9 +6,10 @@
 # value was not copied into its module store.
 set -euo pipefail
 
-NEW_BIND="${NEW_BIND:-terpd}"
-VAL1HOME="${VAL1HOME:?VAL1HOME is required}"
-VAL1_RPC_PORT="${VAL1_RPC_PORT:-26657}"
+NEW_BIND="${NEW_BIND:-${BIND:-terpd}}"
+VAL1HOME="${VAL1HOME:-${HOME_DIR:-}}"
+[ -n "$VAL1HOME" ] || { echo "VAL1HOME or HOME_DIR required"; exit 1; }
+VAL1_RPC_PORT="${VAL1_RPC_PORT:-${RPC:-26657}}"
 NODE="tcp://127.0.0.1:${VAL1_RPC_PORT}"
 
 q() {

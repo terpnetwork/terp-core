@@ -1,0 +1,2 @@
+# Same pins as v6.3. ELF is -tags v64 (keepers on dest).
+# See ../v6.3/SOURCE_DEPS.txt
