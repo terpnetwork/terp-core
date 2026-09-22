@@ -2,6 +2,8 @@
 
 This repository is a **Go monorepo** for the Terp Network chain (`terpd`, `x/*`, protos, Docker, tests) that also vendors a large set of **Rust / CosmWasm / IBC related repositories** under `crates/` as **git submodules**.
 
+x/wasm, CosmWasm, and wasmvm stay **submodules** (`crates/zk-wasmd`, `crates/cosmwasm`, `crates/zk-wasmvm`). Their history stays on those forks. Do not copy them into `x/` or commit their `.github` and builders into this tree. `go.mod` path replaces are for the working checkout. A release artifact is the tagged `terpd` plus its sha256 on S3, not a dirty local tree. Contribution rules: [CONTRIBUTING.md](CONTRIBUTING.md). Bit-for-bit CI: [`.github/workflows/repro-artifacts.yml`](.github/workflows/repro-artifacts.yml).
+
 The submodule list is defined only in [`.gitmodules`](.gitmodules). This guide is derived from that file (61 modules at time of writing). If the list drifts, trust `.gitmodules` and refresh this document.
 
 Related reading:

@@ -1,0 +1,62 @@
+# Rebuild the published linux/amd64 ELF for v6.3 and v6.4 and compare it
+# to ARTIFACT_LOCK. Also check pack JSON against S3.
+# Does not re-test fork internals (wasmvm FFI, muslc generation, submodule SHAs).
+name: repro-artifacts
+
+on:
+  pull_request:
+    branches:
+      - feat/6.3.0-dev
+      - release/v6.3.0
+      - release/v6.4.0
+  push:
+    branches:
+      - feat/6.3.0-dev
+      - release/v6.3.0
+      - release/v6.4.0
+    tags:
+      - "v6.3.*"
+      - "v6.4.*"
+  workflow_dispatch:
+
+concurrency:
+  group: repro-artifacts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  published-bytes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+      - name: Chain forks
+        run: git submodule update --init crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+      - name: Published muslc pin
+        run: ./scripts/release/fetch_zk_muslc.sh crates/zk-wasmvm/internal/api
+      - name: Pack JSON matches S3
+        run: |
+          PLAN=v6.3 CHECK_S3=1 bash scripts/release/verify_upgrade_pack.sh
+          PLAN=v6.4 CHECK_S3=1 bash scripts/release/verify_upgrade_pack.sh
+
+  linux-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+      - name: Chain forks
+        run: git submodule update --init crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+      - name: ibc-hooks (path replace, not a submodule)
+        run: |
+          if [ ! -f crates/ibc-hooks-v11/go.mod ]; then
+            curl -fsSL -o /tmp/ibc-hooks-v11.tar.gz \
+              https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v11.tar.gz
+            tar -C crates -xzf /tmp/ibc-hooks-v11.tar.gz
+          fi
+      - name: Rebuild tagged amd64 ELF
+        run: |
+          RECURATE_ARCH=amd64 PLAN=v6.3 bash scripts/release/recurate_upgrade_binaries.sh
+          RECURATE_ARCH=amd64 PLAN=v6.4 bash scripts/release/recurate_upgrade_binaries.sh
