@@ -39,12 +39,12 @@ make wasmvm-verify
 # 1) Branch
 git checkout v6.0.0-dev
 
-# 2) Build ZK alpine image + tag as v5.3.0-dev (local + ghcr names)
+# 2) Build ZK alpine runtime image + tag as registry.terp.network/terp-core:<tag>
 make docker-publish-dev RELEASE_TAG=v6.0.0-dev
 # Retag only (reuse existing :local-zk without rebuild):
 # make docker-publish-dev RELEASE_TAG=v6.0.0-dev SKIP_BUILD=1
 
-# 3) Push image (needs docker login to containers.terp.network)
+# 3) Push image (docker login to registry.terp.network — not GHCR)
 make docker-push-dev RELEASE_TAG=v6.0.0-dev
 
 # 4) Bundle source + manifest (local build/release/<tag>/)

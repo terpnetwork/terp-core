@@ -15,10 +15,10 @@ Fresh-VM: `TAG=v6.3.0 ./scripts/release/fresh-vm/run.sh` (extras
 iavl + store/v2 replaces).
 
 Do these in order. **Do not broadcast** a gov proposal until heights are
-filled. Tags, GHCR builder images, and `releases/zk-wasmvm/v4.0.0-zk/` are
-the dep-release path in [`DEPS-RELEASE.md`](./DEPS-RELEASE.md). Linux terpd
-tarballs stay `published: false` until fresh-VM sha256 is in
-`ARTIFACT_LOCK`.
+filled. `releases/zk-wasmvm/v4.0.0-zk/` is on S3. Builder images stay
+**local**. Operator registry is `registry.terp.network/terp-core:<tag>`
+(see [`REGISTRY-HANDOFF.md`](./REGISTRY-HANDOFF.md)). Linux terpd tarballs
+stay `published: false` until fresh-VM sha256 is in `ARTIFACT_LOCK`.
 
 1. **Branch** `feat/6.3.0-dev` from post-v6.2 HEAD. Vendor patched IAVL v1 +
    store/v2 **in git** (`crates/cosmos/iavl`, `crates/cosmos/store-v2`). Run

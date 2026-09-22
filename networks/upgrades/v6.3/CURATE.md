@@ -25,7 +25,8 @@ grep -n 'iavl =>\|store/v2 =>\|wasmvm/v3 =>' go.mod
 ```
 
 Build libwasmvm with **our** images (`terpnetwork/zk-*-builder:4.0.0-zk`),
-published as `ghcr.io/terpnetwork/zk-*-builder:4.0.0-zk`. Never
+local only — do not push builders to GHCR or `registry.terp.network`.
+Compiled release image is `registry.terp.network/terp-core:<tag>`. Never
 `docker pull cosmwasm/libwasmvm-builder:0103-*` (rustc 1.86, no Path A).
 Canonical: [`crates/zk-wasmvm/docs/BUILDERS.md`](../../../crates/zk-wasmvm/docs/BUILDERS.md).
 
