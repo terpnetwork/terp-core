@@ -14,7 +14,7 @@ set -euo pipefail
 # VERSION defaults to the current git tag (v-prefix stripped).
 
 VERSION="${1:-$(git describe --tags 2>/dev/null | sed 's/^v//' || echo "unknown")}"
-BUILD_DIR="build"
+BUILD_DIR="${BUILD_DIR:-build}"
 CHECKSUM_FILE="$BUILD_DIR/sha256sum.txt"
 ALLOW_PARTIAL="${ALLOW_PARTIAL:-0}"
 PLAN="${PLAN:-}"
@@ -62,13 +62,9 @@ fi
 # Create versioned tarballs and append their checksums
 # ------------------------------------------------------------------
 # Cosmovisor auto-download requires ./terpd in the archive (DAEMON_NAME).
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 pack_cv_tarball() {
-    local src="$1" dest="$2" stage
-    stage="$(mktemp -d)"
-    cp "$src" "$stage/terpd"
-    chmod 755 "$stage/terpd"
-    COPYFILE_DISABLE=1 tar -C "$stage" -czf "$dest" terpd
-    rm -rf "$stage"
+    bash "$ROOT/scripts/release/pack_cv_tarball.sh" "$1" "$2" >/dev/null
 }
 
 for arch in "${present[@]}"; do

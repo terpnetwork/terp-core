@@ -2,18 +2,20 @@ plan: v6.4
 binary_tag: v6.4.0
 binary_commit: 224419ac63c12a88223b4ac8380c9633ba8f9123
 pack_branch: release/v6.4.0
-dirty: feat/6.3.0-dev
+dirty: v6.4.0
 s3_binaries_intended: https://s3.terp.network/releases/terp-core/v6.4.0/
-published: false
-note: ELF identity is git tag v6.4.0 (same SHA as v6.3.0) built with -tags v64. Same 4.0.0-zk muslc as v6.3.0. Do not move tag v6.4.0.
+published: true
+source_date_epoch: 1790066941
+note: ELF identity is git tag v6.4.0. Pack files belong on release/v6.4.0 and must not move the tag. Tarballs use pack_cv_tarball.sh (SOURCE_DATE_EPOCH=tag %ct).
 
-# wasmvm 4.0.0-zk host libs (same generation as v6.3; our zk-*-builder, not CosmWasm 0103)
+6b49c432d7d8a8123d44ea8bcb5811a616e7e86b048bbe0c20b37dc0503a9ef4  terpd-6.4.0-linux-amd64.tar.gz
+98f9d9a92c9a72261fa062e16e42c5dfdb22e5172f972bb3cf1e0aaffca1171d  terpd-6.4.0-linux-arm64.tar.gz
+68fb7f902ad8fccc26cbd400e936541f9b3627b0148c6a765e342b4b186c4ca9  terpd-linux-amd64
+453630632e5c96726ce779c12ff9cf610225c01f3227eb9401ec4e7c3000c618  terpd-linux-arm64
+
+wasmvm_muslc_base: https://minio.terp.network/releases/zk-wasmvm/v4.0.0-zk/
 4adc7b3ca25340a18f38cf313d6cd6d9a8bac0e86cd31799534a04eec1c75ea2  libwasmvm_muslc.aarch64.a
 892b623f7a8df2caf40c038461f7a9f9545a381aef3de35c0e4a297f25c98bd7  libwasmvm_muslc.x86_64.a
 fd22dc51ac7ccc7362ad6ce3c07947bda42963f67595cc76c6d313a113277ecc  libwasmvm.x86_64.so
 5304710677b69c400a7b2aa342f8a14d58ee1f7f9bf216c4bbc95ba15fa6202c  libwasmvm.aarch64.so
 cf6a5a43482b0f67ab7e99cf8771015079a5948555abfb2d87a3d90b41196907  libwasmvm.dylib
-
-# terpd linux (fill after TAG=v6.4.0 BUILD_TAGS=v64 fresh-vm)
-# TBD  terpd-linux-amd64
-# TBD  terpd-linux-arm64

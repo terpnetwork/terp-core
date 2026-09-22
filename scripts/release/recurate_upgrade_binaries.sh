@@ -79,18 +79,14 @@ REC_BUILD_TAGS="muslc"
 if [ "$PLAN" = "v6.4" ] || [ "$TAG" = "v6.4.0" ]; then
   REC_BUILD_TAGS="muslc v64"
 fi
+# Darwin create-binaries needs the static archive; Cosmovisor packs are linux.
+if [ "$(uname -s)" = Darwin ] && [ -f "$ROOT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a" ]; then
+  mkdir -p "$WT/crates/zk-wasmvm/internal/api"
+  cp -f "$ROOT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a" \
+    "$WT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a"
+fi
 echo "==> recurate PLAN=$PLAN TAG=$TAG COMMIT=$COMMIT VERSION=$REC_VERSION BUILD_TAGS='$REC_BUILD_TAGS' EPOCH=$EPOCH worktree=$WT (clean $desc)"
 ( cd "$WT" && RELEASE_TAG="$TAG" VERSION="$REC_VERSION" BUILD_TAGS="$REC_BUILD_TAGS" WASMVM_SOURCE=local make create-binaries )
-if [ "$(uname -s)" = Darwin ]; then
-  # Tagged worktrees may predate build_host_darwin.sh — run it from this repo
-  # against the worktree sources so darwin is part of the same recurate, not a sidecar.
-  if [ ! -f "$WT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a" ] \
-     && [ -f "$ROOT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a" ]; then
-    cp -f "$ROOT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a" \
-      "$WT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a"
-  fi
-  BUILD_ROOT="$WT" RELEASE_TAG="$TAG" bash "$ROOT/scripts/release/build_host_darwin.sh"
-fi
 SOURCE_DATE_EPOCH="$EPOCH" BUILD_DIR="$WT/build" ALLOW_PARTIAL=0 PLAN="$PLAN" \
   TAG="$TAG" RELEASE_TAG="$TAG" bash "$ROOT/scripts/release/prep.sh" "${TAG#v}"
 

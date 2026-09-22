@@ -65,8 +65,9 @@ if [ -f "$BJ" ] && [ -f "$CJ" ]; then
     [ "$a" = "$b" ] || { echo "ERROR: $plat binaries.json $a != cosmovisor.json $b" >&2; exit 1; }
     echo "OK $plat pack json $a"
   done
-  # lock ELF rows if filled
-  for pair in "amd64 terpd-linux-amd64" "arm64 terpd-linux-arm64"; do
+  # lock tarball rows (not raw ELF sha) vs Cosmovisor JSON
+  ver="${tag#v}"
+  for pair in "amd64 terpd-${ver}-linux-amd64.tar.gz" "arm64 terpd-${ver}-linux-arm64.tar.gz"; do
     set -- $pair
     locksha="$(hex_from_lock "$2")"
     [ -n "$locksha" ] || continue
