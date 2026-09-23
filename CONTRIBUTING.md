@@ -110,6 +110,24 @@ changes.
   exactly the files the commit is about, and read `git status` before committing.
   The user's working files must never enter commits, gitignored or not.
 
+## Changelog
+
+Same shape as the Zakura fragment standard. This repo is the consumer: do not
+edit Zakura's changelog or agent files.
+
+- After a draft PR exists, a change operators can see owns exactly one
+  `changelog/unreleased/<PR-number>.md`. The filename is the PR number.
+- Categories: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`.
+  Prefer `Fixed` when unsure. Write the observable effect, start with a verb,
+  and link the PR.
+- Internal work (tests, refactors, CI) still gets that file, with
+  `<!-- changelog: none -->` and a one-line reason.
+- Do not edit an assembled release note in an ordinary PR. Upgrade cuts live in
+  `networks/upgrades/<plan>/RELEASE.md` and are written when that release is cut.
+- `docs/` is gitignored here, so fragments are not under `docs/changelog/`.
+
+Procedure: `.grok/skills/changelog-fragment/SKILL.md`.
+
 ## Issue and Task Management
 
 - Never mark an issue or task completed without explicit user verification. Resolve
