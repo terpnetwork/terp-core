@@ -11,7 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Chain forks at gitlink SHAs
-        run: git submodule update --init crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+        run: |
+          set -euo pipefail
+          if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            git submodule update --init crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+          fi
+          test -f crates/zk-wasmvm/go.mod
+          test -f crates/cosmwasm/Cargo.toml
+          test -f crates/zk-wasmd/go.mod
       - name: Published muslc
         run: ./scripts/release/fetch_zk_muslc.sh crates/zk-wasmvm/internal/api
       - name: Published packs match S3

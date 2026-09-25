@@ -51,6 +51,7 @@ echo "==> act platform=$platform host=$arch"
 # Do not exec. The EXIT trap has to run after act returns.
 # --rm is act's own cleanup. The trap covers a killed run.
 # One image tag. --container-architecture selects the manifest for this host.
-act --rm --container-architecture "$platform" \
+# --bind keeps this checkout (and its .git) instead of a copy that is not a repo.
+act --rm --bind --container-architecture "$platform" \
   -P "ubuntu-latest=catthehacker/ubuntu:act-latest" \
   "$@"
