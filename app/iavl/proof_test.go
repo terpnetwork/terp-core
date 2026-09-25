@@ -1,4 +1,4 @@
-package iavlhash
+package iavl
 
 import (
 	"testing"

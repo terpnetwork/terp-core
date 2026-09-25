@@ -10,7 +10,7 @@ import (
 	packetforwardtypes "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 )
 
 // LegacyParamsStoreKey is the historical x/params KV name. SDK 0.55 removed
@@ -35,10 +35,10 @@ func alwaysStoreNames() []string {
 func (appKeepers *AppKeepers) GenerateKeys() {
 	names := alwaysStoreNames()
 	if !KeepersOnDest {
-		names = append(names, iavlhash.MigratableStores()...)
+		names = append(names, iavl.MigratableStores()...)
 	}
 	if MountDestStores {
-		names = append(names, iavlhash.DestStores()...)
+		names = append(names, iavl.DestStores()...)
 	}
 	appKeepers.keys = storetypes.NewKVStoreKeys(names...)
 	appKeepers.tkeys = storetypes.NewTransientStoreKeys()
@@ -61,7 +61,7 @@ func (appKeepers *AppKeepers) GetKey(storeKey string) *storetypes.KVStoreKey {
 // On the v6.4.0 ELF, migratable modules are wired to dest `b3-*` keys.
 func (appKeepers *AppKeepers) KeeperKey(storeKey string) *storetypes.KVStoreKey {
 	if KeepersOnDest {
-		if dst := appKeepers.keys[iavlhash.DestName(storeKey)]; dst != nil {
+		if dst := appKeepers.keys[iavl.DestName(storeKey)]; dst != nil {
 			return dst
 		}
 	}

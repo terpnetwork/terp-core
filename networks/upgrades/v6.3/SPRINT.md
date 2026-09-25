@@ -21,9 +21,9 @@ TWAP-BTC confirmed root. Expired TM clients are restored via **gov + 08-wasm**
 | Path | Role |
 |------|------|
 | `crates/cosmos/iavl` | IAVL v1 + `HasherOptionForStore` — **committed** |
-| `crates/cosmos/store-v2` | store/v2 + `app/iavlhash/store-v2-hasher.patch` — **committed** |
+| `crates/cosmos/store-v2` | store/v2 + `app/iavl/store-v2-hasher.patch` — **committed** |
 | `go.mod` | `replace` both onto those paths |
-| `app/iavlhash/store.go` | dual-store `AlgorithmName` (v6.3 vs v7) |
+| `app/iavl/store.go` | dual-store `AlgorithmName` (v6.3 vs v7) |
 | `app/upgrades/v6_3/` | plan `v6.3`, copy handler, arm `v7` |
 | `app/upgrades/v7/` | plan `v7`, drop SHA-256 migratable names |
 | `app/keepers/keys.go` | v6.3: append `DestStores()`; v7: dest keys only, no Rename |
@@ -51,7 +51,7 @@ ignored except zk-*).
 - [ ] **Vendor** stock `github.com/cosmos/iavl v1.2.8` that contains
       `HasherOptionForStore` (permissionlessweb/iavl v1 BLAKE3 option), and
       `github.com/cosmos/cosmos-sdk/store/v2 v2.0.0` + apply
-      `app/iavlhash/store-v2-hasher.patch`.
+      `app/iavl/store-v2-hasher.patch`.
 - [ ] **`go.mod` on the branch:**
 
 ```
@@ -68,7 +68,7 @@ grep -q HasherOptionForStore crates/cosmos/store-v2/iavl/store.go || exit 1
 grep -q HasherOptionForStore crates/cosmos/iavl/*.go crates/cosmos/iavl/**/*.go || exit 1
 ```
 
-- [ ] **Unit:** `go test ./app/iavlhash/ ./app/iavlv2/ -count=1` — SHA-256 root
+- [ ] **Unit:** `go test ./app/iavl/ ./app/iavlv2/ -count=1` — SHA-256 root
       ≠ BLAKE3 root for the same KV.
 
 **Verify:** `git ls-files crates/cosmos/iavl crates/cosmos/store-v2 | head` is
@@ -78,7 +78,7 @@ non-empty. `git show HEAD:go.mod` contains both replaces.
 
 ### Task 2: Dual-store AlgorithmName (v6.3 ELF)
 
-**Files:** `app/iavlhash/store.go`, `app/iavlhash/store_test.go`
+**Files:** `app/iavl/store.go`, `app/iavl/store_test.go`
 
 v6.3 loader: `HasherOptionForStore(key.Name())` must **not** select BLAKE3 for
 live `bank` (SHA-256 history). Dest names only.
@@ -99,7 +99,7 @@ func AlgorithmName(storeName string) string {
       `08-wasm`→`sha256`.
 - [ ] `SHA256Stores` stays in lockstep with IAVL’s IBC list.
 
-**Verify:** `go test ./app/iavlhash/ -count=1`.
+**Verify:** `go test ./app/iavl/ -count=1`.
 
 ---
 
@@ -139,7 +139,7 @@ not `TBD`.
 `feat/6.3.0-dev` only. Modify `app/keepers/keys.go`: `append(DestStores())`.
 
 - [ ] `UpgradeName = "v6.3"`.
-- [ ] `StoreUpgrades.Added = iavlhash.DestStores()`.
+- [ ] `StoreUpgrades.Added = iavl.DestStores()`.
 - [ ] Handler: same KV copy as v6_1; refuse `SHA256Stores`; after copy, arm
       `v7` at `ctx.BlockHeight()+2` with `plan.info` =
       `https://s3.terp.network/upgrades/v7/cosmovisor.json`.
@@ -153,7 +153,7 @@ must be `6.3.0` on the tag, not `-dev`.
 ### Task 4: Plan v7 (keepers on dest, drop SHA-256 copies)
 
 **Files:** `app/upgrades/v7/`, `app/keepers/keys.go` on `feat/7.0.0-dev`,
-`app/iavlhash/store.go` (v7 AlgorithmName: migratable live names → blake3).
+`app/iavl/store.go` (v7 AlgorithmName: migratable live names → blake3).
 
 - [ ] Do **not** `Renamed` onto `bank` (IAVL initialVersion vs history).
 - [ ] `GenerateKeys` does **not** mount the old SHA-256 migratable names.

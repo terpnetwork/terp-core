@@ -11,7 +11,7 @@ not compiled into those ELFs.
 | **v6.1** | KV-copy every migratable store → `b3-*` dest. IBC / 08-wasm / transfer / ICA **not** copied. | Dest trees exist in CommitInfo. **Node hashes stay SHA-256** (stock `iavl v1.2.8`). |
 | **v6.2** | Keepers stay `bank` / `staking` / `acc`. Unmounted `b3-*` dests drop from CommitInfo. | Same live names as before v6.1. **Still SHA-256.** IBC unchanged. |
 
-`app/iavlhash.AlgorithmName("bank")` *documents* `"blake3"`. That string is
+`app/iavl.AlgorithmName("bank")` *documents* `"blake3"`. That string is
 not what `LoadStoreWithOpts` uses in the tagged binaries.
 
 ## Why BLAKE3 is not on the ELF
@@ -27,7 +27,7 @@ Tagged `go.mod` (`v6.1.0` = `612ebf3`, `v6.2.0` = `0c24074`):
 That replace is **not** on the release tags. Stock module-cache `iavl@v1.2.8`
 and `store/v2@v2.0.0` have zero `HasherOptionForStore` hits.
 
-The patch that would wire it (`app/iavlhash/store-v2-hasher.patch`) appends
+The patch that would wire it (`app/iavl/store-v2-hasher.patch`) appends
 `iavl.HasherOptionForStore(key.Name())` in `LoadStoreWithOpts`. Without the
 `go.mod` replace, Docker `make build-reproducible-*` never sees that file.
 

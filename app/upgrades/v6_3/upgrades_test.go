@@ -24,7 +24,7 @@ import (
 	"github.com/cosmos/iavl"
 	dbm "github.com/cosmos/iavl/db"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	terpiavl "github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
 	"github.com/terpnetwork/terp-core/v6/app/testutils"
 	v63 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_3"
@@ -48,7 +48,7 @@ func (s *UpgradeTestSuite) SetupTest() {
 
 func (s *UpgradeTestSuite) TestUpgradeCopiesDestArmsV64() {
 	s.SetupTest()
-	if s.App.GetKey(iavlhash.DestStores()[0]) == nil {
+	if s.App.GetKey(terpiavl.DestStores()[0]) == nil {
 		s.T().Skip("this ELF does not mount dest trees")
 	}
 	s.FundAcc(s.TestAccs[0], sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1_000_000))))
@@ -64,7 +64,7 @@ func (s *UpgradeTestSuite) TestUpgradeCopiesDestArmsV64() {
 		s.Require().NoError(err)
 	})
 
-	for _, p := range iavlhash.DualStorePairs() {
+	for _, p := range terpiavl.DualStorePairs() {
 		got := s.dumpStore(p[1])
 		live := s.dumpStore(p[0])
 		s.Require().Equal(len(live), len(got), "%s: dest key count vs src", p[0])
@@ -99,7 +99,7 @@ func (s *UpgradeTestSuite) TestUpgradeCopiesDestArmsV64() {
 // Deletes a stale SHA-256 tree.
 func (s *UpgradeTestSuite) TestLiveWriteAfterCopyLandsOnDest() {
 	s.SetupTest()
-	if s.App.GetKey(iavlhash.BankB3) == nil {
+	if s.App.GetKey(terpiavl.BankB3) == nil {
 		s.T().Skip("this ELF does not mount dest trees")
 	}
 	s.FundAcc(s.TestAccs[0], sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(1_000_000))))
@@ -110,17 +110,17 @@ func (s *UpgradeTestSuite) TestLiveWriteAfterCopyLandsOnDest() {
 	liveKey := []byte("v63-post-copy-live")
 	liveVal := []byte("after-preblock")
 	s.Ctx.KVStore(s.App.GetKey("bank")).Set(liveKey, liveVal)
-	s.Require().Nil(s.Ctx.KVStore(s.App.GetKey(iavlhash.BankB3)).Get(liveKey),
+	s.Require().Nil(s.Ctx.KVStore(s.App.GetKey(terpiavl.BankB3)).Get(liveKey),
 		"dest must not already have the post-PreBlock live write")
 
 	_, err = s.App.EndBlocker(s.Ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(liveVal, s.Ctx.KVStore(s.App.GetKey(iavlhash.BankB3)).Get(liveKey),
+	s.Require().Equal(liveVal, s.Ctx.KVStore(s.App.GetKey(terpiavl.BankB3)).Get(liveKey),
 		"dest must include live writes after v6.3 EndBlock recopy")
 
 	// dest-only key is dropped
 	orphan := []byte("v63-dest-only")
-	s.Ctx.KVStore(s.App.GetKey(iavlhash.BankB3)).Set(orphan, []byte("stale"))
+	s.Ctx.KVStore(s.App.GetKey(terpiavl.BankB3)).Set(orphan, []byte("stale"))
 	s.Ctx.KVStore(s.App.GetKey("bank")).Delete(liveKey)
 	gap := v63UpgradeHeight + 1
 	s.Ctx = s.Ctx.WithHeaderInfo(header.Info{Height: gap, Time: s.Ctx.BlockTime().Add(time.Second)}).
@@ -129,9 +129,9 @@ func (s *UpgradeTestSuite) TestLiveWriteAfterCopyLandsOnDest() {
 	s.Ctx.KVStore(s.App.GetKey("bank")).Set(liveKey, gapVal)
 	_, err = s.App.EndBlocker(s.Ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(gapVal, s.Ctx.KVStore(s.App.GetKey(iavlhash.BankB3)).Get(liveKey),
+	s.Require().Equal(gapVal, s.Ctx.KVStore(s.App.GetKey(terpiavl.BankB3)).Get(liveKey),
 		"dest must recopy on the gap block while v6.4 is armed")
-	s.Require().Nil(s.Ctx.KVStore(s.App.GetKey(iavlhash.BankB3)).Get(orphan),
+	s.Require().Nil(s.Ctx.KVStore(s.App.GetKey(terpiavl.BankB3)).Get(orphan),
 		"dest-only keys must be deleted so cutover matches last live commit")
 }
 
@@ -195,10 +195,10 @@ func (s *UpgradeTestSuite) assertCopiedKVProof(storeName string, want ics23.Hash
 	s.Require().NoError(err)
 	proof, err := tree.GetMembershipProof(firstK)
 	s.Require().NoError(err)
-	hop, err := iavlhash.ProofHashOp(proof)
+	hop, err := terpiavl.ProofHashOp(proof)
 	s.Require().NoError(err)
 	s.Require().Equal(want, hop, storeName)
-	s.Require().NoError(iavlhash.VerifyExclusive(storeName, tree.Hash(), proof, firstK, firstV))
+	s.Require().NoError(terpiavl.VerifyExclusive(storeName, tree.Hash(), proof, firstK, firstV))
 }
 
 func TestV63LayoutConstants(t *testing.T) {
@@ -210,7 +210,7 @@ func TestV63LayoutConstants(t *testing.T) {
 	if !keepers.MountDestStores {
 		t.Skip("v63pre ELF")
 	}
-	if k.GetKey(iavlhash.BankB3) == nil {
+	if k.GetKey(terpiavl.BankB3) == nil {
 		t.Fatal("v6.3 ELF must mount b3-bank")
 	}
 }

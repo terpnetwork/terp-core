@@ -12,7 +12,7 @@ import (
 	ics23 "github.com/cosmos/ics23/go"
 	"github.com/spf13/cobra"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 )
 
 var errEmptyStore = errors.New("empty store")
@@ -58,10 +58,10 @@ func HasherProofCmd() *cobra.Command {
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
-	cmd.Flags().String("bank-store", iavlhash.BankB3, "IAVL store name for bank dest")
+	cmd.Flags().String("bank-store", iavl.BankB3, "IAVL store name for bank dest")
 	cmd.Flags().String("ibc-store", "ibc", "IAVL store name for IBC")
 	cmd.Flags().Bool("all", false, "prove every dest store BLAKE3 and IBC SHA-256")
-	cmd.Flags().StringSlice("require", []string{iavlhash.BankB3, iavlhash.StakingB3, iavlhash.AuthB3, "ibc"}, "stores that must prove (not skip empty)")
+	cmd.Flags().StringSlice("require", []string{iavl.BankB3, iavl.StakingB3, iavl.AuthB3, "ibc"}, "stores that must prove (not skip empty)")
 	return cmd
 }
 
@@ -78,7 +78,7 @@ func proveAll(cmd *cobra.Command, clientCtx client.Context, bankStore, ibcStore 
 
 	var destParts []string
 	proved := map[string]string{}
-	for _, store := range iavlhash.DestStores() {
+	for _, store := range iavl.DestStores() {
 		alg, err := proveStore(clientCtx, store, scanCandidates())
 		if errors.Is(err, errEmptyStore) {
 			if _, ok := need[store]; ok {
@@ -189,7 +189,7 @@ func proveKey(clientCtx client.Context, store string, key []byte) (string, error
 	if err := proof.Unmarshal(res.ProofOps.Ops[0].Data); err != nil {
 		return "", err
 	}
-	hop, err := iavlhash.ProofHashOp(proof)
+	hop, err := iavl.ProofHashOp(proof)
 	if err != nil {
 		return "", err
 	}
@@ -197,7 +197,7 @@ func proveKey(clientCtx client.Context, store string, key []byte) (string, error
 	if err != nil {
 		return "", err
 	}
-	if err := iavlhash.VerifyExclusive(store, root, proof, key, res.Value); err != nil {
+	if err := iavl.VerifyExclusive(store, root, proof, key, res.Value); err != nil {
 		return "", err
 	}
 	switch hop {

@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 PACK="$ROOT/networks/upgrades/v6.1"
-PATCH="$ROOT/app/iavlhash/store-v2-hasher.patch"
+PATCH="$ROOT/app/iavl/store-v2-hasher.patch"
 STORE_DEST="$ROOT/crates/cosmos/store-v2"
 STORE_MOD="github.com/cosmos/cosmos-sdk/store/v2"
 STORE_VER="v2.0.0"
@@ -107,7 +107,7 @@ bash "$ROOT/scripts/release/curate_wasmvm_artifacts.sh"
   if [ -d crates/cosmos/iavl/.git ] || [ -f crates/cosmos/iavl/.git ]; then
     echo "iavl       $(git -C crates/cosmos/iavl rev-parse HEAD)  $(git -C crates/cosmos/iavl describe --tags --always --dirty)"
   fi
-  echo "store/v2   $STORE_MOD@$STORE_VER + app/iavlhash/store-v2-hasher.patch"
+  echo "store/v2   $STORE_MOD@$STORE_VER + app/iavl/store-v2-hasher.patch"
   echo
   echo "replaces:"
   grep -E 'wasmd|wasmvm/v3|cosmos/iavl |store/v2' go.mod | grep -E '=>|replace' || true

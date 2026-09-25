@@ -9,7 +9,7 @@ import (
 	ics23 "github.com/cosmos/ics23/go"
 	"github.com/stretchr/testify/require"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	terpiavl "github.com/terpnetwork/terp-core/v6/app/iavl"
 )
 
 func treeKV(t *testing.T, store string, key, val []byte) (*iavl.MutableTree, *ics23.CommitmentProof) {
@@ -44,12 +44,12 @@ func TestWasmLcVerifyMembershipBlake3BankAndSha256IBC(t *testing.T) {
 	key, val := []byte("k"), []byte("v")
 
 	bank, pBank := treeKV(t, "b3-bank", key, val)
-	hop, err := iavlhash.ProofHashOp(pBank)
+	hop, err := terpiavl.ProofHashOp(pBank)
 	require.NoError(t, err)
 	require.Equal(t, ics23.HashOp_BLAKE3, hop)
 
 	ibc, pIBC := treeKV(t, "ibc", key, val)
-	hop, err = iavlhash.ProofHashOp(pIBC)
+	hop, err = terpiavl.ProofHashOp(pIBC)
 	require.NoError(t, err)
 	require.Equal(t, ics23.HashOp_SHA256, hop)
 

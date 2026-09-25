@@ -9,7 +9,7 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
 	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 )
@@ -34,9 +34,9 @@ func CreateUpgradeHandler(
 			return nil, err
 		}
 
-		for _, p := range iavlhash.DualStorePairs() {
+		for _, p := range iavl.DualStorePairs() {
 			srcName, dstName := p[0], p[1]
-			if iavlhash.IsIBCStore(srcName) {
+			if iavl.IsIBCStore(srcName) {
 				return nil, fmt.Errorf("refusing to rehash IBC-facing store %s", srcName)
 			}
 			if keepers == nil {
@@ -68,9 +68,9 @@ func SyncDestFromLive(ctx sdk.Context, k *keepers.AppKeepers) error {
 		return nil
 	}
 	logger := ctx.Logger().With("upgrade", UpgradeName)
-	for _, p := range iavlhash.DualStorePairs() {
+	for _, p := range iavl.DualStorePairs() {
 		srcName, dstName := p[0], p[1]
-		if iavlhash.IsIBCStore(srcName) {
+		if iavl.IsIBCStore(srcName) {
 			return fmt.Errorf("refusing to rehash IBC-facing store %s", srcName)
 		}
 		srcKey := k.GetKey(srcName)

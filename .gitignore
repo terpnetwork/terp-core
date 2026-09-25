@@ -7,6 +7,8 @@
 *.swn
 .vscode
 .idea
+.hooks/*
+.opencode/*
 crates/*
 !crates/cosmwasm
 !crates/zk-wasmd

@@ -74,7 +74,7 @@ Do **not** compare mock (`ICT_MOCK=1`) to Docker. Mock skip ≠ pass.
 |------|------|
 | `crates/ict-rs/examples/hasher_ibc_bench.rs` | Two-chain Docker; variant `H`/`F` via `HASHER_VARIANT` |
 | `crates/ict-rs-cw-orch` helper (if needed) | `Daemon` txs; `gas_used` from `parse_tx_response` |
-| `app/iavlhash` build tag or image label | `terpnetwork/terp-core:local-zk-hybrid` vs `:local-zk-blake3` |
+| `app/iavl` build tag or image label | `terpnetwork/terp-core:local-zk-hybrid` vs `:local-zk-blake3` |
 | 08-wasm LC wasm | Stock ICS-23 IAVL spec (H) vs `Blake3IavlSpec` (F); store via `gov_store_ibc_wasm_lc` (`ict-rs/src/cosmos/ibc_wasm.rs`) |
 
 Reuse: `examples/ibc_transfer_e2e.rs` (two Terp + Hermes),

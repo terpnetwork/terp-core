@@ -11,7 +11,7 @@ import (
 	ics23 "github.com/cosmos/ics23/go"
 	"github.com/spf13/cobra"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/wasmlc"
 )
 
@@ -56,13 +56,13 @@ func WasmLcVerifyCmd() *cobra.Command {
 				return fmt.Errorf("wasm LC ibc: %w", err)
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "OK wasm-lc bank=%s ibc=%s wasm=%s\n",
-				iavlhash.AlgorithmName(bankStore), iavlhash.AlgorithmName(ibcStore), wasmPath)
+				iavl.AlgorithmName(bankStore), iavl.AlgorithmName(ibcStore), wasmPath)
 			return nil
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
 	cmd.Flags().String("wasm", "", "path to cw_ics08_wasm_terp.wasm")
-	cmd.Flags().String("bank-store", iavlhash.BankB3, "dest bank IAVL store")
+	cmd.Flags().String("bank-store", iavl.BankB3, "dest bank IAVL store")
 	cmd.Flags().String("ibc-store", "ibc", "IBC IAVL store")
 	return cmd
 }

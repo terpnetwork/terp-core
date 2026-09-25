@@ -24,7 +24,7 @@ replaces the IBC rows with BLAKE3 and drops `SHA256Stores`.
 | Live migratable (`bank`, `staking`, `acc`, …) | **SHA-256** (existing history) | **BLAKE3** (keepers on dest data) |
 | Dest `b3-<name>` | **BLAKE3** (new trees from KV copy) | not mounted (dropped after keepers moved) |
 
-`app/iavlhash.AlgorithmName` must implement **that table**, not “everything
+`app/iavl.AlgorithmName` must implement **that table**, not “everything
 except IBC is blake3” while `bank` still has SHA-256 history.
 
 ## Why v6.1/v6.2 failed
@@ -47,7 +47,7 @@ replace github.com/cosmos/cosmos-sdk/store/v2 => ./crates/cosmos/store-v2
 ```
 
 `crates/cosmos/iavl` is IAVL v1 with `HasherOptionForStore`.
-`crates/cosmos/store-v2` has `app/iavlhash/store-v2-hasher.patch` applied
+`crates/cosmos/store-v2` has `app/iavl/store-v2-hasher.patch` applied
 (`LoadStoreWithOpts` appends `iavl.HasherOptionForStore(key.Name())`).
 
 `curate_v63.sh` **fails** if either replace is missing or if

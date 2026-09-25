@@ -3,7 +3,7 @@ package v6_4
 import (
 	store "github.com/cosmos/cosmos-sdk/store/v2/types"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 )
 
@@ -17,6 +17,6 @@ var Upgrade = upgrades.Upgrade{
 	// Drop live SHA-256 migratable names from CommitInfo. Keep dest b3-* as
 	// the keeper stores. Do not Renamed dest onto bank/staking/acc.
 	StoreUpgrades: store.StoreUpgrades{
-		Deleted: iavlhash.MigratableStores(),
+		Deleted: iavl.MigratableStores(),
 	},
 }

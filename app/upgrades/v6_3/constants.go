@@ -3,7 +3,7 @@ package v6_3
 import (
 	store "github.com/cosmos/cosmos-sdk/store/v2/types"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 )
 
@@ -24,6 +24,6 @@ var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
 	CreateUpgradeHandler: CreateUpgradeHandler,
 	StoreUpgrades: store.StoreUpgrades{
-		Added: iavlhash.DestStores(),
+		Added: iavl.DestStores(),
 	},
 }

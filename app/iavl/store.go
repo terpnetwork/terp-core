@@ -1,9 +1,9 @@
-// Package iavlhash documents Terp's per-store IAVL hash policy.
+// Package iavl documents Terp's per-store IAVL hash policy.
 //
 // cosmossdk.io/store must pass iavl.HasherOptionForStore(key.Name()) into
 // LoadStoreWithOpts (see PATCH.md). This package does not import IAVL so
 // terp-core can compile before go.mod tidy pulls the hasher deps.
-package iavlhash
+package iavl
 
 // SHA256Stores must stay in lockstep with github.com/cosmos/iavl SHA256Stores.
 var SHA256Stores = map[string]struct{}{

@@ -3,16 +3,8 @@ module github.com/terpnetwork/terp-core/v6
 go 1.26.5
 
 // for verifiable dependencies:
-// go mod edit -replace github.com/CosmWasm/wasmd=github.com/permissionlessweb/wasmd@a2cad08268f814d7d958baae8a52b5860398ea13
-// go mod edit -replace github.com/CosmWasm/wasmvm/v3=github.com/permissionlessweb/wasmvm/v3@178ec936f3ba4b964aeb8872029200f75e96b20d
-//
-// ZK monorepo path (DEFAULT for this branch / testnet lineage):
-//   host:    ./crates/zk-{wasmd,wasmvm}
-//   v6 default: zk-wasmd@merge/upstream-wasmd-v0.70 (bulk_memory), zk-wasmvm@v3.0.7-zk, cosmwasm@v3.1.0-zk.0 (metered memory.copy)
-//   docker:  Dockerfile (WASMVM_SOURCE=local) rewrites to /code/build/zk-deps/...
-//            after `make _docker-stage` / build-zk-local stages those trees.
-// Stock mainnet builds (WASMVM_SOURCE=github) strip these two replaces in the Dockerfile.
-
+// go mod edit -replace github.com/CosmWasm/wasmd=github.com/permissionlessweb/wasmd@<commit>
+// go mod edit -replace github.com/CosmWasm/wasmvm/<version>=github.com/permissionlessweb/wasmvm/<version>@<commit>
 replace (
 	github.com/CosmWasm/wasmd => ./crates/zk-wasmd
 	github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm

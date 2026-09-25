@@ -28,7 +28,7 @@ stay `published: false` until fresh-VM sha256 is in `ARTIFACT_LOCK`.
    Unit tests: `bank`→sha256, `b3-bank`→blake3, `ibc`→sha256.
 
 3. **Register plan `v6.3`** in `app/upgrades/v6_3` (copy shape from `v6_1`:
-   `Added: iavlhash.DestStores()`). Handler KV-copies migratable stores.
+   `Added: iavl.DestStores()`). Handler KV-copies migratable stores.
    Refuse copy of `SHA256Stores`. Arm plan `v6.4` at `BlockHeight()+2`.
 
 4. **Compile** linux muslc ELFs from a fresh guest (rebuild muslc + fetch

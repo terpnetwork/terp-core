@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/testutils"
 	v62 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_2"
 )
@@ -44,12 +44,12 @@ func TestNoRenameOntoExistingKeeperNames(t *testing.T) {
 
 func (s *UpgradeTestSuite) TestNoB3SuffixMounted() {
 	s.SetupTest()
-	if s.App.GetKey(iavlhash.BankB3) != nil {
+	if s.App.GetKey(iavl.BankB3) != nil {
 		s.T().Skip("v6.3 ELF mounts dest trees; v6.2 drop-dest is the v6.2 binary")
 	}
-	s.Require().Nil(s.App.GetKey(iavlhash.BankB3), "post-B binary must not mount b3-bank")
-	s.Require().Nil(s.App.GetKey(iavlhash.StakingB3))
-	s.Require().Nil(s.App.GetKey(iavlhash.AuthB3))
+	s.Require().Nil(s.App.GetKey(iavl.BankB3), "post-B binary must not mount b3-bank")
+	s.Require().Nil(s.App.GetKey(iavl.StakingB3))
+	s.Require().Nil(s.App.GetKey(iavl.AuthB3))
 	s.Require().NotNil(s.App.GetKey("bank"))
 	s.Require().NotNil(s.App.GetKey("staking"))
 	s.Require().NotNil(s.App.GetKey("acc"))

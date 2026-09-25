@@ -63,7 +63,7 @@ Pack files (`ARTIFACT_LOCK`, proposals) may live on `release/v6.3.0` /
 ## 3. Preflight (already the TSH gate)
 
 ```sh
-go test ./app/upgrades/v6_3/ ./app/iavlhash ./app/wasmlc
+go test ./app/upgrades/v6_3/ ./app/iavl ./app/wasmlc
 go test -tags v64 ./app/upgrades/v6_4/
 make tsh-upgrade          # morocco-1 pack + in-place-testnet dual-halt
 ```

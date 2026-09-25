@@ -2,9 +2,6 @@
 
 Follow [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Zakura already enforces its own changelog. Do not add fragments, skills, or
-agent rules inside `crates/zakura`.
-
 ## Changelog
 
 When a pull request changes operator-visible behavior, add one
@@ -13,14 +10,12 @@ are `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, and `Security`.
 Internal-only work uses `<!-- changelog: none -->` and a reason. Do not edit
 `networks/upgrades/<plan>/RELEASE.md` in an ordinary PR.
 
-Steps: `.grok/skills/changelog-fragment/SKILL.md`.
+Steps: `skills/changelog-fragment/SKILL.md`.
 
 ## Releasing our forks
 
-Zakura Common's `release-libraries` skill is theirs (17 `zakura-*` crates,
-crates.io, bottom-up). Do not run it from here. Our cuts are the forks below.
 Preparing a release does not publish it. Ask before `git tag`, `git push`,
-S3 upload, or `cargo publish`. Do not retag `v6.1.0` or `v6.2.0`.
+S3 upload, or `cargo publish`.
 
 Primary, in this order. Each step consumes the tag from the step above. A
 local path override is not a release.
@@ -54,4 +49,4 @@ do not block the Cosmovisor ELF.
 - **headstash** — airdrop: `hard-nett/airdrop` and
   `permissionlessweb/cw-headstash`.
 
-Mechanics: `.grok/skills/release-libraries/SKILL.md`.
+Mechanics: `/skills/release-libraries/SKILL.md`.

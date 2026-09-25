@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
 	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 )
@@ -32,11 +32,11 @@ func CreateUpgradeHandler(
 		if keepers == nil {
 			return nil, fmt.Errorf("v6.4: keepers required")
 		}
-		for _, src := range iavlhash.MigratableStores() {
+		for _, src := range iavl.MigratableStores() {
 			if keepers.GetKey(src) != nil {
 				return nil, fmt.Errorf("v6.4: live SHA-256 name %s still mounted; this ELF must omit it", src)
 			}
-			dst := iavlhash.DestName(src)
+			dst := iavl.DestName(src)
 			if keepers.GetKey(dst) == nil {
 				return nil, fmt.Errorf("v6.4: dest %s missing", dst)
 			}

@@ -15,7 +15,7 @@ import (
 	"github.com/CosmWasm/wasmvm/v3/types"
 	ics23 "github.com/cosmos/ics23/go"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 )
 
 const DefaultWasmRel = "crates/terp-rs/artifacts/cw_ics08_wasm_terp.wasm"
@@ -304,7 +304,7 @@ func ExclusiveWasm(wasm []byte, m Membership) error {
 	if err != nil {
 		return err
 	}
-	if err := iavlhash.VerifyExclusive(m.Store, iavlRoot, m.Proofs[0], m.Key, m.Value); err != nil {
+	if err := iavl.VerifyExclusive(m.Store, iavlRoot, m.Proofs[0], m.Key, m.Value); err != nil {
 		return err
 	}
 	_, err = Verify(wasm, "auto", m)

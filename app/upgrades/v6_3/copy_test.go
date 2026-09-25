@@ -7,19 +7,19 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil"
 	"github.com/stretchr/testify/require"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
 )
 
 func TestCopyKVStoreMatchesAndLeavesIBC(t *testing.T) {
 	srcKey := storetypes.NewKVStoreKey("bank")
-	dstKey := storetypes.NewKVStoreKey(iavlhash.BankB3)
+	dstKey := storetypes.NewKVStoreKey(iavl.BankB3)
 	ibcKey := storetypes.NewKVStoreKey("ibc")
 	ctx := testutil.DefaultContextWithKeys(
 		map[string]*storetypes.KVStoreKey{
-			"bank":          srcKey,
-			iavlhash.BankB3: dstKey,
-			"ibc":           ibcKey,
+			"bank":      srcKey,
+			iavl.BankB3: dstKey,
+			"ibc":       ibcKey,
 		},
 		nil,
 		nil,
@@ -39,11 +39,11 @@ func TestCopyKVStoreMatchesAndLeavesIBC(t *testing.T) {
 
 func TestSyncKVStoreDeletesDestOnly(t *testing.T) {
 	srcKey := storetypes.NewKVStoreKey("bank")
-	dstKey := storetypes.NewKVStoreKey(iavlhash.BankB3)
+	dstKey := storetypes.NewKVStoreKey(iavl.BankB3)
 	ctx := testutil.DefaultContextWithKeys(
 		map[string]*storetypes.KVStoreKey{
-			"bank":          srcKey,
-			iavlhash.BankB3: dstKey,
+			"bank":      srcKey,
+			iavl.BankB3: dstKey,
 		},
 		nil,
 		nil,
@@ -63,16 +63,16 @@ func TestSyncKVStoreDeletesDestOnly(t *testing.T) {
 func TestRefuseIBCRehashPolicy(t *testing.T) {
 	require.Empty(t, Upgrade.StoreUpgrades.Renamed)
 	require.Empty(t, Upgrade.StoreUpgrades.Deleted)
-	require.Equal(t, iavlhash.DestStores(), Upgrade.StoreUpgrades.Added)
+	require.Equal(t, iavl.DestStores(), Upgrade.StoreUpgrades.Added)
 	require.Equal(t, "v6.3", UpgradeName)
 	require.Equal(t, "v6.4", NextUpgradeName)
 	require.Equal(t, int64(2), NextUpgradeGap)
 
 	for _, name := range []string{"ibc", "transfer", "icahost", "icacontroller", "08-wasm", "hooks-for-ibc"} {
-		require.True(t, iavlhash.IsIBCStore(name), name)
+		require.True(t, iavl.IsIBCStore(name), name)
 	}
-	for _, p := range iavlhash.DualStorePairs() {
-		require.False(t, iavlhash.IsIBCStore(p[0]), p[0])
+	for _, p := range iavl.DualStorePairs() {
+		require.False(t, iavl.IsIBCStore(p[0]), p[0])
 		require.NotEqual(t, "08-wasm", p[0])
 		require.NotEqual(t, "params", p[0])
 	}
@@ -85,7 +85,7 @@ func TestDestMountedOnV63Layout(t *testing.T) {
 	var k keepers.AppKeepers
 	k.GenerateKeys()
 	require.NotNil(t, k.GetKey("bank"))
-	require.NotNil(t, k.GetKey(iavlhash.BankB3))
+	require.NotNil(t, k.GetKey(iavl.BankB3))
 	require.NotNil(t, k.GetKey("ibc"))
 	require.Nil(t, k.GetKey("b3-ibc"))
 }

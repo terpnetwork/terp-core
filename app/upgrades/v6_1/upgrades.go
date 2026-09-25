@@ -10,13 +10,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
 	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 )
 
 // CreateUpgradeHandler copies every migratable IAVL store into its Added
-// b3-* dest (iavlhash.MigratableStores). IBC-facing stores and 08-wasm stay
+// b3-* dest (iavl.MigratableStores). IBC-facing stores and 08-wasm stay
 // SHA-256. Upgrade B is plan v6.2 on feat/6.2.0-dev (separate worktree).
 func CreateUpgradeHandler(
 	mm *module.Manager,
@@ -51,9 +51,9 @@ func CreateUpgradeHandler(
 			logger.Info("v6.1: circuit_dev_destination", "addr", FoundationDAOAddr)
 		}
 
-		for _, p := range iavlhash.DualStorePairs() {
+		for _, p := range iavl.DualStorePairs() {
 			srcName, dstName := p[0], p[1]
-			if iavlhash.IsIBCStore(srcName) {
+			if iavl.IsIBCStore(srcName) {
 				return nil, fmt.Errorf("refusing to rehash IBC-facing store %s", srcName)
 			}
 			if keepers == nil {

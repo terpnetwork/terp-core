@@ -21,7 +21,7 @@ import (
 	"github.com/cosmos/iavl"
 	dbm "github.com/cosmos/iavl/db"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
 	"github.com/terpnetwork/terp-core/v6/app/testutils"
 	v64 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_4"
@@ -47,12 +47,12 @@ func (s *UpgradeTestSuite) TestKeepersOnDestNoRename() {
 	s.SetupTest()
 	s.Require().True(keepers.KeepersOnDest)
 	s.Require().Nil(s.App.GetKey("bank"), "live SHA-256 bank must not be mounted")
-	s.Require().NotNil(s.App.GetKey(iavlhash.BankB3))
-	s.Require().Equal(iavlhash.BankB3, s.App.KeeperKey(banktypes.StoreKey).Name())
+	s.Require().NotNil(s.App.GetKey(iavl.BankB3))
+	s.Require().Equal(iavl.BankB3, s.App.KeeperKey(banktypes.StoreKey).Name())
 	s.Require().NotNil(s.App.GetKey(ibcexported.StoreKey))
 	s.Require().Nil(s.App.GetKey("b3-ibc"))
-	s.Require().Equal("sha256", iavlhash.AlgorithmName("ibc"))
-	s.Require().Equal("blake3", iavlhash.AlgorithmName(iavlhash.BankB3))
+	s.Require().Equal("sha256", iavl.AlgorithmName("ibc"))
+	s.Require().Equal("blake3", iavl.AlgorithmName(iavl.BankB3))
 }
 
 func (s *UpgradeTestSuite) TestHandlerKeepsDestAndIBC() {
@@ -63,13 +63,13 @@ func (s *UpgradeTestSuite) TestHandlerKeepsDestAndIBC() {
 		_, err := s.preModule.PreBlock(s.Ctx)
 		s.Require().NoError(err)
 	})
-	s.Require().NotNil(s.App.GetKey(iavlhash.BankB3))
+	s.Require().NotNil(s.App.GetKey(iavl.BankB3))
 	s.Require().Nil(s.App.GetKey("bank"))
 	s.Require().NotNil(s.App.GetKey(ibcexported.StoreKey))
 	_, err := s.App.UpgradeKeeper.GetUpgradePlan(s.Ctx)
 	s.Require().Error(err, "v6.4 must not arm a further plan")
 
-	s.assertCopiedKVProof(iavlhash.BankB3, ics23.HashOp_BLAKE3)
+	s.assertCopiedKVProof(iavl.BankB3, ics23.HashOp_BLAKE3)
 	s.assertCopiedKVProof(ibcexported.StoreKey, ics23.HashOp_SHA256)
 }
 
@@ -112,8 +112,8 @@ func (s *UpgradeTestSuite) assertCopiedKVProof(storeName string, want ics23.Hash
 	s.Require().NoError(err)
 	proof, err := tree.GetMembershipProof(firstK)
 	s.Require().NoError(err)
-	hop, err := iavlhash.ProofHashOp(proof)
+	hop, err := iavl.ProofHashOp(proof)
 	s.Require().NoError(err)
 	s.Require().Equal(want, hop, storeName)
-	s.Require().NoError(iavlhash.VerifyExclusive(storeName, tree.Hash(), proof, firstK, firstV))
+	s.Require().NoError(iavl.VerifyExclusive(storeName, tree.Hash(), proof, firstK, firstV))
 }
