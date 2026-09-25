@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6.3",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "TBD",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-amd64.tar.gz?checksum=sha256:5f5d6e049dbd203d02822121869cb2e20df797678fe7b10247ad7736d50653d2\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-arm64.tar.gz?checksum=sha256:68ce1c29bb4ccdb367d9c999bbd313784957960861a0b0947c2e1acf98edf57d\",\"darwin/arm64\":\"https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-darwin-arm64.tar.gz?checksum=sha256:f2338efc9933ae9e16d267e685729912cea16a2db37d13c64324d2b35468d158\"}}",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "5000000000uterp",
+  "title": "v6.3",
+  "summary": "v6.3 dest copy; handler arms v6.4 at +2",
+  "expedited": true
+}

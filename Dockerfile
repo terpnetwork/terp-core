@@ -12,6 +12,8 @@ FROM golang:${GO_VERSION}-alpine AS go-builder
 # Must be vX.Y.Z for Cosmovisor packs — not git-describe.
 ARG GIT_VERSION=
 ARG GIT_COMMIT=
+# Always muslc for linux Cosmovisor. v6.4.0 appends v64 (keepers on dest).
+ARG BUILD_TAGS=muslc
 
 SHELL ["/bin/sh", "-ecuxo", "pipefail"]
 # this comes from standard alpine nightly file
@@ -85,6 +87,10 @@ RUN ARCH=$(uname -m) && \
         echo "ERROR: staged ibc-hooks-v11 missing under build/zk-deps." && \
         exit 1; \
       fi && \
+      if [ ! -f /code/build/zk-deps/cosmos-iavl/go.mod ] || [ ! -f /code/build/zk-deps/cosmos-store-v2/go.mod ]; then \
+        echo "ERROR: staged hasher crates missing (cosmos-iavl / cosmos-store-v2)." && \
+        exit 1; \
+      fi && \
       # Ensure muslc .a is present where cgo LDFLAGS ${SRCDIR} looks (internal/api)
       if ! grep -a -q -F 'stwo: Dummy DSTW rejected' /code/build/wasmvm/libwasmvm_muslc.$ARCH.a; then \
         echo "ERROR: staged muslc missing Path A STWO host (proof_instance_verify)"; \
@@ -95,6 +101,9 @@ RUN ARCH=$(uname -m) && \
       sed -i 's|=> \./crates/zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \./crates/zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \
       sed -i 's|=> \./crates/ibc-hooks-v11|=> /code/build/zk-deps/ibc-hooks-v11|g' /code/go.mod && \
+      sed -i 's|=> \./crates/cosmos/iavl|=> /code/build/zk-deps/cosmos-iavl|g' /code/go.mod && \
+      sed -i 's|=> \./crates/cosmos/store-v2|=> /code/build/zk-deps/cosmos-store-v2|g' /code/go.mod && \
+      sed -i 's|=> \./crates/ics23/go|=> /code/build/zk-deps/ics23-go|g' /code/go.mod && \
       # Also accept already-rewritten or alternate relative forms
       sed -i 's|=> \.\./zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \.\./zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \
@@ -117,7 +126,7 @@ RUN ARCH=$(uname -m) && \
 # NOTE: never `go mod tidy` here — tests/ibctesting and other test-only packages
 # are intentionally excluded from the docker context; tidy would try to resolve
 # them and fail. go.mod/go.sum are already tidy on the host.
-RUN go mod download && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build VERSION="${GIT_VERSION}" COMMIT="${GIT_COMMIT}"
+RUN go mod download && LEDGER_ENABLED=false BUILD_TAGS="${BUILD_TAGS}" LINK_STATICALLY=true make build VERSION="${GIT_VERSION}" COMMIT="${GIT_COMMIT}"
 RUN echo "Ensuring binary is statically linked ..." \
   && (file /code/build/terpd | grep "statically linked")
 

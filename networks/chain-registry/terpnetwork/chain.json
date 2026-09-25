@@ -8,16 +8,16 @@
   "chain_id": "morocco-1",
   "bech32_prefix": "terp",
   "slip44": 118,
-  "daemon_name": "terp",
-  "node_home": "$HOME/.terp",
+  "daemon_name": "terpd",
+  "node_home": "$HOME/.terpd",
   "codebase": {
     "git_repo": "https://github.com/terpnetwork/terp-core.git",
     "genesis": {
       "genesis_url": "https://raw.githubusercontent.com/terpnetwork/networks/main/mainnet/morocco-1/genesis.json"
     },
-    "recommended_version": "v6.0.0",
+    "recommended_version": "v6.0.1",
     "compatible_versions": [
-      "v6.0.0"
+      "v6.0.1"
     ],
     "consensus": {
       "type": "cometbft",
@@ -29,17 +29,12 @@
     },
     "ibc": {
       "type": "go",
-      "version": "v11.1.0"
+      "version": "v11.2.0"
     },
     "cosmwasm": {
       "version": "0.70.3",
       "enabled": true,
       "path": "$HOME/.terpd/data/wasm"
-    },
-    "binaries": {
-      "linux/amd64": "https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-amd64.tar.gz",
-      "linux/arm64": "https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-arm64.tar.gz",
-      "darwin/arm64": "https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-darwin-arm64.tar.gz"
     }
   },
   "fees": {
@@ -75,7 +70,7 @@
       {
         "id": "8542cd7e6bf9d260fef543bc49e59be5a3fa9074",
         "address": "seed.publicnode.com:26656",
-        "provider": "Allnodes \u26a1\ufe0f Nodes & Staking"
+        "provider": "Allnodes ⚡️ Nodes & Staking"
       }
     ],
     "persistent_peers": [
@@ -116,7 +111,7 @@
       },
       {
         "address": "https://terp.api.m.stavr.tech",
-        "provider": "\ud83d\udd25STAVR\ud83d\udd25"
+        "provider": "🔥STAVR🔥"
       }
     ],
     "grpc": [
@@ -152,7 +147,7 @@
       "account_page": "https://explorer.nodestake.top/terp/account/{$accountAddress}"
     },
     {
-      "kind": "\ud83d\udd25STAVR\ud83d\udd25",
+      "kind": "🔥STAVR🔥",
       "url": "https://explorer.stavr.tech/Terp-Mainnet",
       "tx_page": "https://explorer.stavr.tech/Terp-Mainnet/tx/${txHash}",
       "account_page": "https://explorer.stavr.tech/Terp-Mainnet/account/{$accountAddress}"

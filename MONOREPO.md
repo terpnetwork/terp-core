@@ -2,6 +2,18 @@
 
 This repository is a **Go monorepo** for the Terp Network chain (`terpd`, `x/*`, protos, Docker, tests) that also vendors a large set of **Rust / CosmWasm / IBC related repositories** under `crates/` as **git submodules**.
 
+x/wasm, CosmWasm, and wasmvm stay **submodules** (`crates/zk-wasmd`, `crates/cosmwasm`, `crates/zk-wasmvm`). Their history stays on those forks. Do not copy them into `x/` or commit their `.github` and builders into this tree. `go.mod` path replaces are for the working checkout. A release artifact is the tagged `terpd` plus its sha256 on S3, not a dirty local tree.
+
+CI by branch (not one hardcoded list of tags):
+
+| Workflow | When |
+|----------|------|
+| [ci-dev.yml](.github/workflows/ci-dev.yml) | `dev/**` and `*-dev`. ict-rs E2E from the published `ict-ci` tarball. |
+| [ci-release.yml](.github/workflows/ci-release.yml) | `release/**` and `v*` tags. Pack vs S3, linux/amd64 rebuild, same ict-rs E2E. |
+| [release.yml](.github/workflows/release.yml) | GitHub Release created. Muslc + submodule SHAs from the tag. |
+
+Pull requests into those branches wait until a login in [CODEOWNERS](.github/CODEOWNERS) approves. Contribution rules: [CONTRIBUTING.md](CONTRIBUTING.md).
+
 The submodule list is defined only in [`.gitmodules`](.gitmodules). This guide is derived from that file (61 modules at time of writing). If the list drifts, trust `.gitmodules` and refresh this document.
 
 Related reading:

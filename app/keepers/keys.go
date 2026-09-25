@@ -1,20 +1,7 @@
 package keepers
 
 import (
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	crisistypes "github.com/cosmos/cosmos-sdk/contrib/x/crisis/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
-	"github.com/cosmos/cosmos-sdk/x/feegrant"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11/types"
 	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
@@ -23,13 +10,7 @@ import (
 	packetforwardtypes "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
-	cwhookstypes "github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
-	driptypes "github.com/terpnetwork/terp-core/v6/x/drip/types"
-	feesharetypes "github.com/terpnetwork/terp-core/v6/x/feeshare/types"
-	globalfeetypes "github.com/terpnetwork/terp-core/v6/x/globalfee/types"
-	hashmerchanttypes "github.com/terpnetwork/terp-core/v6/x/hashmerchant/types"
-	smartaccounttypes "github.com/terpnetwork/terp-core/v6/x/smart-account/types"
-	tokenfactorytypes "github.com/terpnetwork/terp-core/v6/x/tokenfactory/types"
+	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
 )
 
 // LegacyParamsStoreKey is the historical x/params KV name. SDK 0.55 removed
@@ -37,43 +18,29 @@ import (
 // be copied into module stores, then the keys are wiped.
 const LegacyParamsStoreKey = "params"
 
-func (appKeepers *AppKeepers) GenerateKeys() {
-	appKeepers.keys = storetypes.NewKVStoreKeys(
-		authtypes.StoreKey,
-		banktypes.StoreKey,
-		stakingtypes.StoreKey,
-		crisistypes.StoreKey,
-		minttypes.StoreKey,
-		distrtypes.StoreKey,
-		slashingtypes.StoreKey,
-		govtypes.StoreKey,
-		consensusparamtypes.StoreKey,
+func alwaysStoreNames() []string {
+	return []string{
 		upgradetypes.StoreKey,
-		feegrant.StoreKey,
-		evidencetypes.StoreKey,
-		authzkeeper.StoreKey,
-		// non sdk store keys
 		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
-		wasmtypes.StoreKey,
 		ibcwasmtypes.StoreKey,
 		icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey,
 		packetforwardtypes.StoreKey,
 		ibchookstypes.StoreKey,
-		feesharetypes.StoreKey,
-		globalfeetypes.StoreKey,
-		driptypes.StoreKey,
-		smartaccounttypes.StoreKey,
-		tokenfactorytypes.StoreKey,
-		hashmerchanttypes.StoreKey,
-		cwhookstypes.StoreKey,
-		// b3-* are not mounted on this binary. v6.1 Added dest trees; v6.2
-		// leaves keepers on bank/staking/acc and omits unmounted dests from
-		// CommitInfo. Remounting here would panic on restart.
 		LegacyParamsStoreKey,
-	)
+	}
+}
 
+func (appKeepers *AppKeepers) GenerateKeys() {
+	names := alwaysStoreNames()
+	if !KeepersOnDest {
+		names = append(names, iavlhash.MigratableStores()...)
+	}
+	if MountDestStores {
+		names = append(names, iavlhash.DestStores()...)
+	}
+	appKeepers.keys = storetypes.NewKVStoreKeys(names...)
 	appKeepers.tkeys = storetypes.NewTransientStoreKeys()
 }
 
@@ -85,23 +52,26 @@ func (appKeepers *AppKeepers) GetTransientStoreKey() map[string]*storetypes.Tran
 	return appKeepers.tkeys
 }
 
-// GetKey returns the KVStoreKey for the provided store key.
-//
-// NOTE: This is solely to be used for testing purposes.
+// GetKey returns the KVStoreKey mounted under storeKey, or nil.
 func (appKeepers *AppKeepers) GetKey(storeKey string) *storetypes.KVStoreKey {
 	return appKeepers.keys[storeKey]
 }
 
-// GetTKey returns the TransientStoreKey for the provided store key.
-//
-// NOTE: This is solely to be used for testing purposes.
+// KeeperKey is the store key keepers should use for a module StoreKey constant.
+// On the v6.4.0 ELF, migratable modules are wired to dest `b3-*` keys.
+func (appKeepers *AppKeepers) KeeperKey(storeKey string) *storetypes.KVStoreKey {
+	if KeepersOnDest {
+		if dst := appKeepers.keys[iavlhash.DestName(storeKey)]; dst != nil {
+			return dst
+		}
+	}
+	return appKeepers.keys[storeKey]
+}
+
 func (appKeepers *AppKeepers) GetTKey(storeKey string) *storetypes.TransientStoreKey {
 	return appKeepers.tkeys[storeKey]
 }
 
-// GetMemKey returns the MemStoreKey for the provided mem key.
-//
-// NOTE: This is solely used for testing purposes.
 func (appKeepers *AppKeepers) GetMemKey(storeKey string) *storetypes.MemoryStoreKey {
 	return appKeepers.memKeys[storeKey]
 }

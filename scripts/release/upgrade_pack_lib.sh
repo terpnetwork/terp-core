@@ -110,10 +110,10 @@ write_source_deps() {
     echo "replaces (go.mod at binary_commit):"
     git show "$commit:go.mod" | grep -E '=>|replace ' | grep -E 'wasmd|wasmvm/v3|iavl|store/v2' | grep -v '^//' || true
     echo
-    echo "wasmvm muslc (do not rebuild; fetch + sha256, Path A STWO):"
-    echo "  base https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/"
-    echo "  0687e59140c967a752b0b0ede98e71a3c859fb4f6b94fc26883792d381eb4716  libwasmvm_muslc.aarch64.a"
-    echo "  4f4880e1655d34c098729df52db22c9253bec87d2b3185669ff015a340b76d49  libwasmvm_muslc.x86_64.a"
+    echo "wasmvm muslc (do not rebuild; fetch + sha256, Path A STWO 4.0.0-zk):"
+    echo "  base https://minio.terp.network/releases/zk-wasmvm/v4.0.0-zk/"
+    echo "  4adc7b3ca25340a18f38cf313d6cd6d9a8bac0e86cd31799534a04eec1c75ea2  libwasmvm_muslc.aarch64.a"
+    echo "  892b623f7a8df2caf40c038461f7a9f9545a381aef3de35c0e4a297f25c98bd7  libwasmvm_muslc.x86_64.a"
   } > "$out"
 }
 

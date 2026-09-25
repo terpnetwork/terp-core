@@ -156,15 +156,15 @@
         "type": "cometbft",
         "version": "0.38.21"
       },
-      "next_version_name": "v5.2.0",
+      "next_version_name": "v520",
       "binaries": {
         "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.1/terpd-linux-amd64",
         "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.1.1/terpd-linux-arm64"
       }
     },
     {
-      "name": "v5.2.0",
-      "proposal": null,
+      "name": "v520",
+      "proposal": 57,
       "height": 21725359,
       "recommended_version": "v5.2.0",
       "compatible_versions": [
@@ -189,15 +189,15 @@
       },
       "next_version_name": "v6",
       "binaries": {
-        "linux/amd64": "https://s3.terp.network/releases/terp-core/v5.2.0/terpd-5.2.0-linux-amd64.tar.gz",
-        "linux/arm64": "https://s3.terp.network/releases/terp-core/v5.2.0/terpd-5.2.0-linux-arm64.tar.gz",
-        "darwin/arm64": "https://s3.terp.network/releases/terp-core/v5.2.0/terpd-5.2.0-darwin-arm64.tar.gz"
-      }
+        "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v5.2.0/terpd-linux-amd64",
+        "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v5.2.0/terpd-linux-arm64"
+      },
+      "tag": "v5.2.0"
     },
     {
       "name": "v6",
-      "proposal": null,
-      "height": 22611000,
+      "proposal": 58,
+      "height": 22810000,
       "recommended_version": "v6.0.0",
       "compatible_versions": [
         "v6.0.0"
@@ -212,7 +212,39 @@
       },
       "ibc": {
         "type": "go",
-        "version": "v11.1.0"
+        "version": "v11.2.0"
+      },
+      "cosmwasm": {
+        "version": "0.70.3",
+        "enabled": true,
+        "path": "$HOME/.terpd/data/wasm"
+      },
+      "next_version_name": "v6.0.1",
+      "binaries": {
+        "linux/amd64": "https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-amd64",
+        "linux/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-linux-arm64",
+        "darwin/arm64": "https://github.com/terpnetwork/terp-core/releases/download/v6.0.0/terpd-darwin-arm64"
+      },
+      "tag": "v6.0.0",
+      "previous_version_name": "v520"
+    },
+    {
+      "name": "v6.0.1",
+      "recommended_version": "v6.0.1",
+      "compatible_versions": [
+        "v6.0.1"
+      ],
+      "consensus": {
+        "type": "cometbft",
+        "version": "0.39.3"
+      },
+      "sdk": {
+        "type": "cosmos",
+        "version": "0.54.3"
+      },
+      "ibc": {
+        "type": "go",
+        "version": "v11.2.0"
       },
       "cosmwasm": {
         "version": "0.70.3",
@@ -220,16 +252,13 @@
         "path": "$HOME/.terpd/data/wasm"
       },
       "next_version_name": "v6.1",
-      "binaries": {
-        "linux/amd64": "https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-amd64.tar.gz",
-        "linux/arm64": "https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-linux-arm64.tar.gz",
-        "darwin/arm64": "https://s3.terp.network/releases/terp-core/v6.0.0/terpd-6.0.0-darwin-arm64.tar.gz"
-      }
+      "tag": "v6.0.1",
+      "previous_version_name": "v6"
     },
     {
       "name": "v6.1",
-      "proposal": null,
-      "height": null,
+      "proposal": 59,
+      "height": 23191300,
       "recommended_version": "v6.1.0",
       "compatible_versions": [
         "v6.1.0"
@@ -247,20 +276,17 @@
         "version": "v11.2.0"
       },
       "cosmwasm": {
-        "version": "0.70.3-zk",
+        "version": "0.70.3",
         "enabled": true,
         "path": "$HOME/.terpd/data/wasm"
       },
       "next_version_name": "v6.2",
-      "binaries": {
-        "linux/amd64": "https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-amd64.tar.gz",
-        "linux/arm64": "https://s3.terp.network/releases/terp-core/v6.1.0/terpd-6.1.0-linux-arm64.tar.gz"
-      }
+      "tag": "v6.1.0",
+      "previous_version_name": "v6.0.1"
     },
     {
       "name": "v6.2",
-      "proposal": null,
-      "height": null,
+      "height": 23191302,
       "recommended_version": "v6.2.0",
       "compatible_versions": [
         "v6.2.0"
@@ -278,15 +304,13 @@
         "version": "v11.2.0"
       },
       "cosmwasm": {
-        "version": "0.70.3-zk",
+        "version": "0.70.3",
         "enabled": true,
         "path": "$HOME/.terpd/data/wasm"
       },
-      "next_version_name": null,
-      "binaries": {
-        "linux/amd64": "https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-amd64.tar.gz",
-        "linux/arm64": "https://s3.terp.network/releases/terp-core/v6.2.0/terpd-6.2.0-linux-arm64.tar.gz"
-      }
+      "next_version_name": "v6.3",
+      "tag": "v6.2.0",
+      "previous_version_name": "v6.1"
     }
   ]
 }
