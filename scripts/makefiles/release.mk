@@ -9,7 +9,8 @@ WASMVM_VERSION=$(go list -m github.com/CosmWasm/wasmvm/v3 | awk '{print $2}')
 	create-binaries create-checksums release-prep create-binaries-json \
 	create-upgrade-guide release-proposal upgrade-proposal \
 	release-bundle release-s3 release-dev release-control \
-	sync-upgrade-pack verify-upgrade-pack test-upgrade-pack recurate-upgrade-binaries
+	sync-upgrade-pack verify-upgrade-pack test-upgrade-pack recurate-upgrade-binaries \
+	sync-chain-registry verify-fresh-vm
 
 # Shared with docker.mk for version-aligned testnet/ZK releases
 RELEASE_TAG ?= v6.0.0-dev
@@ -34,7 +35,7 @@ release-help:
 	@echo "  release-publish          Goreleaser release to GitHub (requires GITHUB_TOKEN)"
 	@echo "  release-dry-run          Goreleaser dry run (no publish)"
 	@echo "  release-snapshot         Goreleaser snapshot build"
-	@echo "  create-binaries          Build reproducible binaries (linux amd64+arm64)"
+	@echo "  create-binaries          Linux muslc (docker) + darwin/arm64 static wasmvm on Darwin hosts"
 	@echo "  create-checksums         Generate build/sha256sum.txt for raw binaries only"
 	@echo "  release-prep             Create tarballs + unified sha256sum.txt (binaries + tarballs)"
 	@echo "  create-binaries-json     Generate cosmovisor-compatible binaries JSON"
@@ -46,12 +47,18 @@ release-help:
 	@echo "Testnet ZK / S3 verifiable distribution (see scripts/release/README.md, S3-LAYOUT.md):"
 	@echo "  release-bundle           Deterministic source.tar.gz + manifest.json"
 	@echo "  release-s3               Upload to releases/\$$PROJECT/\$$TAG/ (MINIO_ALIAS=$(MINIO_ALIAS))"
+	@echo "  wasmvm-release-build     Recut ALL libwasmvm libs via terpnetwork/zk-*-builder:4.0.0-zk (not CosmWasm 0103)"
+	@echo "  wasmvm-release-build-linux  Recut glibc .so only (what Linux go test links)"
+	@echo "  wasmvm-verify            Fail if muslc/.so are mixed generations"
 	@echo "  wasmvm-curate            Pack libwasmvm artifacts + SHA256SUMS + VERSIONS.txt"
+	@echo "  publish-zk-wasmvm        Upload 4.0.0-zk muslc+.so to s3terp/releases/zk-wasmvm/v4.0.0-zk/"
 	@echo "  preflight-upgrade       Gate Cosmovisor plan + local tarballs + ZK muslc (no upload)"
 	@echo "  sync-upgrade-pack       Rewrite pack JSON/SOURCE_DEPS from ARTIFACT_LOCK (WRITE=1 from tarballs)"
 	@echo "  verify-upgrade-pack     Fail-closed: binaries.json == cosmovisor.json == proposal == lock"
 	@echo "  test-upgrade-pack       Drift regression (corrupt binaries.json must fail verify)"
 	@echo "  recurate-upgrade-binaries  Rebuild tagged ELF and compare ARTIFACT_LOCK"
+	@echo "  verify-fresh-vm         Clone TAG in empty GOPATH; compare S3 (Firecracker and/or Wasmer)"
+	@echo "  sync-chain-registry      Copy networks/chain-registry/terpnetwork into a cosmos/chain-registry clone"
 	@echo "  release-dev              bundle + s3 for RELEASE_TAG (default $(RELEASE_TAG))"
 	@echo "  docker-publish-dev       (docker.mk) ZK image tagged RELEASE_TAG"
 	@echo "  docker-push-dev          (docker.mk) push IMAGE_REPO:RELEASE_TAG"
@@ -165,6 +172,9 @@ endef
 
 create-binaries:
 	$(MAKE) build-reproducible
+	@if [ "$$(uname -s)" = Darwin ] && echo "$(RELEASE_TAG)" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
+	  RELEASE_TAG=$(RELEASE_TAG) bash scripts/release/build_host_darwin.sh; \
+	fi
 
 release-control:
 	@RELEASE_TAG=$(RELEASE_TAG) BINARY_COMMIT=$(or $(BINARY_COMMIT),) \
@@ -257,6 +267,13 @@ upgrade-proposal:
 		$(if $(filter 1,$(BROADCAST)),--broadcast,)
 
 ###############################################################################
+# cosmos/chain-registry publish (SoT is networks/chain-registry/terpnetwork)
+###############################################################################
+
+sync-chain-registry:
+	@DEST=$(or $(DEST),$(CURDIR)/crates/chain-registry) bash scripts/release/sync_chain_registry.sh
+
+###############################################################################
 # Deterministic source bundle + MinIO/S3 publish (testnet ZK lineage)
 # Docs: scripts/release/README.md
 ###############################################################################
@@ -273,6 +290,19 @@ release-s3:
 		ENTRYPOINT_SRC=$(ENTRYPOINT_SRC) CONFIG_ENDPOINTS_SRC=$(CONFIG_ENDPOINTS_SRC) \
 		PUBLISH_LATEST=$(PUBLISH_LATEST) \
 		./scripts/release/publish_s3_release.sh
+	@if [ "$$(uname -s)" = Darwin ]; then \
+	  RELEASE_TAG=$(RELEASE_TAG) ONLY=darwin DRY_RUN=$(DRY_RUN) \
+	    bash scripts/release/publish_s3_binaries.sh; \
+	fi
+
+.PHONY: publish-installer publish-s3-binaries
+publish-installer:
+	@DRY_RUN=$(DRY_RUN) bash scripts/release/publish_installer.sh
+
+publish-s3-binaries:
+	$(require_exact_release_tag)
+	@RELEASE_TAG=$(RELEASE_TAG) ONLY=$(or $(ONLY),) DRY_RUN=$(DRY_RUN) \
+		bash scripts/release/publish_s3_binaries.sh
 
 # Convenience: bundle then upload (does not build/push docker)
 release-dev: release-bundle release-s3
@@ -282,10 +312,30 @@ release-dev: release-bundle release-s3
 # ZK libwasmvm artifact pack (checksums + version pairing)
 ###############################################################################
 
-.PHONY: wasmvm-curate curate-v61 preflight-upgrade \
-	sync-upgrade-pack verify-upgrade-pack test-upgrade-pack recurate-upgrade-binaries
-wasmvm-curate:
+.PHONY: wasmvm-release-build wasmvm-release-build-linux wasmvm-release-build-macos wasmvm-verify \
+	wasmvm-curate curate-v61 preflight-upgrade \
+	sync-upgrade-pack verify-upgrade-pack test-upgrade-pack recurate-upgrade-binaries \
+	verify-fresh-vm
+# wasmvm already ships Docker builders for every host lib. Always recut
+# alpine + linux together: Linux go test links .so, not muslc .a.
+wasmvm-release-build:
+	$(MAKE) -C crates/zk-wasmvm release-build
+
+wasmvm-release-build-linux:
+	$(MAKE) -C crates/zk-wasmvm release-build-linux
+
+wasmvm-release-build-macos:
+	$(MAKE) -C crates/zk-wasmvm release-build-macos
+
+wasmvm-verify:
+	$(MAKE) -C crates/zk-wasmvm verify-libwasmvm
+
+wasmvm-curate: wasmvm-verify
 	@./scripts/release/curate_wasmvm_artifacts.sh
+
+.PHONY: publish-zk-wasmvm
+publish-zk-wasmvm: wasmvm-verify
+	@./scripts/release/publish_zk_wasmvm.sh
 
 # Pins + patched store/v2 + wasm checksums for 120u-1 v6.1 soak (no upload).
 # SOURCE_DEPS comes from gitlinks at ARTIFACT_LOCK binary_commit (sync_upgrade_pack).
@@ -323,3 +373,10 @@ test-upgrade-pack:
 # Rebuild tagged ELF and compare to ARTIFACT_LOCK. Does not upload.
 recurate-upgrade-binaries:
 	@PLAN=$(or $(PLAN),v6.1) bash scripts/release/recurate_upgrade_binaries.sh
+
+# Standard release recurate: fresh guest vs published sha256sum.txt.
+# Version extras: scripts/release/fresh-vm/releases/<tag>.sh
+verify-fresh-vm:
+	@TAG=$(or $(TAG),$(RELEASE_TAG)) PLATFORMS=$(or $(PLATFORMS),linux/amd64,linux/arm64,darwin/arm64) \
+		GUEST=$(or $(GUEST),) GUESTS=$(or $(GUESTS),) \
+		bash scripts/release/fresh-vm/run.sh

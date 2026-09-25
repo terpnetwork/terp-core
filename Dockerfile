@@ -12,12 +12,16 @@ FROM golang:${GO_VERSION}-alpine AS go-builder
 # Must be vX.Y.Z for Cosmovisor packs — not git-describe.
 ARG GIT_VERSION=
 ARG GIT_COMMIT=
+# Always muslc for linux Cosmovisor. v6.4.0 appends v64 (keepers on dest).
+ARG BUILD_TAGS=muslc
 
 SHELL ["/bin/sh", "-ecuxo", "pipefail"]
 # this comes from standard alpine nightly file
 #  https://github.com/rust-lang/docker-rust-nightly/blob/master/alpine3.12/Dockerfile
 # with some changes to support our toolchain, etc
-RUN apk add --no-cache ca-certificates build-base git binutils-gold musl-dev gcc libc-dev
+# binutils provides ld.bfd. binutils-gold would otherwise own /usr/bin/ld and
+# drop the muslc wasmvm archive (see Makefile LINK_STATICALLY / -fuse-ld=bfd).
+RUN apk add --no-cache ca-certificates build-base git binutils binutils-gold musl-dev gcc libc-dev
 # NOTE: add these to run with LEDGER_ENABLED=true
 # RUN apk add libusb-dev linux-headers
 
@@ -117,7 +121,7 @@ RUN ARCH=$(uname -m) && \
 # NOTE: never `go mod tidy` here — tests/ibctesting and other test-only packages
 # are intentionally excluded from the docker context; tidy would try to resolve
 # them and fail. go.mod/go.sum are already tidy on the host.
-RUN go mod download && LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build VERSION="${GIT_VERSION}" COMMIT="${GIT_COMMIT}"
+RUN go mod download && LEDGER_ENABLED=false BUILD_TAGS="${BUILD_TAGS}" LINK_STATICALLY=true make build VERSION="${GIT_VERSION}" COMMIT="${GIT_COMMIT}"
 RUN echo "Ensuring binary is statically linked ..." \
   && (file /code/build/terpd | grep "statically linked")
 

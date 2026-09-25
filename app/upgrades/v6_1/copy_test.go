@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil"
 	"github.com/stretchr/testify/require"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
 )
 
@@ -24,13 +24,13 @@ func commitKV(t *testing.T, ms storetypes.MultiStore, key storetypes.StoreKey) s
 
 func TestCopyKVStoreCommitHashesSoundAndUnsound(t *testing.T) {
 	srcKey := storetypes.NewKVStoreKey("bank")
-	dstKey := storetypes.NewKVStoreKey(iavlhash.BankB3)
+	dstKey := storetypes.NewKVStoreKey(iavl.BankB3)
 	ibcKey := storetypes.NewKVStoreKey("ibc")
 	ctx := testutil.DefaultContextWithKeys(
 		map[string]*storetypes.KVStoreKey{
-			"bank":          srcKey,
-			iavlhash.BankB3: dstKey,
-			"ibc":           ibcKey,
+			"bank":      srcKey,
+			iavl.BankB3: dstKey,
+			"ibc":       ibcKey,
 		},
 		nil,
 		nil,
@@ -61,8 +61,8 @@ func TestCopyKVStoreCommitHashesSoundAndUnsound(t *testing.T) {
 	require.False(t, bytes.Equal(dstWorking, dstWorkingBefore),
 		"sound: dest working hash changes after copy")
 
-	require.Equal(t, srcWorking, dstWorking,
-		"sound: dest working hash matches src when both empty trees use SHA-256 and the same KV/versions")
+	require.False(t, bytes.Equal(srcWorking, dstWorking),
+		"dest b3-bank is BLAKE3; live bank is SHA-256 — same KV must not share a root")
 
 	require.False(t, bytes.Equal(dstLastBefore.Hash, dstWorking),
 		"unsound if dest LastCommitID (pre-copy) is used as the post-copy root")
@@ -84,14 +84,14 @@ func TestAllNonIBCAppStoresAreMigrated(t *testing.T) {
 		"upgrade": {},
 		"params":  {},
 	}
-	for name := range iavlhash.SHA256Stores {
+	for name := range iavl.SHA256Stores {
 		skip[name] = struct{}{}
 	}
 	migratable := map[string]struct{}{}
-	for _, s := range iavlhash.MigratableStores() {
+	for _, s := range iavl.MigratableStores() {
 		migratable[s] = struct{}{}
 		require.NotNil(t, k.GetKey(s), "src %s must be mounted", s)
-		require.NotNil(t, k.GetKey(iavlhash.DestName(s)), "dest %s must be mounted", iavlhash.DestName(s))
+		require.NotNil(t, k.GetKey(iavl.DestName(s)), "dest %s must be mounted", iavl.DestName(s))
 	}
 	for name := range k.GetKVStoreKey() {
 		if strings.HasPrefix(name, "b3-") {
@@ -107,10 +107,11 @@ func TestAllNonIBCAppStoresAreMigrated(t *testing.T) {
 
 func TestRefuseIBCRehashPolicy(t *testing.T) {
 	for _, name := range []string{"ibc", "transfer", "icahost", "icacontroller", "08-wasm", "hooks-for-ibc"} {
-		require.Equal(t, "sha256", iavlhash.AlgorithmName(name), name)
+		require.Equal(t, "sha256", iavl.AlgorithmName(name), name)
+		require.True(t, iavl.IsIBCStore(name), name)
 	}
-	for _, p := range iavlhash.DualStorePairs() {
-		require.NotEqual(t, "sha256", iavlhash.AlgorithmName(p[0]), p[0])
+	for _, p := range iavl.DualStorePairs() {
+		require.False(t, iavl.IsIBCStore(p[0]), p[0])
 		require.NotEqual(t, "08-wasm", p[0])
 		require.NotEqual(t, "params", p[0])
 	}

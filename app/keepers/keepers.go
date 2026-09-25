@@ -190,14 +190,13 @@ func NewAppKeepers(
 
 	// Set keys KVStoreKey, TransientStoreKey, MemoryStoreKey
 	appKeepers.GenerateKeys()
-	keys := appKeepers.GetKVStoreKey()
 
 	govModAddress := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	// set the BaseApp's parameter store
 	consensusParamsKeeper := consensusparamkeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[consensusparamtypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(consensusparamtypes.StoreKey)),
 		govModAddress,
 		runtime.EventService{},
 	)
@@ -208,7 +207,7 @@ func NewAppKeepers(
 
 	accountKeeper := authkeeper.NewAccountKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[authtypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(authtypes.StoreKey)),
 		authtypes.ProtoBaseAccount,
 		maccPerms,
 		addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
@@ -219,7 +218,7 @@ func NewAppKeepers(
 
 	appKeepers.BankKeeper = bankkeeper.NewBaseKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[banktypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(banktypes.StoreKey)),
 		appKeepers.AccountKeeper,
 		BlockedAddresses(),
 		govModAddress,
@@ -228,7 +227,7 @@ func NewAppKeepers(
 
 	stakingKeeper := stakingkeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[stakingtypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(stakingtypes.StoreKey)),
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		govModAddress,
@@ -238,7 +237,7 @@ func NewAppKeepers(
 
 	mintKeeper := mintkeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[minttypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(minttypes.StoreKey)),
 		stakingKeeper,
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
@@ -248,7 +247,7 @@ func NewAppKeepers(
 	appKeepers.MintKeeper = &mintKeeper
 
 	feegrantKeeper := feegrantkeeper.NewKeeper(
-		appCodec, runtime.NewKVStoreService(appKeepers.keys[feegrant.StoreKey]), appKeepers.AccountKeeper,
+		appCodec, runtime.NewKVStoreService(appKeepers.KeeperKey(feegrant.StoreKey)), appKeepers.AccountKeeper,
 	)
 	appKeepers.FeeGrantKeeper = &feegrantKeeper
 
@@ -265,7 +264,7 @@ func NewAppKeepers(
 
 	smartAccountKeeper := smartaccountkeeper.NewKeeper(
 		appCodec,
-		appKeepers.keys[smartaccounttypes.StoreKey],
+		appKeepers.KeeperKey(smartaccounttypes.StoreKey),
 		authtypes.NewModuleAddress(govtypes.ModuleName),
 		appKeepers.AuthenticatorManager,
 		*appKeepers.FeeGrantKeeper,
@@ -274,7 +273,7 @@ func NewAppKeepers(
 
 	distrKeeper := distrkeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[distrtypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(distrtypes.StoreKey)),
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		stakingKeeper,
@@ -287,7 +286,7 @@ func NewAppKeepers(
 	slashKeeper := slashingkeeper.NewKeeper(
 		appCodec,
 		cdc,
-		runtime.NewKVStoreService(appKeepers.keys[slashingtypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(slashingtypes.StoreKey)),
 		stakingKeeper,
 		govModAddress,
 	)
@@ -297,7 +296,7 @@ func NewAppKeepers(
 
 	appKeepers.CrisisKeeper = crisiskeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[crisistypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(crisistypes.StoreKey)),
 		invCheckPeriod,
 		appKeepers.BankKeeper,
 		authtypes.FeeCollectorName,
@@ -314,7 +313,7 @@ func NewAppKeepers(
 	// set the governance module account as the authority for conducting upgrades
 	appKeepers.UpgradeKeeper = upgradekeeper.NewKeeper(
 		skipUpgradeHeights,
-		runtime.NewKVStoreService(appKeepers.keys[upgradetypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(upgradetypes.StoreKey)),
 		appCodec,
 		homePath,
 		bApp,
@@ -325,13 +324,13 @@ func NewAppKeepers(
 
 	appKeepers.IBCKeeper = ibckeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[ibcexported.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(ibcexported.StoreKey)),
 		appKeepers.UpgradeKeeper,
 		govModAddress,
 	)
 
 	authzKeeper := authzkeeper.NewKeeper(
-		runtime.NewKVStoreService(appKeepers.keys[authzkeeper.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(authzkeeper.StoreKey)),
 		appCodec,
 		bApp.MsgServiceRouter(),
 		appKeepers.AccountKeeper,
@@ -346,7 +345,7 @@ func NewAppKeepers(
 
 	appKeepers.GovKeeper = govkeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[govtypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(govtypes.StoreKey)),
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		appKeepers.DistrKeeper,
@@ -358,7 +357,7 @@ func NewAppKeepers(
 
 	// Configure the hooks keeper
 	hooksKeeper := ibchookskeeper.NewKeeper(
-		keys[ibchookstypes.StoreKey],
+		appKeepers.KeeperKey(ibchookstypes.StoreKey),
 	)
 	appKeepers.IBCHooksKeeper = &hooksKeeper
 
@@ -374,7 +373,7 @@ func NewAppKeepers(
 	transferKeeper := ibctransferkeeper.NewKeeper(
 		appCodec,
 		appKeepers.AccountKeeper.AddressCodec(),
-		runtime.NewKVStoreService(appKeepers.keys[ibctransfertypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(ibctransfertypes.StoreKey)),
 		appKeepers.IBCKeeper.ChannelKeeper,
 		bApp.MsgServiceRouter(),
 		appKeepers.AccountKeeper,
@@ -386,7 +385,7 @@ func NewAppKeepers(
 	appKeepers.PacketForwardKeeper = packetforwardkeeper.NewKeeper(
 		appCodec,
 		appKeepers.AccountKeeper.AddressCodec(),
-		runtime.NewKVStoreService(appKeepers.keys[packetforwardtypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(packetforwardtypes.StoreKey)),
 		appKeepers.TransferKeeper,
 		appKeepers.IBCKeeper.ChannelKeeper,
 		appKeepers.BankKeeper,
@@ -395,7 +394,7 @@ func NewAppKeepers(
 
 	icaHostKeeper := icahostkeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[icahosttypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(icahosttypes.StoreKey)),
 		appKeepers.IBCKeeper.ChannelKeeper,
 		appKeepers.AccountKeeper,
 		bApp.MsgServiceRouter(),
@@ -406,7 +405,7 @@ func NewAppKeepers(
 
 	icaControllerKeeper := icacontrollerkeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[icacontrollertypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(icacontrollertypes.StoreKey)),
 		appKeepers.IBCKeeper.ChannelKeeper,
 		bApp.MsgServiceRouter(),
 		govModAddress,
@@ -429,7 +428,7 @@ func NewAppKeepers(
 	// create evidence keeper with router
 	evidenceKeeper := evidencekeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[evidencetypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(evidencetypes.StoreKey)),
 		appKeepers.StakingKeeper,
 		appKeepers.SlashingKeeper,
 		addresscodec.NewBech32Codec(sdk.Bech32PrefixAccAddr),
@@ -439,7 +438,7 @@ func NewAppKeepers(
 	appKeepers.EvidenceKeeper = evidenceKeeper
 
 	tfKeeper := tokenfactorykeeper.NewKeeper(
-		appKeepers.keys[tokenfactorytypes.StoreKey],
+		appKeepers.KeeperKey(tokenfactorytypes.StoreKey),
 		maccPerms,
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
@@ -483,7 +482,7 @@ func NewAppKeepers(
 
 	wasmKeeper := wasmkeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[wasmtypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(wasmtypes.StoreKey)),
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
 		appKeepers.StakingKeeper,
@@ -512,7 +511,7 @@ func NewAppKeepers(
 
 	ibcWasmClientKeeper := ibcwlckeeper.NewKeeperWithVM(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[ibcwlctypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(ibcwlctypes.StoreKey)),
 		appKeepers.IBCKeeper.ClientKeeper,
 		govModAddress,
 		lcWasmer,
@@ -525,7 +524,7 @@ func NewAppKeepers(
 	appKeepers.Ics20WasmHooks.ContractKeeper = appKeepers.WasmKeeper
 
 	feeshareKeeper := feesharekeeper.NewKeeper(
-		appKeepers.keys[feesharetypes.StoreKey],
+		appKeepers.KeeperKey(feesharetypes.StoreKey),
 		appCodec,
 		appKeepers.BankKeeper,
 		appKeepers.WasmKeeper,
@@ -537,13 +536,13 @@ func NewAppKeepers(
 
 	globalFeeKeeper := globalfeekeeper.NewKeeper(
 		appCodec,
-		appKeepers.keys[globalfeetypes.StoreKey],
+		appKeepers.KeeperKey(globalfeetypes.StoreKey),
 		govModAddress,
 	)
 	appKeepers.GlobalFeeKeeper = &globalFeeKeeper
 
 	appKeepers.DripKeeper = dripkeeper.NewKeeper(
-		appKeepers.keys[driptypes.StoreKey],
+		appKeepers.KeeperKey(driptypes.StoreKey),
 		appCodec,
 		appKeepers.BankKeeper,
 		authtypes.FeeCollectorName,
@@ -553,7 +552,7 @@ func NewAppKeepers(
 	hmConfig := hashmerchantkeeper.ReadConfig(appOpts)
 	hmKeeper := hashmerchantkeeper.NewKeeper(
 		appCodec,
-		appKeepers.keys[hashmerchanttypes.StoreKey],
+		appKeepers.KeeperKey(hashmerchanttypes.StoreKey),
 		govModAddress,
 		appKeepers.AccountKeeper,
 		appKeepers.BankKeeper,
@@ -566,7 +565,7 @@ func NewAppKeepers(
 	// Initialize cw-hooks keeper (requires wasm keeper + contract keeper)
 	cwHooksKeeper := cwhookskeeper.NewKeeper(
 		appCodec,
-		runtime.NewKVStoreService(appKeepers.keys[cwhookstypes.StoreKey]),
+		runtime.NewKVStoreService(appKeepers.KeeperKey(cwhookstypes.StoreKey)),
 		*stakingKeeper,
 		*appKeepers.GovKeeper,
 		*appKeepers.WasmKeeper,

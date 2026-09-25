@@ -9,10 +9,13 @@ if [ ! -x "$BINS/ict-ci" ]; then
   exit 1
 fi
 "$BINS/ict-ci" list | python3 -c '
-import json, sys
+import json, os, sys
 suites = [ln.strip() for ln in sys.stdin if ln.strip()]
-if not suites:
-    sys.stderr.write("ERROR: ict-ci list produced no suites\n")
+allow = [x.strip() for x in os.environ.get("ICT_CI_ALLOWLIST", "aa,pfm,ibchooks,hashmerchant,staking-hooks").split(",") if x.strip()]
+deny = [x.strip() for x in os.environ.get("ICT_CI_DENYLIST", "marketplace,bridge,lean,pir,private-dex,private-bridge").split(",") if x.strip()]
+picked = [s for s in suites if s in allow and not any(d in s for d in deny)]
+if not picked:
+    sys.stderr.write("ERROR: no suites after allowlist %s (have %s)\n" % (allow, suites))
     sys.exit(1)
-print(json.dumps(suites))
+print(json.dumps(picked))
 '

@@ -1,0 +1,41 @@
+# Reusable gate. Callers run heavy jobs only when outputs.proceed == 'true'.
+name: heavy-ci-gate
+
+on:
+  workflow_call:
+    outputs:
+      proceed:
+        description: Run heavy jobs
+        value: ${{ jobs.gate.outputs.proceed }}
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.g.outputs.proceed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/CODEOWNERS
+            scripts/ci/heavy-ci-gate.sh
+          sparse-checkout-cone-mode: false
+      - id: g
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref || github.base_ref }}
+          REVIEW_STATE: ${{ github.event.review.state }}
+        run: |
+          set -euo pipefail
+          # review events pass a URL; pull_request events pass a number.
+          if [[ "${PR_NUMBER:-}" == http* ]]; then
+            PR_NUMBER="${PR_NUMBER##*/}"
+          fi
+          export PR_NUMBER
+          bash scripts/ci/heavy-ci-gate.sh
