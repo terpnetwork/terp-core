@@ -1,0 +1,19 @@
+module github.com/cosmos/ics23/go
+
+go 1.22
+
+require (
+	github.com/cosmos/gogoproto v1.7.0
+	github.com/zeebo/blake3 v0.2.4
+	golang.org/x/crypto v0.31.0
+)
+
+require (
+	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.12 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
+)
+
+// subject to the dragonberry vulnerability
+retract [v0.0.0, v0.7.0]

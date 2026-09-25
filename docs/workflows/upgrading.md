@@ -1,48 +1,74 @@
 # Upgrade Workflow
 
+Current coordinated upgrade on this tree: **v6.3 then v6.4** (hasher dest copy
+→ keepers on BLAKE3 dest). Cosmovisor directories are plan names, not git tags:
+
+`~/.terpd/cosmovisor/upgrades/v6.3/bin/terpd`  
+`~/.terpd/cosmovisor/upgrades/v6.4/bin/terpd`
+
+Governance submits **only** `v6.3`. The v6.3 binary arms `v6.4` at apply+2.
+
+v6.0 (`plan v6`, bulk_memory VM) already shipped. Those TSH scripts live in
+`tests/tsh/upgrade/archive/v6.0/`. Do not use them as this gate.
+
 ## TLDR
 
-1. Prepare upgrade version + handler (`app/upgrades/<plan>`).
-2. Unit-test the handler.
-3. E2E / tsh: `make tsh-upgrade` (live fork), `make tsh-upgrade-wasm` (existing contracts), `make tsh-upgrade-cv` (Cosmovisor).
-4. Prepare artifacts: binaries, checksums, Cosmovisor `binaries.json`, upgrade guide.
-5. Expedited proposal on testnet, confirm halt + Cosmovisor swap.
-6. Expedited proposal on mainnet.
-
-v6 plan name is **`v6`** (not the git tag). Cosmovisor folder:
-
-`~/.terpd/cosmovisor/upgrades/v6/bin/terpd`
+1. Handler unit tests: `go test ./app/upgrades/v6_3/` and `-tags v64 ./app/upgrades/v6_4/`.
+2. E2E: `make tsh-upgrade` (Cosmovisor dual-halt + dest-bank BLAKE3 proofs +
+   CosmWasm guest survival + 08-wasm LC on a counterparty).
+3. Curate bit-for-bit ELFs: [`networks/upgrades/v6.3/CURATE.md`](../../networks/upgrades/v6.3/CURATE.md).
+   Do not upload, tag, or broadcast until asked.
+4. Expedited proposal on testnet, then mainnet. Heights TBD.
 
 ## 1. Upgrade handler unit tests
 
-See `app/upgrades/v6/upgrades_test.go`.
+- `app/upgrades/v6_3/` — dest `b3-*` Added, KV copy, refuse IBC stores, arm `v6.4`.
+- `app/upgrades/v6_4/` (`-tags v64`) — keepers on dest, live SHA-256 names Deleted, empty Renamed.
 
 ## 2. E2E / tsh
 
 | Target | Script | What it proves |
 |--------|--------|----------------|
-| `make tsh-upgrade` | `tests/tsh/upgrade/a.sh` | Current mainnet binary loads appstate, hits `UPGRADE "v6" NEEDED`, new binary applies |
-| `make tsh-upgrade` companion | `tests/tsh/upgrade/b.sh` | Fresh genesis + **expedited** gov software-upgrade |
-| `make tsh-upgrade-wasm` | `tests/tsh/upgrade/d.sh` | Pre-v6 CosmWasm guest still executes after v6 |
-| `make tsh-upgrade-cv` | `tests/tsh/upgrade/e.sh` | **Cosmovisor** swaps genesis → `upgrades/v6` without a manual restart |
+| `make tsh-upgrade` | `tests/tsh/upgrade/v63.sh` | Cosmovisor `v6.3` then `v6.4`; dest bank BLAKE3; `ibc` SHA-256; `cw_template` guest survives; 08-wasm LC VerifyMembership |
+| `make tsh-upgrade-wasm` | same (`HASH_WASM=1`) | Same; fail if guest store/query/execute does not survive |
+| `make tsh-upgrade-cv` | same | Cosmovisor is the dual-halt (not a separate v6 swap) |
+| `make tsh-upgrade-v63` | `v63.sh` | Alias |
+| `make tsh-upgrade-v6-archive` | `archive/v6.0/a.sh` | Historical 5.2 → plan `v6` only |
+
+`a.sh` / `d.sh` / `e.sh` at the upgrade dir root **exec `v63.sh`**. The v6.0
+bodies are under `archive/v6.0/`.
 
 ## 3. Prepare upgrade assets
 
+See [`networks/upgrades/v6.3/CURATE.md`](../../networks/upgrades/v6.3/CURATE.md).
+
+Libwasmvm dynamic libraries (glibc `.so`, Darwin dylib) and muslc archives
+are built with **our** images `terpnetwork/zk-*-builder:4.0.0-zk`
+(`ghcr.io/terpnetwork/zk-*-builder:4.0.0-zk`). Do **not** pull
+`cosmwasm/libwasmvm-builder:0103-*`. Write-up:
+[`crates/zk-wasmvm/docs/BUILDERS.md`](../../crates/zk-wasmvm/docs/BUILDERS.md).
+
 ```sh
-make create-binaries
-make release-prep RELEASE_TAG=v6.0.0
-make create-binaries-json RELEASE_TAG=v6.0.0
-make create-upgrade-guide   # or:
-python3 scripts/release/create_upgrade_guide/create_upgrade_guide.py \
-  --type coordinated -c v5.2 -u v6 -t v6.0.0 -p <id> -b <height> \
-  --out scripts/release/create_upgrade_guide/v5.2-to-v6.md
-./scripts/release/create_proposal/submit_proposal.sh --height <H> --tag v6.0.0 --name v6
+(cd crates/zk-wasmvm/builders && make docker-images-4.0.0-zk)
+make wasmvm-release-build
+make wasmvm-verify
+./scripts/release/curate_v63.sh
+# then cut linux ELFs (muslc, two tags):
+TAG=v6.3.0 PLATFORMS=linux/amd64,linux/arm64 ./scripts/release/fresh-vm/run.sh
+TAG=v6.4.0 BUILD_TAGS=v64 PLATFORMS=linux/amd64,linux/arm64 ./scripts/release/fresh-vm/run.sh
+PLAN=v6.3 make recurate-upgrade-binaries
+PLAN=v6.4 make recurate-upgrade-binaries
+make verify-upgrade-pack PLAN=v6.3
+make verify-upgrade-pack PLAN=v6.4
 ```
 
-- Cosmovisor JSON: `make create-binaries-json`
-- Checked-in guide template fill: `scripts/release/create_upgrade_guide/v5.2-to-v6.md`
-- Expedited proposal JSON: `build/upgrade-proposal-v6.json`
+Do not invent S3 checksums. `published: false` until linux tarballs are on
+S3; then `CHECK_S3=1`. Pack identity is
+`ARTIFACT_LOCK` ↔ `binaries.json` ↔ `cosmovisor.json` ↔ optional S3
+`sha256sum.txt`.
 
 ## 4. Testnet then mainnet
 
-Create proposal on testnet first. Confirm Cosmovisor auto-restart. Then mainnet expedited proposal.
+Create proposal on testnet first. Confirm Cosmovisor auto-restart **twice**
+(v6.3, then v6.4 two blocks later). Then mainnet expedited proposal for **v6.3
+only**.

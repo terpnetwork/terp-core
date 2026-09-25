@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
-# Rebuild Cosmovisor linux ELFs from the *tag* in ARTIFACT_LOCK on a clean
-# detached worktree. Muslc is fetched from MinIO (pinned sha256). Do not copy
-# gitignored .a files from a dirty parent tree.
-#
-#   git checkout release/v6.1.0   # lock + ibc-hooks tarball
-#   PLAN=v6.1 ./scripts/release/recurate_upgrade_binaries.sh
-#
+# Rebuild Cosmovisor linux ELFs from ARTIFACT_LOCK's tag on a clean worktree.
+# PLAN=v6.1 ./scripts/release/recurate_upgrade_binaries.sh
 # Does not upload, tag, or broadcast.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 PLAN="${PLAN:-}"
 if [ -z "$PLAN" ]; then
-  echo "ERROR: set PLAN=v6.1 or PLAN=v6.2" >&2
+  echo "ERROR: set PLAN=v6.3 or PLAN=v6.4" >&2
   exit 1
 fi
 LOCK="$ROOT/networks/upgrades/${PLAN}/ARTIFACT_LOCK"
@@ -39,9 +34,9 @@ if [ "$tagged" != "$COMMIT" ]; then
   echo "ERROR: tag $TAG is ${tagged:-missing}, lock binary_commit is $COMMIT" >&2
   exit 1
 fi
-exact="$(git describe --tags --exact-match "$COMMIT" 2>/dev/null || true)"
-if [ "$exact" != "$TAG" ]; then
-  echo "ERROR: $COMMIT is not exact-match tag $TAG (got '${exact:-<none>}')" >&2
+# v6.3.0 and v6.4.0 share one source SHA; git describe --exact-match picks one tag.
+if ! git tag --points-at "$COMMIT" | grep -Fxq "$TAG"; then
+  echo "ERROR: $COMMIT is not tagged $TAG (points-at: $(git tag --points-at "$COMMIT" | tr '\n' ' '))" >&2
   exit 1
 fi
 
@@ -68,21 +63,49 @@ fi
 # Muslc: published STWO archives, checksum-verified. Never parent-tree copy.
 bash "$ROOT/scripts/release/fetch_zk_muslc.sh" "$WT/crates/zk-wasmvm/internal/api"
 
-HOOKS_SRC="$(bash "$ROOT/scripts/ci/resolve-ibc-hooks.sh")"
+HOOKS_SRC="$ROOT/crates/ibc-hooks-v11"
+if [ ! -d "$HOOKS_SRC" ]; then
+  echo "ERROR: missing $HOOKS_SRC" >&2
+  exit 1
+fi
 mkdir -p "$WT/crates/ibc-hooks-v11"
 rsync -a --delete --exclude='.git/' "$HOOKS_SRC/" "$WT/crates/ibc-hooks-v11/"
 
 EPOCH="$(git log -1 --format=%ct "$COMMIT")"
-echo "==> recurate PLAN=$PLAN TAG=$TAG COMMIT=$COMMIT EPOCH=$EPOCH worktree=$WT (clean $desc)"
-( cd "$WT" && RELEASE_TAG="$TAG" WASMVM_SOURCE=local make create-binaries )
-SOURCE_DATE_EPOCH="$EPOCH" BUILD_DIR="$WT/build" ALLOW_PARTIAL=0 PLAN="$PLAN" \
+# Stamp VERSION from the tag, not git describe (dual tags on one SHA).
+# v6.4 keepers are -tags v64; docker always adds muslc.
+REC_VERSION="${TAG#v}"
+REC_BUILD_TAGS="muslc"
+if [ "$PLAN" = "v6.4" ] || [ "$TAG" = "v6.4.0" ]; then
+  REC_BUILD_TAGS="muslc v64"
+fi
+# Darwin create-binaries needs the static archive; Cosmovisor packs are linux.
+if [ "$(uname -s)" = Darwin ] && [ -f "$ROOT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a" ]; then
+  mkdir -p "$WT/crates/zk-wasmvm/internal/api"
+  cp -f "$ROOT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a" \
+    "$WT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a"
+fi
+# RECURATE_ARCH=amd64 skips arm64 (CI on ubuntu). Default builds both.
+RECURATE_ARCH="${RECURATE_ARCH:-both}"
+PARTIAL=0
+BUILD_TARGET=create-binaries
+if [ "$RECURATE_ARCH" = "amd64" ]; then
+  PARTIAL=1
+  BUILD_TARGET=build-reproducible-amd64
+fi
+echo "==> recurate PLAN=$PLAN TAG=$TAG COMMIT=$COMMIT VERSION=$REC_VERSION BUILD_TAGS='$REC_BUILD_TAGS' ARCH=$RECURATE_ARCH EPOCH=$EPOCH worktree=$WT (clean $desc)"
+( cd "$WT" && RELEASE_TAG="$TAG" VERSION="$REC_VERSION" BUILD_TAGS="$REC_BUILD_TAGS" WASMVM_SOURCE=local make "$BUILD_TARGET" )
+SOURCE_DATE_EPOCH="$EPOCH" BUILD_DIR="$WT/build" ALLOW_PARTIAL="$PARTIAL" PLAN="$PLAN" \
   TAG="$TAG" RELEASE_TAG="$TAG" bash "$ROOT/scripts/release/prep.sh" "${TAG#v}"
 
 fail=0
 while read -r want name; do
   [ -n "${want:-}" ] || continue
   case "$name" in
-    terpd-linux-amd64|terpd-linux-arm64|terpd-*-linux-amd64.tar.gz|terpd-*-linux-arm64.tar.gz) ;;
+    terpd-linux-amd64|terpd-*-linux-amd64.tar.gz) ;;
+    terpd-linux-arm64|terpd-*-linux-arm64.tar.gz)
+      [ "$RECURATE_ARCH" = "amd64" ] && continue
+      ;;
     *) continue ;;
   esac
   got="$(shasum -a 256 "$WT/build/$name" | awk '{print $1}')"

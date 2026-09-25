@@ -1,0 +1,50 @@
+package mem_test
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/cosmos/cosmos-sdk/store/v2/cachekv"
+	"github.com/cosmos/cosmos-sdk/store/v2/mem"
+	pruningtypes "github.com/cosmos/cosmos-sdk/store/v2/pruning/types"
+	"github.com/cosmos/cosmos-sdk/store/v2/types"
+)
+
+func TestStore(t *testing.T) {
+	db := mem.NewStore()
+	require.Equal(t, types.StoreTypeMemory, db.GetStoreType())
+
+	key, value := []byte("key"), []byte("value")
+
+	require.Nil(t, db.Get(key))
+	db.Set(key, value)
+	require.Equal(t, value, db.Get(key))
+
+	newValue := []byte("newValue")
+	db.Set(key, newValue)
+	require.Equal(t, newValue, db.Get(key))
+
+	db.Delete(key)
+	require.Nil(t, db.Get(key))
+
+	cacheWrapper := db.CacheWrap()
+	require.IsType(t, &cachekv.Store{}, cacheWrapper)
+}
+
+func TestCommit(t *testing.T) {
+	db := mem.NewStore()
+	key, value := []byte("key"), []byte("value")
+
+	db.Set(key, value)
+	id := db.Commit()
+	require.True(t, id.IsZero())
+	require.True(t, db.LastCommitID().IsZero())
+	require.Equal(t, value, db.Get(key))
+}
+
+func TestStorePruningOptions(t *testing.T) {
+	// this is a no-op
+	db := mem.NewStore()
+	require.Equal(t, pruningtypes.NewPruningOptions(pruningtypes.PruningUndefined), db.GetPruning())
+}

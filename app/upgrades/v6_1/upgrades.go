@@ -53,7 +53,7 @@ func CreateUpgradeHandler(
 
 		for _, p := range iavlhash.DualStorePairs() {
 			srcName, dstName := p[0], p[1]
-			if iavlhash.AlgorithmName(srcName) == "sha256" {
+			if iavlhash.IsIBCStore(srcName) {
 				return nil, fmt.Errorf("refusing to rehash IBC-facing store %s", srcName)
 			}
 			if keepers == nil {

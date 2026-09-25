@@ -73,7 +73,7 @@ echo "v62-cv: OLD=$OLD_BIND V61=$V61_BIND V62=$V62_BIND snapshot=${SNAPSHOT_URL:
 
 # Snapshot + in-place-testnet halt on v6.1 (v6 binary has no v6.1 handler).
 # shellcheck disable=SC1091
-source "$ROOT/a.sh"
+source "$ROOT/archive/v6.0/a.sh"
 
 : "${VAL1HOME:?}" "${VAL1_RPC_PORT:?}"
 VAL1HOME="$(cd "$VAL1HOME" && pwd)"

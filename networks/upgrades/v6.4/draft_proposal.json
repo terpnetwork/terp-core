@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+      "plan": {
+        "name": "v6.4",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "0",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.4.0/terpd-6.4.0-linux-amd64.tar.gz?checksum=sha256:6b49c432d7d8a8123d44ea8bcb5811a616e7e86b048bbe0c20b37dc0503a9ef4\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.4.0/terpd-6.4.0-linux-arm64.tar.gz?checksum=sha256:98f9d9a92c9a72261fa062e16e42c5dfdb22e5172f972bb3cf1e0aaffca1171d\"}}",
+        "upgraded_client_state": null
+      }
+    }
+  ],
+  "metadata": "",
+  "deposit": "50000000uterp",
+  "title": "v6.4",
+  "summary": "Do not broadcast. The v6.3 handler arms this plan at apply height + 2.",
+  "expedited": true
+}

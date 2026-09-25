@@ -13,18 +13,38 @@ without drift.
 
 Build ZK images with `WASMVM_SOURCE=local` from this monorepo (`crates/zk-wasmvm`).
 
+## 4.0.0-zk libwasmvm builders (required)
+
+Host libs (glibc `.so`, Darwin dylib, muslc `.a`) are compiled with **our**
+images, not CosmWasm Docker Hub:
+
+- `terpnetwork/zk-alpine-builder:4.0.0-zk` → muslc `.a`
+- `terpnetwork/zk-debian-builder:4.0.0-zk` → glibc `.so` (what Linux `go test` links)
+- `terpnetwork/zk-cross-builder:4.0.0-zk` → osxcross (optional; Darwin native is supported)
+
+```bash
+(cd crates/zk-wasmvm/builders && make docker-images-4.0.0-zk)
+make wasmvm-release-build
+make wasmvm-verify
+./scripts/release/publish_zk_wasmvm.sh   # S3 releases/zk-wasmvm/v4.0.0-zk/
+```
+
+`make docker-images` in `crates/zk-wasmvm/builders` **refuses**
+`cosmwasm/libwasmvm-builder:0103-*`. Write-up:
+[`crates/zk-wasmvm/docs/BUILDERS.md`](../../crates/zk-wasmvm/docs/BUILDERS.md).
+
 ## Quick start — `v6.0.0-dev`
 
 ```bash
 # 1) Branch
 git checkout v6.0.0-dev
 
-# 2) Build ZK alpine image + tag as v5.3.0-dev (local + ghcr names)
+# 2) Build ZK alpine runtime image + tag as registry.terp.network/terp-core:<tag>
 make docker-publish-dev RELEASE_TAG=v6.0.0-dev
 # Retag only (reuse existing :local-zk without rebuild):
 # make docker-publish-dev RELEASE_TAG=v6.0.0-dev SKIP_BUILD=1
 
-# 3) Push image (needs docker login to containers.terp.network)
+# 3) Push image (docker login to registry.terp.network — not GHCR)
 make docker-push-dev RELEASE_TAG=v6.0.0-dev
 
 # 4) Bundle source + manifest (local build/release/<tag>/)
@@ -70,6 +90,8 @@ make docker-push-dev RELEASE_TAG=v6.0.0-dev
 
 After publishing a tag pack: `make verify-artifacts RELEASE_TAG=v6.0.0` (S3 checksums, muslc, docker image == ELF, ict-rs).
 
+Standard bit-for-bit recurate of any `vX.Y.Z` (empty GOPATH): `TAG=v6.2.0 make verify-fresh-vm`. Dual confirmation: `GUESTS=firecracker,wasmer TAG=v6.2.0 make verify-fresh-vm` (`FIRECRACKER_SSH` + `WASMER_SSH`). Per-tag extras live in `scripts/release/fresh-vm/releases/` and are not edited once that tag is published. Cosmovisor pack recurate (`make recurate-upgrade-binaries`) stays a separate ARTIFACT_LOCK check.
+
 Before a Cosmovisor upgrade (local artifacts, no S3): `WRITE=1 PLAN=v6.1 make preflight-upgrade RELEASE_TAG=v6.1.0`. `RELEASE_TAG` must be **vX.Y.Z** (the git tag). That rejects `file://` plans, requires tarball member `terpd`, and records per-arch libwasmvm checksums.
 
 ### Release control (same as v6.0.0)
@@ -81,6 +103,10 @@ ELF identity is an **annotated git tag** `vX.Y.Z` on the frozen source commit. C
 RELEASE_TAG=v6.1.0 BINARY_COMMIT=<sha> make release-control
 git checkout v6.1.0
 RELEASE_TAG=v6.1.0 WASMVM_SOURCE=local make create-binaries
+# Darwin/arm64 host: create-binaries also runs scripts/release/build_host_darwin.sh
+# (static libwasmvmstatic_darwin.a). prep.sh packs terpd-<ver>-darwin-arm64.tar.gz
+# into the same sha256sum.txt. Publish darwin without touching linux muslc:
+#   ONLY=darwin make publish-s3-binaries RELEASE_TAG=v6.1.0
 git checkout release/v6.1.0
 WRITE=1 PLAN=v6.1 RELEASE_TAG=v6.1.0 make release-prep
 # commit lock/proposal on release/v6.1.0 only — do not move tag v6.1.0
@@ -95,6 +121,7 @@ WRITE=1 PLAN=v6.1 RELEASE_TAG=v6.1.0 make release-prep
 | [`S3-LAYOUT.md`](./S3-LAYOUT.md) | Canonical multi-project MinIO layout |
 | [`prep.sh`](./prep.sh) | Goreleaser-era binary tarballs (mainnet-style) |
 | [`ensure_release_control.sh`](./ensure_release_control.sh) | Create/verify tag `vX.Y.Z` + branch `release/vX.Y.Z` |
+| [`fresh-vm/run.sh`](./fresh-vm/run.sh) | Standard bit-for-bit recurate vs S3 (`TAG=vX.Y.Z`). Per-tag extras in [`fresh-vm/releases/`](./fresh-vm/releases/) |
 
 ## Manifest (verifiability)
 

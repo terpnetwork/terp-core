@@ -1,0 +1,71 @@
+{
+  "image": "registry.terp.network/terp-core:v6.3.0-dev",
+  "topology": "A=blake3 B=hybrid C=sha256; TM B→C; 08-wasm ICS-23 on C",
+  "lc_store_gas": 0,
+  "a_tm_handshake": "link_path: Relayer error on hermes: create channel produced no channel ids: a_side channel_id not found in: {\"result\":\"failed to spawn chain runtime: missing chain config for 'terp-a-1' in configuration file\",\"status\":\"error\"}; stdout={\"timestamp\":\"2026-09-13T12:29:50.021350Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"using default configuration from '/home/hermes/.hermes/config.toml'\"},\"threadId\":\"ThreadId(1)\"}\n{\"timestamp\":\"2026-09-13T12:29:50.021752Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"running Hermes v1.13.1\"},\"threadId\":\"ThreadId(1)\"}\n{\"result\":\"failed to spawn chain runtime: missing chain config for 'terp-a-1' in configuration file\",\"status\":\"error\"}\n; stderr=",
+  "hybrid_inclusion_gas": 0,
+  "hybrid_exclusion_gas": 0,
+  "a_inclusion_gas": 0,
+  "wasm_lc_contract": "terp14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9skqhzr5",
+  "legs": [
+    {
+      "variant": "H",
+      "image": "registry.terp.network/terp-core:v6.3.0-dev",
+      "n": 4,
+      "warmup": 1,
+      "packets_on": "07-tendermint",
+      "median_t_round_trip_ms": 5463,
+      "median_t_recv_packet_ms": 2560,
+      "median_gas_recv_packet": 162540,
+      "median_gas_recv": 162540,
+      "median_gas_update_client": 162540,
+      "median_proof_bytes_recv": 640,
+      "median_t_ack_ms": 3494,
+      "median_gas_ack": 116019,
+      "lc_store_gas": 0,
+      "lc_create_gas": 0,
+      "samples": [
+        {
+          "t_round_trip_ms": 4899,
+          "t_recv_packet_ms": 2558,
+          "t_update_client_ms": 2558,
+          "t_ack_ms": 2558,
+          "gas_recv_packet": 186914,
+          "gas_update_client": 186914,
+          "gas_ack": 115989,
+          "proof_bytes_recv": 596
+        },
+        {
+          "t_round_trip_ms": 11756,
+          "t_recv_packet_ms": 2597,
+          "t_update_client_ms": 2597,
+          "t_ack_ms": 6128,
+          "gas_recv_packet": 162540,
+          "gas_update_client": 162540,
+          "gas_ack": 116039,
+          "proof_bytes_recv": 640
+        },
+        {
+          "t_round_trip_ms": 5296,
+          "t_recv_packet_ms": 2563,
+          "t_update_client_ms": 2563,
+          "t_ack_ms": 4431,
+          "gas_recv_packet": 162540,
+          "gas_update_client": 162540,
+          "gas_ack": 116019,
+          "proof_bytes_recv": 640
+        },
+        {
+          "t_round_trip_ms": 5630,
+          "t_recv_packet_ms": 2552,
+          "t_update_client_ms": 2552,
+          "t_ack_ms": 2552,
+          "gas_recv_packet": 162540,
+          "gas_update_client": 162540,
+          "gas_ack": 116019,
+          "proof_bytes_recv": 640
+        }
+      ]
+    }
+  ]
+}

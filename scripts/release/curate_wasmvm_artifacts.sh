@@ -52,6 +52,17 @@ for muslc in "$OUT"/libwasmvm_muslc.*.a; do
   echo "OK $base store_code_with_circuit"
 done
 
+# glibc .so is what Linux `go test` links. Mixed-generation (new .a, old .so)
+# is the 4.0.0-zk trip. Fail closed if .so lacks 4.0.0-zk FFI.
+for so in "$OUT"/libwasmvm.x86_64.so "$OUT"/libwasmvm.aarch64.so; do
+  [ -f "$so" ] || { echo "ERROR: missing $so — make wasmvm-release-build-linux" >&2; exit 1; }
+  if ! grep -a -q -F store_param "$so"; then
+    echo "ERROR: $(basename "$so") missing store_param (stale 3.0.7-zk .so)" >&2
+    exit 1
+  fi
+  echo "OK $(basename "$so") store_param"
+done
+
 (
   cd "$OUT"
   if command -v sha256sum >/dev/null; then
