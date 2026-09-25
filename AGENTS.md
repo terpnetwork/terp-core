@@ -50,3 +50,10 @@ do not block the Cosmovisor ELF.
   `permissionlessweb/cw-headstash`.
 
 Mechanics: `/skills/release-libraries/SKILL.md`.
+
+## act
+
+`scripts/ci/act.sh` is the way to run a workflow locally. It picks
+`linux/arm64` or `linux/amd64` from the machine and deletes act containers
+when the process exits. groot2 is amd64. This Mac is arm64. Do not pin the
+other architecture in `.actrc`.
