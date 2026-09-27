@@ -18,7 +18,7 @@ const NextUpgradeGap int64 = 2
 // NextUpgradeInfo is compact Cosmovisor binaries JSON (never file://).
 // After linux recurate: scripts/release/stamp_v63_next_info.sh copies
 // networks/upgrades/v6.4/cosmovisor.json so plan.info carries v6.4 checksums.
-const NextUpgradeInfo = `{"binaries":{"linux/amd64":"https://s3.terp.network/releases/terp-core/v6.4.0/terpd-6.4.0-linux-amd64.tar.gz?checksum=sha256:6b49c432d7d8a8123d44ea8bcb5811a616e7e86b048bbe0c20b37dc0503a9ef4","linux/arm64":"https://s3.terp.network/releases/terp-core/v6.4.0/terpd-6.4.0-linux-arm64.tar.gz?checksum=sha256:98f9d9a92c9a72261fa062e16e42c5dfdb22e5172f972bb3cf1e0aaffca1171d"}}`
+const NextUpgradeInfo = `{"binaries":{"linux/amd64":"https://s3.terp.network/releases/terp-core/v6.4.0/terpd-6.4.0-linux-amd64.tar.gz?checksum=sha256:7d11ade8818301c9ed443f18f7ac63b4f8f10bc1dfc99787bc2e61af2993eac4","linux/arm64":"https://s3.terp.network/releases/terp-core/v6.4.0/terpd-6.4.0-linux-arm64.tar.gz?checksum=sha256:75d50600d7c1fb9fd1e215d1739a3ac95e5c56f0651422a03ab87835c52c4e27","darwin/arm64":"https://s3.terp.network/releases/terp-core/v6.4.0/terpd-6.4.0-darwin-arm64.tar.gz?checksum=sha256:7ea993e1afb44c6a96859ba985a5ff8d260a755334e8aa582bb2d6dad4f5b284"}}`
 
 var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
