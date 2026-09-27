@@ -18,7 +18,7 @@ q() {
   local out rc
   set +e
   # --home first so client.toml (node=) is loaded. SDK 0.55 --node is per-subcommand.
-  out=$("$NEW_BIND" --home "$VAL1HOME" q "$@" --output json 2>&1)
+  out=$("$NEW_BIND" --home "$VAL1HOME" q "$@" --node "$NODE" --output json 2>&1)
   rc=$?
   set -e
   if [ "$rc" -ne 0 ]; then
@@ -77,7 +77,7 @@ q cw-hooks cw-hooks params || fail=1
 # Prove they are live via module-versions + a real query on the same stack.
 echo "--- surfaces without q params ---"
 set +e
-mvjson=$("$NEW_BIND" --home "$VAL1HOME" q upgrade module-versions --output json 2>&1)
+mvjson=$("$NEW_BIND" --home "$VAL1HOME" q upgrade module-versions --node "$NODE" --output json 2>&1)
 mrc=$?
 set -e
 if [ "$mrc" -ne 0 ] || ! echo "$mvjson" | jq -e . >/dev/null 2>&1; then

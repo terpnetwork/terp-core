@@ -121,11 +121,14 @@ applied() {
 # Live `q upgrade plan` is empty once v6.4 has halted; Cosmovisor wrote upgrade-info.json.
 check_v64_plan_info() {
   local info=""
-  if [ -f "$HOME_DIR/data/upgrade-info.json" ]; then
-    info="$(jq -r '.info // empty' "$HOME_DIR/data/upgrade-info.json" 2>/dev/null || true)"
-  fi
-  if [ -z "$info" ]; then
-    info="$(grep -o 'armed plan v6.4 height=[0-9]* info=.*' "$NEW_LOG" | tail -1 || true)"
+  # upgrade-info.json still holds the v6.3 governance plan (often a bare URL).
+  # The handler log is the v6.4 plan it armed.
+  info="$(grep -o 'armed plan v6.4 height=[0-9]* info=.*' "$NEW_LOG" | tail -1 || true)"
+  info="${info#*info=}"
+  if ! printf '%s' "$info" | grep -q 'checksum=sha256:'; then
+    if [ -f "$HOME_DIR/data/upgrade-info.json" ]; then
+      info="$(jq -r '.info // empty' "$HOME_DIR/data/upgrade-info.json" 2>/dev/null || true)"
+    fi
   fi
   echo "v63: armed plan.info=${info:0:180}"
   echo "$info" | grep -q 'checksum=sha256:' || {
