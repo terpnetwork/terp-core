@@ -123,7 +123,8 @@ RUN ARCH=$(uname -m) && \
 # them and fail. go.mod/go.sum are already tidy on the host.
 RUN go mod download && LEDGER_ENABLED=false BUILD_TAGS="${BUILD_TAGS}" LINK_STATICALLY=true make build VERSION="${GIT_VERSION}" COMMIT="${GIT_COMMIT}"
 RUN echo "Ensuring binary is statically linked ..." \
-  && (file /code/build/terpd | grep "statically linked")
+  && file /code/build/terpd \
+  && file /code/build/terpd | grep -E 'statically linked|static-pie'
 
 # ---------------------------------------------------------
 # 1. Runtime image — standard (github wasmvm)
