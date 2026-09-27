@@ -307,7 +307,7 @@ func NewTerpApp(
 	}
 	ibcWasmConfig := wasmlctypes.WasmConfig{
 		DataDir:               ibcwasmDir,
-		SupportedCapabilities: append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0", "bn254", "hash-blake"),
+		SupportedCapabilities: append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0"),
 		ContractDebugMode:     false,
 	}
 

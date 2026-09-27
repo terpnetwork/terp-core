@@ -466,7 +466,7 @@ func NewAppKeepers(
 			}),
 	)
 
-	wasmCapabilities := append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0", "bn254", "hash-blake")
+	wasmCapabilities := append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0")
 	// Both x/wasm and 08-wasm use the local zk-wasmvm (wasmvm v3).
 	// Each NewVM gets MemoryCacheSize (default 100 MiB); two VMs ≈ 200 MiB resident LRU.
 	// LRU is node-local and gas-neutral — pin hot codeIDs via gov MsgPinCodes, not hottest-N.

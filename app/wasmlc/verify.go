@@ -131,7 +131,7 @@ func Verify(wasm []byte, hasherMode string, m Membership) (checksum []byte, err 
 	}
 	defer os.RemoveAll(dir)
 
-	caps := append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0", "bn254", "hash-blake")
+	caps := append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0")
 	vm, err := wasmvm.NewVM(dir, caps, 32, false, 100)
 	if err != nil {
 		return nil, fmt.Errorf("wasmvm: %w", err)
