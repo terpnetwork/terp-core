@@ -83,7 +83,7 @@ import (
 
 	terpabci "github.com/terpnetwork/terp-core/v6/app/abci"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
-	v63 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_3"
+
 	"github.com/terpnetwork/terp-core/v6/docs"
 	"github.com/terpnetwork/terp-core/v6/x/drip"
 	"github.com/terpnetwork/terp-core/v6/x/feeshare"
@@ -551,17 +551,13 @@ func (app *TerpApp) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
 }
 
 // EndBlocker application updates every end block.
-// v6.3 arms v6.4 here (ApplyUpgrade clears the plan key), then recopies dest
-// so EndBlock/gap-block live writes are on dest before v6.4 Deletes live trees.
+// The v6.3 ELF arms v6.4 here. The v6.4 ELF does not.
 func (app *TerpApp) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
 	res, err := app.mm.EndBlock(ctx)
 	if err != nil {
 		return res, err
 	}
-	if err := v63.MaybeArmNext(ctx, app.UpgradeKeeper); err != nil {
-		return res, err
-	}
-	if err := v63.SyncDestWhileArmed(ctx, &app.AppKeepers); err != nil {
+	if err := app.armHasherNext(ctx); err != nil {
 		return res, err
 	}
 	return res, nil
