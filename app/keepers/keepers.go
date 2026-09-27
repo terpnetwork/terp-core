@@ -505,10 +505,6 @@ func NewAppKeepers(
 	)
 	appKeepers.WasmKeeper = &wasmKeeper
 
-	// register CosmWasm authenticator
-	appKeepers.AuthenticatorManager.RegisterAuthenticator(
-		authenticator.NewCosmwasmAuthenticator(appKeepers.ContractKeeper, appKeepers.AccountKeeper, appCodec))
-
 	ibcWasmClientKeeper := ibcwlckeeper.NewKeeperWithVM(
 		appCodec,
 		runtime.NewKVStoreService(appKeepers.KeeperKey(ibcwlctypes.StoreKey)),
@@ -521,6 +517,9 @@ func NewAppKeepers(
 
 	// set the contract keeper for the Ics20WasmHooks
 	appKeepers.ContractKeeper = wasmkeeper.NewDefaultPermissionKeeper(appKeepers.WasmKeeper)
+	// Register after ContractKeeper is set. Registering above uses the nil field.
+	appKeepers.AuthenticatorManager.RegisterAuthenticator(
+		authenticator.NewCosmwasmAuthenticator(appKeepers.ContractKeeper, appKeepers.AccountKeeper, appCodec))
 	appKeepers.Ics20WasmHooks.ContractKeeper = appKeepers.WasmKeeper
 
 	feeshareKeeper := feesharekeeper.NewKeeper(
