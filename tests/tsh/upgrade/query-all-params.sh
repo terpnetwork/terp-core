@@ -86,7 +86,7 @@ if [ "$mrc" -ne 0 ] || ! echo "$mvjson" | jq -e . >/dev/null 2>&1; then
   fail=1
 else
   echo "ok  upgrade module-versions"
-  for need in packetfowardmiddleware wasm ibchooks transfer interchainaccounts hashmerchant feeshare tokenfactory smartaccount globalfee staking auth; do
+  for need in packetfowardmiddleware wasm ibccallbacks transfer interchainaccounts hashmerchant feeshare tokenfactory smartaccount globalfee staking auth; do
     if echo "$mvjson" | jq -e --arg n "$need" '[.module_versions[]? | .name] | index($n) != null' >/dev/null; then
       echo "ok  module-version $need"
     else
@@ -94,6 +94,10 @@ else
       fail=1
     fi
   done
+  if echo "$mvjson" | jq -e '[.module_versions[]? | .name] | index("ibchooks") != null' >/dev/null; then
+    echo "FAIL stale module-version ibchooks"
+    fail=1
+  fi
   # SDK 0.55 migrations
   stver=$(echo "$mvjson" | jq -r '.module_versions[] | select(.name=="staking") | .version')
   auver=$(echo "$mvjson" | jq -r '.module_versions[] | select(.name=="auth") | .version')
@@ -110,10 +114,6 @@ q ibc-wasm-checksums ibc-wasm checksums || fail=1
 q evidence-list evidence list || fail=1
 q wasm-list-code wasm list-code || fail=1
 q wasm-pinned wasm pinned || fail=1
-
-# ibchooks: local address derivation (does not need a live packet).
-HOOKS_SENDER="${HOOKS_SENDER:-terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq}"
-q ibchooks-wasm-sender ibchooks wasm-sender channel-0 "$HOOKS_SENDER" || fail=1
 
 if [ "$fail" -ne 0 ]; then
   echo "query-all-params: one or more module queries failed"
