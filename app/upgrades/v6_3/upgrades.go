@@ -35,6 +35,14 @@ func CreateUpgradeHandler(
 		if err != nil {
 			return nil, err
 		}
+		// SetModuleVersionMap only writes keys. Drop the removed module or
+		// "ibchooks" stays next to ibccallbacks in the upgrade store.
+		if keepers != nil {
+			if upgradeKey := keepers.GetKey(upgradetypes.StoreKey); upgradeKey != nil {
+				ctx.KVStore(upgradeKey).Delete(append([]byte{upgradetypes.VersionMapByte}, []byte("ibchooks")...))
+				logger.Info("v6.3: dropped ibchooks module version")
+			}
+		}
 
 		for _, p := range iavl.DualStorePairs() {
 			srcName, dstName := p[0], p[1]

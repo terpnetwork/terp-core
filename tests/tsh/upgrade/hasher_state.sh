@@ -139,13 +139,23 @@ echo "ok  wasm codes retained ($(echo "$post_ids" | jq 'length'))"
 
 pre_mods="$(mod_names "$STATE")"
 post_mods="$(mod_names "$POST")"
-if [ "$pre_mods" != "$post_mods" ]; then
-  echo "hasher_state: module-versions names changed"
-  echo "pre $pre_mods"
+# v6.3 replaces ibchooks with ibccallbacks. The old name must not remain.
+if printf '%s\n' "$post_mods" | jq -e 'index("ibchooks") != null' >/dev/null; then
+  echo "hasher_state: stale ibchooks module version"
   echo "post $post_mods"
   fail=1
 fi
-echo "ok  module-versions retained"
+pre_expect="$(printf '%s\n' "$pre_mods" | jq -c 'map(select(. != "ibchooks")) + ["ibccallbacks"] | unique | sort')"
+post_sorted="$(printf '%s\n' "$post_mods" | jq -c 'sort')"
+if [ "$pre_expect" != "$post_sorted" ]; then
+  echo "hasher_state: module-versions names changed"
+  echo "pre $pre_mods"
+  echo "expect $pre_expect"
+  echo "post $post_mods"
+  fail=1
+else
+  echo "ok  module-versions retained"
+fi
 
 # Params that must not silently empty after dest switch.
 for p in bank staking wasm mint distribution slashing; do
