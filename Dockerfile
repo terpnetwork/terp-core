@@ -85,7 +85,7 @@ RUN ARCH=$(uname -m) && \
         echo "ERROR: staged zk-deps missing. Need build/zk-deps/zk-wasmvm and zk-wasmd." && \
         exit 1; \
       fi && \
-      if [ ! -f /code/build/zk-deps/ibc-hooks-v11/go.mod ]; then \
+      if grep -q 'crates/ibc-hooks-v11' /code/go.mod && [ ! -f /code/build/zk-deps/ibc-hooks-v11/go.mod ]; then \
         echo "ERROR: staged ibc-hooks-v11 missing under build/zk-deps." && \
         exit 1; \
       fi && \

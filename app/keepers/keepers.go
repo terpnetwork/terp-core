@@ -25,9 +25,9 @@ import (
 	packetforwardkeeper "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/keeper"
 	packetforwardtypes "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/types"
 
-	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11"
-	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11/keeper"
-	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11/types"
+	ibchooks "github.com/permissionlessweb/ibc-apps/modules/ibc-hooks/v11"
+	ibchookskeeper "github.com/permissionlessweb/ibc-apps/modules/ibc-hooks/v11/keeper"
+	ibchookstypes "github.com/permissionlessweb/ibc-apps/modules/ibc-hooks/v11/types"
 
 	icacontroller "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller"
 	icacontrollerkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/keeper"

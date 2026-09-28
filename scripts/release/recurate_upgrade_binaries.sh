@@ -49,11 +49,18 @@ else
   git worktree add --detach "$WT" "$COMMIT"
   git -C "$WT" submodule update --init --checkout crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
 fi
+# A workspace language server rewrites go.mod (drops // indirect) as soon as
+# the worktree appears. The tag's go.mod is the source of truth. Writable
+# again before make: Darwin's host build uses `go build -mod=mod`.
+if [ -f "$WT/go.mod" ]; then chmod u+w "$WT/go.mod"; fi
+git -C "$WT" checkout -- go.mod
+chmod a-w "$WT/go.mod"
 if [ -n "$(git -C "$WT" status --porcelain --untracked-files=no)" ]; then
   echo "ERROR: recurate worktree $WT is dirty after checkout $COMMIT" >&2
   git -C "$WT" status --porcelain >&2
   exit 1
 fi
+chmod u+w "$WT/go.mod"
 desc="$(git -C "$WT" describe --tags --always --dirty)"
 if echo "$desc" | grep -q dirty; then
   echo "ERROR: recurate worktree describes as $desc (must be exact $TAG)" >&2
@@ -63,13 +70,15 @@ fi
 # Muslc: published STWO archives, checksum-verified. Never parent-tree copy.
 bash "$ROOT/scripts/release/fetch_zk_muslc.sh" "$WT/crates/zk-wasmvm/internal/api"
 
-HOOKS_SRC="$ROOT/crates/ibc-hooks-v11"
-if [ ! -d "$HOOKS_SRC" ]; then
-  echo "ERROR: missing $HOOKS_SRC" >&2
-  exit 1
+if grep -q '=> ./crates/ibc-hooks-v11' "$WT/go.mod"; then
+  HOOKS_SRC="$ROOT/crates/ibc-hooks-v11"
+  if [ ! -d "$HOOKS_SRC" ]; then
+    echo "ERROR: missing $HOOKS_SRC" >&2
+    exit 1
+  fi
+  mkdir -p "$WT/crates/ibc-hooks-v11"
+  rsync -a --delete --exclude='.git/' "$HOOKS_SRC/" "$WT/crates/ibc-hooks-v11/"
 fi
-mkdir -p "$WT/crates/ibc-hooks-v11"
-rsync -a --delete --exclude='.git/' "$HOOKS_SRC/" "$WT/crates/ibc-hooks-v11/"
 
 EPOCH="$(git log -1 --format=%ct "$COMMIT")"
 # Stamp VERSION from the tag, not git describe (dual tags on one SHA).

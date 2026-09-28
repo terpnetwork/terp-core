@@ -126,10 +126,12 @@ endif
 	@rsync -a --delete \
 		--exclude='.git/' \
 		$(ZK_WASMD_DIR)/ build/zk-deps/zk-wasmd/ 2>/dev/null || true
-	@echo "==> Staging ibc-hooks-v11 (store/v2 keeper patch) ..."
-	@mkdir -p build/zk-deps/ibc-hooks-v11
-	@rsync -a --delete --exclude='.git/' \
-		./crates/ibc-hooks-v11/ build/zk-deps/ibc-hooks-v11/ 2>/dev/null || true
+	@if grep -q '=> ./crates/ibc-hooks-v11' go.mod; then \
+		echo "==> Staging ibc-hooks-v11 (store/v2 keeper patch) ..."; \
+		mkdir -p build/zk-deps/ibc-hooks-v11; \
+		rsync -a --delete --exclude='.git/' \
+			./crates/ibc-hooks-v11/ build/zk-deps/ibc-hooks-v11/; \
+	fi
 docker-clean:
 	@echo "==> Removing staged wasmvm + zk artifacts ..."
 	rm -rf build/zk-deps build/wasmvm
