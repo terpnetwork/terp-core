@@ -98,7 +98,7 @@ func proveAll(cmd *cobra.Command, clientCtx client.Context, bankStore, ibcStore 
 		fmt.Fprintf(cmd.OutOrStdout(), "ok  dest %s=%s\n", store, alg)
 	}
 
-	ibcNames := []string{"ibc", "transfer", "icahost", "icacontroller", "packetfowardmiddleware", "hooks-for-ibc", "08-wasm"}
+	ibcNames := []string{"ibc", "transfer", "icahost", "icacontroller", "packetfowardmiddleware", "08-wasm"}
 	var ibcParts []string
 	for _, store := range ibcNames {
 		alg, err := proveStore(clientCtx, store, scanCandidates())

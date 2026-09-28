@@ -3,7 +3,6 @@ package keepers
 import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11/types"
 	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 	icacontrollertypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/types"
 	icahosttypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/types"
@@ -27,13 +26,15 @@ func alwaysStoreNames() []string {
 		icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey,
 		packetforwardtypes.StoreKey,
-		ibchookstypes.StoreKey,
 		LegacyParamsStoreKey,
 	}
 }
 
 func (appKeepers *AppKeepers) GenerateKeys() {
 	names := alwaysStoreNames()
+	if MountHooksStore {
+		names = append(names, "hooks-for-ibc")
+	}
 	if !KeepersOnDest {
 		names = append(names, iavl.MigratableStores()...)
 	}

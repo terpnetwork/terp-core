@@ -23,7 +23,11 @@ const NextUpgradeInfo = `{"binaries":{"linux/amd64":"https://s3.terp.network/rel
 var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
 	CreateUpgradeHandler: CreateUpgradeHandler,
+	// Deleted runs in the SDK store loader, before CreateUpgradeHandler copies
+	// dest stores. ibccallbacks is added by RunMigrations at the start of that
+	// handler. Callbacks has no store of its own.
 	StoreUpgrades: store.StoreUpgrades{
-		Added: iavl.DestStores(),
+		Added:   iavl.DestStores(),
+		Deleted: []string{"hooks-for-ibc"},
 	},
 }

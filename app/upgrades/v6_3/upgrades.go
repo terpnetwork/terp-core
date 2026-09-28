@@ -29,6 +29,8 @@ func CreateUpgradeHandler(
 		logger := ctx.Logger().With("upgrade", UpgradeName)
 
 		logger.Info("v6.3: running module migrations")
+		// hooks-for-ibc is already gone: StoreUpgrades.Deleted ran in the store
+		// loader. RunMigrations adds ibccallbacks (empty genesis) before the copy.
 		migrations, err := mm.RunMigrations(ctx, configurator, vm)
 		if err != nil {
 			return nil, err

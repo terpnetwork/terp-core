@@ -6,3 +6,6 @@ package keepers
 // no dest trees, no v6.3 handler. Cosmovisor swaps to the v6.3.0 ELF at halt.
 const MountDestStores = false
 const KeepersOnDest = false
+
+// MountHooksStore keeps the live ibc-hooks KV so a v6.2 snapshot still opens.
+const MountHooksStore = true

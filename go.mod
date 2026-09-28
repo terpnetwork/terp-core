@@ -23,7 +23,6 @@ require (
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
 	github.com/cosmos/cosmos-sdk v0.55.0
 	github.com/cosmos/gogoproto v1.7.2
-	github.com/cosmos/ibc-apps/modules/ibc-hooks/v11 v11.0.0
 	github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11 v11.1.0
 	github.com/cosmos/ibc-go/v11 v11.2.0
 	github.com/golang/protobuf v1.5.4
@@ -396,9 +395,6 @@ replace (
 )
 
 exclude github.com/gogo/protobuf v1.3.3
-
-// store/v2 keeper only. Fork go.mod still declares the cosmos module path.
-replace github.com/cosmos/ibc-apps/modules/ibc-hooks/v11 => github.com/permissionlessweb/ibc-apps/modules/ibc-hooks/v11 v11.0.3
 
 // IAVL v2 is unused by CommitMultiStore.
 replace github.com/cosmos/iavl/v2 => github.com/permissionlessweb/iavl/v2 v2.0.0-20260831004022-e5686bb83c1c

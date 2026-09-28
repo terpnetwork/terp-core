@@ -63,9 +63,6 @@ import (
 	cwhooksmodule "github.com/terpnetwork/terp-core/v6/x/cw-hooks/module"
 	cwhookstypes "github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
 
-	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11"
-	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11/types"
-
 	// cwhooks "github.com/terpnetwork/terp-core/v6/x/cw-hooks"
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 
@@ -76,6 +73,9 @@ import (
 
 	wasmlc "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11"
 	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
+
+	ibccallbackstypes "github.com/cosmos/ibc-go/v11/modules/apps/callbacks/types"
+	"github.com/terpnetwork/terp-core/v6/app/ibccallbacks"
 )
 
 // ModuleBasics defines the module BasicManager is in charge of setting up basic,
@@ -105,7 +105,7 @@ var ModuleBasics = module.NewBasicManager(
 	ibctm.AppModuleBasic{},
 	transfer.AppModuleBasic{},
 	ica.AppModuleBasic{},
-	ibchooks.AppModuleBasic{},
+	ibccallbacks.AppModuleBasic{},
 	packetforward.AppModuleBasic{},
 	feeshare.AppModuleBasic{},
 	globalfee.AppModuleBasic{},
@@ -172,7 +172,7 @@ func orderBeginBlockers() []string {
 		driptypes.ModuleName,
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
-		ibchookstypes.ModuleName,
+		ibccallbackstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		cwhookstypes.ModuleName,
 		hashmerchanttypes.ModuleName,
@@ -206,7 +206,7 @@ func orderEndBlockers() []string {
 		driptypes.ModuleName,
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
-		ibchookstypes.ModuleName,
+		ibccallbackstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		smartaccounttypes.ModuleName,
 		hashmerchanttypes.ModuleName,
@@ -232,7 +232,7 @@ func orderInitBlockers() []string {
 		feesharetypes.ModuleName,
 		globalfee.ModuleName,
 		packetforwardtypes.ModuleName,
-		ibchookstypes.ModuleName,
+		ibccallbackstypes.ModuleName,
 		tokenfactorytypes.ModuleName,
 		smartaccounttypes.ModuleName,
 		hashmerchanttypes.ModuleName,

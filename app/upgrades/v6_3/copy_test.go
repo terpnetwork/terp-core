@@ -62,15 +62,16 @@ func TestSyncKVStoreDeletesDestOnly(t *testing.T) {
 
 func TestRefuseIBCRehashPolicy(t *testing.T) {
 	require.Empty(t, Upgrade.StoreUpgrades.Renamed)
-	require.Empty(t, Upgrade.StoreUpgrades.Deleted)
+	require.Equal(t, []string{"hooks-for-ibc"}, Upgrade.StoreUpgrades.Deleted)
 	require.Equal(t, iavl.DestStores(), Upgrade.StoreUpgrades.Added)
 	require.Equal(t, "v6.3", UpgradeName)
 	require.Equal(t, "v6.4", NextUpgradeName)
 	require.Equal(t, int64(2), NextUpgradeGap)
 
-	for _, name := range []string{"ibc", "transfer", "icahost", "icacontroller", "08-wasm", "hooks-for-ibc"} {
+	for _, name := range []string{"ibc", "transfer", "icahost", "icacontroller", "08-wasm"} {
 		require.True(t, iavl.IsIBCStore(name), name)
 	}
+	require.False(t, iavl.IsIBCStore("hooks-for-ibc"))
 	for _, p := range iavl.DualStorePairs() {
 		require.False(t, iavl.IsIBCStore(p[0]), p[0])
 		require.NotEqual(t, "08-wasm", p[0])
@@ -88,4 +89,5 @@ func TestDestMountedOnV63Layout(t *testing.T) {
 	require.NotNil(t, k.GetKey(iavl.BankB3))
 	require.NotNil(t, k.GetKey("ibc"))
 	require.Nil(t, k.GetKey("b3-ibc"))
+	require.Nil(t, k.GetKey("hooks-for-ibc"))
 }

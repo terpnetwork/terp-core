@@ -53,8 +53,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/iavl"
-	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11"
 	packetforward "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware"
+	"github.com/terpnetwork/terp-core/v6/app/ibccallbacks"
 	ap "github.com/terpnetwork/terp-core/v6/app/params"
 
 	smartaccount "github.com/terpnetwork/terp-core/v6/x/smart-account"
@@ -400,7 +400,7 @@ func NewTerpApp(
 		ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper),
 		ibcwlc.NewAppModule(*app.IBCWasmClientKeeper),
 		packetforward.NewAppModule(app.PacketForwardKeeper),
-		ibchooks.NewAppModule(*app.AccountKeeper),
+		ibccallbacks.NewAppModule(),
 		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
 		hashmerchant.NewAppModule(app.HashMerchantKeeper),
 		cwhooksmodule.NewAppModule(appCodec, *app.CwHooksKeeper),
