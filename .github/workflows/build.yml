@@ -104,6 +104,13 @@ jobs:
               git submodule update --init --depth 1 "$p"
             fi
           done
+      - name: ibc-hooks-v11
+        run: |
+          if [ ! -f crates/ibc-hooks-v11/go.mod ]; then
+            curl -fsSL -o /tmp/ibc-hooks-v11.tar.gz \
+              https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v11.tar.gz
+            tar -C crates -xzf /tmp/ibc-hooks-v11.tar.gz
+          fi
       - name: Setup go
         uses: actions/setup-go@v6
         with:
