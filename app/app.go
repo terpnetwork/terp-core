@@ -53,8 +53,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/iavl"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11"
 	packetforward "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware"
-	ibchooks "github.com/permissionlessweb/ibc-apps/modules/ibc-hooks/v11"
 	ap "github.com/terpnetwork/terp-core/v6/app/params"
 
 	smartaccount "github.com/terpnetwork/terp-core/v6/x/smart-account"

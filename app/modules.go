@@ -63,8 +63,8 @@ import (
 	cwhooksmodule "github.com/terpnetwork/terp-core/v6/x/cw-hooks/module"
 	cwhookstypes "github.com/terpnetwork/terp-core/v6/x/cw-hooks/types"
 
-	ibchooks "github.com/permissionlessweb/ibc-apps/modules/ibc-hooks/v11"
-	ibchookstypes "github.com/permissionlessweb/ibc-apps/modules/ibc-hooks/v11/types"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11"
+	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11/types"
 
 	// cwhooks "github.com/terpnetwork/terp-core/v6/x/cw-hooks"
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
