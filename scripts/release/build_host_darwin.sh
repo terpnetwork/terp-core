@@ -45,15 +45,21 @@ GO_MODULE="$(awk '/^module /{print $2; exit}' go.mod)"
 mkdir -p "$ROOT/build"
 OUT="$ROOT/build/terpd-darwin-arm64"
 
+TAGS="netgo ledger static_wasm"
+if [ -n "${BUILD_TAGS:-}" ]; then
+  TAGS="$TAGS ${BUILD_TAGS}"
+fi
+TAG_LIST="$(printf '%s' "$TAGS" | tr ' ' ',')"
+
 ldflags="-X github.com/cosmos/cosmos-sdk/version.Name=terp-core"
 ldflags="$ldflags -X github.com/cosmos/cosmos-sdk/version.AppName=terpd"
 ldflags="$ldflags -X github.com/cosmos/cosmos-sdk/version.Version=${VER}"
 ldflags="$ldflags -X github.com/cosmos/cosmos-sdk/version.Commit=${COMMIT}"
-ldflags="$ldflags -X github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger,static_wasm"
+ldflags="$ldflags -X github.com/cosmos/cosmos-sdk/version.BuildTags=${TAG_LIST}"
 
-echo "==> darwin/arm64 static wasmvm  TAG=$TAG COMMIT=$COMMIT"
+echo "==> darwin/arm64 static wasmvm  TAG=$TAG COMMIT=$COMMIT TAGS=$TAGS"
 GOWORK=off CGO_ENABLED=1 go build -mod=mod \
-  -tags "netgo ledger static_wasm" \
+  -tags "$TAGS" \
   -ldflags "$ldflags" \
   -o "$OUT" \
   "${GO_MODULE}/cmd/terpd"
