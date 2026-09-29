@@ -4,7 +4,7 @@ binary_commit: 8c2f4a72ef6f5e492fd257607e39bf228e8fd67c
 pack_branch: release/v6.4.0
 dirty: v6.4.0
 s3_binaries_intended: https://s3.terp.network/releases/terp-core/v6.4.0/
-published: false
+published: true
 note: ELF identity is git tag v6.4.0. Pack files belong on release/v6.4.0 and must not move the tag.
 
 dedd89bcd84957aba2d6e9625ee546da6a72703825528ebfa57224b333173106  terpd-6.4.0-linux-amd64.tar.gz
