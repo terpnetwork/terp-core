@@ -20,6 +20,10 @@ import (
 
 const DefaultWasmRel = "crates/terp-rs/artifacts/cw_ics08_wasm_terp.wasm"
 
+// DefaultWasmTestdata is the guest shipped in this module. crates/* is
+// gitignored, so `go test ./...` cannot see the terp-rs artifact.
+const DefaultWasmTestdata = "app/wasmlc/testdata/cw_ics08_wasm_terp.wasm"
+
 // FindWasm walks up from cwd looking for cw_ics08_wasm_terp.wasm.
 func FindWasm() (string, error) {
 	if p := os.Getenv("WASM_LC"); p != "" {
@@ -31,10 +35,22 @@ func FindWasm() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	for i := 0; i < 8; i++ {
-		p := filepath.Join(dir, DefaultWasmRel)
-		if _, err := os.Stat(p); err == nil {
+	if p := walkFor(dir, DefaultWasmRel); p != "" {
+		return p, nil
+	}
+	for _, rel := range []string{DefaultWasmTestdata, "testdata/cw_ics08_wasm_terp.wasm"} {
+		if p := walkFor(dir, rel); p != "" {
 			return p, nil
+		}
+	}
+	return "", fmt.Errorf("cw_ics08_wasm_terp.wasm not found (set WASM_LC)")
+}
+
+func walkFor(dir, rel string) string {
+	for i := 0; i < 8; i++ {
+		p := filepath.Join(dir, rel)
+		if _, err := os.Stat(p); err == nil {
+			return p
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {
@@ -42,7 +58,7 @@ func FindWasm() (string, error) {
 		}
 		dir = parent
 	}
-	return "", fmt.Errorf("cw_ics08_wasm_terp.wasm not found (set WASM_LC)")
+	return ""
 }
 
 // Membership is one IAVL (or chained) existence proof for the wasm LC.

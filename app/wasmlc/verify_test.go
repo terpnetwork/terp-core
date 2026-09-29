@@ -27,12 +27,22 @@ func treeKV(t *testing.T, store string, key, val []byte) (*iavl.MutableTree, *ic
 func loadWasm(t *testing.T) []byte {
 	t.Helper()
 	p, err := FindWasm()
-	if err != nil {
-		t.Skip(err.Error())
-	}
+	require.NoError(t, err)
 	bz, err := os.ReadFile(p)
 	require.NoError(t, err)
 	require.Greater(t, len(bz), 1000)
+
+	dir, err := os.Getwd()
+	require.NoError(t, err)
+	art := walkFor(dir, DefaultWasmRel)
+	td := walkFor(dir, DefaultWasmTestdata)
+	if art != "" && td != "" && art != td {
+		other, err := os.ReadFile(td)
+		require.NoError(t, err)
+		pinned, err := os.ReadFile(art)
+		require.NoError(t, err)
+		require.Equal(t, pinned, other, "testdata guest drifted from %s", art)
+	}
 	return bz
 }
 
