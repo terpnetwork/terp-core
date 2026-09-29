@@ -12,3 +12,10 @@ b19fd2692c02e1848f0cbb61d3937c28abeeb5e9851cd4b1292ae6f8ca4b9cc4  terpd-6.3.0-li
 2d6e673ed2faedca23d1feeca4524f1b9bca3dea7a011a04f952a733b469e8e0  terpd-6.3.0-darwin-arm64.tar.gz
 62cc3c65a7032f70237e7af572d27ddbbc1900616996ea08632e4d77627454fb  terpd-linux-amd64
 7edbdbcce1cebf9a477dfd699caf0840d120dd885d4718419a99f5361a28a08f  terpd-linux-arm64
+
+wasmvm_muslc_base: https://s3.terp.network/releases/zk-wasmvm/v4.0.0-zk/
+ec9afa36668bcdccbfce99d7529a59556403f0456a5fe00b898a05c19dd7b06c  libwasmvm_muslc.aarch64.a
+927ce262d5e06735f77cd304e48e15c003c00ec93b57b5fbc277ad319010e771  libwasmvm_muslc.x86_64.a
+0ba3e8f46d24e6144d733f6cc4ab73888b09763f0e5723fcbb089980e3903020  libwasmvm.x86_64.so
+7ee8bb8e46267742559552c0fc65dde91d0a89f4452b656bd585b711a121d222  libwasmvm.aarch64.so
+f601cdfde2345148f9b6aa3ea2eb797e85e402c50df7924b899b86d58af00a50  libwasmvm.dylib

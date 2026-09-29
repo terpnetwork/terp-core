@@ -12,3 +12,10 @@ note: ELF identity is git tag v6.4.0. Pack files belong on release/v6.4.0 and mu
 8ec4814b5b7933a8fe20655508fe4be6bd0e39f9061c949928ee8737fcb2857d  terpd-6.4.0-darwin-arm64.tar.gz
 e1202dfead23f81aa8618e29d06e97c4e93155eba3db52157269ebd45947628a  terpd-linux-amd64
 9d0942ecbb7628fd5b7fda5bbba398bedaf8732738bcda907c98507cdf14f1d2  terpd-linux-arm64
+
+wasmvm_muslc_base: https://s3.terp.network/releases/zk-wasmvm/v4.0.0-zk/
+ec9afa36668bcdccbfce99d7529a59556403f0456a5fe00b898a05c19dd7b06c  libwasmvm_muslc.aarch64.a
+927ce262d5e06735f77cd304e48e15c003c00ec93b57b5fbc277ad319010e771  libwasmvm_muslc.x86_64.a
+0ba3e8f46d24e6144d733f6cc4ab73888b09763f0e5723fcbb089980e3903020  libwasmvm.x86_64.so
+7ee8bb8e46267742559552c0fc65dde91d0a89f4452b656bd585b711a121d222  libwasmvm.aarch64.so
+f601cdfde2345148f9b6aa3ea2eb797e85e402c50df7924b899b86d58af00a50  libwasmvm.dylib
