@@ -1,21 +1,21 @@
 plan: v6.4
 binary_tag: v6.4.0
-binary_commit: 9bd301a77b734f3bbb7fcaf1f13b6d38c721e0cf
+binary_commit: 8c2f4a72ef6f5e492fd257607e39bf228e8fd67c
 pack_branch: release/v6.4.0
 dirty: v6.4.0
 s3_binaries_intended: https://s3.terp.network/releases/terp-core/v6.4.0/
-published: true
+published: false
 note: ELF identity is git tag v6.4.0. Pack files belong on release/v6.4.0 and must not move the tag.
 
-8aeefb7c97f096614c40e985bd6aae6902c7f957296916bfc96000dd892cb60e  terpd-6.4.0-linux-amd64.tar.gz
-8450f743627f7957a2aee4d1b3733bec10ef053e2a67fca321f635e56d4d478d  terpd-6.4.0-linux-arm64.tar.gz
-8ec4814b5b7933a8fe20655508fe4be6bd0e39f9061c949928ee8737fcb2857d  terpd-6.4.0-darwin-arm64.tar.gz
-e1202dfead23f81aa8618e29d06e97c4e93155eba3db52157269ebd45947628a  terpd-linux-amd64
-9d0942ecbb7628fd5b7fda5bbba398bedaf8732738bcda907c98507cdf14f1d2  terpd-linux-arm64
+dedd89bcd84957aba2d6e9625ee546da6a72703825528ebfa57224b333173106  terpd-6.4.0-linux-amd64.tar.gz
+33f2e37454eb47c81685ee67438c0ea5082c6a484fa5350766f81868f332fd0f  terpd-6.4.0-linux-arm64.tar.gz
+62515ab79b2509497c55a1d78c34722780ccc64e0494cbca325107b8d3f3ae25  terpd-6.4.0-darwin-arm64.tar.gz
+a7c028522984d7010c07b0c8294cb078cd85b4fde75e2d201e7c48da11a12e99  terpd-linux-amd64
+0437e5e8fe8fbe4fafb07bc607cbac24c5a2e5bcb4abc6e7b60cb6b5b4f56e8a  terpd-linux-arm64
 
 wasmvm_muslc_base: https://s3.terp.network/releases/zk-wasmvm/v4.0.0-zk/
-ec9afa36668bcdccbfce99d7529a59556403f0456a5fe00b898a05c19dd7b06c  libwasmvm_muslc.aarch64.a
-927ce262d5e06735f77cd304e48e15c003c00ec93b57b5fbc277ad319010e771  libwasmvm_muslc.x86_64.a
-0ba3e8f46d24e6144d733f6cc4ab73888b09763f0e5723fcbb089980e3903020  libwasmvm.x86_64.so
-7ee8bb8e46267742559552c0fc65dde91d0a89f4452b656bd585b711a121d222  libwasmvm.aarch64.so
-f601cdfde2345148f9b6aa3ea2eb797e85e402c50df7924b899b86d58af00a50  libwasmvm.dylib
+3cb0e887c678eb934bec05800ffdfeb017bb57f931bd40c17f7ff9fe0c96ca34  libwasmvm_muslc.aarch64.a
+c5d5dec1410d537b75358747caf29316d862d785b24a54a2b9c24d94e9364621  libwasmvm_muslc.x86_64.a
+894ddc487b9e5beaa15966458c64ac2bcf20c042cbe622b57ca1902fd31b3a07  libwasmvm.x86_64.so
+0afc14b8657f2aae64d45eda5f3386794993fa9414f38b144f6a081a43bda3ad  libwasmvm.aarch64.so
+ea83434ccbf2de81e1cb41a2e58579f6805bf5a1c1ab360d4a1df41310287ddc  libwasmvm.dylib
