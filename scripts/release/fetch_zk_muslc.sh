@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Fetch Path A STWO muslc into DEST. Do not rebuild rust; do not copy from a dirty tree.
-# Pins for 4.0.0-zk muslc rebuilt 2026-09-29 from wasmvm e799f70
-# and CosmWasm 5f141e70 (stack limiter + CallDepthExceeded).
+# Pins for 4.0.0-zk muslc rebuilt 2026-09-29 from wasmvm 8117f41
+# (nam-wasm-instrument 248ac27 / 0.5.3-terp.2, data count before code).
 # Built with terpnetwork/zk-alpine-builder:4.0.0-zk.
-# Do not reuse 892b623f / 4adc7b3c or the 2026-09-25 0500dd2e / 963ba7d9 pins.
+# Do not reuse e799f70 ec9afa36 / 927ce262, or 892b623f / 4adc7b3c.
 set -euo pipefail
 DEST="${1:-}"
 if [ -z "$DEST" ]; then
@@ -11,8 +11,8 @@ if [ -z "$DEST" ]; then
   exit 2
 fi
 BASE="${WASMVM_MUSLC_BASE:-https://minio.terp.network/releases/zk-wasmvm/v4.0.0-zk}"
-AARCH64_SHA="${WASMVM_MUSLC_AARCH64_SHA:-ec9afa36668bcdccbfce99d7529a59556403f0456a5fe00b898a05c19dd7b06c}"
-X86_SHA="${WASMVM_MUSLC_X86_SHA:-927ce262d5e06735f77cd304e48e15c003c00ec93b57b5fbc277ad319010e771}"
+AARCH64_SHA="${WASMVM_MUSLC_AARCH64_SHA:-3cb0e887c678eb934bec05800ffdfeb017bb57f931bd40c17f7ff9fe0c96ca34}"
+X86_SHA="${WASMVM_MUSLC_X86_SHA:-c5d5dec1410d537b75358747caf29316d862d785b24a54a2b9c24d94e9364621}"
 mkdir -p "$DEST"
 sha256_file() {
   if command -v sha256sum >/dev/null; then
