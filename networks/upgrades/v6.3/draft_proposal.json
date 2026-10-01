@@ -6,15 +6,15 @@
       "plan": {
         "name": "v6.3",
         "time": "0001-01-01T00:00:00Z",
-        "height": "TBD",
+        "height": "23674923",
         "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-amd64.tar.gz?checksum=sha256:4161cf4531f357ce4cec24e0302b71ca404810556b439729d43a120dd0972d65\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-arm64.tar.gz?checksum=sha256:3d28fe7a68e52c6bfcc696b71393c4cd5795d208c7c87f0ee4f6d65f44f6e4cf\",\"darwin/arm64\":\"https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-darwin-arm64.tar.gz?checksum=sha256:872511980bb59c6e403f179bd934217e5a4e9eee861d0085420079510ea47d6e\"}}",
         "upgraded_client_state": null
       }
     }
   ],
   "metadata": "",
-  "deposit": "5000000000uterp",
-  "title": "v6.3",
-  "summary": "v6.3 dest copy; handler arms v6.4 at +2",
+  "deposit": "100000000000uterp",
+  "title": "Software upgrade v6.3, then v6.4",
+  "summary": "Halt for terpd v6.3.0, which copies application stores onto BLAKE3 trees and arms v6.4 two blocks later. v6.4 switches keepers onto those trees and deletes the old SHA-256 names. IBC stores stay SHA-256. This pair includes the wasmvm prefix-iterator fix. Governance submits only v6.3.",
   "expedited": true
 }
