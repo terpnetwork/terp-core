@@ -1,4 +1,10 @@
-# v6.1 upgrade ops (120u-1 testnet)
+# v6.1 upgrade ops (120u-1 soak)
+
+**Validators (morocco-1):** use [`guide.md`](./guide.md), not this file.
+This WORKFLOW is the 120u-1 soak / curator path.
+
+**Hasher:** published `v6.1.0` / `v6.2.0` do **not** switch live IAVL to BLAKE3.
+See [`HASHER.md`](./HASHER.md). Fresh-VM recurate (all tags): `scripts/release/fresh-vm/run.sh`. v6.1 extras: `scripts/release/fresh-vm/releases/v6.1.0.sh`.
 
 Chain **120u-1**. Plan name **`v6.1`**. This is not morocco-1 and not plan `v6`.
 

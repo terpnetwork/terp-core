@@ -43,11 +43,14 @@ if [ ! -f build/zk-deps/zk-wasmd/go.mod ]; then
   rm -rf build/zk-deps/zk-wasmd
   git clone --depth 1 --branch "$WASMD_REF" "$WASMD_REPO" build/zk-deps/zk-wasmd
 fi
-if [ ! -f build/zk-deps/ibc-hooks-v11/go.mod ]; then
-  echo "==> fetch ibc-hooks-v11 tarball"
-  rm -rf build/zk-deps/ibc-hooks-v11
-  curl -fsSL -o /tmp/ibc-hooks-v11.tar.gz "$HOOKS_URL"
-  tar -C build/zk-deps -xzf /tmp/ibc-hooks-v11.tar.gz
+# Path replace only. The release line imports the permissionlessweb module directly.
+if grep -q '=> ./crates/ibc-hooks-v11' go.mod; then
+  if [ ! -f build/zk-deps/ibc-hooks-v11/go.mod ]; then
+    echo "==> fetch ibc-hooks-v11 tarball"
+    rm -rf build/zk-deps/ibc-hooks-v11
+    curl -fsSL -o /tmp/ibc-hooks-v11.tar.gz "$HOOKS_URL"
+    tar -C build/zk-deps -xzf /tmp/ibc-hooks-v11.tar.gz
+  fi
 fi
 mkdir -p build/zk-deps/zk-wasmvm/internal/api
 cp -f "build/wasmvm/libwasmvm_muslc.$ARCH.a" \
@@ -56,7 +59,9 @@ echo "==> staged"
 ls -lh "build/wasmvm/libwasmvm_muslc.$ARCH.a"
 test -f build/zk-deps/zk-wasmvm/go.mod
 test -f build/zk-deps/zk-wasmd/go.mod
-test -f build/zk-deps/ibc-hooks-v11/go.mod
+if grep -q '=> ./crates/ibc-hooks-v11' go.mod; then
+  test -f build/zk-deps/ibc-hooks-v11/go.mod
+fi
 if ! grep -q "const CircuitKeyLen" build/zk-deps/zk-wasmvm/lib.go; then
   echo "ERROR: staged wasmvm has no CircuitKeyLen (origin/v3.0.7-zk is behind local 5aab589+)." >&2
   exit 1

@@ -19,7 +19,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/std"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
 	"github.com/terpnetwork/terp-core/v6/app/testutils"
 	v61 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_1"
@@ -59,11 +59,11 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 		dstHash  []byte
 		dstLast  []byte
 	}
-	if s.App.GetKey(iavlhash.DestStores()[0]) == nil {
+	if s.App.GetKey(iavl.DestStores()[0]) == nil {
 		s.T().Skip("v6.2 binary does not mount dest trees; v6.1 copy is applied by the v6.1 binary")
 	}
-	snaps := make([]snap, 0, len(iavlhash.DualStorePairs()))
-	for _, p := range iavlhash.DualStorePairs() {
+	snaps := make([]snap, 0, len(iavl.DualStorePairs()))
+	for _, p := range iavl.DualStorePairs() {
 		snaps = append(snaps, snap{
 			name:    p[0] + "->" + p[1],
 			src:     p[0],
@@ -129,7 +129,7 @@ func (s *UpgradeTestSuite) TestUpgrade() {
 	s.Require().Nil(s.App.GetKey("b3-ibc"), "no IBC dest tree")
 	s.Require().Nil(s.App.GetKey("b3-08-wasm"), "no 08-wasm dest tree")
 	s.Require().NotNil(s.commitStore(ibcexported.StoreKey), "IBC IAVL store still mounted")
-	s.Require().Equal(len(iavlhash.DualStorePairs()), len(snaps))
+	s.Require().Equal(len(iavl.DualStorePairs()), len(snaps))
 	s.Require().Equal(v61.FoundationDAOAddr, s.App.WasmKeeper.GetParams(s.Ctx).CircuitDevDestination)
 }
 

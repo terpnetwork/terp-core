@@ -14,7 +14,7 @@ set -euo pipefail
 # VERSION defaults to the current git tag (v-prefix stripped).
 
 VERSION="${1:-$(git describe --tags 2>/dev/null | sed 's/^v//' || echo "unknown")}"
-BUILD_DIR="build"
+BUILD_DIR="${BUILD_DIR:-build}"
 CHECKSUM_FILE="$BUILD_DIR/sha256sum.txt"
 ALLOW_PARTIAL="${ALLOW_PARTIAL:-0}"
 PLAN="${PLAN:-}"
@@ -50,6 +50,11 @@ raw=()
 for arch in "${present[@]}"; do
     raw+=("terpd-linux-$arch")
 done
+if [[ "$(uname -s)" == "Darwin" && ! -f "$BUILD_DIR/terpd-darwin-arm64" && "$ALLOW_PARTIAL" != "1" ]]; then
+    echo "Error: Darwin builder missing $BUILD_DIR/terpd-darwin-arm64. Run: RELEASE_TAG=v$VERSION make create-binaries" >&2
+    echo "(or ALLOW_PARTIAL=1 to pack linux-only)" >&2
+    exit 1
+fi
 [[ -f "$BUILD_DIR/terpd-darwin-arm64" ]] && raw+=("terpd-darwin-arm64")
 (cd "$BUILD_DIR" && sha256sum "${raw[@]}" > sha256sum.txt)
 
@@ -57,13 +62,9 @@ done
 # Create versioned tarballs and append their checksums
 # ------------------------------------------------------------------
 # Cosmovisor auto-download requires ./terpd in the archive (DAEMON_NAME).
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 pack_cv_tarball() {
-    local src="$1" dest="$2" stage
-    stage="$(mktemp -d)"
-    cp "$src" "$stage/terpd"
-    chmod 755 "$stage/terpd"
-    COPYFILE_DISABLE=1 tar -C "$stage" -czf "$dest" terpd
-    rm -rf "$stage"
+    bash "$ROOT/scripts/release/pack_cv_tarball.sh" "$1" "$2" >/dev/null
 }
 
 for arch in "${present[@]}"; do
@@ -81,6 +82,11 @@ for arch in "${present[@]}"; do
 done
 
 if [[ -f "$BUILD_DIR/terpd-darwin-arm64" ]]; then
+    if command -v otool >/dev/null && otool -L "$BUILD_DIR/terpd-darwin-arm64" | grep -q libwasmvm.dylib; then
+        echo "Error: $BUILD_DIR/terpd-darwin-arm64 links libwasmvm.dylib (rpath to the build clone)." >&2
+        echo "Rebuild with: make build-darwin-arm64   # tags static_wasm" >&2
+        exit 1
+    fi
     echo "Creating $BUILD_DIR/terpd-$VERSION-darwin-arm64.tar.gz (member terpd)..."
     pack_cv_tarball "$BUILD_DIR/terpd-darwin-arm64" "$BUILD_DIR/terpd-$VERSION-darwin-arm64.tar.gz"
     cp "$BUILD_DIR/terpd-$VERSION-darwin-arm64.tar.gz" "$BUILD_DIR/terpd-darwin-arm64.tar.gz"

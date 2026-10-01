@@ -3,7 +3,7 @@ package v6_1
 import (
 	store "github.com/cosmos/cosmos-sdk/store/v2/types"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 )
 
@@ -21,7 +21,7 @@ var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
 	CreateUpgradeHandler: CreateUpgradeHandler,
 	StoreUpgrades: store.StoreUpgrades{
-		Added: iavlhash.DestStores(),
+		Added: iavl.DestStores(),
 		Deleted: []string{
 			// x/params stays mounted for this upgrade so the handler can copy
 			// leftover subspace values. Keys are wiped in the handler.

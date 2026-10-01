@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 # Fetch Path A STWO muslc into DEST. Do not rebuild rust; do not copy from a dirty tree.
-# Pins match minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/SHA256SUMS (linked into v6.1.0/v6.2.0).
+# Pins for 4.0.0-zk muslc rebuilt 2026-09-29 from wasmvm 8117f41
+# (nam-wasm-instrument 248ac27 / 0.5.3-terp.2, data count before code).
+# Built with terpnetwork/zk-alpine-builder:4.0.0-zk.
+# Do not reuse e799f70 ec9afa36 / 927ce262, or 892b623f / 4adc7b3c.
 set -euo pipefail
 DEST="${1:-}"
 if [ -z "$DEST" ]; then
   echo "usage: fetch_zk_muslc.sh <dest-dir>" >&2
   exit 2
 fi
-BASE="${WASMVM_MUSLC_BASE:-https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk}"
-AARCH64_SHA="${WASMVM_MUSLC_AARCH64_SHA:-0687e59140c967a752b0b0ede98e71a3c859fb4f6b94fc26883792d381eb4716}"
-X86_SHA="${WASMVM_MUSLC_X86_SHA:-4f4880e1655d34c098729df52db22c9253bec87d2b3185669ff015a340b76d49}"
+BASE="${WASMVM_MUSLC_BASE:-https://minio.terp.network/releases/zk-wasmvm/v4.0.0-zk}"
+AARCH64_SHA="${WASMVM_MUSLC_AARCH64_SHA:-3cb0e887c678eb934bec05800ffdfeb017bb57f931bd40c17f7ff9fe0c96ca34}"
+X86_SHA="${WASMVM_MUSLC_X86_SHA:-c5d5dec1410d537b75358747caf29316d862d785b24a54a2b9c24d94e9364621}"
 mkdir -p "$DEST"
 sha256_file() {
   if command -v sha256sum >/dev/null; then
@@ -32,6 +35,10 @@ fetch_one() {
   fi
   if ! grep -a -q -F 'stwo: Dummy DSTW rejected' "$out"; then
     echo "ERROR: $name missing Path A STWO host (proof_instance_verify)" >&2
+    exit 1
+  fi
+  if ! grep -a -q -F 'CallDepthExceeded' "$out"; then
+    echo "ERROR: $name missing CallDepthExceeded (muslc predates the call-depth cap)" >&2
     exit 1
   fi
   echo "OK $name $got"

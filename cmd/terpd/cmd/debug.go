@@ -34,6 +34,8 @@ func DebugCmd() *cobra.Command {
 		ConvertBech32Cmd(),
 		ExportDeriveBalancesCmd(),
 		StakedToCSVCmd(),
+		HasherProofCmd(),
+		WasmLcVerifyCmd(),
 	)
 
 	return cmd

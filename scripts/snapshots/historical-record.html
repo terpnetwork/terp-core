@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>morocco-1 historical snapshot record</title>
+<style>
+  :root {
+    --bg: #0e1110;
+    --bg2: #161b19;
+    --ink: #e8efe9;
+    --muted: #8a9a90;
+    --line: #2a3530;
+    --full: #3dd68c;
+    --app: #e6a23c;
+    --live: #6ea8ff;
+    --gap: #c45c4a;
+    --upg: #c9b8ff;
+    --stall: #ff7a59;
+    --wasm: #7d8b84;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; }
+  header {
+    padding: 20px 24px 8px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #141a17, var(--bg));
+  }
+  h1 { font-size: 20px; font-weight: 650; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); max-width: 920px; }
+  .sub code { color: #cde7d6; }
+  .stats { display: flex; gap: 18px; flex-wrap: wrap; margin: 14px 0 6px; }
+  .stat { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 140px; }
+  .stat b { display: block; font-size: 18px; }
+  .stat span { color: var(--muted); font-size: 12px; }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 10px 24px; }
+  .toolbar label { color: var(--muted); font-size: 12px; display: flex; gap: 6px; align-items: center; }
+  button, select {
+    background: var(--bg2); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 10px; cursor: pointer;
+  }
+  button:hover { border-color: #4a5c54; }
+  #stage { padding: 0 16px 16px; }
+  svg { width: 100%; height: 420px; background: #101412; border: 1px solid var(--line); border-radius: 12px; touch-action: none; }
+  .lane-label { fill: var(--muted); font-size: 11px; }
+  .axis { fill: var(--muted); font-size: 11px; }
+  .gap-rect { fill: var(--gap); opacity: 0.18; }
+  .pack { cursor: pointer; }
+  .pack:hover { filter: brightness(1.15); }
+  .upg-hit { cursor: pointer; }
+  tr.pack-row { cursor: pointer; }
+  tr.pack-row:hover td { background: #1c2421; }
+  .detail {
+    margin: 0 24px 24px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg2);
+    min-height: 120px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; border: 1px solid var(--line); }
+  .tag.full { color: var(--full); border-color: #2a6b4a; }
+  .tag.window { color: var(--full); border-color: #2a6b4a; }
+  .tag.app { color: var(--app); border-color: #6b5420; }
+  .tag.live { color: var(--live); border-color: #2a4a7a; }
+  .tag.gap { color: var(--gap); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 12px; padding: 0 24px 8px; }
+  .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 5px; }
+  footer { color: var(--muted); font-size: 12px; padding: 8px 24px 28px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>morocco-1 historical snapshot record</h1>
+  <p class="sub">
+    Unique queryable block ranges only (overlaps merged, not summed). Catalog is the genesis
+    archive window, the public archive window, and the daily pruned pack. Probed on groot2 2026-09-15.
+  </p>
+  <div class="stats" id="stats"></div>
+</header>
+<div class="toolbar">
+  <label>x-axis <select id="scale"><option value="linear">linear height</option><option value="log">log height</option></select></label>
+  <label><input type="checkbox" id="gaps" checked /> show gaps in blockstore coverage</label>
+  <button type="button" id="fit">fit all</button>
+  <span class="sub" id="hint">scroll to zoom · drag to pan · click a bar</span>
+</div>
+<div class="legend">
+  <span><i class="sw" style="background:var(--full)"></i>full block archive</span>
+  <span><i class="sw" style="background:var(--live)"></i>public pruned (app-state only)</span>
+  <span><i class="sw" style="background:var(--upg)"></i>upgrade halt</span>
+  <span><i class="sw" style="background:var(--gap)"></i>no full-block pack</span>
+</div>
+<div id="stage"><svg id="svg"></svg></div>
+<div class="detail" id="detail">Click a pack or a gap.</div>
+<section style="padding:0 24px 24px">
+  <h2 style="font-size:15px;margin:0 0 8px">Catalog</h2>
+  <div style="overflow:auto"><table id="table"></table></div>
+</section>
+<footer>
+  Coverage is the union of blockstore windows. Unique archives live under <code>/permafrost/TERP/snapshots</code>
+  (homes/ + tars). Hole remains <b>11,411,802–18,053,333</b>.
+</footer>
+<script>
+const DATA = {
+  probedAt: "2026-09-15T19:00:00Z",
+  chainId: "morocco-1",
+  chainTip: 23224649,
+  upgrades: [
+    { name: "v2", height: 2847602, status: "applied" },
+    { name: "v3", height: 3039061, status: "applied" },
+    { name: "v4", height: 3341663, status: "applied" },
+    { name: "v4.1.0", height: 3698609, status: "applied" },
+    { name: "v5", height: 14170662, status: "applied" },
+    { name: "v6", height: 22810000, status: "applied" },
+    { name: "v6.1", height: 23191300, status: "applied" },
+    { name: "v6.2", height: 23191302, status: "applied" }
+  ],
+  packs: [
+    {
+      id: "genesis-era",
+      name: "genesis block archive (wave1-archive-b)",
+      path: "/permafrost/TERP/snapshots/homes/wave1-archive-b",
+      copies: [
+        "/mnt/usb/terp-11411800-backup.tar.lz4 (external packed copy)"
+      ],
+      size: 182536110080,
+      mtime: "unpacked 2026-08-04 · lz4 backup 2025-04-09",
+      kind: "full-blocks",
+      from: 1,
+      to: 11411801,
+      evidence: "RPC on this home: earliest=1 latest=11411801. /block 1 and 11411801 ok; 11411802 error. 75 GiB blockstore. The lz4 backup is the same era (tip 11411800), not extra heights.",
+      notes: "One coverage window. Unpacked node + packed lz4 + USB copy. Do not sum them."
+    },
+    {
+      id: "public-archive",
+      name: "public archive morocco-1_23222709",
+      path: "https://minio.terp.network/snapshots/mainnet/morocco-1/archive/morocco-1_23222709_2026-09-15T00-27-12Z.tar.lz4",
+      copies: [
+        "live hub ~/.terpd-mainnet (same earliest, tip now past this pack)",
+        "/permafrost/TERP/snapshots/homes/wave1-live-a (unpacked freeze 18053334–22168311, subset of this window)"
+      ],
+      size: 64147767608,
+      mtime: "2026-09-15",
+      kind: "block-window",
+      from: 18053334,
+      to: 23222709,
+      tip: 23222709,
+      evidence: "Live RPC earliest_block_height=18053334. /block 1 and 11411800 error; 18053334 and 23222709 ok. Halt-copy of that hub.",
+      notes: "Queryable blocks 18,053,334 → 23,222,709. wave1-live-a is an older freeze of this same window, not extra coverage."
+    },
+    {
+      id: "public-pruned",
+      name: "public pruned morocco-1_23222707",
+      path: "https://minio.terp.network/snapshots/mainnet/morocco-1/pruned/morocco-1_23222707_2026-09-15T00-02-29Z.tar.lz4",
+      copies: [],
+      size: 222902780,
+      mtime: "2026-09-15",
+      kind: "live-catalog",
+      from: 23222707,
+      to: 23222707,
+      tip: 23222707,
+      evidence: "curate-epoch CLASS=both; statesync tip; wasm/cache excluded",
+      notes: "Daily app-state pack. Not counted in full-block coverage."
+    }
+  ]
+};
+
+const LANES = [
+  { id: "full", label: "Queryable blocks" },
+  { id: "live", label: "Public pruned" },
+  { id: "meta", label: "Upgrades" }
+];
+
+function fmt(n) {
+  if (n == null) return "—";
+  return Number(n).toLocaleString("en-US");
+}
+function bytes(n) {
+  if (!n) return "—";
+  const u = ["B","KiB","MiB","GiB","TiB"];
+  let i = 0, x = n;
+  while (x >= 1024 && i < u.length-1) { x /= 1024; i++; }
+  return (x >= 10 || i === 0 ? x.toFixed(0) : x.toFixed(1)) + " " + u[i];
+}
+function laneOf(p) {
+  if (p.kind === "full-blocks" || p.kind === "block-window") return "full";
+  if (p.kind === "live-catalog") return "live";
+  return "app";
+}
+
+function hasBlocks(p) {
+  return (p.kind === "full-blocks" || p.kind === "block-window") && p.from != null && p.to != null;
+}
+function mergeRanges(segs) {
+  const s = segs.filter(x => x[0] != null && x[1] != null).map(([a,b]) => [Math.min(a,b), Math.max(a,b)]).sort((x,y) => x[0]-y[0]);
+  const out = [];
+  for (const [a,b] of s) {
+    if (!out.length || a > out[out.length-1][1] + 1) out.push([a,b]);
+    else out[out.length-1][1] = Math.max(out[out.length-1][1], b);
+  }
+  return out;
+}
+function blockRanges() {
+  return mergeRanges(DATA.packs.filter(hasBlocks).map(p => [p.from, p.to]));
+}
+function coveredHeights() {
+  return blockRanges().reduce((s,[a,b]) => s + (b - a + 1), 0);
+}
+function gaps() {
+  const segs = blockRanges();
+  const g = [];
+  let c = 1;
+  for (const [a,b] of segs) {
+    if (a > c) g.push({ from: c, to: a - 1, why: "no queryable blockstore" });
+    c = Math.max(c, b + 1);
+  }
+  if (c <= DATA.chainTip) g.push({ from: c, to: DATA.chainTip, why: "no queryable blockstore through live tip" });
+  return g;
+}
+
+const stats = document.getElementById("stats");
+const g = gaps();
+const covered = coveredHeights();
+const pct = Math.min(100, (covered / DATA.chainTip) * 100);
+stats.innerHTML = `
+  <div class="stat"><b>${fmt(DATA.chainTip)}</b><span>live tip (probed)</span></div>
+  <div class="stat"><b>1 – ${fmt(11411801)}</b><span>genesis archive (one window)</span></div>
+  <div class="stat"><b>${fmt(18053334)} – ${fmt(23222709)}</b><span>public archive blockstore</span></div>
+  <div class="stat"><b>${fmt(g.reduce((s,x)=>s+(x.to-x.from+1),0))}</b><span>heights with no blockstore</span></div>
+  <div class="stat"><b>${pct.toFixed(1)}%</b><span>chain covered by full blocks (merged, no overlap)</span></div>
+`;
+
+const svg = document.getElementById("svg");
+const NS = "http://www.w3.org/2000/svg";
+let view = { x0: 0, x1: DATA.chainTip * 1.02 };
+let drag = null;
+
+function xScale(h) {
+  const w = svg.clientWidth || 1000;
+  const padL = 128, padR = 16;
+  const inner = w - padL - padR;
+  const mode = document.getElementById("scale").value;
+  const a = view.x0, b = view.x1;
+  let t;
+  if (mode === "log") {
+    const la = Math.log10(Math.max(1, a)), lb = Math.log10(Math.max(2, b));
+    t = (Math.log10(Math.max(1, h)) - la) / (lb - la);
+  } else {
+    t = (h - a) / (b - a);
+  }
+  return padL + t * inner;
+}
+function hAt(px) {
+  const w = svg.clientWidth || 1000;
+  const padL = 128, padR = 16;
+  const inner = w - padL - padR;
+  const t = (px - padL) / inner;
+  const mode = document.getElementById("scale").value;
+  const a = view.x0, b = view.x1;
+  if (mode === "log") {
+    const la = Math.log10(Math.max(1, a)), lb = Math.log10(Math.max(2, b));
+    return Math.round(10 ** (la + t * (lb - la)));
+  }
+  return Math.round(a + t * (b - a));
+}
+
+function el(name, attrs, text) {
+  const n = document.createElementNS(NS, name);
+  for (const [k,v] of Object.entries(attrs || {})) n.setAttribute(k, v);
+  if (text != null) n.textContent = text;
+  return n;
+}
+
+function draw() {
+  const w = svg.clientWidth || 1000;
+  const h = 420;
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svg.innerHTML = "";
+  const showGaps = document.getElementById("gaps").checked;
+  const laneH = 70, top = 36;
+
+  LANES.forEach((lane, i) => {
+    const y = top + i * laneH;
+    svg.appendChild(el("text", { x: 12, y: y + 28, class: "lane-label" }, lane.label));
+    svg.appendChild(el("line", { x1: 120, x2: w - 12, y1: y + 52, y2: y + 52, stroke: "#24302b" }));
+  });
+
+  if (showGaps) {
+    const y = top + 8;
+    for (const gap of gaps()) {
+      const x1 = xScale(gap.from), x2 = xScale(gap.to);
+      if (x2 < 120 || x1 > w) continue;
+      const r = el("rect", {
+        x: Math.min(x1,x2), y, width: Math.max(2, Math.abs(x2-x1)), height: 44,
+        class: "gap-rect", rx: 3,
+        "data-kind": "gap", "data-from": String(gap.from), "data-to": String(gap.to)
+      });
+      svg.appendChild(r);
+    }
+  }
+
+  const vis = DATA.packs;
+  const laneN = {};
+  for (const p of vis) {
+    if (p.from == null && p.to == null) continue;
+    const lane = LANES.findIndex(l => l.id === laneOf(p));
+    const slot = laneN[lane] || 0;
+    laneN[lane] = slot + 1;
+    const y = top + lane * laneH + 8 + (slot % 3) * 10;
+    const a = p.from ?? p.tip, b = p.to ?? p.tip;
+    if (a == null) continue;
+    const x1 = xScale(a), x2 = xScale(b);
+    const color = (p.kind === "full-blocks" || p.kind === "block-window") ? "var(--full)" : p.kind === "live-catalog" ? "var(--live)" : "var(--app)";
+    const width = Math.max(hasBlocks(p) ? 6 : 4, Math.abs(x2 - x1));
+    const r = el("rect", {
+      x: Math.min(x1, x2), y, width, height: 22, rx: 4,
+      fill: color, class: "pack", "data-kind": "pack", "data-id": p.id,
+      opacity: p.kind === "full-blocks" ? 0.95 : 0.85
+    });
+    r.appendChild(el("title", {}, `${p.name}  ${p.from == null ? "" : fmt(p.from) + "–" + fmt(p.to)}`));
+    svg.appendChild(r);
+  }
+
+  DATA.upgrades.forEach((u, i) => {
+    const x = xScale(u.height);
+    svg.appendChild(el("line", { x1: x, x2: x, y1: 8, y2: h - 28, stroke: "var(--upg)", "stroke-dasharray": "3 4", "stroke-width": 1, "pointer-events": "none" }));
+    const hit = el("rect", {
+      x: x - 5, y: 4, width: 10, height: h - 32, fill: "transparent", class: "upg-hit",
+      "data-kind": "upgrade", "data-i": String(i)
+    });
+    hit.appendChild(el("title", {}, `${u.name}  ${fmt(u.height)}  ${u.status || ""}`));
+    svg.appendChild(hit);
+    const ly = 14 + (i % 4) * 11;
+    svg.appendChild(el("text", { x: x + 6, y: ly, class: "axis", fill: "var(--upg)", "pointer-events": "none" }, u.name));
+  });
+  const xs = xScale(19127861);
+  const sy = top + 2 * laneH;
+  svg.appendChild(el("line", { x1: xs, x2: xs, y1: sy, y2: sy + 40, stroke: "var(--stall)", "stroke-width": 2, "pointer-events": "none" }));
+  svg.appendChild(el("text", { x: xs + 4, y: sy + 14, class: "axis", fill: "var(--stall)", "pointer-events": "none" }, "stall 19127861"));
+
+  const ticks = 8;
+  for (let i = 0; i <= ticks; i++) {
+    const hv = view.x0 + (i / ticks) * (view.x1 - view.x0);
+    const x = xScale(hv);
+    svg.appendChild(el("text", { x, y: h - 10, class: "axis" }, fmt(Math.round(hv))));
+  }
+}
+
+function showPack(p) {
+  if (!p) return;
+  document.getElementById("detail").innerHTML = `
+    <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div class="tag ${p.kind === "full-blocks" || p.kind === "block-window" ? "full" : p.kind === "live-catalog" ? "live" : "app"}">${p.kind}</div>
+        <h3 style="margin:8px 0 4px">${p.name}</h3>
+        <div class="sub">${p.path}</div>
+      </div>
+      <div class="sub">size ${bytes(p.size)} · ${p.mtime}</div>
+    </div>
+    <p style="margin:10px 0 6px"><b>Range:</b> ${p.from == null ? "unproven" : fmt(p.from) + " → " + fmt(p.to)}${p.tip != null ? " · tip " + fmt(p.tip) : ""}</p>
+    <p class="sub" style="margin:0 0 8px">${p.notes || ""}</p>
+    <p class="sub" style="margin:0"><b>Evidence:</b> ${p.evidence || ""}</p>
+    ${p.copies && p.copies.length ? `<p class="sub">Copies:<br>${p.copies.map(c => `<code>${c}</code>`).join("<br>")}</p>` : ""}
+  `;
+  document.getElementById("detail").scrollIntoView({ block: "nearest" });
+}
+function showGap(gap) {
+  document.getElementById("detail").innerHTML = `
+    <div class="tag gap">gap</div>
+    <h3 style="margin:8px 0 4px">${fmt(gap.from)} → ${fmt(gap.to)}</h3>
+    <p>${fmt(gap.to - gap.from + 1)} heights with no pack that can serve historical blocks.</p>
+    <p class="sub">${gap.why}. App-state islands in this window (if any) still cannot reconstruct the block log.</p>
+  `;
+}
+function showUpgrade(u) {
+  document.getElementById("detail").innerHTML = `
+    <div class="tag" style="color:var(--upg);border-color:#5a4a8a">${u.status || "upgrade"}</div>
+    <h3 style="margin:8px 0 4px">${u.name}</h3>
+    <p><b>Halt height:</b> ${fmt(u.height)}</p>
+    <p class="sub">On-chain upgrade ${u.status || ""}. Packs whose tip is below this height never saw this binary.</p>
+  `;
+}
+
+function hitFromEvent(e) {
+  const n = e.target && e.target.closest ? e.target.closest("[data-kind]") : e.target;
+  if (!n || !n.getAttribute) return;
+  const kind = n.getAttribute("data-kind");
+  if (kind === "pack") showPack(DATA.packs.find(p => p.id === n.getAttribute("data-id")));
+  else if (kind === "gap") showGap({ from: +n.getAttribute("data-from"), to: +n.getAttribute("data-to"), why: "no full-block pack" });
+  else if (kind === "upgrade") showUpgrade(DATA.upgrades[+n.getAttribute("data-i")]);
+}
+
+let press = null;
+svg.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const h = hAt(e.offsetX);
+  const z = e.deltaY > 0 ? 1.18 : 1/1.18;
+  const a = h - (h - view.x0) * z;
+  const b = h + (view.x1 - h) * z;
+  view.x0 = Math.max(0, a);
+  view.x1 = Math.min(DATA.chainTip * 1.05, Math.max(a + 1000, b));
+  draw();
+}, { passive: false });
+svg.addEventListener("pointerdown", (e) => {
+  press = { x: e.clientX, y: e.clientY, a: view.x0, b: view.x1, target: e.target, dragged: false };
+});
+svg.addEventListener("pointermove", (e) => {
+  if (!press) return;
+  const dx = e.clientX - press.x;
+  if (!press.dragged) {
+    if (Math.abs(dx) < 8) return;
+    press.dragged = true;
+    try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+  }
+  const w = (svg.clientWidth || 1000) - 144;
+  const span = press.b - press.a;
+  const dh = -dx / w * span;
+  view.x0 = Math.max(0, press.a + dh);
+  view.x1 = view.x0 + span;
+  draw();
+});
+svg.addEventListener("pointerup", (e) => {
+  if (press && !press.dragged) hitFromEvent({ target: press.target });
+  press = null;
+});
+svg.addEventListener("pointercancel", () => { press = null; });
+document.getElementById("fit").onclick = () => { view = { x0: 0, x1: DATA.chainTip * 1.02 }; draw(); };
+document.getElementById("scale").onchange = draw;
+document.getElementById("gaps").onchange = draw;
+
+const tb = document.getElementById("table");
+tb.innerHTML = `<thead><tr><th>Pack</th><th>Kind</th><th>Range</th><th>Size</th><th>Where</th></tr></thead>` +
+  "<tbody>" + DATA.packs.map(p => `<tr class="pack-row" data-id="${p.id}">
+    <td>${p.name}</td>
+    <td><span class="tag ${p.kind === "full-blocks" || p.kind === "block-window" ? "full" : p.kind === "live-catalog" ? "live" : "app"}">${p.kind}</span></td>
+    <td>${p.from == null ? "unproven" : fmt(p.from) + " – " + fmt(p.to)}</td>
+    <td>${bytes(p.size)}</td>
+    <td class="sub">${p.path}</td>
+  </tr>`).join("") + "</tbody>";
+tb.addEventListener("click", (e) => {
+  const row = e.target.closest("tr.pack-row");
+  if (row) showPack(DATA.packs.find(p => p.id === row.getAttribute("data-id")));
+});
+
+window.addEventListener("resize", draw);
+draw();
+</script>
+</body>
+</html>

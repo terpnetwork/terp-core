@@ -1,0 +1,202 @@
+{
+  "timestamp": "2026-09-14T09:17:52Z",
+  "arch": "aarch64",
+  "image": "registry.terp.network/terp-core:v6.3.0-dev",
+  "topology": "same-hasher 07-tendermint pairs (no 08-wasm)",
+  "lc_store_gas": 0,
+  "a_tm_handshake": "native pairs",
+  "hybrid_inclusion_gas": 0,
+  "hybrid_exclusion_gas": 0,
+  "a_inclusion_gas": 0,
+  "wasm_lc_contract": "",
+  "a_wasm_client": "",
+  "a_wasm_path": "n/a (native TM pairs)",
+  "c_wasm_client": "",
+  "actions": [
+    {
+      "action": "CreateClient",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 94441,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 94441,
+      "gas_amd64": null
+    },
+    {
+      "action": "ConnOpenInit",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 56683,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 56683,
+      "gas_amd64": null
+    },
+    {
+      "action": "ConnOpenAck",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 129627,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 129627,
+      "gas_amd64": null
+    },
+    {
+      "action": "ChanOpenInit",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 62931,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 62931,
+      "gas_amd64": null
+    },
+    {
+      "action": "ChanOpenAck",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 115043,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 115043,
+      "gas_amd64": null
+    },
+    {
+      "action": "UpdateClient",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 116623,
+      "n": 4,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 116623,
+      "gas_amd64": null
+    },
+    {
+      "action": "Acknowledgement",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 116623,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 116623,
+      "gas_amd64": null
+    },
+    {
+      "action": "CreateClient",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 94441,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 94441,
+      "gas_amd64": null
+    },
+    {
+      "action": "ConnOpenTry",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 137723,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 137723,
+      "gas_amd64": null
+    },
+    {
+      "action": "ConnOpenConfirm",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 112790,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 112790,
+      "gas_amd64": null
+    },
+    {
+      "action": "ChanOpenTry",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 128777,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 128777,
+      "gas_amd64": null
+    },
+    {
+      "action": "ChanOpenConfirm",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 114893,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 114893,
+      "gas_amd64": null
+    },
+    {
+      "action": "UpdateClient",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 128777,
+      "n": 6,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 128777,
+      "gas_amd64": null
+    },
+    {
+      "action": "RecvPacket",
+      "path": "sha256↔sha256",
+      "packets_on": "07-tendermint",
+      "gas": 187757,
+      "n": 1,
+      "ok": true,
+      "note": "sha256",
+      "gas_aarch64": 187757,
+      "gas_amd64": null
+    }
+  ],
+  "legs": [
+    {
+      "variant": "H",
+      "image": "registry.terp.network/terp-core:v6.3.0-dev",
+      "n": 1,
+      "warmup": 0,
+      "packets_on": "07-tendermint",
+      "median_t_round_trip_ms": 0,
+      "median_t_recv_packet_ms": 0,
+      "median_gas_recv_packet": 187757,
+      "median_gas_recv": 187757,
+      "median_gas_update_client": 0,
+      "median_proof_bytes_recv": 0,
+      "median_t_ack_ms": 0,
+      "median_gas_ack": 0,
+      "lc_store_gas": 0,
+      "lc_create_gas": 0,
+      "samples": [
+        {
+          "t_round_trip_ms": 0,
+          "t_recv_packet_ms": 0,
+          "t_update_client_ms": 0,
+          "t_ack_ms": 0,
+          "gas_recv_packet": 187757,
+          "gas_update_client": 0,
+          "gas_ack": 0,
+          "proof_bytes_recv": 0
+        }
+      ]
+    }
+  ]
+}

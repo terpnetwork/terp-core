@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/terpnetwork/terp-core/v6/app/iavlhash"
+	"github.com/terpnetwork/terp-core/v6/app/iavl"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
 	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 )
@@ -30,7 +30,7 @@ func CreateUpgradeHandler(
 
 		logger.Info("v6.2: dropping unmounted b3-* dest trees from CommitInfo; keepers remain bank/staking/acc")
 		if keepers != nil {
-			for _, p := range iavlhash.DualStorePairs() {
+			for _, p := range iavl.DualStorePairs() {
 				if keepers.GetKey(p[1]) != nil {
 					logger.Error("v6.2: dest key still mounted; suffix would remain", "dst", p[1])
 				}

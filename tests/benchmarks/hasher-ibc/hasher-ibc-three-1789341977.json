@@ -1,0 +1,53 @@
+{
+  "image": "registry.terp.network/terp-core:v6.3.0-dev",
+  "topology": "A=blake3 B=hybrid C=sha256; TM B→C; 08-wasm A→C",
+  "lc_store_gas": 39742,
+  "a_tm_handshake": "skipped (08-wasm Hermes path; set HASHER_SKIP_TM_AC=0 to force)",
+  "hybrid_inclusion_gas": 0,
+  "hybrid_exclusion_gas": 0,
+  "a_inclusion_gas": 0,
+  "wasm_lc_contract": "",
+  "a_wasm_client": "",
+  "a_wasm_path": "Config error: broadcast code!=0: receive packet verification failed: couldn't verify counterparty packet commitment: failed packet commitment verification for client (08-wasm-1): proof: root mismatch: wasm contract call failed",
+  "legs": [
+    {
+      "variant": "H",
+      "image": "registry.terp.network/terp-core:v6.3.0-dev",
+      "n": 2,
+      "warmup": 1,
+      "packets_on": "07-tendermint",
+      "median_t_round_trip_ms": 4029,
+      "median_t_recv_packet_ms": 2267,
+      "median_gas_recv_packet": 174807,
+      "median_gas_recv": 174807,
+      "median_gas_update_client": 174807,
+      "median_proof_bytes_recv": 618,
+      "median_t_ack_ms": 3182,
+      "median_gas_ack": 116129,
+      "lc_store_gas": 0,
+      "lc_create_gas": 0,
+      "samples": [
+        {
+          "t_round_trip_ms": 4258,
+          "t_recv_packet_ms": 2563,
+          "t_update_client_ms": 2563,
+          "t_ack_ms": 2563,
+          "gas_recv_packet": 186994,
+          "gas_update_client": 186994,
+          "gas_ack": 116139,
+          "proof_bytes_recv": 596
+        },
+        {
+          "t_round_trip_ms": 3801,
+          "t_recv_packet_ms": 1971,
+          "t_update_client_ms": 1971,
+          "t_ack_ms": 3801,
+          "gas_recv_packet": 162620,
+          "gas_update_client": 162620,
+          "gas_ack": 116119,
+          "proof_bytes_recv": 640
+        }
+      ]
+    }
+  ]
+}

@@ -74,7 +74,7 @@ fi
 
 # Reuse the in-place harness (OLD halt → NEW start → applied + post blocks).
 # shellcheck disable=SC1091
-source "$ROOT/a.sh"
+source "$ROOT/archive/v6.0/a.sh"
 
 echo "v6.1: checking handler curated dual stores"
 if ! grep -q "v6.1: ibc/transfer/ica stores unchanged" "$NEW_LOG"; then

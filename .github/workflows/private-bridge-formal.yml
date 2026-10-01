@@ -2,17 +2,8 @@
 # Round-2 residual (STATUS-REVIEW). Bounded verify optional (slow); typecheck always.
 name: private-bridge-formal
 
+# Not part of terp-core product CI (private bridge + Lean). Manual only.
 on:
-  push:
-    paths:
-      - "crates/terp-rs/docs/private-bridge/formal/**"
-      - "crates/terp-rs/docs/private-bridge/agents/formal-invariants-quint-lean-2026-07-27/**"
-      - ".github/workflows/private-bridge-formal.yml"
-  pull_request:
-    paths:
-      - "crates/terp-rs/docs/private-bridge/formal/**"
-      - "crates/terp-rs/docs/private-bridge/agents/formal-invariants-quint-lean-2026-07-27/**"
-      - ".github/workflows/private-bridge-formal.yml"
   workflow_dispatch:
 
 concurrency:

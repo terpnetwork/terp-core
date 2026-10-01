@@ -3,24 +3,7 @@
 name: pir-notes
 
 on:
-  push:
-    paths:
-      - "crates/terp-rs/tools/hash-market/**"
-      - "crates/terp-rs/crates/seam_note_out/**"
-      - "crates/headstash/test-press/src/harness/note_persist_client.rs"
-      - "crates/headstash/justfile"
-      - ".github/workflows/pir-notes.yml"
-      - "docs/research/PIR-NOTES*.md"
-      - "docs/research/NOTES-AUTH-MODULAR.md"
-  pull_request:
-    paths:
-      - "crates/terp-rs/tools/hash-market/**"
-      - "crates/terp-rs/crates/seam_note_out/**"
-      - "crates/headstash/test-press/src/harness/note_persist_client.rs"
-      - "crates/headstash/justfile"
-      - ".github/workflows/pir-notes.yml"
-      - "docs/research/PIR-NOTES*.md"
-      - "docs/research/NOTES-AUTH-MODULAR.md"
+  # Not part of terp-core product CI. Manual only.
   workflow_dispatch:
 
 concurrency:

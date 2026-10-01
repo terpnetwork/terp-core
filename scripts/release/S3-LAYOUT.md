@@ -38,6 +38,7 @@ releases/
 | `releases/terp-core/v5.3.0-dev/` | `releases/v5.3.0-dev/` (bare tag) |
 | `releases/terp-core/v5.2.0/` | `releases/terpd/…` (binary name) |
 | `releases/o-line/<tag>/` | Mix network files into `releases/` |
+| `releases/zk-wasmvm/v4.0.0-zk/` | CosmWasm GitHub `libwasmvm-builder:0103-*` artifacts |
 
 **Rule:** top-level under `releases/` = **repository name**. Tags and binaries nest under that.
 
@@ -95,14 +96,37 @@ Website: [Public endpoints](https://docs.terp.network/docs/resources/public) (S3
 - Binary-named trees (`releases/terpd/…`) are **not** allowed; delete them. Binaries belong under
   `releases/terp-core/<tag>/` if published at all.
 
+### `releases/zk-wasmvm/<tag>/`
+
+libwasmvm host libs (muslc `.a` is gitignored in wasmvm; Cosmovisor linux
+ELFs fetch these). 4.0.0-zk:
+
+```
+releases/zk-wasmvm/v4.0.0-zk/
+  libwasmvm_muslc.x86_64.a
+  libwasmvm_muslc.aarch64.a
+  libwasmvm.x86_64.so
+  libwasmvm.aarch64.so
+  SHA256SUMS
+  SOURCE_COMMIT
+  VERSION
+```
+
+Built with **our** `terpnetwork/zk-*-builder:4.0.0-zk` images, never
+`cosmwasm/libwasmvm-builder:0103-*`. See `crates/zk-wasmvm/docs/BUILDERS.md`.
+
 ## Container images
 
-Binaries and manifests live on **S3**. Images live on the self-hosted registry:
+Binaries and manifests live on **S3**. Operator-facing **terpd** images live
+on the self-hosted registry (not GHCR):
 
 ```
-containers.terp.network/terp-core:<tag>
+registry.terp.network/terp-core:<tag>
 ```
 
-Example: `docker pull containers.terp.network/terp-core:v6.0.0`
+Example: `docker pull registry.terp.network/terp-core:v6.0.0`
 
-Do not publish operator-facing image pins to `ghcr.io/terpnetwork/terp-core`.
+CI on a release tag builds the compiled ELF / runtime image. Do **not**
+push libwasmvm **builder** images (`zk-*-builder`, multi-GB rustc) here —
+413 on large blob PUT; they stay local. See
+`networks/upgrades/v6.3/REGISTRY-HANDOFF.md`.

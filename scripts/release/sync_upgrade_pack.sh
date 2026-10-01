@@ -21,7 +21,7 @@ require_cmd jq
 
 PLAN="${PLAN:-}"
 if [ -z "$PLAN" ]; then
-  echo "ERROR: set PLAN=v6.1 or PLAN=v6.2" >&2
+  echo "ERROR: set PLAN=v6.3 or PLAN=v6.4" >&2
   exit 1
 fi
 WRITE="${WRITE:-0}"
@@ -105,22 +105,29 @@ if [ "$WRITE" = "1" ]; then
   write_linux_sums_from_build
   EPOCH="$(git log -1 --format=%ct "$COMMIT")"
   PUBLISHED="${PUBLISHED:-false}"
+  muslc_base="${WASMVM_MUSLC_BASE:-https://minio.terp.network/releases/zk-wasmvm/v4.0.0-zk/}"
+  muslc_arm="$(lock_sum_for "$LOCK" libwasmvm_muslc.aarch64.a 2>/dev/null || true)"
+  muslc_x86="$(lock_sum_for "$LOCK" libwasmvm_muslc.x86_64.a 2>/dev/null || true)"
+  muslc_arm="${muslc_arm:-${WASMVM_MUSLC_AARCH64_SHA:-4adc7b3ca25340a18f38cf313d6cd6d9a8bac0e86cd31799534a04eec1c75ea2}}"
+  muslc_x86="${muslc_x86:-${WASMVM_MUSLC_X86_SHA:-892b623f7a8df2caf40c038461f7a9f9545a381aef3de35c0e4a297f25c98bd7}}"
+  so_x86="$(lock_sum_for "$LOCK" libwasmvm.x86_64.so 2>/dev/null || true)"
+  so_arm="$(lock_sum_for "$LOCK" libwasmvm.aarch64.so 2>/dev/null || true)"
+  dylib="$(lock_sum_for "$LOCK" libwasmvm.dylib 2>/dev/null || true)"
   {
     echo "plan: $PLAN"
     echo "binary_tag: $TAG"
     echo "binary_commit: $COMMIT"
     echo "pack_branch: release/$TAG"
-    # Exact tag on BINARY_COMMIT only. Never --dirty from the pack worktree.
-    _desc="$(git describe --tags --exact-match "$COMMIT" 2>/dev/null || true)"
-    if [ "$_desc" != "$TAG" ]; then
-      echo "ERROR: $COMMIT is not exact tag $TAG (git describe='${_desc:-<none>}'). Refuse dirty lock." >&2
+    # v6.3.0 and v6.4.0 may share a SHA; git describe --exact-match picks one.
+    if ! git tag --points-at "$COMMIT" | grep -Fxq "$TAG"; then
+      echo "ERROR: $COMMIT is not tagged $TAG (points-at: $(git tag --points-at "$COMMIT" | tr '\n' ' '))" >&2
       exit 1
     fi
     echo "dirty: $TAG"
     echo "s3_binaries_intended: $S3_BASE/"
     echo "published: $PUBLISHED"
     echo "source_date_epoch: $EPOCH"
-    echo "note: ELF identity is git tag $TAG. Pack files belong on release/$TAG and must not move the tag. Tarballs are pack_cv_tarball.py (SOURCE_DATE_EPOCH=tag %ct); ELF sha256 is the consensus identity."
+    echo "note: ELF identity is git tag $TAG. Pack files belong on release/$TAG and must not move the tag. Tarballs use pack_cv_tarball.sh (SOURCE_DATE_EPOCH=tag %ct)."
     echo
     cat "$sums_tmp"
     for arch in amd64 arm64; do
@@ -130,9 +137,15 @@ if [ "$WRITE" = "1" ]; then
       fi
     done
     echo
-    echo "wasmvm_muslc_base: ${WASMVM_MUSLC_BASE:-https://minio.terp.network/releases/zk-wasmvm/v3.0.7-zk/}"
-    echo "${WASMVM_MUSLC_AARCH64_SHA:-0687e59140c967a752b0b0ede98e71a3c859fb4f6b94fc26883792d381eb4716}  libwasmvm_muslc.aarch64.a"
-    echo "${WASMVM_MUSLC_X86_SHA:-4f4880e1655d34c098729df52db22c9253bec87d2b3185669ff015a340b76d49}  libwasmvm_muslc.x86_64.a"
+    echo "wasmvm_muslc_base: $muslc_base"
+    echo "$muslc_arm  libwasmvm_muslc.aarch64.a"
+    echo "$muslc_x86  libwasmvm_muslc.x86_64.a"
+    so_x86="$(lock_sum_for "$LOCK" libwasmvm.x86_64.so 2>/dev/null || true)"
+    so_arm="$(lock_sum_for "$LOCK" libwasmvm.aarch64.so 2>/dev/null || true)"
+    dylib="$(lock_sum_for "$LOCK" libwasmvm.dylib 2>/dev/null || true)"
+    [ -n "${so_x86:-}" ] && echo "$so_x86  libwasmvm.x86_64.so"
+    [ -n "${so_arm:-}" ] && echo "$so_arm  libwasmvm.aarch64.so"
+    [ -n "${dylib:-}" ] && echo "$dylib  libwasmvm.dylib"
   } > "$LOCK"
   echo "sync: wrote $LOCK (WRITE=1 from $BUILD_DIR)"
 else

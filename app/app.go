@@ -52,8 +52,9 @@ import (
 	mint "github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v11"
+	"github.com/cosmos/iavl"
 	packetforward "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware"
+	"github.com/terpnetwork/terp-core/v6/app/ibccallbacks"
 	ap "github.com/terpnetwork/terp-core/v6/app/params"
 
 	smartaccount "github.com/terpnetwork/terp-core/v6/x/smart-account"
@@ -82,6 +83,7 @@ import (
 
 	terpabci "github.com/terpnetwork/terp-core/v6/app/abci"
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
+
 	"github.com/terpnetwork/terp-core/v6/docs"
 	"github.com/terpnetwork/terp-core/v6/x/drip"
 	"github.com/terpnetwork/terp-core/v6/x/feeshare"
@@ -95,10 +97,6 @@ import (
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	feegrantmodule "github.com/cosmos/cosmos-sdk/x/feegrant/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-
-	"github.com/terpnetwork/terp-core/v6/app/upgrades"
-	v61 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_1"
-	v62 "github.com/terpnetwork/terp-core/v6/app/upgrades/v6_2"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
@@ -123,11 +121,6 @@ var (
 
 	// EmptyWasmOpts defines a type alias for a list of wasm options.
 	EmptyWasmOpts []wasmkeeper.Option
-
-	Upgrades = []upgrades.Upgrade{ // v2.Upgrade,v3.Upgrade,v4.Upgrade,v4_1.Upgrade, v5.Upgrade, v520.Upgrade, v6.Upgrade,
-		v61.Upgrade, // still needed if this binary applies a leftover v6.1 halt
-		v62.Upgrade, // empty StoreUpgrades; not registered on the v6.1 binary
-	}
 )
 
 // Account specific Bech32 prefixes.
@@ -283,6 +276,7 @@ func NewTerpApp(
 	wasmOpts []wasmkeeper.Option,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *TerpApp {
+	iavl.SetHasherMode(iavl.HasherModeFromEnv())
 	encodingConfig := MakeEncodingConfig()
 	appCodec, legacyAmino := encodingConfig.Marshaler, encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
@@ -313,7 +307,7 @@ func NewTerpApp(
 	}
 	ibcWasmConfig := wasmlctypes.WasmConfig{
 		DataDir:               ibcwasmDir,
-		SupportedCapabilities: append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0", "bn254", "hash-blake"),
+		SupportedCapabilities: append(wasmkeeper.BuiltInCapabilities(), "cosmwasm_3_0"),
 		ContractDebugMode:     false,
 	}
 
@@ -406,7 +400,7 @@ func NewTerpApp(
 		ica.NewAppModule(app.ICAControllerKeeper, app.ICAHostKeeper),
 		ibcwlc.NewAppModule(*app.IBCWasmClientKeeper),
 		packetforward.NewAppModule(app.PacketForwardKeeper),
-		ibchooks.NewAppModule(*app.AccountKeeper),
+		ibccallbacks.NewAppModule(),
 		smartaccount.NewAppModule(appCodec, *app.SmartAccountKeeper),
 		hashmerchant.NewAppModule(app.HashMerchantKeeper),
 		cwhooksmodule.NewAppModule(appCodec, *app.CwHooksKeeper),
@@ -457,7 +451,7 @@ func NewTerpApp(
 			IBCKeeper:         app.IBCKeeper,
 			FeeShareKeeper:    app.FeeShareKeeper,
 			BankKeeperFork:    app.BankKeeper, // since we need extra methods
-			TXCounterStoreKey: runtime.NewKVStoreService(app.GetKey(wasmtypes.StoreKey)),
+			TXCounterStoreKey: runtime.NewKVStoreService(app.KeeperKey(wasmtypes.StoreKey)),
 			WasmConfig:        &wasmConfig,
 			Cdc:               appCodec,
 
@@ -557,9 +551,16 @@ func (app *TerpApp) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
 }
 
 // EndBlocker application updates every end block.
-// v6.1's MaybeArmV62 must not live here: the v6.1 binary arms plan v6.2 at apply.
+// The v6.3 ELF arms v6.4 here. The v6.4 ELF does not.
 func (app *TerpApp) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
-	return app.mm.EndBlock(ctx)
+	res, err := app.mm.EndBlock(ctx)
+	if err != nil {
+		return res, err
+	}
+	if err := app.armHasherNext(ctx); err != nil {
+		return res, err
+	}
+	return res, nil
 }
 
 // Precommitter application updates before the commital of a block after all transactions have been delivered.

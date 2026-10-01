@@ -3,20 +3,8 @@
 name: infra credits baseline
 
 on:
+  # Not part of terp-core product CI. Manual only.
   workflow_dispatch:
-  push:
-    paths:
-      - "crates/inference-edge/**"
-      - "crates/o-line/src/auth_plane/**"
-      - "crates/buzz/crates/buzz-acp/**"
-      - ".github/workflows/infra-credits-baseline.yml"
-      - ".github/workflows/inference-edge-credits.yml"
-  pull_request:
-    paths:
-      - "crates/inference-edge/**"
-      - "crates/o-line/src/auth_plane/**"
-      - "crates/buzz/crates/buzz-acp/**"
-      - ".github/workflows/infra-credits-baseline.yml"
 
 jobs:
   baseline:

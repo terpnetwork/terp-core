@@ -109,6 +109,16 @@ endif
 ifeq ($(WITH_CLEVELDB),yes)
   build_tags += gcc
 endif
+# Darwin installer/dev binaries must not rpath libwasmvm.dylib to this clone
+# (${SRCDIR} in crates/zk-wasmvm/internal/api/link_mac.go). Link the static
+# archive instead. Override with BUILD_TAGS= (empty) only for local dylib debug.
+ifeq ($(shell uname -s 2>/dev/null),Darwin)
+  ifneq ($(wildcard crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a),)
+    ifeq ($(filter static_wasm,$(BUILD_TAGS)),)
+      BUILD_TAGS += static_wasm
+    endif
+  endif
+endif
 build_tags += $(BUILD_TAGS)
 build_tags := $(strip $(build_tags))
 
@@ -128,15 +138,21 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=terp-core \
 ifeq ($(WITH_CLEVELDB),yes)
   ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
 endif
+# muslc wasmvm is a Rust static archive. Alpine's default ld.gold drops those
+# members under plain -static, so the ELF still expects libwasmvm.so (or fails
+# with missing store_param). bfd + static-pie is what actually embeds the .a.
+# https://github.com/osmosis-labs/osmosis/pull/9735
 ifeq ($(LINK_STATICALLY),true)
-  ldflags += -linkmode=external -extldflags "-Wl,-z,muldefs -static"
+  extldflags += -fuse-ld=bfd -Wl,-z,muldefs -static-pie -z noexecstack
+  ldflags += -linkmode=external -extldflags "$(extldflags)"
+  buildmode_flags += -buildmode=pie
 endif
 
 ldflags += $(LDFLAGS)
 ldflags := $(strip $(ldflags))
 
  
-BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
+BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)' $(buildmode_flags)
 
 build: build-check-version go.sum
 	@if [ -n "$(SDK_HASH)" ] || [ -n "$(COMET_HASH)" ]; then \

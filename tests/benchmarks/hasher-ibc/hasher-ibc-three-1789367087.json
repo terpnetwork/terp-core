@@ -1,0 +1,64 @@
+{
+  "image": "registry.terp.network/terp-core:v6.3.0-dev",
+  "topology": "A=blake3 C=sha256; 08-wasm A↔C (HASHER_SMOKE)",
+  "lc_store_gas": 79484,
+  "a_tm_handshake": "skipped (08-wasm Hermes path; set HASHER_SKIP_TM_AC=0 to force)",
+  "hybrid_inclusion_gas": 0,
+  "hybrid_exclusion_gas": 0,
+  "a_inclusion_gas": 0,
+  "wasm_lc_contract": "",
+  "a_wasm_client": "08-wasm-0",
+  "a_wasm_path": "ok",
+  "c_wasm_client": "08-wasm-0",
+  "actions": [
+    {
+      "action": "ibc-hooks increment",
+      "path": "A→C",
+      "packets_on": "08-wasm",
+      "gas": 285494,
+      "n": 1,
+      "ok": true,
+      "note": "count=1 as dest"
+    },
+    {
+      "action": "polytone note→voice",
+      "path": "A→C",
+      "packets_on": "08-wasm",
+      "gas": 572576,
+      "n": 1,
+      "ok": true,
+      "note": "callback=true ch=channel-1"
+    }
+  ],
+  "legs": [
+    {
+      "variant": "F",
+      "image": "registry.terp.network/terp-core:v6.3.0-dev",
+      "n": 1,
+      "warmup": 0,
+      "packets_on": "08-wasm",
+      "median_t_round_trip_ms": 0,
+      "median_t_recv_packet_ms": 0,
+      "median_gas_recv_packet": 200129,
+      "median_gas_recv": 200129,
+      "median_gas_update_client": 0,
+      "median_proof_bytes_recv": 0,
+      "median_t_ack_ms": 0,
+      "median_gas_ack": 0,
+      "lc_store_gas": 0,
+      "lc_create_gas": 0,
+      "samples": [
+        {
+          "t_round_trip_ms": 0,
+          "t_recv_packet_ms": 0,
+          "t_update_client_ms": 0,
+          "t_ack_ms": 0,
+          "gas_recv_packet": 200129,
+          "gas_update_client": 0,
+          "gas_ack": 0,
+          "proof_bytes_recv": 0
+        }
+      ]
+    }
+  ]
+}

@@ -3,3 +3,11 @@
 # Primary repo maintainers
 *       @ethanfrey
 *       @alpe
+
+# Heavy CI (ci-dev, ci-release, ict-rs E2E, GitHub release binaries).
+# scripts/ci/heavy-ci-gate.sh treats every @login in this file as an approver.
+/.github/workflows/ci-dev.yml @hard-nett
+/.github/workflows/ci-release.yml @hard-nett
+/.github/workflows/interchaintest-E2E.yml @hard-nett
+/.github/workflows/release.yml @hard-nett
+/.github/workflows/heavy-ci-gate.yml @hard-nett

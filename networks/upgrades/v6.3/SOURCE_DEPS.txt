@@ -1,0 +1,28 @@
+# Pins for v6.3 / v6.4 hasher two-step + CosmWasm/wasmvm 4.0.0-zk.
+# Path-replaces in go.mod (must be on the git tags):
+#   wasmd     -> ./crates/zk-wasmd
+#   wasmvm/v3 -> ./crates/zk-wasmvm     (Go import stays wasmvm/v3)
+#   iavl      -> ./crates/cosmos/iavl
+#   store/v2  -> ./crates/cosmos/store-v2
+#
+# Plan names: v6.3 then v6.4 (not v7).
+# Do not mix v3.0.7-zk muslc (93d4bce / 0687e591…) with this cut.
+# Path A: fail-closed Flock/DSTW. No dummy SNARK placeholders.
+
+terp-core   https://github.com/terpnetwork/terp-core.git                 v6.3.0/v6.4.0  224419ac63c12a88223b4ac8380c9633ba8f9123
+wasmd       https://github.com/permissionlessweb/wasmd.git               (crates/zk-wasmd)            d08c754ac59bc3e08785b377f5c9b06b6a457599
+wasmvm      https://github.com/permissionlessweb/wasmvm.git              4.0.0-zk                     de95b3f2bc5cc5e713acfca821a40e7c6667c37d
+cosmwasm    https://github.com/permissionlessweb/cosmwasm.git            4.0.0-zk mvp/main            09e3ba815
+zakura      crates/zakura-common (halo2 IPA codec; contains 5364d3d)     a64b90a804615cc88e5c4e39b6ade3afa68bc2b0
+iavl        crates/cosmos/iavl (HasherOptionForStore)                    a92b48fa0a8dbb73d7d8eb7f8d1229eccee5b007
+
+# libwasmvm Cargo 4.0.0-zk. Built with terpnetwork/zk-*-builder:4.0.0-zk
+# (never cosmwasm/libwasmvm-builder:0103-*).
+# Muslc recut 2026-09-21 (alpine-nightly, DSTW reject):
+#   aarch64 4adc7b3ca25340a18f38cf313d6cd6d9a8bac0e86cd31799534a04eec1c75ea2
+#   x86_64  892b623f7a8df2caf40c038461f7a9f9545a381aef3de35c0e4a297f25c98bd7
+# glibc .so recut 2026-09-22 (debian-nightly + libc6-dev-arm64-cross):
+#   x86_64  fd22dc51ac7ccc7362ad6ce3c07947bda42963f67595cc76c6d313a113277ecc
+#   aarch64 5304710677b69c400a7b2aa342f8a14d58ee1f7f9bf216c4bbc95ba15fa6202c
+# Host Darwin dylib is not the Cosmovisor ELF.
+# Go module path remains github.com/CosmWasm/wasmvm/v3.

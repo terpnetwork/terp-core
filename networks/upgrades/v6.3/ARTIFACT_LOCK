@@ -1,0 +1,21 @@
+plan: v6.3
+binary_tag: v6.3.0
+binary_commit: 02599d268e93bc4a6455d00951e3abb5955f4383
+pack_branch: release/v6.3.0
+dirty: v6.3.0
+s3_binaries_intended: https://s3.terp.network/releases/terp-core/v6.3.0/
+published: true
+note: ELF identity is git tag v6.3.0. Pack files belong on release/v6.3.0 and must not move the tag.
+
+4161cf4531f357ce4cec24e0302b71ca404810556b439729d43a120dd0972d65  terpd-6.3.0-linux-amd64.tar.gz
+3d28fe7a68e52c6bfcc696b71393c4cd5795d208c7c87f0ee4f6d65f44f6e4cf  terpd-6.3.0-linux-arm64.tar.gz
+872511980bb59c6e403f179bd934217e5a4e9eee861d0085420079510ea47d6e  terpd-6.3.0-darwin-arm64.tar.gz
+40e1a62d5c7b68832c0de58e1a0ca0dc83b7bf883777eb1f08feb43ca44dbfce  terpd-linux-amd64
+c8e3ba3db686f01456cb487f44fbf3bee7b6277040609d4ab2c45589748130b2  terpd-linux-arm64
+
+wasmvm_muslc_base: https://s3.terp.network/releases/zk-wasmvm/v4.0.0-zk/
+3cb0e887c678eb934bec05800ffdfeb017bb57f931bd40c17f7ff9fe0c96ca34  libwasmvm_muslc.aarch64.a
+c5d5dec1410d537b75358747caf29316d862d785b24a54a2b9c24d94e9364621  libwasmvm_muslc.x86_64.a
+894ddc487b9e5beaa15966458c64ac2bcf20c042cbe622b57ca1902fd31b3a07  libwasmvm.x86_64.so
+0afc14b8657f2aae64d45eda5f3386794993fa9414f38b144f6a081a43bda3ad  libwasmvm.aarch64.so
+ea83434ccbf2de81e1cb41a2e58579f6805bf5a1c1ab360d4a1df41310287ddc  libwasmvm.dylib

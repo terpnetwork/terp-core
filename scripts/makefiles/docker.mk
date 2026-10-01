@@ -60,7 +60,7 @@ docker-help:
 	@echo "  docker-build-nonroot        Build nonroot Docker image"
 	@echo "  docker-build-localnet       Build localterp dev image"
 	@echo "  build-zk-local              Build with local ../zk-wasmvm (all libs)"
-	@echo "  docker-publish-dev          ZK build + tag as RELEASE_TAG + local-zk + ghcr name"
+	@echo "  docker-publish-dev          ZK build + tag as IMAGE_REPO:RELEASE_TAG (registry.terp.network)"
 	@echo "  docker-push-dev             docker push IMAGE_REPO:RELEASE_TAG"
 	@echo "  wasmvm-download-libs        Download official libs into build/wasmvm/"
 	@echo "  wasmvm-build-libs           Build libs locally (if you have zk-wasmvm)"
@@ -126,11 +126,12 @@ endif
 	@rsync -a --delete \
 		--exclude='.git/' \
 		$(ZK_WASMD_DIR)/ build/zk-deps/zk-wasmd/ 2>/dev/null || true
-	@echo "==> Staging ibc-hooks-v11 (store/v2 keeper patch) ..."
-	@mkdir -p build/zk-deps/ibc-hooks-v11
-	@rsync -a --delete --exclude='.git/' \
-		./crates/ibc-hooks-v11/ build/zk-deps/ibc-hooks-v11/ 2>/dev/null || true
-
+	@if grep -q '=> ./crates/ibc-hooks-v11' go.mod; then \
+		echo "==> Staging ibc-hooks-v11 (store/v2 keeper patch) ..."; \
+		mkdir -p build/zk-deps/ibc-hooks-v11; \
+		rsync -a --delete --exclude='.git/' \
+			./crates/ibc-hooks-v11/ build/zk-deps/ibc-hooks-v11/; \
+	fi
 docker-clean:
 	@echo "==> Removing staged wasmvm + zk artifacts ..."
 	rm -rf build/zk-deps build/wasmvm

@@ -15,5 +15,5 @@ cosmwasm   https://github.com/permissionlessweb/cosmwasm.git            v3.1.0-z
 iavl/v2    github.com/permissionlessweb/iavl/v2                         feat/blake3-native-v2       e5686bb83c1c
 
 # store/v2 hasher (opt-in, not in this git tree):
-#   github.com/cosmos/cosmos-sdk/store/v2@v2.0.0 + app/iavlhash/store-v2-hasher.patch
+#   github.com/cosmos/cosmos-sdk/store/v2@v2.0.0 + app/iavl/store-v2-hasher.patch
 # Dual-store dest names: b3-bank b3-staking b3-acc. IBC stores stay SHA-256.

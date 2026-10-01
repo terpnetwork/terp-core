@@ -1,0 +1,53 @@
+{
+  "image": "registry.terp.network/terp-core:v6.3.0-dev",
+  "topology": "A=blake3 B=hybrid C=sha256; TM B→C; 08-wasm A→C",
+  "lc_store_gas": 39742,
+  "a_tm_handshake": "link_path: Relayer error on hermes: create channel produced no channel ids: a_side channel_id not found in: {\"result\":\"failed to spawn chain runtime: missing chain config for 'terp-a-1' in configuration file\",\"status\":\"error\"}; stdout={\"timestamp\":\"2026-09-13T22:33:01.492399Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"using default configuration from '/home/hermes/.hermes/config.toml'\"},\"threadId\":\"ThreadId(1)\"}\n{\"timestamp\":\"2026-09-13T22:33:01.492860Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"running Hermes v1.10.3+f66b78a\"},\"threadId\":\"ThreadId(1)\"}\n{\"result\":\"failed to spawn chain runtime: missing chain config for 'terp-a-1' in configuration file\",\"status\":\"error\"}\n; stderr=",
+  "hybrid_inclusion_gas": 0,
+  "hybrid_exclusion_gas": 0,
+  "a_inclusion_gas": 0,
+  "wasm_lc_contract": "",
+  "a_wasm_client": "",
+  "a_wasm_path": "Relayer error on hermes: hermes create client --wasm-checksum failed: {\"timestamp\":\"2026-09-13T22:33:34.314424Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"using default configuration from '/home/hermes/.hermes/config.toml'\"},\"threadId\":\"ThreadId(1)\"}\n{\"timestamp\":\"2026-09-13T22:33:34.315040Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"running Hermes v1.10.3+f66b78a\"},\"threadId\":\"ThreadId(1)\"}\n{\"timestamp\":\"2026-09-13T22:33:34.321692Z\",\"level\":\"WARN\",\"fields\":{\"message\":\"Hermes could not infer the compatibility mode for this chain, and will use the configured `compat_mode` version `v0.37`.\"},\"threadId\":\"ThreadId(1)\"}\n{\"timestamp\":\"2026-09-13T22:33:34.330249Z\",\"level\":\"WARN\",\"fields\":{\"message\":\"Hermes could not infer the compatibility mode for this chain, and will use the configured `compat_mode` version `v0.37`.\"},\"threadId\":\"ThreadId(1)\"}\n{\"timestamp\":\"2026-09-13T22:33:34.352873Z\",\"level\":\"ERROR\",\"fields\":{\"message\":\"failed to simulate tx. propagating error to caller: gRPC call `send_tx_simulate` failed with status: status: Unknown, message: \\\"failed to execute message; message index: 0: json: expected value at line 2 column 1: wasm contract call failed [cosmos/ibc-go/modules/light-clients/08-wasm/v11@v11.1.0/keeper/contract_keeper.go:112] with gas used: '50052'\\\", details: [], metadata: MetadataMap { headers: {\\\"content-type\\\": \\\"application/grpc\\\", \\\"x-cosmos-block-height\\\": \\\"88\\\"} }\"},\"span\":{\"name\":\"estimate_gas\"},\"spans\":[{\"chain\":\"terp-c-1\",\"tracking_id\":\"create client\",\"name\":\"send_messages_and_wait_commit\"},{\"account.sequence\":\"9\",\"chain\":\"terp-c-1\",\"name\":\"send_tx_with_account_sequence_retry\"},{\"name\":\"estimate_gas\"}],\"threadId\":\"ThreadId(25)\"}\n{\"timestamp\":\"2026-09-13T22:33:34.352938Z\",\"level\":\"ERROR\",\"fields\":{\"message\":\"gas estimation failed or encountered another unrecoverable error\",\"error\":\"gRPC call `send_tx_simulate` failed with status: status: Unknown, message: \\\"failed to execute message; message index: 0: json: expected value at line 2 column 1: wasm contract call failed [cosmos/ibc-go/modules/light-clients/08-wasm/v11@v11.1.0/keeper/contract_keeper.go:112] with gas used: '50052'\\\", details: [], metadata: MetadataMap { headers: {\\\"content-type\\\": \\\"application/grpc\\\", \\\"x-cosmos-block-height\\\": \\\"88\\\"} }\"},\"span\":{\"account.sequence\":\"9\",\"chain\":\"terp-c-1\",\"name\":\"send_tx_with_account_sequence_retry\"},\"spans\":[{\"chain\":\"terp-c-1\",\"tracking_id\":\"create client\",\"name\":\"send_messages_and_wait_commit\"},{\"account.sequence\":\"9\",\"chain\":\"terp-c-1\",\"name\":\"send_tx_with_account_sequence_retry\"}],\"threadId\":\"ThreadId(25)\"}\n{\"result\":\"foreign client error: error raised while creating client for chain terp-c-1: failed sending message to dst chain : gRPC call `send_tx_simulate` failed with status: status: Unknown, message: \\\"failed to execute message; message index: 0: json: expected value at line 2 column 1: wasm contract call failed [cosmos/ibc-go/modules/light-clients/08-wasm/v11@v11.1.0/keeper/contract_keeper.go:112] with gas used: '50052'\\\", details: [], metadata: MetadataMap { headers: {\\\"content-type\\\": \\\"application/grpc\\\", \\\"x-cosmos-block-height\\\": \\\"88\\\"} }\",\"status\":\"error\"}\n",
+  "legs": [
+    {
+      "variant": "H",
+      "image": "registry.terp.network/terp-core:v6.3.0-dev",
+      "n": 2,
+      "warmup": 1,
+      "packets_on": "07-tendermint",
+      "median_t_round_trip_ms": 5475,
+      "median_t_recv_packet_ms": 2270,
+      "median_gas_recv_packet": 174808,
+      "median_gas_recv": 174808,
+      "median_gas_update_client": 174808,
+      "median_proof_bytes_recv": 618,
+      "median_t_ack_ms": 3174,
+      "median_gas_ack": 116068,
+      "lc_store_gas": 0,
+      "lc_create_gas": 0,
+      "samples": [
+        {
+          "t_round_trip_ms": 5016,
+          "t_recv_packet_ms": 1953,
+          "t_update_client_ms": 1953,
+          "t_ack_ms": 1953,
+          "gas_recv_packet": 187000,
+          "gas_update_client": 187000,
+          "gas_ack": 116083,
+          "proof_bytes_recv": 596
+        },
+        {
+          "t_round_trip_ms": 5934,
+          "t_recv_packet_ms": 2588,
+          "t_update_client_ms": 2588,
+          "t_ack_ms": 4395,
+          "gas_recv_packet": 162617,
+          "gas_update_client": 162617,
+          "gas_ack": 116054,
+          "proof_bytes_recv": 640
+        }
+      ]
+    }
+  ]
+}
