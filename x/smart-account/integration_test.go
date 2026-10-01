@@ -1,3 +1,5 @@
+//go:build ibc_simapp
+
 package authenticator_test
 
 import (
