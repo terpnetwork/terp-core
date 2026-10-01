@@ -1,0 +1,3019 @@
+//! Lincheck PIOP for **block-diagonal** R1CS over GF(2).
+//!
+//! Reduces three MLE evaluation claims (`â(x)=v`, `b̂(x')=v'`, `ĉ(x'')=v''`)
+//! plus the linear constraints (`a = Az`, `b = Bz`, `c = Cz`) to three MLE
+//! evaluation claims on `z`, all sharing a fresh random inner coord.
+//!
+//! ## Matrix structure (the assumption we exploit)
+//!
+//! `A = I_{2^n_log} ⊗ A_0` (block-diagonal with `A_0` repeated `2^n_log`
+//! times along the diagonal). Same for B, C. Storage is `O(k²)` for the
+//! small base matrices, not `O(N²)`.
+//!
+//! With the row/col index decomposed as `(i_inner, i_outer)` with `k_log`
+//! inner bits and `n_log` outer bits (`m = k_log + n_log`), the bilinear MLE
+//! factors:
+//!
+//!   `Â(i, x)  =  Â_0(i_inner, x_inner) · eq(i_outer, x_outer)`
+//!
+//! So for the claim `v = â(x) = Σ_i z(i) · Â(i, x)` the outer summation
+//! collapses by the eq-MLE identity:
+//!
+//!   `v  =  Σ_{i_inner}  Â_0(i_inner, x_inner) · ẑ(i_inner, x_outer)`
+//!
+//! — a sum over only `2^k_log` terms, with `ẑ(·, x_outer)` being the
+//! partial fold of `z` at the outer half of the claim point.
+//!
+//! ## Protocol shape (circuit R1CS: C = I, A & B share a claim point)
+//!
+//! For R1CS coming from circuits, `C = I` (identity), so `c = Cz = z` and
+//! the zerocheck's c-claim `ĉ(point_c) = v_c` IS a direct `z`-claim
+//! `ẑ(point_c) = v_c` — handled by the PCS without going through lincheck.
+//! Likewise the zerocheck's `â` and `b̂` claims live at the **same** point
+//! `(z, ρ-values)`, so lincheck only needs to fold `z` **once** at that
+//! shared point.
+//!
+//! 1. **Prover sends** one length-`k = 2^k_log` F128 vector
+//!    `z_vec[i_inner] = ẑ(i_inner, x_ab.x_outer)`.
+//! 2. **Verifier checks** *two* consistency equations against the same
+//!    `z_vec`:
+//!    ```text
+//!    Σ_{i_inner}  Â_0_quirky(z_skip, x_inner_rest, i_inner) · z_vec[i_inner]  ==  v_a
+//!    Σ_{i_inner}  B̂_0_quirky(z_skip, x_inner_rest, i_inner) · z_vec[i_inner]  ==  v_b
+//!    ```
+//! 3. **Verifier samples** quirky `(r_inner_skip, r_inner_rest)` after
+//!    observing `z_vec`.
+//! 4. **Verifier derives** one z-claim at the shared output point:
+//!    ```text
+//!    w = ẑ((r_inner_skip, r_inner_rest), x_ab.x_outer)
+//!      = Σ_{i_inner} quirky_eq(r_inner_skip, r_inner_rest, i_inner) · z_vec[i_inner]
+//!    ```
+//!
+//! The lincheck output is one `(point, value)` z-claim; combined with the
+//! c-claim handed in directly by the caller, the PCS sees **two** z-openings.
+//!
+//! ## Soundness
+//!
+//! - The two scalar checks tie `z_vec` to `v_a` and `v_b` from the upstream
+//!   layer — without them a malicious prover could send any vector.
+//! - The post-vector random `(r_inner_skip, r_inner_rest)` plus Schwartz-Zippel
+//!   ensures that if `z_vec_claimed` differs from the true partial fold of `z`,
+//!   the derived `w` differs from the true `ẑ((r_inner_skip, r_inner_rest), x_outer)`
+//!   with probability `≈ 1 − 2⁻¹²⁸`. The PCS opening catches that downstream.
+//!
+//! ## Quirky (univariate-skip) claim points
+//!
+//! To compose with the **zerocheck's univariate skip** for the first `k_skip`
+//! variables, claim points use the [`QuirkyPoint`] representation:
+//!
+//!   `x = (z_skip ∈ F_{2^128},  x_inner_rest ∈ F_{2^128}^{k_log − k_skip},  x_outer ∈ F_{2^128}^{n_log})`
+//!
+//! - `z_skip` is the univariate-skip challenge; it represents all `k_skip`
+//!   skip variables collapsed via the polynomial extension with Lagrange
+//!   basis on `φ_8(0), …, φ_8(2^{k_skip} − 1)`.
+//! - The remaining `k_log − k_skip` inner coords plus the `n_log` outer
+//!   coords are standard multilinear.
+//!
+//! When evaluating the bilinear matrix MLE at a quirky claim point, the
+//! eq factor for the inner row index becomes the **outer product of**:
+//! `L_{i_skip}(z_skip) · eq(x_inner_rest, i_inner_rest)`, where `L_*` are
+//! Lagrange weights at `z_skip` for the `k_skip` skip dims (see
+//! [`build_quirky_eq_table`]).
+//!
+//! The prover's partial fold `ẑ(·, x_outer)` is unchanged — it only depends
+//! on `x_outer` (still pure multilinear). The verifier-side eq tables and
+//! the final-sample reduction are the only changes.
+//!
+//! ## Conventions
+//!
+//! - **Point ordering inside `QuirkyPoint`.** `x_inner_rest[0..k_log − k_skip]`
+//!   bind to inner variables `i_inner_rest[0..k_log − k_skip]`. `x_outer[0..n_log]`
+//!   to outer vars.
+//! - **Eq table layout.** `eq_table[i]` where `i = Σ b_j · 2^j` is
+//!   `Π_j eq(point[j], b_j) = Π_j (1 + point[j] + b_j)`.
+//! - **`z_packed` byte layout (specific to lincheck — enables column-scan
+//!   lookup tables without an explicit transpose).** Writing `i_outer = 8·byte_idx + r`
+//!   with `r ∈ {0,..,7}` and `byte_idx ∈ {0,..,n_outer/8 − 1}`, the bit
+//!   `z[i_inner, i_outer]` lives at:
+//!     - **byte position** `byte_idx · k + i_inner`,
+//!     - **bit-within-byte** `r`.
+//!
+//!   Equivalently: `z_packed` is organized in `n_outer/8` *stripes* of `k`
+//!   contiguous bytes each. Stripe `byte_idx` covers all `i_inner ∈ {0,..,k}`
+//!   for the same outer batch `i_outer ∈ {8·byte_idx, …, 8·byte_idx + 7}`.
+//!   Each byte holds 8 outer bits for one i_inner.
+//!
+//!   In bit-position terms, the bit-index decomposes as:
+//!   ```text
+//!   LSB:  3 bits = r           (= low 3 bits of i_outer, = bit-within-byte)
+//!         k_log bits = i_inner
+//!   MSB:  (n_log − 3) bits = byte_idx (= upper bits of i_outer)
+//!   ```
+//!
+//!   This layout makes the partial-fold column scan sequential — for each
+//!   `byte_idx`, all `k` per-i_inner bytes are at consecutive byte positions,
+//!   so we build a 256-entry sum table for the 8 outer values once per
+//!   `byte_idx` and apply it across all `i_inner` with one lookup + one XOR
+//!   per byte.
+
+use std::{
+    env::var,
+    fmt::{Debug, Formatter, Result as FmtResult},
+    mem::take,
+    sync::atomic::{AtomicBool, Ordering},
+    time::Instant,
+};
+
+use flock_multilinear::{IndexOrder, eq_table};
+use rayon::{
+    current_num_threads,
+    prelude::{
+        IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator,
+        IntoParallelRefMutIterator, ParallelIterator, ParallelSlice, ParallelSliceMut,
+    },
+};
+use serde::{Deserialize, Serialize};
+
+#[cfg(target_arch = "x86_64")]
+pub use crate::lincheck::kernels::partial_fold_packed_z_x86_tiled_padded;
+#[cfg(target_arch = "aarch64")]
+pub use crate::lincheck::kernels::{
+    partial_fold_packed_z_neon_allcore_padded, partial_fold_packed_z_neon_iblock_padded,
+    partial_fold_packed_z_neon_oblock_padded, partial_fold_packed_z_neon_single,
+    partial_fold_packed_z_neon_single_padded,
+};
+pub use crate::lincheck::union::{
+    MatrixAssertion, UnionLincheckSlot, eq_prefix_sum, eq_prefix_weight, prove_union_capture_z_vec,
+    prove_union_capture_z_vec_with_grinding, union_bitbank_fold, union_comb_partial, verify_union,
+    verify_union_deferred, verify_union_deferred_with_grinding, verify_union_with_grinding,
+};
+use crate::{
+    all_core_pool, alloc_uninit_vec,
+    challenger::Challenger,
+    ecore_rich_topology,
+    field::F128,
+    genus95_curve_code::{
+        EvaluationPoint, FsRng, base_evaluation_functional, evaluation_point_from_nonce_pow,
+        sample_random_evaluation_point,
+    },
+    r1cs::SparseBinaryMatrix,
+    zerocheck::{
+        ag_skip::{K_SKIP, R1_FUSED_ATTEMPT_BUDGET, fallback_point},
+        multilinear::lagrange_weights_naive,
+    },
+};
+mod kernels;
+mod union;
+
+/// Bench-only A/B toggle: when set, [`partial_fold_packed_z_best`] uses the legacy
+/// `i_inner`-partitioned `partial_fold_packed_z_neon_iblock_padded` instead of the
+/// default outer(tile)-partitioned `partial_fold_packed_z_neon_oblock_padded`. The
+/// two are bit-identical (GF(2¹²⁸) add is XOR — associative + commutative), so one
+/// process can time both back-to-back and cancel thermal drift. The oblock default
+/// builds each tile's sum-tables once instead of once per worker, scaling the fold
+/// ~8.5× vs iblock's ~6.5× on 10 P-cores at m=32. See `benches/lincheck.rs` (FOLD_AB=1).
+pub static FOLD_IBLOCK: AtomicBool = AtomicBool::new(false);
+
+/// A/B toggle: when set, lincheck's two heavy passes (the z partial fold and
+/// `fold_alpha_batched`) stay on the caller's (P-core) rayon pool instead of
+/// [`crate::all_core_pool`]. Both passes are flat parallel-fors with dynamic
+/// work assignment, so the work-stealing scheduler drains around the slower
+/// E-cores and the extra cores are a straight throughput win (same shape as
+/// the PCS combine's −29%). Thread count / pool choice cannot change output
+/// bits: the alpha fold writes every slot deterministically and the partial
+/// fold is an XOR reduction of per-worker partials. `LINCHECK_PCORES_ONLY=1`
+/// in the environment forces the same fallback (production kill-switch);
+/// the AtomicBool exists for paired within-process A/B (see
+/// `benches/lincheck.rs`, `ALLCORE_AB=1`).
+pub static LC_PCORES_ONLY: AtomicBool = AtomicBool::new(false);
+
+/// True when lincheck's passes may hop to the all-core (P+E) pool at all:
+/// not disabled (atomic or env), and the all-core pool actually has more
+/// threads than the caller's pool (under `RAYON_NUM_THREADS=1` both are 1,
+/// so ST parity conventions hold automatically). The prover's partial fold
+/// additionally requires an E-rich topology (see [`lincheck_use_all_cores`]);
+/// the alpha fold does not — from the verify context the P-pool runs it at
+/// ~11 ms vs ~2.3 ms all-core on 4P+4E, and the same ~10.2 → ~2.9 ms verify
+/// win reproduces on 10P+4E, so the hop pays on every measured topology.
+fn lincheck_all_cores_enabled() -> bool {
+    !LC_PCORES_ONLY.load(Ordering::Relaxed)
+        && var("LINCHECK_PCORES_ONLY").is_err()
+        && all_core_pool().current_num_threads() > current_num_threads()
+}
+
+/// [`lincheck_all_cores_enabled`] plus the E-rich topology requirement — the
+/// gate for the prover's z partial fold, where the hop measures as a win only
+/// with a large-enough E-cluster (see [`crate::ecore_rich_topology`] — on
+/// 10P+4E it is a ~13% LOSS, `FLOCK_ALLCORE=1` overrides).
+// Only consulted by the aarch64 partial-fold dispatch; dead elsewhere.
+#[cfg_attr(not(target_arch = "aarch64"), allow(dead_code))]
+fn lincheck_use_all_cores() -> bool {
+    lincheck_all_cores_enabled() && ecore_rich_topology()
+}
+
+/// `circuit.fold_alpha_batched` on the all-core pool when profitable. The
+/// alpha fold is a flat per-column gather (cost ∝ NNZ, e.g. ~21M for BLAKE3)
+/// — the same drain-friendly shape as the partial fold. Only worth the pool
+/// hop when the column loop parallelizes at all; identical output either way
+/// (every slot written deterministically). Shared by prover and verifier —
+/// and deliberately NOT topology-gated: the verify-context win is large on
+/// both measured topologies (see [`lincheck_all_cores_enabled`]).
+fn fold_alpha_batched_pooled(
+    circuit: &dyn LincheckCircuit,
+    alpha: F128,
+    eq_inner: &[F128],
+) -> Vec<F128> {
+    if circuit.n_cols() >= SUMCHECK_PAR_THRESHOLD && lincheck_all_cores_enabled() {
+        all_core_pool().install(|| circuit.fold_alpha_batched(alpha, eq_inner))
+    } else {
+        circuit.fold_alpha_batched(alpha, eq_inner)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// LincheckCircuit: the per-block linear structure lincheck consumes
+// ---------------------------------------------------------------------------
+//
+// Lincheck's hot path computes a single length-`k = 2^k_log` vector
+//
+//   `comb_vec[c] = α · ξ_A(c) + ξ_B(c)`
+//
+// where `ξ_M(c) = Σ_r eq_inner[r] · M[r, c]` is the eq-weighted column
+// marginal of base matrix `M ∈ {A_0, B_0}`. Today's `sparse_row_fold_alpha_batched`
+// computes it by scattering `eq_inner[r]` to every column in row r's nonzero
+// set — cost ∝ NNZ.
+//
+// For circuit-shaped R1CS (Keccak, BLAKE3, SHA-256) the same `comb_vec` can be
+// produced by walking the constraint graph in round order — same operations
+// the witness gen already does, just with eq-weights instead of bit values.
+// Per-hash impls can also avoid materializing matrices entirely (relevant for
+// encodings where intermediate state slots are dropped and substitution would
+// otherwise blow up A/B density).
+//
+// `LincheckCircuit` is the seam: `lincheck::prove`/`verify` take
+// `&dyn LincheckCircuit` instead of a pair of matrices. The default impl
+// `SparseMatrixCircuit` wraps the existing fused sparse kernel so callers
+// that haven't ported get identical behavior.
+
+/// Per-block linear structure consumed by lincheck. Implementations produce
+/// the α-batched column marginal `comb_vec[c] = α · ξ_A(c) + ξ_B(c)` either
+/// by sparse-matrix iteration (default) or by walking the circuit directly.
+pub trait LincheckCircuit: Sync {
+    /// Number of columns in the per-block matrices A_0, B_0 (= k = 2^k_log).
+    fn n_cols(&self) -> usize;
+
+    /// Compute `comb_vec[c] = α · (eq^T · A_0)[c] + (eq^T · B_0)[c]` over
+    /// `c ∈ [0, n_cols())`. `eq_inner.len() == n_cols()`.
+    fn fold_alpha_batched(&self, alpha: F128, eq_inner: &[F128]) -> Vec<F128>;
+
+    /// The same two column marginals, kept APART: `((eq^T·A_0), (eq^T·B_0))`.
+    ///
+    /// Accumulation needs them separate. The lincheck's target only ever
+    /// carries their α-combination, and α is per-proof, so a claim about
+    /// `α·A_0 + B_0` would be a claim about a different polynomial in every
+    /// proof and could never be folded with its neighbours; claims about
+    /// `A_0` and `B_0` individually are about registry-static matrices and
+    /// fold forever. See [`crate::matrix_fold`].
+    ///
+    /// The default costs two folds. It touches the same nonzeros as one, so
+    /// an implementation that emits both vectors in a single pass is free to
+    /// override — the arithmetic is identical, only the accumulation differs.
+    fn fold_split(&self, eq_inner: &[F128]) -> (Vec<F128>, Vec<F128>) {
+        let b = self.fold_alpha_batched(F128::ZERO, eq_inner);
+        let mut a = self.fold_alpha_batched(F128::ONE, eq_inner);
+        // char 2: fold(1) = A + B, so A = fold(1) + B.
+        for (x, y) in a.iter_mut().zip(&b) {
+            *x += *y;
+        }
+        (a, b)
+    }
+
+    /// Column index of a constant-one wire to pin, or `None` if the circuit has
+    /// no such wire. When `Some(col)`, lincheck folds one extra `β`-term into the
+    /// comb so the sumcheck also proves that the committed constant column is the
+    /// all-ones vector (whose MLE is the constant `1`), closing the all-zero
+    /// witness soundness gap. This REQUIRES the witness to set that wire to `1`
+    /// in *every* batched instance — padding included. See
+    /// `docs/const-wire-pin.md`. Default `None` keeps the transcript unchanged
+    /// for circuits without a constant wire.
+    fn const_pin_col(&self) -> Option<usize> {
+        None
+    }
+}
+
+/// Default `LincheckCircuit` over a pair of sparse binary matrices. Delegates
+/// to the existing fused row-fold kernel. Callers that haven't migrated to a
+/// per-hash circuit walker use this wrapper.
+pub struct SparseMatrixCircuit<'a> {
+    pub a_0: &'a SparseBinaryMatrix,
+    pub b_0: &'a SparseBinaryMatrix,
+    /// Constant-wire pin column (see [`LincheckCircuit::const_pin_col`]).
+    const_pin: Option<usize>,
+}
+
+impl<'a> SparseMatrixCircuit<'a> {
+    pub fn new(a_0: &'a SparseBinaryMatrix, b_0: &'a SparseBinaryMatrix) -> Self {
+        debug_assert_eq!(a_0.num_rows, b_0.num_rows);
+        debug_assert_eq!(a_0.num_cols, b_0.num_cols);
+        Self {
+            a_0,
+            b_0,
+            const_pin: None,
+        }
+    }
+
+    /// Set the constant-wire pin column (see `docs/const-wire-pin.md`).
+    pub fn with_const_pin(mut self, const_pin: Option<usize>) -> Self {
+        self.const_pin = const_pin;
+        self
+    }
+}
+
+impl<'a> LincheckCircuit for SparseMatrixCircuit<'a> {
+    fn n_cols(&self) -> usize {
+        self.a_0.num_cols
+    }
+    fn fold_alpha_batched(&self, alpha: F128, eq_inner: &[F128]) -> Vec<F128> {
+        sparse_row_fold_alpha_batched(alpha, self.a_0, self.b_0, eq_inner)
+    }
+    /// One scatter pass per matrix rather than the default's two folds over
+    /// both — half the nonzero touches.
+    fn fold_split(&self, eq_inner: &[F128]) -> (Vec<F128>, Vec<F128>) {
+        let scatter = |m: &SparseBinaryMatrix| {
+            let mut out = vec![F128::ZERO; m.num_cols];
+            for (r, cols) in m.rows.iter().enumerate() {
+                let w = eq_inner[r];
+                if w == F128::ZERO {
+                    continue;
+                }
+                for &c in cols {
+                    out[c] += w;
+                }
+            }
+            out
+        };
+        (scatter(self.a_0), scatter(self.b_0))
+    }
+    fn const_pin_col(&self) -> Option<usize> {
+        self.const_pin
+    }
+}
+
+/// Column-major (CSC) `LincheckCircuit`: `(A_0, B_0)` transposed once into
+/// flat `col_ptr`/`row_idx` arrays. `fold_alpha_batched` becomes a gather —
+/// each column reads its own row list and sums `eq_inner[r]`, so columns are
+/// independent (parallel with no per-thread accumulator copies and no write
+/// scatter) and the α-mul amortizes to one per column:
+///
+///   `comb[c] = α · Σ_{r ∈ colA(c)} eq_inner[r] + Σ_{r ∈ colB(c)} eq_inner[r]`
+///
+/// On the SHA-256 hybrid matrices (k = 2^15, ~1.3M nonzeros) this measures
+/// ~7× faster than the row-scatter fold and ~100× faster than the symbolic
+/// per-hash walkers; on BLAKE3 (~21M nonzeros) ~1.7× faster than row-scatter.
+/// Construction costs one pass over the nonzeros (~4 ms / ~40 ms for the
+/// above) — do it once at setup, e.g. via
+/// [`crate::r1cs::BlockR1cs::csc_lincheck_circuit`].
+#[derive(Clone)]
+pub struct CscCircuit {
+    n_cols: usize,
+    a_col_ptr: Vec<u32>,
+    a_rows: Vec<u32>,
+    b_col_ptr: Vec<u32>,
+    b_rows: Vec<u32>,
+    /// Constant-wire pin column (see [`LincheckCircuit::const_pin_col`]).
+    const_pin: Option<usize>,
+}
+
+/// Flatten one sparse matrix into CSC arrays: rows with a 1 in column `c` are
+/// `rows_flat[col_ptr[c] as usize .. col_ptr[c+1] as usize]`.
+fn csc_from_rows(m: &SparseBinaryMatrix) -> (Vec<u32>, Vec<u32>) {
+    assert!(m.num_rows <= u32::MAX as usize);
+    assert!(m.num_cols <= u32::MAX as usize);
+    let mut col_ptr = vec![0u32; m.num_cols + 1];
+    for row in m.rows.iter() {
+        for &c in row {
+            col_ptr[c + 1] += 1;
+        }
+    }
+    for c in 0..m.num_cols {
+        col_ptr[c + 1] += col_ptr[c];
+    }
+    let mut next = col_ptr.clone();
+    let mut rows_flat = vec![0u32; *col_ptr.last().unwrap() as usize];
+    for (r, row) in m.rows.iter().enumerate() {
+        for &c in row {
+            rows_flat[next[c] as usize] = r as u32;
+            next[c] += 1;
+        }
+    }
+    (col_ptr, rows_flat)
+}
+
+// Compact Debug — the row arrays run to millions of entries.
+impl Debug for CscCircuit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        f.debug_struct("CscCircuit")
+            .field("n_cols", &self.n_cols)
+            .field("nnz_a", &self.a_rows.len())
+            .field("nnz_b", &self.b_rows.len())
+            .finish()
+    }
+}
+
+impl CscCircuit {
+    pub fn from_matrices(a_0: &SparseBinaryMatrix, b_0: &SparseBinaryMatrix) -> Self {
+        assert_eq!(a_0.num_rows, b_0.num_rows);
+        assert_eq!(a_0.num_cols, b_0.num_cols);
+        let (a_col_ptr, a_rows) = csc_from_rows(a_0);
+        let (b_col_ptr, b_rows) = csc_from_rows(b_0);
+        Self {
+            n_cols: a_0.num_cols,
+            a_col_ptr,
+            a_rows,
+            b_col_ptr,
+            b_rows,
+            const_pin: None,
+        }
+    }
+
+    /// Set the constant-wire pin column (see `docs/const-wire-pin.md`).
+    pub fn with_const_pin(mut self, const_pin: Option<usize>) -> Self {
+        self.const_pin = const_pin;
+        self
+    }
+}
+
+impl LincheckCircuit for CscCircuit {
+    fn n_cols(&self) -> usize {
+        self.n_cols
+    }
+    fn const_pin_col(&self) -> Option<usize> {
+        self.const_pin
+    }
+    fn fold_alpha_batched(&self, alpha: F128, eq_inner: &[F128]) -> Vec<F128> {
+        assert_eq!(eq_inner.len(), self.n_cols);
+        let one_col = |c: usize| {
+            let mut sa = F128::ZERO;
+            for &r in &self.a_rows[self.a_col_ptr[c] as usize..self.a_col_ptr[c + 1] as usize] {
+                sa += eq_inner[r as usize];
+            }
+            let mut sb = F128::ZERO;
+            for &r in &self.b_rows[self.b_col_ptr[c] as usize..self.b_col_ptr[c + 1] as usize] {
+                sb += eq_inner[r as usize];
+            }
+            alpha * sa + sb
+        };
+        if self.n_cols < SUMCHECK_PAR_THRESHOLD {
+            return (0..self.n_cols).map(one_col).collect();
+        }
+        let mut out = vec![F128::ZERO; self.n_cols];
+        out.par_iter_mut()
+            .enumerate()
+            .for_each(|(c, slot)| *slot = one_col(c));
+        out
+    }
+
+    /// One pass, both outputs. The α-batched kernel above already forms
+    /// `sa` and `sb` apart and only mixes them at the end, so keeping them
+    /// apart costs strictly LESS — the walk is identical and the per-column
+    /// multiply disappears. The default would walk twice.
+    fn fold_split(&self, eq_inner: &[F128]) -> (Vec<F128>, Vec<F128>) {
+        assert_eq!(eq_inner.len(), self.n_cols);
+        let one_col = |c: usize| {
+            let mut sa = F128::ZERO;
+            for &r in &self.a_rows[self.a_col_ptr[c] as usize..self.a_col_ptr[c + 1] as usize] {
+                sa += eq_inner[r as usize];
+            }
+            let mut sb = F128::ZERO;
+            for &r in &self.b_rows[self.b_col_ptr[c] as usize..self.b_col_ptr[c + 1] as usize] {
+                sb += eq_inner[r as usize];
+            }
+            (sa, sb)
+        };
+        if self.n_cols < SUMCHECK_PAR_THRESHOLD {
+            return (0..self.n_cols).map(one_col).unzip();
+        }
+        let mut xa = vec![F128::ZERO; self.n_cols];
+        let mut xb = vec![F128::ZERO; self.n_cols];
+        xa.par_iter_mut()
+            .zip(xb.par_iter_mut())
+            .enumerate()
+            .for_each(|(c, (pa, pb))| {
+                let (sa, sb) = one_col(c);
+                *pa = sa;
+                *pb = sb;
+            });
+        (xa, xb)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Public types
+// ---------------------------------------------------------------------------
+
+/// A "quirky" claim point: one univariate-skip coord (`z_skip`) representing
+/// the first `k_skip` variables via the polynomial extension with the φ_8 basis,
+/// followed by multilinear coords for the rest of inner and for outer.
+///
+/// Total "elements" = `1 + (k_log − k_skip) + n_log`, which is the shape the
+/// zerocheck's extract_c output uses.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct QuirkyPoint {
+    /// Univariate-skip challenge. Binds all `k_skip` skip variables. φ₈ point
+    /// (`SkipPoint::Phi8`) for the RS path, AG `EvaluationPoint`
+    /// (`SkipPoint::Ag`) for the AG zerocheck's claims.
+    pub z_skip: SkipPoint,
+    /// Multilinear coords for the inner dims *after* the skip block. Length
+    /// `k_log − k_skip`.
+    pub x_inner_rest: Vec<F128>,
+    /// Multilinear coords for the outer dims. Length `n_log = m − k_log`.
+    pub x_outer: Vec<F128>,
+}
+
+/// Lincheck prover message: a partial product-sumcheck that proves the two
+/// scalar consistency equations against `z` partially folded at the shared
+/// outer half `x_ab.x_outer`, without sending the full length-`2^k_log`
+/// `z_vec`. Sumcheck binds the high `k_log − k_skip` multilinear inner dims;
+/// the low `k_skip` (φ8 univariate-skip) dims are handled by sending
+/// `z_partial` (the post-sumcheck length-`2^k_skip` collapsed vector) and
+/// applying a fresh-`z_skip` φ8 Lagrange combination at verify time.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LincheckProof {
+    /// Per-round messages `(q(1), q(∞))` of the `k_log − k_skip`-round
+    /// product-sumcheck. `q(0)` is recovered from the running claim
+    /// (`q(0) = T_r + q(1)` in char 2). Standard multilinear binding.
+    pub rounds: Vec<(F128, F128)>,
+    /// The length-`2^k_skip` collapse of the prover's `z_vec` over the
+    /// sumcheck-bound `r_rest` dims. Folded against φ8 Lagrange weights at a
+    /// fresh `z_skip` to yield the output claim's value.
+    pub z_partial: Vec<F128>,
+    /// Per boolean type in slot order, the UNSCALED bilinear forms
+    /// `(⟨W_row_t ⊗ W_col_t, A_0⟩, ⟨…, B_0⟩)` — the matrix work, split so it
+    /// can be accumulated.
+    ///
+    /// The verifier cannot derive these: its final check is one equation in
+    /// `2T` unknowns. It checks that equation and then hands the values out
+    /// as per-matrix claims ([`crate::matrix_fold::MatrixClaim`]) instead of
+    /// evaluating the matrices itself. A prover who reports them
+    /// inconsistently fails the equation; one who reports them consistently
+    /// but wrongly poisons the accumulator, which the root discharge
+    /// catches.
+    ///
+    /// Empty on the single-table path, which does not accumulate.
+    pub matrix_evals: Vec<(F128, F128)>,
+    /// PoW nonces in Fiat--Shamir order: the α batching challenge, one β
+    /// constant-wire challenge per pinned circuit, one nonce per multilinear
+    /// product-sumcheck round, then the final φ8 skip challenge. Empty under
+    /// [`LincheckGrinding::disabled`].
+    #[serde(default)]
+    pub grinding_nonces: Vec<u64>,
+}
+
+/// Fiat--Shamir grinding policy for the Boolean lincheck.
+///
+/// Every challenge below is sampled only after the data it must bind has
+/// entered the transcript.  The secure schedule makes each individual
+/// algebraic error strictly smaller than `2^-128`:
+///
+/// * α and each β batch one linear identity, so one PoW bit turns
+///   `1 / |F|` into `2^-129`;
+/// * each ordinary sumcheck round has degree two, so two bits turn
+///   `2 / |F|` into `2^-129`;
+/// * the final φ8 interpolation has degree `2^k_skip - 1`, so `k_skip`
+///   bits give `(2^k_skip - 1) / (2^k_skip |F|) < 2^-128`.
+///
+/// The same policy applies to the single-table and union-column linchecks;
+/// the union simply has one β site for every pinned Boolean table.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LincheckGrinding {
+    alpha_bits: Option<u32>,
+    beta_bits: Option<u32>,
+    multilinear_round_bits: Option<u32>,
+    skip_bits: bool,
+}
+
+impl LincheckGrinding {
+    /// Preserve the legacy transcript and wire format: no PoW operations.
+    pub const fn disabled() -> Self {
+        Self {
+            alpha_bits: None,
+            beta_bits: None,
+            multilinear_round_bits: None,
+            skip_bits: false,
+        }
+    }
+
+    /// Per-challenge schedule with strict 128-bit work-normalized bounds.
+    pub const fn per_challenge_128() -> Self {
+        Self {
+            alpha_bits: Some(1),
+            beta_bits: Some(1),
+            multilinear_round_bits: Some(2),
+            skip_bits: true,
+        }
+    }
+
+    pub const fn alpha_bits(self) -> Option<u32> {
+        self.alpha_bits
+    }
+
+    pub const fn beta_bits(self) -> Option<u32> {
+        self.beta_bits
+    }
+
+    pub const fn multilinear_round_bits(self) -> Option<u32> {
+        self.multilinear_round_bits
+    }
+
+    /// The φ8 skip polynomial has degree `2^k_skip - 1`; zero variables
+    /// means it is constant and needs no grinding.
+    pub fn skip_bits(self, k_skip: usize) -> Option<u32> {
+        self.skip_bits
+            .then_some(k_skip as u32)
+            .filter(|&bits| bits != 0)
+    }
+
+    /// Explicit PoW bits for the AG-basis final skip point's FUSED nonce. The
+    /// bad set is a nonzero BASE-code word's zeros — at most `deg D = 158`
+    /// (the genus tax: `dim 64 + g 95 − 1`), against the φ₈ basis's `2^6 − 1
+    /// = 63` — so `bits_for(158) = 8` total bits, of which the rejection
+    /// sampler provably contributes
+    /// [`crate::zerocheck::ag_skip::AG_SAMPLING_CREDIT_BITS`] = 5, leaving 3
+    /// explicit. Gated on the same flag as [`Self::skip_bits`], so
+    /// [`Self::nonce_count`] holds for either basis (one skip nonce each).
+    pub fn ag_skip_bits(self, k_skip: usize) -> Option<u32> {
+        self.skip_bits(k_skip).map(|_| AG_LINCHECK_SKIP_POW_BITS)
+    }
+
+    /// Number of nonces the proof must carry for this concrete lincheck.
+    pub fn nonce_count(
+        self,
+        inner_rest_len: usize,
+        pinned_circuits: usize,
+        k_skip: usize,
+    ) -> usize {
+        usize::from(self.alpha_bits.is_some())
+            + usize::from(self.beta_bits.is_some()) * pinned_circuits
+            + usize::from(self.multilinear_round_bits.is_some()) * inner_rest_len
+            + usize::from(self.skip_bits(k_skip).is_some())
+    }
+}
+
+/// Explicit PoW bits on the AG-basis final-skip fused nonce:
+/// `bits_for(158) − AG_SAMPLING_CREDIT_BITS = 8 − 5 = 3`. See
+/// [`LincheckGrinding::ag_skip_bits`]; guarded by the ag_skip constants test.
+pub const AG_LINCHECK_SKIP_POW_BITS: u32 = 3;
+
+/// Lincheck output: one MLE evaluation claim on `z`, at the quirky inner
+/// point `(r_inner_skip, r_inner_rest)` combined with `x_ab.x_outer`
+/// (publicly known to the caller).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LincheckClaim {
+    /// Univariate-skip post-vector random sample (same basis as the input skip).
+    pub r_inner_skip: SkipPoint,
+    /// Multilinear post-vector random sample, length `k_log − k_skip`.
+    pub r_inner_rest: Vec<F128>,
+    /// `ẑ((r_inner_skip, r_inner_rest), x_ab.x_outer)` — the single
+    /// `z`-claim derived from the A and B consistency checks.
+    pub w: F128,
+}
+
+/// Reasons the verifier may reject.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum LincheckError {
+    /// One of the proof vectors has the wrong length (expected `2^k_log`).
+    BadVectorLength {
+        which: &'static str,
+        expected: usize,
+        got: usize,
+    },
+    /// The supplied nonce vector does not match the configured grinding
+    /// schedule. Checked before transcript replay so a malformed proof cannot
+    /// shift nonce-to-challenge alignment.
+    BadGrindingNonceCount { expected: usize, got: usize },
+    /// A nonce does not satisfy the PoW at the FS position that samples its
+    /// corresponding challenge.
+    InvalidGrindingNonce { which: &'static str },
+    /// One of the input quirky points has wrong `x_inner_rest` length
+    /// (expected `k_log − k_skip`).
+    BadInnerRestLength {
+        which: &'static str,
+        expected: usize,
+        got: usize,
+    },
+    /// One of the input quirky points has wrong `x_outer` length
+    /// (expected `n_log = m − k_log`).
+    BadOuterLength {
+        which: &'static str,
+        expected: usize,
+        got: usize,
+    },
+    /// One of the base matrices isn't `2^k_log × 2^k_log`.
+    BadMatrixShape {
+        which: &'static str,
+        expected: usize,
+        got_rows: usize,
+        got_cols: usize,
+    },
+    /// `k_skip` exceeds `k_log` (the matrix inner dimension).
+    KSkipExceedsKLog { k_skip: usize, k_log: usize },
+    /// The scalar consistency check failed for one of (A, B, C).
+    /// Detected: `Σ_{i_inner} M̂_0_quirky(z_skip, x_inner_rest, i_inner) · z_x_vec[i_inner] ≠ v`.
+    ConsistencyFailed { which: &'static str },
+}
+
+// ---------------------------------------------------------------------------
+// Core kernels
+// ---------------------------------------------------------------------------
+
+/// Build the eq-MLE table at `point ∈ F^d`. Returns a length-`2^d` vector
+/// where `output[i] = Π_j (1 + point[j] + bit_j(i)) = Π_j eq(point[j], bit_j(i))`.
+///
+/// Standard "doubling-in-half" construction: `O(2^d)` F128 muls, no
+/// inversions. Indexing is LSB-first — `bit_j(i)` is the `j`-th LSB of `i`.
+pub fn build_eq_table(point: &[F128]) -> Vec<F128> {
+    eq_table(point, F128::ONE, IndexOrder::LowToHigh)
+}
+
+/// Fold a sparse boolean matrix's rows against an eq table at the row
+/// coords. Computes the **transposed** matrix-vector product:
+///
+///   `output[col] = Σ_{row: M[row, col] = 1} eq_table[row]`
+///
+/// This is the row-MLE `M̂_0(x_inner, ·)` evaluated at all boolean column
+/// indices — the length-`k` vector the verifier needs for the consistency
+/// check. Cost: `nnz(M)` F128 adds.
+/// Below this matrix row count, the sequential path beats rayon dispatch
+/// overhead. Tuned for `k = 2^14` (BLAKE3) — small matrices stay scalar,
+/// big ones parallelize.
+const SPARSE_ROW_FOLD_PAR_THRESHOLD: usize = 1usize << 12;
+
+pub fn sparse_row_fold(matrix: &SparseBinaryMatrix, eq_table: &[F128]) -> Vec<F128> {
+    assert_eq!(
+        eq_table.len(),
+        matrix.num_rows,
+        "eq_table length must match matrix row count"
+    );
+    let n_cols = matrix.num_cols;
+    if matrix.rows.len() < SPARSE_ROW_FOLD_PAR_THRESHOLD {
+        let mut out = vec![F128::ZERO; n_cols];
+        for (row_idx, row) in matrix.rows.iter().enumerate() {
+            let e = eq_table[row_idx];
+            for &col in row {
+                out[col] += e;
+            }
+        }
+        out
+    } else {
+        // Fold sparse rows with one accumulator per worker.
+        matrix
+            .rows
+            .par_iter()
+            .enumerate()
+            .fold(
+                || vec![F128::ZERO; n_cols],
+                |mut acc, (row_idx, row)| {
+                    let e = eq_table[row_idx];
+                    for &col in row {
+                        acc[col] += e;
+                    }
+                    acc
+                },
+            )
+            .reduce(
+                || vec![F128::ZERO; n_cols],
+                |mut a, b| {
+                    for i in 0..n_cols {
+                        a[i] += b[i];
+                    }
+                    a
+                },
+            )
+    }
+}
+
+/// Partial fold of `z` at the outer half of a claim point — single-matrix,
+/// **scalar reference**. Uses the lincheck `z_packed` stripe layout
+/// (see module docs).
+///
+///   `output[i_inner] = Σ_{i_outer ∈ {0,1}^n_log}  z[i_inner, i_outer] · eq_outer[i_outer]`
+///
+/// Equivalently, `output[i_inner] = ẑ(i_inner_as_F128, x_outer)` for boolean
+/// `i_inner`. Used as the cross-check oracle for the production
+/// `partial_fold_packed_z_triple`.
+pub fn partial_fold_packed_z(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    eq_outer: &[F128],
+) -> Vec<F128> {
+    let n_log = m - k_log;
+    let k = 1usize << k_log;
+    let n_outer = 1usize << n_log;
+    assert_eq!(z_packed.len(), (1usize << m) / 8);
+    assert_eq!(eq_outer.len(), n_outer);
+    assert!(n_log >= 3, "need n_outer ≥ 8 for byte stripes");
+    let n_stripes = n_outer / 8;
+
+    let mut out = vec![F128::ZERO; k];
+    for byte_idx in 0..n_stripes {
+        let stripe = &z_packed[byte_idx * k..(byte_idx + 1) * k];
+        for (i_inner, &byte) in stripe.iter().enumerate() {
+            if byte == 0 {
+                continue;
+            }
+            let mut bits = byte;
+            while bits != 0 {
+                let r = bits.trailing_zeros() as usize;
+                let i_outer = 8 * byte_idx + r;
+                out[i_inner] += eq_outer[i_outer];
+                bits &= bits - 1;
+            }
+        }
+    }
+    out
+}
+
+/// **Optimized single-matrix partial fold.** Same shape as
+/// [`partial_fold_packed_z`] but uses 256-entry **sum-table lookups** and is
+/// parallelized via rayon. The hot inner kernel does just **1 byte load +
+/// 1 table lookup + 1 XOR** per `(byte_idx, i_inner)` pair.
+///
+/// At m=29 multi-thread this is ~3× faster than the naive scalar
+/// `partial_fold_packed_z` (which we keep as the cross-check reference).
+///
+/// Iteration:
+/// 1. For each `byte_idx ∈ 0..n_outer/8`, build a 256-entry F128 table
+///    where `table[b] = Σ_{r: bit r set in b} eq_outer[8·byte_idx + r]`.
+///    Cost: 255 F128 XORs (doubling construction).
+/// 2. Sweep the `k`-byte stripe at `z_packed[byte_idx·k .. (byte_idx+1)·k]`.
+///    For each `i_inner`, do `out[i_inner] ^= table[z_byte]`.
+///
+/// Parallel: each worker owns a contiguous range of stripes and a private
+/// length-`k` accumulator; results XOR-reduced.
+pub fn partial_fold_packed_z_fast(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    eq_outer: &[F128],
+) -> Vec<F128> {
+    let k = 1usize << k_log;
+    partial_fold_packed_z_fast_padded(z_packed, m, k_log, k, eq_outer)
+}
+
+/// Padding-aware variant of [`partial_fold_packed_z_fast`]. Skips rows
+/// `i_inner ∈ [useful_bits, k)` — those rows hold zero in every block of an
+/// honestly padded witness, so the fold over the outer dim is zero. Output
+/// is byte-identical to the dense path on such witnesses.
+pub fn partial_fold_packed_z_fast_padded(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    useful_bits: usize,
+    eq_outer: &[F128],
+) -> Vec<F128> {
+    let n_log = m - k_log;
+    let k = 1usize << k_log;
+    let n_outer = 1usize << n_log;
+    assert_eq!(z_packed.len(), (1usize << m) / 8);
+    assert_eq!(eq_outer.len(), n_outer);
+    assert!(n_log >= 3, "need n_outer ≥ 8 for byte stripes");
+    assert!(useful_bits <= k);
+    let n_stripes = n_outer / 8;
+
+    let stripes_per_chunk = (n_stripes / 256).max(1);
+    let bytes_per_chunk = stripes_per_chunk * k;
+
+    // fold(): one length-k accumulator per WORKER rather than per chunk —
+    // at large k the per-chunk accumulators of map().reduce() dominate MT
+    // time with allocation + tree-reduce XOR traffic (keccak3: k = 2^17
+    // means 2 MB per chunk across ~128 chunks).
+    z_packed
+        .par_chunks(bytes_per_chunk)
+        .enumerate()
+        .fold(
+            || vec![F128::ZERO; k],
+            |mut acc, (chunk_idx, chunk_bytes)| {
+                let stripe_start = chunk_idx * stripes_per_chunk;
+                let mut table = vec![F128::ZERO; 256];
+                for (rel_stripe, stripe) in chunk_bytes.chunks(k).enumerate() {
+                    let byte_idx = stripe_start + rel_stripe;
+                    build_sum_table(&eq_outer[8 * byte_idx..8 * byte_idx + 8], &mut table);
+                    for (i_inner, &z_byte) in stripe[..useful_bits].iter().enumerate() {
+                        acc[i_inner] += table[z_byte as usize];
+                    }
+                }
+                acc
+            },
+        )
+        .reduce(
+            || vec![F128::ZERO; k],
+            |mut a, b| {
+                for (x, y) in a.iter_mut().zip(b.iter()) {
+                    *x += *y;
+                }
+                a
+            },
+        )
+}
+
+/// Row-prefix variant of [`partial_fold_packed_z_fast_padded`] (M6,
+/// support-proportional): fold only the outer rows `[0, n_rows)`. On an
+/// honest partial-count witness the rows `[n_rows, 2^n_log)` are identically
+/// zero, so their fold terms are zero and the output is byte-identical to
+/// the dense fold — at cost proportional to the DECLARED rows. Stripe
+/// granularity is 8 rows; a partial last stripe is handled by the byte
+/// itself (its dead-row bits are zero, so the sum-table lookup already
+/// contributes only the live rows).
+pub fn partial_fold_packed_z_rows_padded(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    useful_bits: usize,
+    eq_outer: &[F128],
+    n_rows: usize,
+) -> Vec<F128> {
+    let n_log = m - k_log;
+    let k = 1usize << k_log;
+    let n_outer = 1usize << n_log;
+    assert_eq!(z_packed.len(), (1usize << m) / 8);
+    assert_eq!(eq_outer.len(), n_outer);
+    assert!(n_log >= 3, "need n_outer ≥ 8 for byte stripes");
+    assert!(useful_bits <= k);
+    assert!(n_rows <= n_outer);
+    let n_stripes = n_rows.div_ceil(8);
+
+    let stripes_per_chunk = (n_stripes / 256).max(1);
+    let bytes_per_chunk = stripes_per_chunk * k;
+
+    z_packed[..n_stripes * k]
+        .par_chunks(bytes_per_chunk)
+        .enumerate()
+        .fold(
+            || vec![F128::ZERO; k],
+            |mut acc, (chunk_idx, chunk_bytes)| {
+                let stripe_start = chunk_idx * stripes_per_chunk;
+                let mut table = vec![F128::ZERO; 256];
+                for (rel_stripe, stripe) in chunk_bytes.chunks(k).enumerate() {
+                    let byte_idx = stripe_start + rel_stripe;
+                    build_sum_table(&eq_outer[8 * byte_idx..8 * byte_idx + 8], &mut table);
+                    for (i_inner, &z_byte) in stripe[..useful_bits].iter().enumerate() {
+                        acc[i_inner] += table[z_byte as usize];
+                    }
+                }
+                acc
+            },
+        )
+        .reduce(
+            || vec![F128::ZERO; k],
+            |mut a, b| {
+                for (x, y) in a.iter_mut().zip(b.iter()) {
+                    *x += *y;
+                }
+                a
+            },
+        )
+}
+
+/// Stripes swept per accumulator touch in the NEON tiled partial fold.
+/// Larger ⇒ the length-`k` accumulator is re-streamed fewer times
+/// (`n_stripes / NEON_TILE_T`), but the per-tile sum tables grow
+/// `NEON_TILE_T × 4 KB` and must stay L1-resident.
+const NEON_TILE_T: usize = 8;
+
+/// Dispatch helper: pick the fastest single-matrix partial fold available
+/// for the given (m, k_log). Threads `useful_bits` through so the kernel
+/// can skip blocks past the useful region of each block (byte-identical to
+/// the dense path on honestly-padded witnesses).
+pub fn partial_fold_packed_z_best(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    useful_bits: usize,
+    eq_outer: &[F128],
+) -> Vec<F128> {
+    if n_log_ok_for_tile(m, k_log, NEON_TILE_T) {
+        #[cfg(target_arch = "aarch64")]
+        {
+            // Pick the partition that wins for this size. The outer(tile)-partitioned
+            // `oblock` builds each tile's sum-tables once instead of once per worker,
+            // so it scales the fold far better (≈8.5× vs iblock's ≈6.5× on 10 P-cores
+            // at m=32) — BUT its private-partial alloc + XOR-reduce overhead makes it
+            // up to ~1.7× SLOWER on small folds. Empirically (M4 Max, 10 P-cores) the
+            // crossover sits at n_log ≈ 15–16 across k_log ∈ {11,14}, so gate oblock at
+            // n_log ≥ 16; below that the L1-resident `iblock` wins. `FOLD_IBLOCK` forces
+            // iblock everywhere (bench A/B).
+            let n_log = m - k_log;
+            if n_log >= OBLOCK_MIN_N_LOG && !FOLD_IBLOCK.load(Ordering::Relaxed) {
+                // Large folds additionally hop to the all-core (P+E) pool —
+                // dynamic tile assignment drains around the slower E-cores.
+                if lincheck_use_all_cores() {
+                    return partial_fold_packed_z_neon_allcore_padded(
+                        z_packed,
+                        m,
+                        k_log,
+                        useful_bits,
+                        eq_outer,
+                    );
+                }
+                return partial_fold_packed_z_neon_oblock_padded(
+                    z_packed,
+                    m,
+                    k_log,
+                    useful_bits,
+                    eq_outer,
+                );
+            }
+            partial_fold_packed_z_neon_iblock_padded(z_packed, m, k_log, useful_bits, eq_outer)
+        }
+        #[cfg(all(not(target_arch = "aarch64"), target_arch = "x86_64"))]
+        {
+            partial_fold_packed_z_x86_tiled_padded(z_packed, m, k_log, useful_bits, eq_outer)
+        }
+        #[cfg(all(not(target_arch = "aarch64"), not(target_arch = "x86_64")))]
+        {
+            partial_fold_packed_z_fast_padded(z_packed, m, k_log, useful_bits, eq_outer)
+        }
+    } else {
+        partial_fold_packed_z_fast_padded(z_packed, m, k_log, useful_bits, eq_outer)
+    }
+}
+
+/// Row-aware dispatch over the declared count (M6, support-proportional):
+/// ANY partial count folds only its stripe prefix
+/// ([`partial_fold_packed_z_rows_padded`] — cost proportional to the count);
+/// a full count takes the dense best-kernel dispatch. Byte-identical either
+/// way on honest witnesses whose dummy rows are zero.
+///
+/// This gate used to require the count to fill at most HALF the capacity, on
+/// the reasoning that "the dense NEON kernels win per byte" so a sub-2×
+/// saving would not pay. Measured (BLAKE3 m=30, ν=16, lincheck phase, A/B
+/// alternated in-process): the row-prefix fold is faster at EVERY
+/// utilization tested — 73% 8.19→5.87 ms, 79% 8.03→6.68, 89% 7.97→7.14, even
+/// 100% 8.53→7.86, where it folds exactly the same bytes. So the per-byte
+/// premise did not hold at this shape; `n_log = 16` sits right on the dense
+/// path's oblock/iblock crossover, whose own comment notes oblock can be
+/// ~1.7× slower on smaller folds. Full utilization is left on the dense path
+/// regardless — it is the byte-identity anchor configuration, its margin here
+/// was the smallest measured, and one shape is thin evidence for changing the
+/// calibrated kernel selection.
+fn partial_fold_packed_z_rows_best(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    useful_bits: usize,
+    eq_outer: &[F128],
+    n_rows: usize,
+) -> Vec<F128> {
+    let n_outer = 1usize << (m - k_log);
+    if n_rows < n_outer {
+        partial_fold_packed_z_rows_padded(z_packed, m, k_log, useful_bits, eq_outer, n_rows)
+    } else {
+        partial_fold_packed_z_best(z_packed, m, k_log, useful_bits, eq_outer)
+    }
+}
+
+/// Outer-dimension threshold (`n_log = m − k_log`) at/above which the
+/// outer(tile)-partitioned fold beats the i_inner-partitioned one. See
+/// [`partial_fold_packed_z_best`] for the crossover calibration.
+#[cfg(target_arch = "aarch64")]
+const OBLOCK_MIN_N_LOG: usize = 16;
+
+/// Quick test for "can we use the tiled fast path?". Tile uses `TILE_T`
+/// stripes; we need `n_stripes` divisible by TILE_T and enough outer dim.
+fn n_log_ok_for_tile(m: usize, k_log: usize, tile_t: usize) -> bool {
+    if k_log < 3 {
+        return false;
+    }
+    let n_log = m - k_log;
+    if n_log < 3 + (tile_t.trailing_zeros() as usize) {
+        return false;
+    }
+    let n_stripes = 1usize << (n_log - 3);
+    n_stripes.is_multiple_of(tile_t)
+}
+
+/// Build a 256-entry sum table over 8 F128 values:
+///   `table[b] = Σ_{r: bit r of b is set}  eq8[r]`
+///
+/// Doubling construction (255 XORs): for each new bit position `i ∈ 0..8`,
+/// extend the table by XORing `eq8[i]` into each existing entry. This
+/// avoids the naive 8·256 = 2048 operations.
+#[inline]
+fn build_sum_table(eq8: &[F128], table: &mut [F128]) {
+    debug_assert_eq!(eq8.len(), 8);
+    debug_assert_eq!(table.len(), 256);
+    table[0] = F128::ZERO;
+    for i in 0..8 {
+        let e = eq8[i];
+        let len = 1usize << i;
+        for j in 0..len {
+            table[len + j] = table[j] + e;
+        }
+    }
+}
+
+/// Pack a logical Boolean witness vector into the lincheck `z_packed`
+/// stripe layout. The input `z_logical` is indexed linearly with
+/// `z_logical[i_inner + i_outer · k]` = z's value at `(i_inner, i_outer)`.
+/// The output `z_packed[byte_idx · k + i_inner]` holds 8 outer bits
+/// `z[i_inner, 8·byte_idx + r]` for `r ∈ 0..8`, with bit `r` within the byte.
+///
+/// See the module-level docs for the full bit-position decomposition.
+pub fn pack_z_lincheck(z_logical: &[bool], m: usize, k_log: usize) -> Vec<u8> {
+    let k = 1usize << k_log;
+    let n_total = 1usize << m;
+    assert_eq!(z_logical.len(), n_total);
+    let n_outer = n_total / k;
+    assert_eq!(n_outer % 8, 0, "need n_outer ≥ 8 for byte stripes");
+    let n_stripes = n_outer / 8;
+
+    // Uninit alloc — every byte is written exactly once in the loop below.
+    let mut z_packed: Vec<u8> = alloc_uninit_vec(n_total / 8);
+    for byte_idx in 0..n_stripes {
+        for i_inner in 0..k {
+            let mut byte = 0u8;
+            for r in 0..8 {
+                let i_outer = 8 * byte_idx + r;
+                let logical_idx = i_inner + i_outer * k;
+                if z_logical[logical_idx] {
+                    byte |= 1u8 << r;
+                }
+            }
+            z_packed[byte_idx * k + i_inner] = byte;
+        }
+    }
+    z_packed
+}
+
+/// Same output as [`pack_z_lincheck`] but reads bits from an F_{2^128}-packed
+/// witness (polynomial basis: bit `i` of logical = bit `i % 128` of
+/// `z_packed_f128[i / 128]`).
+pub fn pack_z_lincheck_from_packed(z_packed_f128: &[F128], m: usize, k_log: usize) -> Vec<u8> {
+    let k = 1usize << k_log;
+    let n_total = 1usize << m;
+    assert_eq!(z_packed_f128.len(), n_total / 128);
+    let n_outer = n_total / k;
+    assert_eq!(n_outer % 8, 0, "need n_outer ≥ 8 for byte stripes");
+
+    // Uninit alloc — the par_chunks_mut loop below writes every byte of
+    // every k-byte stripe exactly once. Saves ~10 ms of sequential
+    // zero-fill at m=29 (64 MB byte buffer) on the main thread.
+    let mut z_packed: Vec<u8> = alloc_uninit_vec(n_total / 8);
+    // Each stripe (byte_idx) writes a disjoint k-byte chunk — process them in
+    // parallel. Inside one stripe, k independent output bytes.
+    z_packed
+        .par_chunks_mut(k)
+        .enumerate()
+        .for_each(|(byte_idx, chunk)| {
+            for i_inner in 0..k {
+                let mut byte = 0u8;
+                for r in 0..8 {
+                    let i_outer = 8 * byte_idx + r;
+                    let logical_idx = i_inner + i_outer * k;
+                    let f128_idx = logical_idx / 128;
+                    let local_bit = logical_idx % 128;
+                    let bit = if local_bit < 64 {
+                        (z_packed_f128[f128_idx].lo >> local_bit) & 1 == 1
+                    } else {
+                        (z_packed_f128[f128_idx].hi >> (local_bit - 64)) & 1 == 1
+                    };
+                    if bit {
+                        byte |= 1u8 << r;
+                    }
+                }
+                chunk[i_inner] = byte;
+            }
+        });
+    z_packed
+}
+
+/// A univariate-skip evaluation point in one of the two supported bases. Both
+/// yield the length-`2^k_skip` skip evaluation functional via
+/// [`SkipPoint::weights`], which feeds [`build_quirky_eq_table_from_weights`]
+/// (the AB claim's input skip) and the lincheck output z-claim value.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SkipPoint {
+    /// RS / φ₈ basis: a single field point; weights via `lagrange_weights_naive`.
+    Phi8(F128),
+    /// AG multiplication-code basis: a genus-95 curve point; weights via the
+    /// base-code evaluation functional. Always `k_skip = 6` (64 base coords).
+    Ag(EvaluationPoint),
+}
+
+impl SkipPoint {
+    /// The length-`2^k_skip` skip evaluation functional at this point.
+    pub fn weights(&self, k_skip: usize) -> Vec<F128> {
+        match self {
+            SkipPoint::Phi8(z) => lagrange_weights_naive(k_skip, *z),
+            SkipPoint::Ag(p) => {
+                debug_assert_eq!(k_skip, K_SKIP, "AG base code is k_skip=6 only");
+                let bf = base_evaluation_functional(p)
+                    .expect("AG base evaluation functional: denominator nonzero at point");
+                (0..(1usize << k_skip)).map(|i| bf[i]).collect()
+            }
+        }
+    }
+
+    /// Sample a fresh skip point of the **same basis** as `self` from the
+    /// challenger. Call AFTER observing the preceding prover message (e.g.
+    /// `z_partial`) so the point is post-commitment for Schwartz-Zippel. The AG
+    /// arm seeds a hash-matched DRBG (`FsRng`, following the transcript hash)
+    /// from two F128 squeezes and replays the rejection sampler on both sides (unlike the zerocheck's `r₁`, which now uses the
+    /// prover-side nonce grind — see `ag_skip::sample_round_one_prover`).
+    pub fn sample_fresh<Ch: Challenger>(&self, ch: &mut Ch) -> SkipPoint {
+        match self {
+            SkipPoint::Phi8(_) => SkipPoint::Phi8(ch.sample_f128()),
+            SkipPoint::Ag(_) => {
+                let seed = Self::ag_fresh_seed(ch);
+                let p = sample_random_evaluation_point(&mut FsRng::new(ch.hash_kind(), seed))
+                    .unwrap_or_else(|_| fallback_point());
+                SkipPoint::Ag(p)
+            }
+        }
+    }
+
+    /// The 32-byte transcript seed for a fresh AG skip point: label + two
+    /// squeezes. Shared by [`Self::sample_fresh`] (deterministic replay on
+    /// both sides) and the fused-nonce pair below.
+    fn ag_fresh_seed<Ch: Challenger>(ch: &mut Ch) -> [u8; 32] {
+        ch.observe_label(b"flock-lincheck-ag-skip-point");
+        let s0 = ch.sample_f128();
+        let s1 = ch.sample_f128();
+        let mut seed = [0u8; 32];
+        seed[0..8].copy_from_slice(&s0.lo.to_le_bytes());
+        seed[8..16].copy_from_slice(&s0.hi.to_le_bytes());
+        seed[16..24].copy_from_slice(&s1.lo.to_le_bytes());
+        seed[24..32].copy_from_slice(&s1.hi.to_le_bytes());
+        seed
+    }
+
+    /// Bind the chosen fused nonce into the transcript — later challenges
+    /// (nothing today, but the claim value flows onward) depend on the point
+    /// through it. Mirrored exactly by the verifier.
+    fn observe_ag_fresh_nonce<Ch: Challenger>(ch: &mut Ch, nonce: u32) {
+        ch.observe_label(b"flock-lincheck-ag-skip-nonce");
+        ch.observe_bytes(&nonce.to_le_bytes());
+    }
+
+    /// [`Self::sample_fresh`] under a strict grinding schedule, AG basis only
+    /// — the FUSED nonce: `H(seed ‖ nonce)` must clear `pow_bits` of PoW AND
+    /// decode to a valid cover point (both criteria on one hash, so no free
+    /// choice among valid nonces). With the sampler's provable
+    /// [`crate::zerocheck::ag_skip::AG_SAMPLING_CREDIT_BITS`] = 5 bits on
+    /// top, the point carries `pow_bits + 5` grinding bits total, and the
+    /// verifier mirror is ONE-SHOT (no rejection replay).
+    pub fn sample_fresh_pow_prover<Ch: Challenger>(
+        &self,
+        ch: &mut Ch,
+        pow_bits: u32,
+    ) -> (SkipPoint, u64) {
+        let SkipPoint::Ag(_) = self else {
+            unreachable!("the fused fresh-point nonce is AG-basis only");
+        };
+        let seed = Self::ag_fresh_seed(ch);
+        let kind = ch.hash_kind();
+        for nonce in 0..R1_FUSED_ATTEMPT_BUDGET {
+            if let Some(p) = evaluation_point_from_nonce_pow(&seed, nonce, kind, pow_bits) {
+                Self::observe_ag_fresh_nonce(ch, nonce);
+                return (SkipPoint::Ag(p), u64::from(nonce));
+            }
+        }
+        unreachable!("fused fresh-point grind exhausted its budget (see R1_FUSED_ATTEMPT_BUDGET)")
+    }
+
+    /// Verifier mirror of [`Self::sample_fresh_pow_prover`]: one hash + one
+    /// point attempt; `None` rejects (bad PoW, bad point, or a nonce outside
+    /// the prover's scan budget).
+    pub fn sample_fresh_pow_verifier<Ch: Challenger>(
+        &self,
+        ch: &mut Ch,
+        nonce: u64,
+        pow_bits: u32,
+    ) -> Option<SkipPoint> {
+        let SkipPoint::Ag(_) = self else {
+            unreachable!("the fused fresh-point nonce is AG-basis only");
+        };
+        let seed = Self::ag_fresh_seed(ch);
+        let nonce = u32::try_from(nonce).ok()?;
+        if nonce >= R1_FUSED_ATTEMPT_BUDGET {
+            return None;
+        }
+        Self::observe_ag_fresh_nonce(ch, nonce);
+        evaluation_point_from_nonce_pow(&seed, nonce, ch.hash_kind(), pow_bits).map(SkipPoint::Ag)
+    }
+
+    /// Extract the φ₈ field point. Panics on an AG point — used at RS PCS-verify
+    /// boundaries that still operate on a single `F128 z_skip` and have not been
+    /// generalized to the AG clear-tail eval (#6). Keeps the RS path's `F128`
+    /// interface unchanged while the claim types carry `SkipPoint`.
+    pub fn phi8(&self) -> F128 {
+        match self {
+            SkipPoint::Phi8(z) => *z,
+            SkipPoint::Ag(_) => {
+                panic!(
+                    "SkipPoint::phi8 on an AG point — the AG PCS clear-tail path (#6) is not wired"
+                )
+            }
+        }
+    }
+}
+
+/// Build the **quirky eq table** from a precomputed skip-weight vector tensored
+/// with `eq(x_inner_rest)`:
+///
+///   `out[i_skip + i_inner_rest · 2^k_skip]
+///     = skip_weights[i_skip] · eq(x_inner_rest, i_inner_rest)`
+///
+/// `skip_weights` (length `2^k_skip`) is the skip dimension's **evaluation
+/// functional** at its challenge: φ₈ Lagrange (`lagrange_weights_naive`, the RS
+/// path) or the AG base-code functional (`genus95_curve_code::
+/// base_evaluation_functional`, the native-`c` path). Encoding: the skip dim is
+/// the **low** `k_skip` table-index bits, the `inner_rest` dims the next bits.
+pub fn build_quirky_eq_table_from_weights(
+    skip_weights: &[F128],
+    x_inner_rest: &[F128],
+) -> Vec<F128> {
+    let eq_rest = build_eq_table(x_inner_rest);
+    let total = skip_weights.len() * eq_rest.len();
+    let mut out = Vec::with_capacity(total);
+    // Layout: index = i_skip + i_inner_rest · 2^k_skip  ⇒  i_skip is low bits.
+    for &er in &eq_rest {
+        for &ls in skip_weights {
+            out.push(ls * er);
+        }
+    }
+    debug_assert_eq!(out.len(), total);
+    out
+}
+
+/// φ₈ (RS-path) quirky eq table: `skip_weights = L_{i_skip}(z_skip)` for the
+/// φ₈ basis over `{0,…,2^k_skip−1}`. Thin wrapper over
+/// [`build_quirky_eq_table_from_weights`]. Cost ≈ tiny.
+pub fn build_quirky_eq_table(z_skip: F128, x_inner_rest: &[F128], k_skip: usize) -> Vec<F128> {
+    build_quirky_eq_table_from_weights(&lagrange_weights_naive(k_skip, z_skip), x_inner_rest)
+}
+
+/// Dot product of two equal-length F128 slices.
+fn inner_product(a: &[F128], b: &[F128]) -> F128 {
+    assert_eq!(a.len(), b.len());
+    let mut acc = F128::ZERO;
+    for (x, y) in a.iter().zip(b.iter()) {
+        acc += *x * *y;
+    }
+    acc
+}
+
+/// Length above which the inner product / element-wise kernels split via
+/// rayon. Below it, sequential beats dispatch overhead.
+const SUMCHECK_PAR_THRESHOLD: usize = 1usize << 12;
+
+/// Fused `sparse_row_fold(A) + α-batch + sparse_row_fold(B)`: produces the
+/// `comb_vec[c] = α · (A^T·eq)[c] + (B^T·eq)[c]` in a single pass, halving the
+/// allocations and reduction phases vs. two separate sparse_row_folds + an
+/// α-batch step. Both matrices must be `k × k` and `eq_table.len() == k`.
+fn sparse_row_fold_alpha_batched(
+    alpha: F128,
+    a_0: &SparseBinaryMatrix,
+    b_0: &SparseBinaryMatrix,
+    eq_table: &[F128],
+) -> Vec<F128> {
+    let n_cols = a_0.num_cols;
+    debug_assert_eq!(b_0.num_cols, n_cols);
+    debug_assert_eq!(eq_table.len(), a_0.num_rows);
+    debug_assert_eq!(eq_table.len(), b_0.num_rows);
+
+    let total_rows = a_0.num_rows + b_0.num_rows;
+    if total_rows < SPARSE_ROW_FOLD_PAR_THRESHOLD {
+        // Scalar fused path.
+        let mut out = vec![F128::ZERO; n_cols];
+        for (r, row) in a_0.rows.iter().enumerate() {
+            let e = alpha * eq_table[r];
+            for &c in row {
+                out[c] += e;
+            }
+        }
+        for (r, row) in b_0.rows.iter().enumerate() {
+            let e = eq_table[r];
+            for &c in row {
+                out[c] += e;
+            }
+        }
+        return out;
+    }
+
+    // Parallel fused path with a BOUNDED number of accumulators. These base
+    // matrices are dense (e.g. BLAKE3: ~21M nonzeros over 16384 rows), so the
+    // fold is ~21M F128 adds. The natural `par_iter().fold()` form spawns a
+    // fresh length-`n_cols` (256 KB) accumulator per work-steal split and then
+    // tree-reduces all of them — O(n_cols × num_splits) of pure overhead that
+    // doesn't shrink with useful work, which capped scaling at ~1.5×. Here we
+    // split the *rows* into a fixed number of contiguous chunks (rows are
+    // evenly sized, so this load-balances), give each chunk one private
+    // accumulator, then reduce. Overhead is O(n_cols × num_chunks) with
+    // num_chunks ≈ 4× the thread count — negligible vs. the 21M-add body.
+    let n_rows = a_0.num_rows;
+    let p = current_num_threads().max(1);
+    // ~4 chunks per worker for work-stealing balance, ≥256 rows each to keep
+    // accumulator alloc/reduce overhead amortized.
+    let chunk_rows = (n_rows.div_ceil(p * 4)).max(256);
+    let n_chunks = n_rows.div_ceil(chunk_rows);
+
+    let partials: Vec<Vec<F128>> = (0..n_chunks)
+        .into_par_iter()
+        .map(|ci| {
+            let lo = ci * chunk_rows;
+            let hi = ((ci + 1) * chunk_rows).min(n_rows);
+            let mut acc = vec![F128::ZERO; n_cols];
+            for r in lo..hi {
+                let ea = alpha * eq_table[r];
+                let eb = eq_table[r];
+                for &c in &a_0.rows[r] {
+                    acc[c] += ea;
+                }
+                for &c in &b_0.rows[r] {
+                    acc[c] += eb;
+                }
+            }
+            acc
+        })
+        .collect();
+
+    let mut out = vec![F128::ZERO; n_cols];
+    for acc in &partials {
+        for i in 0..n_cols {
+            out[i] += acc[i];
+        }
+    }
+    out
+}
+
+/// One round of product-sumcheck on `(c, z)`: compute `(q(1), q(∞))` =
+/// `(Σ c_hi·z_hi, Σ (c_hi+c_lo)·(z_hi+z_lo))` over the top-bit split. The
+/// `len()` of `c` and `z` is even; `half = len/2`.
+pub(crate) fn sumcheck_round_eval_par(c: &[F128], z: &[F128]) -> (F128, F128) {
+    let half = c.len() / 2;
+    debug_assert_eq!(z.len(), c.len());
+    let (clo, chi) = c.split_at(half);
+    let (zlo, zhi) = z.split_at(half);
+    if half < SUMCHECK_PAR_THRESHOLD {
+        let mut e1 = F128::ZERO;
+        let mut einf = F128::ZERO;
+        for i in 0..half {
+            e1 += chi[i] * zhi[i];
+            einf += (chi[i] + clo[i]) * (zhi[i] + zlo[i]);
+        }
+        return (e1, einf);
+    }
+    (0..half)
+        .into_par_iter()
+        .map(|i| {
+            let e1_i = chi[i] * zhi[i];
+            let einf_i = (chi[i] + clo[i]) * (zhi[i] + zlo[i]);
+            (e1_i, einf_i)
+        })
+        .reduce(|| (F128::ZERO, F128::ZERO), |a, b| (a.0 + b.0, a.1 + b.1))
+}
+
+/// Bind the top remaining variable of `v` at challenge `r`: `v[i] ← v[i] +
+/// r·(v[i+half] + v[i])` for `i ∈ [0, half)`, then truncate to `half`. In-place.
+pub(crate) fn sumcheck_bind_top_in_place_par(v: &mut Vec<F128>, r: F128) {
+    let half = v.len() / 2;
+    if half < SUMCHECK_PAR_THRESHOLD {
+        for i in 0..half {
+            v[i] = v[i] + r * (v[i + half] + v[i]);
+        }
+    } else {
+        let (lo, hi) = v.split_at_mut(half);
+        let hi = &hi[..half];
+        lo.par_iter_mut()
+            .zip(hi.par_iter())
+            .for_each(|(lo_i, &hi_i)| {
+                *lo_i = *lo_i + r * (hi_i + *lo_i);
+            });
+    }
+    v.truncate(half);
+}
+
+/// **Fused fold + next-round evaluation.** Binds the top variable of *both*
+/// `comb` and `z` at `r` (in place, each length halves) AND returns the next
+/// product-sumcheck round's message `(q(1), q(∞))` over the just-bound tables —
+/// all in a single pass over the data.
+///
+/// Why it fuses: round `t`'s message must be sent before `r_t` is sampled, so
+/// eval(t) and bind(t) can't share a pass. But binding at `r_t` produces
+/// exactly the table eval(t+1) reads, and `r_t` is known by then. The bound
+/// values `new[i]` and `new[i+half2]` are precisely the `lo`/`hi` halves the
+/// next round's eval pairs up, so we form each product the moment both bound
+/// values exist. This replaces eval + two binds (3 passes) with 1.
+///
+/// Operates on quarters of each array (`half2 = len/4`). For `i ∈ 0..half2`:
+/// ```text
+///   lo' = q0[i] + r·(q2[i] + q0[i])   (= new[i],        next round's lo)
+///   hi' = q1[i] + r·(q3[i] + q1[i])   (= new[i+half2],  next round's hi)
+///   q0[i] ← lo';  q1[i] ← hi'
+///   e1   += hi'·zhi';   einf += (hi'+lo')·(zhi'+zlo')
+/// ```
+/// In-place is safe: each `i` reads its 4 quarter-entries before writing the 2
+/// low-half slots, and writes across distinct `i` are disjoint. Requires
+/// `comb.len() == z.len()`, a power of two ≥ 4 (so the bound length ≥ 2 has a
+/// well-defined next round — the caller guarantees this by only fusing when a
+/// later round exists). The returned message is bit-identical to
+/// `sumcheck_round_eval_par` run on the bound tables.
+pub(crate) fn sumcheck_bind_both_and_eval_next(
+    comb: &mut Vec<F128>,
+    z: &mut Vec<F128>,
+    r: F128,
+) -> (F128, F128) {
+    let len = comb.len();
+    debug_assert_eq!(z.len(), len);
+    let half = len / 2;
+    let half2 = half / 2;
+    debug_assert!(half2 >= 1, "fused step needs a well-defined next round");
+
+    // q0,q1 = low half (written); q2,q3 = high half (read-only).
+    let (c_lo, c_hi) = comb.split_at_mut(half);
+    let (cq0, cq1) = c_lo.split_at_mut(half2);
+    let (cq2, cq3) = c_hi.split_at(half2);
+    let (z_lo, z_hi) = z.split_at_mut(half);
+    let (zq0, zq1) = z_lo.split_at_mut(half2);
+    let (zq2, zq3) = z_hi.split_at(half2);
+
+    let (e1, einf) = if half2 < SUMCHECK_PAR_THRESHOLD {
+        let mut e1 = F128::ZERO;
+        let mut einf = F128::ZERO;
+        for i in 0..half2 {
+            let lo = cq0[i] + r * (cq2[i] + cq0[i]);
+            let hi = cq1[i] + r * (cq3[i] + cq1[i]);
+            let zlo = zq0[i] + r * (zq2[i] + zq0[i]);
+            let zhi = zq1[i] + r * (zq3[i] + zq1[i]);
+            cq0[i] = lo;
+            cq1[i] = hi;
+            zq0[i] = zlo;
+            zq1[i] = zhi;
+            e1 += hi * zhi;
+            einf += (hi + lo) * (zhi + zlo);
+        }
+        (e1, einf)
+    } else {
+        cq0.par_iter_mut()
+            .zip(cq1.par_iter_mut())
+            .zip(cq2.par_iter())
+            .zip(cq3.par_iter())
+            .zip(zq0.par_iter_mut())
+            .zip(zq1.par_iter_mut())
+            .zip(zq2.par_iter())
+            .zip(zq3.par_iter())
+            .map(|(((((((c0, c1), c2), c3), z0), z1), z2), z3)| {
+                let lo = *c0 + r * (*c2 + *c0);
+                let hi = *c1 + r * (*c3 + *c1);
+                let zlo = *z0 + r * (*z2 + *z0);
+                let zhi = *z1 + r * (*z3 + *z1);
+                *c0 = lo;
+                *c1 = hi;
+                *z0 = zlo;
+                *z1 = zhi;
+                (hi * zhi, (hi + lo) * (zhi + zlo))
+            })
+            .reduce(|| (F128::ZERO, F128::ZERO), |a, b| (a.0 + b.0, a.1 + b.1))
+    };
+
+    comb.truncate(half);
+    z.truncate(half);
+    (e1, einf)
+}
+
+// ---------------------------------------------------------------------------
+// API
+// ---------------------------------------------------------------------------
+
+/// Prove the lincheck statement for the block-diagonal R1CS instance
+/// `A = I_{2^n_log} ⊗ a_0`, `B = I ⊗ b_0`, `C = I ⊗ c_0`.
+///
+/// Preconditions:
+/// - `m ≥ k_log`, `m = k_log + n_log` (caller's responsibility).
+/// - `a_0, b_0, c_0` are each `k × k` where `k = 2^k_log`.
+/// - `x.len() == x_prime.len() == x_pprime.len() == m`.
+/// - `z_packed.len() == 2^m / 8`.
+///
+/// Returns `(LincheckProof, LincheckClaim)`. The claim's `r_inner` is
+/// sampled from the challenger after the proof vectors are observed.
+pub fn prove<Ch: Challenger>(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    k_skip: usize,
+    circuit: &dyn LincheckCircuit,
+    x_ab: &QuirkyPoint,
+    challenger: &mut Ch,
+) -> (LincheckProof, LincheckClaim) {
+    prove_with_grinding(
+        z_packed,
+        m,
+        k_log,
+        k_skip,
+        circuit,
+        x_ab,
+        LincheckGrinding::disabled(),
+        challenger,
+    )
+}
+
+/// [`prove`] with an explicit Fiat--Shamir grinding policy.
+pub fn prove_with_grinding<Ch: Challenger>(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    k_skip: usize,
+    circuit: &dyn LincheckCircuit,
+    x_ab: &QuirkyPoint,
+    grinding: LincheckGrinding,
+    challenger: &mut Ch,
+) -> (LincheckProof, LincheckClaim) {
+    prove_padded_with_grinding(
+        z_packed,
+        m,
+        k_log,
+        k_skip,
+        1usize << k_log,
+        circuit,
+        x_ab,
+        grinding,
+        challenger,
+    )
+}
+
+/// Padding-aware variant of [`prove`], with an explicit Fiat--Shamir
+/// grinding policy. `useful_bits ≤ 2^k_log` declares how many rows of each
+/// block carry real witness data; rows `[useful_bits, 2^k_log)` are honest
+/// zero padding. The partial-fold over the outer dimension skips work for
+/// those padding rows — byte-identical proof on a witness with zero-padded
+/// blocks.
+pub fn prove_padded_with_grinding<Ch: Challenger>(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    k_skip: usize,
+    useful_bits: usize,
+    circuit: &dyn LincheckCircuit,
+    x_ab: &QuirkyPoint,
+    grinding: LincheckGrinding,
+    challenger: &mut Ch,
+) -> (LincheckProof, LincheckClaim) {
+    let (proof, claim, _) = prove_padded_inner(
+        z_packed,
+        m,
+        k_log,
+        k_skip,
+        useful_bits,
+        circuit,
+        x_ab,
+        grinding,
+        false,
+        challenger,
+    );
+    (proof, claim)
+}
+
+/// Variant of [`prove_padded_with_grinding`] that also returns the **pre-sumcheck** z_vec
+/// (`output[i_inner] = ẑ(i_inner, x_ab.x_outer)`, length `2^k_log`). The
+/// downstream PCS reuses this vector to compute the AB-claim's ring-switch
+/// `s_hat_v` via [`crate::pcs::ring_switch::s_hat_v_from_z_vec`], skipping a
+/// `fold_1b_rows` pass at open time.
+///
+/// Pays one extra `2^k_log` F128 clone (~2 MB at k_log=17) before the
+/// sumcheck loop; callers that don't need the reuse should keep using
+/// [`prove_padded_with_grinding`] to avoid that clone.
+pub fn prove_padded_capture_z_vec<Ch: Challenger>(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    k_skip: usize,
+    useful_bits: usize,
+    circuit: &dyn LincheckCircuit,
+    x_ab: &QuirkyPoint,
+    challenger: &mut Ch,
+) -> (LincheckProof, LincheckClaim, Vec<F128>) {
+    prove_padded_capture_z_vec_with_grinding(
+        z_packed,
+        m,
+        k_log,
+        k_skip,
+        useful_bits,
+        circuit,
+        x_ab,
+        LincheckGrinding::disabled(),
+        challenger,
+    )
+}
+
+/// [`prove_padded_capture_z_vec`] with an explicit Fiat--Shamir grinding
+/// policy.
+pub fn prove_padded_capture_z_vec_with_grinding<Ch: Challenger>(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    k_skip: usize,
+    useful_bits: usize,
+    circuit: &dyn LincheckCircuit,
+    x_ab: &QuirkyPoint,
+    grinding: LincheckGrinding,
+    challenger: &mut Ch,
+) -> (LincheckProof, LincheckClaim, Vec<F128>) {
+    let (proof, claim, captured) = prove_padded_inner(
+        z_packed,
+        m,
+        k_log,
+        k_skip,
+        useful_bits,
+        circuit,
+        x_ab,
+        grinding,
+        true,
+        challenger,
+    );
+    (
+        proof,
+        claim,
+        captured.expect("capture=true must produce z_vec"),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn prove_padded_inner<Ch: Challenger>(
+    z_packed: &[u8],
+    m: usize,
+    k_log: usize,
+    k_skip: usize,
+    useful_bits: usize,
+    circuit: &dyn LincheckCircuit,
+    x_ab: &QuirkyPoint,
+    grinding: LincheckGrinding,
+    capture_z_vec: bool,
+    challenger: &mut Ch,
+) -> (LincheckProof, LincheckClaim, Option<Vec<F128>>) {
+    let k = 1usize << k_log;
+    let n_log = m - k_log;
+    assert!(m >= k_log);
+    assert!(k_skip <= k_log, "k_skip must be ≤ k_log");
+    assert!(useful_bits <= k, "useful_bits ({useful_bits}) > k ({k})");
+    let inner_rest_len = k_log - k_skip;
+    assert_eq!(circuit.n_cols(), k);
+    assert_eq!(x_ab.x_inner_rest.len(), inner_rest_len);
+    assert_eq!(x_ab.x_outer.len(), n_log);
+
+    challenger.observe_label(b"flock-lincheck-v0");
+    let trace = var("LINCHECK_TRACE").is_ok();
+
+    let mut grinding_nonces = Vec::with_capacity(grinding.nonce_count(
+        inner_rest_len,
+        usize::from(circuit.const_pin_col().is_some()),
+        k_skip,
+    ));
+
+    // 1. Sample α (matches verifier's order). Used to batch the two scalar
+    //    consistency checks v_a, v_b into a single sumcheck.
+    let alpha = if let Some(bits) = grinding.alpha_bits() {
+        let (nonce, alpha) = challenger.grind_pow_and_sample_f128(bits);
+        grinding_nonces.push(nonce);
+        alpha
+    } else {
+        challenger.sample_f128()
+    };
+
+    // 2. Build the α-batched comb_vec via the circuit's per-block fold. For
+    //    the sparse-matrix default this is the fused single-pass row-fold;
+    //    per-hash circuit walkers compute the same `comb_vec` directly from
+    //    the constraint graph.
+    let t = if trace { Some(Instant::now()) } else { None };
+    let eq_inner =
+        build_quirky_eq_table_from_weights(&x_ab.z_skip.weights(k_skip), &x_ab.x_inner_rest);
+    if let Some(t) = t {
+        eprintln!(
+            "[lc] {:<26} {:>7.2} ms",
+            "build_quirky_eq",
+            t.elapsed().as_secs_f64() * 1e3
+        );
+    }
+    let t = if trace { Some(Instant::now()) } else { None };
+    let mut comb_vec = fold_alpha_batched_pooled(circuit, alpha, &eq_inner);
+    if let Some(t) = t {
+        eprintln!(
+            "[lc] {:<26} {:>7.2} ms",
+            "fold_alpha_batched",
+            t.elapsed().as_secs_f64() * 1e3
+        );
+    }
+
+    // 2b. Constant-wire pin. Fold β·eq(j*, ·) into the comb so the same sumcheck
+    //     also proves z_vec[j*] = 1 (the all-ones constant column). Since j* is a
+    //     boolean index, eq(j*, ·) is the one-hot vector and this is a single
+    //     entry update. β is sampled after α; the verifier mirrors both. See
+    //     docs/const-wire-pin.md.
+    if let Some(col) = circuit.const_pin_col() {
+        let beta = if let Some(bits) = grinding.beta_bits() {
+            let (nonce, beta) = challenger.grind_pow_and_sample_f128(bits);
+            grinding_nonces.push(nonce);
+            beta
+        } else {
+            challenger.sample_f128()
+        };
+        comb_vec[col] += beta;
+    }
+
+    // 3. Partial fold of z at the shared outer half (length-k F128 vector).
+    let t = if trace { Some(Instant::now()) } else { None };
+    let eq_x_outer = build_eq_table(&x_ab.x_outer);
+    let z_vec = partial_fold_packed_z_best(z_packed, m, k_log, useful_bits, &eq_x_outer);
+    if let Some(t) = t {
+        eprintln!(
+            "[lc] {:<26} {:>7.2} ms",
+            "partial_fold_z",
+            t.elapsed().as_secs_f64() * 1e3
+        );
+    }
+    // 3b. Optional capture: clone the pre-sumcheck z_vec for downstream reuse
+    //     (PCS open's AB-claim s_hat_v skipping fold_1b_rows). Only pay the
+    //     clone when explicitly requested.
+    let captured_z_vec: Option<Vec<F128>> = if capture_z_vec {
+        Some(z_vec.clone())
+    } else {
+        None
+    };
+
+    // 5.–9. The column-domain sumcheck core, shared with the union-column
+    //       lincheck (`prove_union_capture_z_vec`).
+    let (proof, claim) = column_sumcheck_prove(
+        comb_vec,
+        z_vec,
+        k_skip,
+        &x_ab.z_skip,
+        trace,
+        grinding,
+        &mut grinding_nonces,
+        challenger,
+    );
+    (proof, claim, captured_z_vec)
+}
+
+/// Shared sumcheck core of the single-table and union-column linchecks
+/// (steps 5–9 of `prove_padded_inner`, verbatim): run the multilinear
+/// product-sumcheck over the top `log2(len) − k_skip` variables of the
+/// `(comb, z)` pair, send the length-`2^k_skip` collapse `z_partial`, sample
+/// the fresh univariate-skip challenge, and assemble the proof + claim.
+/// Consumes both vectors. The union prover reuses this loop over the longer
+/// union column domain — same code on the same vectors is what makes the
+/// single-slot union lincheck byte-identical to today's.
+fn column_sumcheck_prove<Ch: Challenger>(
+    mut comb_vec: Vec<F128>,
+    mut z_vec: Vec<F128>,
+    k_skip: usize,
+    z_skip: &SkipPoint,
+    trace: bool,
+    grinding: LincheckGrinding,
+    grinding_nonces: &mut Vec<u64>,
+    challenger: &mut Ch,
+) -> (LincheckProof, LincheckClaim) {
+    debug_assert_eq!(comb_vec.len(), z_vec.len());
+    debug_assert!(comb_vec.len().is_power_of_two());
+    let inner_rest_len = comb_vec.len().trailing_zeros() as usize - k_skip;
+    let t_sumcheck_start = if trace { Some(Instant::now()) } else { None };
+
+    // 5. Standard multilinear product-sumcheck over the high `inner_rest_len`
+    //    bits of `i`. Each round binds the TOP remaining bit. After
+    //    `inner_rest_len` rounds, both
+    //    tables collapse to length `2^k_skip`. Per-round work is parallel via
+    //    rayon when the residual table is large enough.
+    let mut rounds = Vec::with_capacity(inner_rest_len);
+    let mut r_rounds = Vec::with_capacity(inner_rest_len);
+    if inner_rest_len > 0 {
+        // Round 0's message is the only standalone evaluation pass; every later
+        // round's message falls out of binding the previous round (fold +
+        // next-eval fused into one pass — see `sumcheck_bind_both_and_eval_next`).
+        let (mut e1, mut einf) = sumcheck_round_eval_par(&comb_vec, &z_vec);
+        for t in 0..inner_rest_len {
+            challenger.observe_f128(e1);
+            challenger.observe_f128(einf);
+            let r = if let Some(bits) = grinding.multilinear_round_bits() {
+                let (nonce, r) = challenger.grind_pow_and_sample_f128(bits);
+                grinding_nonces.push(nonce);
+                r
+            } else {
+                challenger.sample_f128()
+            };
+            rounds.push((e1, einf));
+            r_rounds.push(r);
+            if t + 1 < inner_rest_len {
+                // Fused: bind both tables at r AND compute round (t+1)'s message.
+                let (ne1, neinf) = sumcheck_bind_both_and_eval_next(&mut comb_vec, &mut z_vec, r);
+                e1 = ne1;
+                einf = neinf;
+            } else {
+                // Final round: just fold; z_vec collapses to z_partial.
+                sumcheck_bind_top_in_place_par(&mut comb_vec, r);
+                sumcheck_bind_top_in_place_par(&mut z_vec, r);
+            }
+        }
+    }
+    if let Some(t) = t_sumcheck_start {
+        eprintln!(
+            "[lc] {:<26} {:>7.2} ms",
+            "sumcheck (all rounds)",
+            t.elapsed().as_secs_f64() * 1e3
+        );
+    }
+
+    // 6. Send `z_partial` (the post-sumcheck collapsed z_vec). Length 2^k_skip.
+    let z_partial = z_vec.clone();
+    challenger.observe_f128_slice(&z_partial);
+
+    // 7. Sample fresh z_skip AFTER observing z_partial — gives Schwartz-Zippel
+    //    soundness on the φ8 (univariate-skip) dim.
+    let r_inner_skip = match z_skip {
+        // Grinding profiles on the φ₈ basis keep the FUSED PoW+squeeze
+        // transcript (byte-pinned on the chained-BLAKE3 challenger).
+        SkipPoint::Phi8(_) => match grinding.skip_bits(k_skip) {
+            Some(bits) => {
+                let (nonce, r) = challenger.grind_pow_and_sample_f128(bits);
+                grinding_nonces.push(nonce);
+                SkipPoint::Phi8(r)
+            }
+            None => z_skip.sample_fresh(challenger),
+        },
+        // AG basis: the FUSED nonce (PoW + point validity on one hash) —
+        // 3 explicit bits + the sampler's 5 provable bits = bits_for(158).
+        SkipPoint::Ag(_) => match grinding.ag_skip_bits(k_skip) {
+            Some(bits) => {
+                let (p, nonce) = z_skip.sample_fresh_pow_prover(challenger, bits);
+                grinding_nonces.push(nonce);
+                p
+            }
+            None => z_skip.sample_fresh(challenger),
+        },
+    };
+
+    // 8. Output claim's value: φ8 Lagrange combination of z_partial at z_skip.
+    //    Equals ẑ_φ8(z_skip, r_rest, x_outer) when z_partial is honest; the
+    //    PCS catches mismatches downstream.
+    let lambda = r_inner_skip.weights(k_skip);
+    let w = inner_product(&lambda, &z_partial);
+
+    // 9. Convert sumcheck challenges to LSB-first `x_inner_rest` order. The
+    //    loop binds the TOP bit each round, so r_rounds[0] bound bit
+    //    (inner_rest_len − 1) of the i_rest part (= bit (k_log − 1) of i).
+    //    LSB-first: x_inner_rest[j] binds bit (k_skip + j) of i — i.e.,
+    //    r_inner_rest[j] = r_rounds[inner_rest_len − 1 − j].
+    let mut r_inner_rest = r_rounds;
+    r_inner_rest.reverse();
+
+    // The shared sumcheck core knows nothing of matrices; the union prover
+    // fills `matrix_evals` in afterwards, once `r_inner_rest` fixes the
+    // column weight. The single-table path leaves it empty.
+    let proof = LincheckProof {
+        rounds,
+        z_partial,
+        matrix_evals: Vec::new(),
+        grinding_nonces: take(grinding_nonces),
+    };
+    let claim = LincheckClaim {
+        r_inner_skip,
+        r_inner_rest,
+        w,
+    };
+    (proof, claim)
+}
+
+/// Verify a lincheck proof. Walks the challenger in lockstep with `prove`,
+/// performs the three scalar consistency checks against `v, v', v''`, and
+/// derives the three output z claims.
+pub fn verify<Ch: Challenger>(
+    m: usize,
+    k_log: usize,
+    k_skip: usize,
+    circuit: &dyn LincheckCircuit,
+    x_ab: &QuirkyPoint,
+    v_a: F128,
+    v_b: F128,
+    proof: &LincheckProof,
+    challenger: &mut Ch,
+) -> Result<LincheckClaim, LincheckError> {
+    verify_with_grinding(
+        m,
+        k_log,
+        k_skip,
+        circuit,
+        x_ab,
+        v_a,
+        v_b,
+        proof,
+        LincheckGrinding::disabled(),
+        challenger,
+    )
+}
+
+/// [`verify`] with an explicit Fiat--Shamir grinding policy.
+pub fn verify_with_grinding<Ch: Challenger>(
+    m: usize,
+    k_log: usize,
+    k_skip: usize,
+    circuit: &dyn LincheckCircuit,
+    x_ab: &QuirkyPoint,
+    v_a: F128,
+    v_b: F128,
+    proof: &LincheckProof,
+    grinding: LincheckGrinding,
+    challenger: &mut Ch,
+) -> Result<LincheckClaim, LincheckError> {
+    let k = 1usize << k_log;
+    let n_log = m - k_log;
+
+    if k_skip > k_log {
+        return Err(LincheckError::KSkipExceedsKLog { k_skip, k_log });
+    }
+    let inner_rest_len = k_log - k_skip;
+    let n_skip = 1usize << k_skip;
+
+    if x_ab.x_inner_rest.len() != inner_rest_len {
+        return Err(LincheckError::BadInnerRestLength {
+            which: "x_ab",
+            expected: inner_rest_len,
+            got: x_ab.x_inner_rest.len(),
+        });
+    }
+    if x_ab.x_outer.len() != n_log {
+        return Err(LincheckError::BadOuterLength {
+            which: "x_ab",
+            expected: n_log,
+            got: x_ab.x_outer.len(),
+        });
+    }
+    if circuit.n_cols() != k {
+        return Err(LincheckError::BadMatrixShape {
+            which: "circuit",
+            expected: k,
+            got_rows: k,
+            got_cols: circuit.n_cols(),
+        });
+    }
+    if proof.rounds.len() != inner_rest_len {
+        return Err(LincheckError::BadVectorLength {
+            which: "rounds",
+            expected: inner_rest_len,
+            got: proof.rounds.len(),
+        });
+    }
+    if proof.z_partial.len() != n_skip {
+        return Err(LincheckError::BadVectorLength {
+            which: "z_partial",
+            expected: n_skip,
+            got: proof.z_partial.len(),
+        });
+    }
+    let expected_nonces = grinding.nonce_count(
+        inner_rest_len,
+        usize::from(circuit.const_pin_col().is_some()),
+        k_skip,
+    );
+    if proof.grinding_nonces.len() != expected_nonces {
+        return Err(LincheckError::BadGrindingNonceCount {
+            expected: expected_nonces,
+            got: proof.grinding_nonces.len(),
+        });
+    }
+
+    challenger.observe_label(b"flock-lincheck-v0");
+    let mut nonce_idx = 0;
+
+    let trace = var("VERIFY_TRACE").is_ok();
+    let fmt = |s: f64| -> String {
+        let ms = s * 1000.0;
+        if ms < 1.0 {
+            format!("{:>8.2} µs", s * 1e6)
+        } else {
+            format!("{:>8.2} ms", ms)
+        }
+    };
+
+    // 1. Sample α (matches prover's order).
+    let alpha = if let Some(bits) = grinding.alpha_bits() {
+        let alpha = challenger
+            .verify_pow_and_sample_f128(proof.grinding_nonces[nonce_idx], bits)
+            .ok_or(LincheckError::InvalidGrindingNonce { which: "alpha" })?;
+        nonce_idx += 1;
+        alpha
+    } else {
+        challenger.sample_f128()
+    };
+
+    // 2. Build α-batched comb_vec via the circuit's per-block fold (same call
+    //    the prover made — sparse default delegates to the fused row-fold;
+    //    per-hash impls walk the constraint graph directly).
+    let t = Instant::now();
+    let eq_inner =
+        build_quirky_eq_table_from_weights(&x_ab.z_skip.weights(k_skip), &x_ab.x_inner_rest);
+    if trace {
+        eprintln!(
+            "        [lcv] build_quirky_eq_table (2^{k_log}): {}",
+            fmt(t.elapsed().as_secs_f64())
+        );
+    }
+    let t = Instant::now();
+    let mut comb_vec = fold_alpha_batched_pooled(circuit, alpha, &eq_inner);
+    if trace {
+        eprintln!(
+            "        [lcv] circuit.fold_alpha_batched: {}",
+            fmt(t.elapsed().as_secs_f64())
+        );
+    }
+
+    // 3. Replay the multilinear product-sumcheck (inner_rest_len rounds),
+    //    folding comb_vec in lockstep so we end up with the "comb_partial"
+    //    vector of length 2^k_skip. Parallel fold for the early (large) rounds.
+    let t = Instant::now();
+    // Constant-wire pin (mirror of prove): β sampled after α, comb gains +β at
+    // the constant column, and the initial target gains +β·1 — the honest
+    // all-ones constant column folds to 1. See docs/const-wire-pin.md.
+    let mut target = alpha * v_a + v_b;
+    if let Some(col) = circuit.const_pin_col() {
+        let beta = if let Some(bits) = grinding.beta_bits() {
+            let beta = challenger
+                .verify_pow_and_sample_f128(proof.grinding_nonces[nonce_idx], bits)
+                .ok_or(LincheckError::InvalidGrindingNonce { which: "beta" })?;
+            nonce_idx += 1;
+            beta
+        } else {
+            challenger.sample_f128()
+        };
+        comb_vec[col] += beta;
+        target += beta;
+    }
+    let mut running = target;
+    let mut r_rounds = Vec::with_capacity(inner_rest_len);
+    for &(e1, einf) in &proof.rounds {
+        challenger.observe_f128(e1);
+        challenger.observe_f128(einf);
+        let r = if let Some(bits) = grinding.multilinear_round_bits() {
+            let r = challenger
+                .verify_pow_and_sample_f128(proof.grinding_nonces[nonce_idx], bits)
+                .ok_or(LincheckError::InvalidGrindingNonce {
+                    which: "sumcheck-round",
+                })?;
+            nonce_idx += 1;
+            r
+        } else {
+            challenger.sample_f128()
+        };
+        // q(0) = claim + q(1) in char 2; q(X) = einf·X² + c1·X + e0.
+        let e0 = running + e1;
+        let c1 = e0 + e1 + einf;
+        running = einf * r * r + c1 * r + e0;
+        // Fold comb_vec at the same r (mirrors prover's fold).
+        sumcheck_bind_top_in_place_par(&mut comb_vec, r);
+        r_rounds.push(r);
+    }
+    debug_assert_eq!(comb_vec.len(), n_skip);
+    if trace {
+        eprintln!(
+            "        [lcv] sumcheck replay + comb_vec fold ({} rounds): {}",
+            inner_rest_len,
+            fmt(t.elapsed().as_secs_f64())
+        );
+    }
+
+    // 4. Observe z_partial AFTER the sumcheck rounds (matches prover order).
+    challenger.observe_f128_slice(&proof.z_partial);
+
+    // 5. Final sumcheck consistency: Σ comb_partial[i_skip] · z_partial[i_skip]
+    //    must equal the running claim. Ties z_partial to the upstream v_a, v_b.
+    //    Small (length 2^k_skip = 64); sequential.
+    let final_sum = inner_product(&comb_vec, &proof.z_partial);
+    if running != final_sum {
+        return Err(LincheckError::ConsistencyFailed {
+            which: "sumcheck-final",
+        });
+    }
+
+    // 6. Sample fresh z_skip AFTER z_partial — gives SZ on the φ8 dim.
+    let r_inner_skip = match &x_ab.z_skip {
+        SkipPoint::Phi8(_) => match grinding.skip_bits(k_skip) {
+            Some(bits) => {
+                let r = challenger
+                    .verify_pow_and_sample_f128(proof.grinding_nonces[nonce_idx], bits)
+                    .ok_or(LincheckError::InvalidGrindingNonce {
+                        which: "inner-skip",
+                    })?;
+                nonce_idx += 1;
+                SkipPoint::Phi8(r)
+            }
+            None => x_ab.z_skip.sample_fresh(challenger),
+        },
+        SkipPoint::Ag(_) => match grinding.ag_skip_bits(k_skip) {
+            Some(bits) => {
+                let nonce = proof.grinding_nonces[nonce_idx];
+                nonce_idx += 1;
+                x_ab.z_skip
+                    .sample_fresh_pow_verifier(challenger, nonce, bits)
+                    .ok_or(LincheckError::InvalidGrindingNonce {
+                        which: "inner-skip",
+                    })?
+            }
+            None => x_ab.z_skip.sample_fresh(challenger),
+        },
+    };
+    debug_assert_eq!(nonce_idx, proof.grinding_nonces.len());
+
+    // 7. Derive output claim value via φ8 Lagrange on z_partial at z_skip.
+    //    Equals ẑ_φ8(z_skip, r_rest, x_outer) when z_partial is honest;
+    //    PCS catches mismatches downstream.
+    let t = Instant::now();
+    let lambda = r_inner_skip.weights(k_skip);
+    let w = inner_product(&lambda, &proof.z_partial);
+    if trace {
+        eprintln!(
+            "        [lcv] final consistency + lagrange_weights_naive: {}",
+            fmt(t.elapsed().as_secs_f64())
+        );
+    }
+
+    // 8. Convert sumcheck challenges to LSB-first x_inner_rest order
+    //    (same convention as prover).
+    let mut r_inner_rest = r_rounds;
+    r_inner_rest.reverse();
+
+    Ok(LincheckClaim {
+        r_inner_skip,
+        r_inner_rest,
+        w,
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+
+    #[cfg(target_arch = "x86_64")]
+    use crate::lincheck::partial_fold_packed_z_x86_tiled_padded;
+    #[cfg(target_arch = "aarch64")]
+    use crate::lincheck::{
+        NEON_TILE_T, partial_fold_packed_z_neon_iblock_padded,
+        partial_fold_packed_z_neon_oblock_padded, partial_fold_packed_z_neon_single,
+        partial_fold_packed_z_neon_single_padded,
+    };
+    use crate::{
+        challenger::FsChallenger,
+        lincheck::{
+            F128, LincheckError, LincheckGrinding, LincheckProof, QuirkyPoint, SkipPoint,
+            SparseBinaryMatrix, SparseMatrixCircuit, build_eq_table,
+            build_quirky_eq_table_from_weights, n_log_ok_for_tile, pack_z_lincheck,
+            partial_fold_packed_z, partial_fold_packed_z_best, partial_fold_packed_z_fast,
+            partial_fold_packed_z_fast_padded, prove, prove_with_grinding, sparse_row_fold, verify,
+            verify_with_grinding,
+        },
+        test_rng::Rng,
+    };
+
+    /// Naive MLE evaluation: `f̂(point) = Σ_i eq(point, i) · f[i]` where i ∈
+    /// {0,1}^d and f[i] is given as a bool slice.
+    fn mle_eval_bool(f: &[bool], point: &[F128]) -> F128 {
+        let d = point.len();
+        assert_eq!(f.len(), 1 << d);
+        let eq = build_eq_table(point);
+        let mut acc = F128::ZERO;
+        for (i, &b) in f.iter().enumerate() {
+            if b {
+                acc += eq[i];
+            }
+        }
+        acc
+    }
+
+    /// Sample a random `QuirkyPoint` for testing: z_skip ∈ F₁₂₈,
+    /// x_inner_rest of length `k_log − k_skip`, x_outer of length `n_log`.
+    fn random_quirky_point(m: usize, k_log: usize, k_skip: usize, rng: &mut Rng) -> QuirkyPoint {
+        QuirkyPoint {
+            z_skip: SkipPoint::Phi8(rng.f128()),
+            x_inner_rest: rng.f128_vec(k_log - k_skip),
+            x_outer: rng.f128_vec(m - k_log),
+        }
+    }
+
+    /// "Quirky MLE evaluation" of a Boolean vector `f` at a quirky point.
+    ///
+    /// `ã(z_skip, x_inner_rest, x_outer) = Σ_i  f[i] · L_{i_skip}(z_skip)
+    ///                                          · eq(x_inner_rest, i_inner_rest)
+    ///                                          · eq(x_outer, i_outer)`
+    ///
+    /// where `i = i_skip + 2^k_skip · i_inner_rest + 2^k_log · i_outer` (matches
+    /// the linear-LSB indexing of `f`).
+    fn mle_eval_bool_quirky(
+        f: &[bool],
+        m: usize,
+        k_log: usize,
+        k_skip: usize,
+        point: &QuirkyPoint,
+    ) -> F128 {
+        let k_skip_dim = 1usize << k_skip;
+        let inner_rest_len = k_log - k_skip;
+        let inner_rest_dim = 1usize << inner_rest_len;
+        let k = 1usize << k_log;
+        let n_outer = 1usize << (m - k_log);
+        assert_eq!(f.len(), 1 << m);
+
+        let lambda = point.z_skip.weights(k_skip);
+        let eq_rest = build_eq_table(&point.x_inner_rest);
+        let eq_outer = build_eq_table(&point.x_outer);
+        debug_assert_eq!(lambda.len(), k_skip_dim);
+        debug_assert_eq!(eq_rest.len(), inner_rest_dim);
+        debug_assert_eq!(eq_outer.len(), n_outer);
+
+        let mut acc = F128::ZERO;
+        for i in 0..(1 << m) {
+            if !f[i] {
+                continue;
+            }
+            let i_skip = i & (k_skip_dim - 1);
+            let i_inner_rest = (i >> k_skip) & (inner_rest_dim - 1);
+            let i_outer = i / k;
+            acc += lambda[i_skip] * eq_rest[i_inner_rest] * eq_outer[i_outer];
+        }
+        acc
+    }
+
+    /// Naive sparse matrix · bool-vector product: `out[i] = ⊕_{j: M[i,j]=1} z[j]`.
+    fn matrix_vector_product(m: &SparseBinaryMatrix, z: &[bool]) -> Vec<bool> {
+        assert_eq!(z.len(), m.num_cols);
+        m.rows
+            .iter()
+            .map(|row| {
+                let mut acc = false;
+                for &col in row {
+                    acc ^= z[col];
+                }
+                acc
+            })
+            .collect()
+    }
+
+    /// Build a block-diagonal full witness vector from a base matrix and the
+    /// outer dimension: full[i_inner + i_outer · k] for the i_outer-th block.
+    /// Used to construct `a = (I_{2^n_log} ⊗ A_0) · z` directly for tests.
+    fn apply_block_diag(m_0: &SparseBinaryMatrix, z: &[bool], k_log: usize) -> Vec<bool> {
+        let k = 1usize << k_log;
+        assert_eq!(m_0.num_rows, k);
+        assert_eq!(m_0.num_cols, k);
+        assert_eq!(z.len() % k, 0);
+        let n_outer = z.len() / k;
+        let mut out = vec![false; z.len()];
+        for i_outer in 0..n_outer {
+            let z_block = &z[i_outer * k..(i_outer + 1) * k];
+            let a_block = matrix_vector_product(m_0, z_block);
+            out[i_outer * k..(i_outer + 1) * k].copy_from_slice(&a_block);
+        }
+        out
+    }
+
+    /// Build a sparse boolean matrix with `nnz` random nonzero entries among
+    /// `k × k` slots. Used for tests.
+    fn random_sparse_matrix(k: usize, nnz: usize, rng: &mut Rng) -> SparseBinaryMatrix {
+        let mut rows: Vec<Vec<usize>> = vec![Vec::new(); k];
+        let mut seen = HashSet::new();
+        let mut count = 0;
+        while count < nnz {
+            let r = (rng.next_u64() as usize) % k;
+            let c = (rng.next_u64() as usize) % k;
+            if seen.insert((r, c)) {
+                rows[r].push(c);
+                count += 1;
+            }
+        }
+        for row in &mut rows {
+            row.sort();
+        }
+        SparseBinaryMatrix::new(k, k, rows)
+    }
+
+    // ---- Unit tests for the kernels ----
+
+    /// `build_eq_table` produces eq(point, i) for all boolean i.
+    #[test]
+    fn eq_table_matches_direct_formula() {
+        for &d in &[1usize, 2, 3, 5, 8] {
+            let mut rng = Rng::new(11 + d as u64);
+            let point = rng.f128_vec(d);
+            let table = build_eq_table(&point);
+            assert_eq!(table.len(), 1 << d);
+            for i in 0..(1 << d) {
+                let mut expected = F128::ONE;
+                for j in 0..d {
+                    let bit = ((i >> j) & 1) as u64;
+                    // eq(r, bit) = (1 + r) if bit = 0 else r
+                    let factor = if bit == 0 {
+                        F128::ONE + point[j]
+                    } else {
+                        point[j]
+                    };
+                    expected *= factor;
+                }
+                assert_eq!(table[i], expected, "mismatch at d={d}, i={i}");
+            }
+        }
+    }
+
+    /// `sparse_row_fold` matches a brute-force dense implementation.
+    #[test]
+    fn sparse_row_fold_matches_dense() {
+        let mut rng = Rng::new(22);
+        let k = 16;
+        let nnz = 40;
+        let matrix = random_sparse_matrix(k, nnz, &mut rng);
+        let eq_table: Vec<F128> = rng.f128_vec(k);
+
+        let got = sparse_row_fold(&matrix, &eq_table);
+
+        // Brute force: for each col j, sum eq[i] over rows i where M[i,j] = 1.
+        let mut expected = vec![F128::ZERO; k];
+        for (i, row) in matrix.rows.iter().enumerate() {
+            for &j in row {
+                expected[j] += eq_table[i];
+            }
+        }
+        assert_eq!(got, expected);
+    }
+
+    /// `partial_fold_packed_z` matches the direct sum.
+    #[test]
+    fn partial_fold_matches_direct() {
+        for &(m, k_log) in &[(10usize, 3), (12, 4), (14, 5), (16, 8)] {
+            let mut rng = Rng::new(33 + m as u64);
+            let z = rng.bits(1 << m);
+            let z_packed = pack_z_lincheck(&z, m, k_log);
+            let n_log = m - k_log;
+            let outer_point = rng.f128_vec(n_log);
+            let eq_outer = build_eq_table(&outer_point);
+
+            let got = partial_fold_packed_z(&z_packed, m, k_log, &eq_outer);
+
+            let k = 1usize << k_log;
+            assert_eq!(got.len(), k);
+            for i_inner in 0..k {
+                let mut acc = F128::ZERO;
+                for i_outer in 0..(1usize << n_log) {
+                    let i = i_inner + i_outer * k;
+                    if z[i] {
+                        acc += eq_outer[i_outer];
+                    }
+                }
+                assert_eq!(got[i_inner], acc, "mismatch at m={m}, i_inner={i_inner}");
+            }
+        }
+    }
+
+    /// `partial_fold_packed_z_fast` (parallel lookup-table) matches the scalar
+    /// reference `partial_fold_packed_z`.
+    #[test]
+    fn partial_fold_fast_matches_serial() {
+        for &(m, k_log) in &[(10usize, 3), (12, 4), (14, 5), (16, 8), (18, 10)] {
+            let mut rng = Rng::new(800 + m as u64);
+            let z = rng.bits(1 << m);
+            let z_packed = pack_z_lincheck(&z, m, k_log);
+            let n_log = m - k_log;
+            let p = rng.f128_vec(n_log);
+            let eq = build_eq_table(&p);
+
+            let serial = partial_fold_packed_z(&z_packed, m, k_log, &eq);
+            let fast = partial_fold_packed_z_fast(&z_packed, m, k_log, &eq);
+            assert_eq!(serial, fast, "at m={m}, k_log={k_log}");
+        }
+    }
+
+    #[test]
+    fn partial_fold_dispatch_handles_small_k() {
+        let (m, k_log) = (8usize, 2usize);
+        let mut rng = Rng::new(1234);
+        let z = rng.bits(1 << m);
+        let z_packed = pack_z_lincheck(&z, m, k_log);
+        let eq = build_eq_table(&rng.f128_vec(m - k_log));
+
+        let serial = partial_fold_packed_z(&z_packed, m, k_log, &eq);
+        let best = partial_fold_packed_z_best(&z_packed, m, k_log, 1 << k_log, &eq);
+        assert_eq!(serial, best);
+    }
+
+    /// NEON single-matrix kernel matches the scalar reference.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn partial_fold_neon_single_matches_serial() {
+        for &(m, k_log) in &[(14usize, 4), (14, 5), (16, 5), (16, 8), (18, 10)] {
+            if !n_log_ok_for_tile(m, k_log, NEON_TILE_T) {
+                continue;
+            }
+            let mut rng = Rng::new(7000 + m as u64);
+            let z = rng.bits(1 << m);
+            let z_packed = pack_z_lincheck(&z, m, k_log);
+            let n_log = m - k_log;
+            let p = rng.f128_vec(n_log);
+            let eq = build_eq_table(&p);
+
+            let serial = partial_fold_packed_z(&z_packed, m, k_log, &eq);
+            let neon = partial_fold_packed_z_neon_single(&z_packed, m, k_log, &eq);
+            assert_eq!(serial, neon, "at m={m}, k_log={k_log}");
+            let iblock =
+                partial_fold_packed_z_neon_iblock_padded(&z_packed, m, k_log, 1usize << k_log, &eq);
+            assert_eq!(serial, iblock, "iblock at m={m}, k_log={k_log}");
+        }
+    }
+
+    /// The default outer(tile)-partitioned fold is **bit-identical** to the legacy
+    /// i_inner-partitioned iblock kernel — dense (useful=k) and padded (useful<k,
+    /// including a non-byte-aligned shape) across tile-eligible sizes. GF(2¹²⁸) add
+    /// is XOR (associative + commutative), so the two partition strategies must
+    /// produce the exact same length-k vector.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn partial_fold_oblock_matches_iblock() {
+        // (m, k_log, useful_bits); mix of dense and padded, all tile-eligible.
+        let cases: &[(usize, usize, usize)] = &[
+            (14, 4, 1 << 4),   // dense, small k
+            (16, 8, 1 << 8),   // dense
+            (18, 10, 1 << 10), // dense
+            (20, 10, 597),     // padded, non-byte-aligned
+            (22, 14, 15_409),  // padded, non-byte-aligned (k=16384)
+        ];
+        for &(m, k_log, useful_bits) in cases {
+            assert!(
+                n_log_ok_for_tile(m, k_log, NEON_TILE_T),
+                "case must be tile-eligible"
+            );
+            let k = 1usize << k_log;
+            let n_log = m - k_log;
+            let n_blocks = 1usize << n_log;
+            let mut rng = Rng::new(7200 + (m * 31 + k_log) as u64);
+            let mut z = rng.bits(1 << m);
+            // Honest padding: zero rows [useful, k) of every block.
+            for blk in 0..n_blocks {
+                for j in useful_bits..k {
+                    z[blk * k + j] = false;
+                }
+            }
+            let z_packed = pack_z_lincheck(&z, m, k_log);
+            let eq = build_eq_table(&rng.f128_vec(n_log));
+            let want =
+                partial_fold_packed_z_neon_iblock_padded(&z_packed, m, k_log, useful_bits, &eq);
+            let got =
+                partial_fold_packed_z_neon_oblock_padded(&z_packed, m, k_log, useful_bits, &eq);
+            assert_eq!(want, got, "m={m} k_log={k_log} useful={useful_bits}");
+        }
+    }
+
+    /// `useful_bits = k`, several tile-eligible sizes).
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn partial_fold_x86_tiled_matches_serial() {
+        for &(m, k_log) in &[(14usize, 4), (14, 5), (16, 5), (16, 8), (18, 10)] {
+            if !n_log_ok_for_tile(m, k_log, 8) {
+                continue;
+            }
+            let mut rng = Rng::new(7100 + m as u64);
+            let z = rng.bits(1 << m);
+            let z_packed = pack_z_lincheck(&z, m, k_log);
+            let n_log = m - k_log;
+            let p = rng.f128_vec(n_log);
+            let eq = build_eq_table(&p);
+            let k = 1usize << k_log;
+            let serial = partial_fold_packed_z(&z_packed, m, k_log, &eq);
+            let tiled = partial_fold_packed_z_x86_tiled_padded(&z_packed, m, k_log, k, &eq);
+            assert_eq!(serial, tiled, "at m={m}, k_log={k_log}");
+        }
+    }
+
+    /// **Padding skip is byte-identical to the dense partial fold.** On a
+    /// witness with honest zeros at rows `[useful_bits, 2^k_log)` of every
+    /// block, the padded kernels (fast + NEON single) must produce the
+    /// exact same `z_vec` as the dense kernels — and the dense scalar
+    /// reference is the ground truth.
+    ///
+    /// Covers the three hash padding shapes plus a non-byte-aligned
+    /// `useful_bits` to exercise the NEON's boundary block (rounded up to
+    /// `BLOCK_K = 8`).
+    #[test]
+    fn partial_fold_padded_matches_dense() {
+        // (m, k_log, useful_bits)
+        let cases: &[(usize, usize, usize)] = &[
+            // BLAKE3 (k_log=14, useful=15409 — boundary not byte-aligned).
+            (17, 14, 15_409),
+            // SHA-2  (k_log=15, useful=31401 — boundary not byte-aligned).
+            (18, 15, 31_401),
+            // Keccak (k_log=16, useful=42560 — exact byte boundary).
+            (19, 16, 42_560),
+        ];
+        for &(m, k_log, useful_bits) in cases {
+            let mut rng = Rng::new(0xBADD_BEEF_u64.wrapping_add((k_log * 31 + m) as u64));
+            let total_bits = 1usize << m;
+            let n_log = m - k_log;
+            let block_size = 1usize << k_log;
+            let n_blocks = 1usize << n_log;
+
+            // Random witness with bits [useful_bits, block_size) of every block
+            // zeroed — mirrors the hash-module layout.
+            let mut z = rng.bits(total_bits);
+            for blk in 0..n_blocks {
+                for j in useful_bits..block_size {
+                    z[blk * block_size + j] = false;
+                }
+            }
+            let z_packed = pack_z_lincheck(&z, m, k_log);
+            let outer_point = rng.f128_vec(n_log);
+            let eq_outer = build_eq_table(&outer_point);
+
+            let dense_fast = partial_fold_packed_z_fast(&z_packed, m, k_log, &eq_outer);
+            let padded_fast =
+                partial_fold_packed_z_fast_padded(&z_packed, m, k_log, useful_bits, &eq_outer);
+            assert_eq!(
+                dense_fast, padded_fast,
+                "fast: m={m}, k_log={k_log}, useful={useful_bits}"
+            );
+
+            #[cfg(target_arch = "aarch64")]
+            if n_log_ok_for_tile(m, k_log, NEON_TILE_T) {
+                let dense_neon = partial_fold_packed_z_neon_single(&z_packed, m, k_log, &eq_outer);
+                let padded_neon = partial_fold_packed_z_neon_single_padded(
+                    &z_packed,
+                    m,
+                    k_log,
+                    useful_bits,
+                    &eq_outer,
+                );
+                assert_eq!(
+                    dense_neon, padded_neon,
+                    "neon: m={m}, k_log={k_log}, useful={useful_bits}"
+                );
+                // i_inner-partitioned kernel: dense and padded must both match.
+                let dense_iblock = partial_fold_packed_z_neon_iblock_padded(
+                    &z_packed,
+                    m,
+                    k_log,
+                    1usize << k_log,
+                    &eq_outer,
+                );
+                let padded_iblock = partial_fold_packed_z_neon_iblock_padded(
+                    &z_packed,
+                    m,
+                    k_log,
+                    useful_bits,
+                    &eq_outer,
+                );
+                assert_eq!(
+                    dense_neon, dense_iblock,
+                    "iblock dense: m={m}, k_log={k_log}, useful={useful_bits}"
+                );
+                assert_eq!(
+                    dense_neon, padded_iblock,
+                    "iblock padded: m={m}, k_log={k_log}, useful={useful_bits}"
+                );
+            }
+        }
+    }
+
+    /// `partial_fold_packed_z(eq_outer) ↦ ẑ(·, x_outer)` matches direct MLE
+    /// evaluation of z at `(i_inner, x_outer)` for boolean i_inner.
+    #[test]
+    fn partial_fold_is_mle_at_outer_point() {
+        let m = 14;
+        let k_log = 5;
+        let k = 1 << k_log;
+        let mut rng = Rng::new(44);
+        let z = rng.bits(1 << m);
+        let z_packed = pack_z_lincheck(&z, m, k_log);
+        let x_outer = rng.f128_vec(m - k_log);
+        let eq_outer = build_eq_table(&x_outer);
+
+        let z_partial = partial_fold_packed_z(&z_packed, m, k_log, &eq_outer);
+
+        // For each boolean i_inner ∈ {0,1}^k_log, the partial fold should
+        // equal ẑ(i_inner, x_outer).
+        for i_inner in 0..k {
+            // Construct the m-dim point: first k_log coords from i_inner (boolean lifted),
+            // then m-k_log coords from x_outer.
+            let mut point = Vec::with_capacity(m);
+            for j in 0..k_log {
+                point.push(if (i_inner >> j) & 1 == 1 {
+                    F128::ONE
+                } else {
+                    F128::ZERO
+                });
+            }
+            point.extend_from_slice(&x_outer);
+            let z_eval = mle_eval_bool(&z, &point);
+            assert_eq!(z_partial[i_inner], z_eval, "i_inner={i_inner}");
+        }
+    }
+
+    // ---- End-to-end prove/verify roundtrip on honest data ----
+
+    /// Build a small honest instance: random sparse A_0/B_0/C_0, random z;
+    /// compute a, b, c via apply_block_diag; pick three points; compute true
+    /// MLE evals as v, v', v''. Roundtrip prove/verify, check claim matches
+    /// what the verifier would re-derive from the (now-known-honest) z.
+    #[test]
+    fn prove_verify_roundtrip_honest() {
+        // Exercise a range of k_skip values:
+        //   k_skip = 0 (no skip)     — reduces to multilinear lincheck
+        //   k_skip = k_log (max)     — only univariate inner
+        //   k_skip < k_log (typical) — protocol-realistic case
+        for &(m, k_log, k_skip) in &[
+            (10usize, 4, 0),
+            (10, 4, 2),
+            (10, 4, 4),
+            (12, 5, 3),
+            (14, 7, 6),
+            (14, 7, 0),
+        ] {
+            let k = 1usize << k_log;
+            let mut rng = Rng::new(55 + (m * 100 + k_log * 10 + k_skip) as u64);
+
+            // Random sparse base matrices A_0, B_0 (no C since C = I in our use case).
+            let nnz_per_mat = k * 2;
+            let a_0 = random_sparse_matrix(k, nnz_per_mat, &mut rng);
+            let b_0 = random_sparse_matrix(k, nnz_per_mat, &mut rng);
+
+            // Random witness z, then a = A·z, b = B·z.
+            let z = rng.bits(1 << m);
+            let a = apply_block_diag(&a_0, &z, k_log);
+            let b = apply_block_diag(&b_0, &z, k_log);
+            let z_packed = pack_z_lincheck(&z, m, k_log);
+
+            // **One shared quirky point** (since zerocheck gives a, b claims at
+            // the same point).
+            let x_ab = random_quirky_point(m, k_log, k_skip, &mut rng);
+
+            // True quirky-MLE eval claims at the shared point.
+            let v_a = mle_eval_bool_quirky(&a, m, k_log, k_skip, &x_ab);
+            let v_b = mle_eval_bool_quirky(&b, m, k_log, k_skip, &x_ab);
+
+            // Prove and verify with matched challengers.
+            let circuit = SparseMatrixCircuit::new(&a_0, &b_0);
+            let mut ch_p = FsChallenger::new(b"flock-test-v0");
+            let (proof, claim_p) = prove(&z_packed, m, k_log, k_skip, &circuit, &x_ab, &mut ch_p);
+
+            let mut ch_v = FsChallenger::new(b"flock-test-v0");
+            let claim_v = verify(
+                m, k_log, k_skip, &circuit, &x_ab, v_a, v_b, &proof, &mut ch_v,
+            )
+            .unwrap_or_else(|e| {
+                panic!("verify rejected honest proof at m={m},k_log={k_log},k_skip={k_skip}: {e:?}")
+            });
+
+            assert_eq!(
+                claim_p, claim_v,
+                "claim mismatch at m={m}, k_log={k_log}, k_skip={k_skip}"
+            );
+
+            // The single `w` value must match the true z quirky evaluation
+            // at ((r_inner_skip, r_inner_rest), x_ab.x_outer).
+            let pt = QuirkyPoint {
+                z_skip: claim_v.r_inner_skip,
+                x_inner_rest: claim_v.r_inner_rest.clone(),
+                x_outer: x_ab.x_outer.clone(),
+            };
+            assert_eq!(
+                claim_v.w,
+                mle_eval_bool_quirky(&z, m, k_log, k_skip, &pt),
+                "w wrong at m={m}, k_log={k_log}, k_skip={k_skip}"
+            );
+        }
+    }
+
+    /// Secure lincheck grinding is replayed in exactly the same order as the
+    /// prover: α, the constant-wire β, every product-sumcheck round, then the
+    /// final φ8 skip challenge.  A malformed vector cannot shift that order,
+    /// and changing a nonce rejects before the corresponding challenge is
+    /// sampled.
+    #[test]
+    fn per_challenge_grinding_roundtrip_and_rejects_bad_nonce() {
+        let (m, k_log, k_skip) = (10usize, 4usize, 2usize);
+        let k = 1usize << k_log;
+        let mut rng = Rng::new(0x1C_128);
+        let a_0 = random_sparse_matrix(k, k * 2, &mut rng);
+        let b_0 = random_sparse_matrix(k, k * 2, &mut rng);
+        let mut z = rng.bits(1usize << m);
+        let const_pin = 3;
+        for block in z.chunks_mut(k) {
+            block[const_pin] = true;
+        }
+        let a = apply_block_diag(&a_0, &z, k_log);
+        let b = apply_block_diag(&b_0, &z, k_log);
+        let z_packed = pack_z_lincheck(&z, m, k_log);
+        let x_ab = random_quirky_point(m, k_log, k_skip, &mut rng);
+        let v_a = mle_eval_bool_quirky(&a, m, k_log, k_skip, &x_ab);
+        let v_b = mle_eval_bool_quirky(&b, m, k_log, k_skip, &x_ab);
+        let circuit = SparseMatrixCircuit::new(&a_0, &b_0).with_const_pin(Some(const_pin));
+        let grinding = LincheckGrinding::per_challenge_128();
+
+        let mut ch_p = FsChallenger::new(b"flock-lc-grinding-v0");
+        let (proof, claim_p) = prove_with_grinding(
+            &z_packed, m, k_log, k_skip, &circuit, &x_ab, grinding, &mut ch_p,
+        );
+        assert_eq!(
+            proof.grinding_nonces.len(),
+            grinding.nonce_count(k_log - k_skip, 1, k_skip)
+        );
+
+        let mut ch_v = FsChallenger::new(b"flock-lc-grinding-v0");
+        let claim_v = verify_with_grinding(
+            m, k_log, k_skip, &circuit, &x_ab, v_a, v_b, &proof, grinding, &mut ch_v,
+        )
+        .expect("valid grinding witnesses must verify");
+        assert_eq!(claim_p, claim_v);
+
+        let mut missing = proof.clone();
+        missing.grinding_nonces.pop();
+        let mut ch_missing = FsChallenger::new(b"flock-lc-grinding-v0");
+        assert!(matches!(
+            verify_with_grinding(
+                m,
+                k_log,
+                k_skip,
+                &circuit,
+                &x_ab,
+                v_a,
+                v_b,
+                &missing,
+                grinding,
+                &mut ch_missing,
+            ),
+            Err(LincheckError::BadGrindingNonceCount { .. })
+        ));
+
+        // One-bit PoW means a fixed mutation can itself be valid with
+        // probability 1/2. Search a tiny deterministic range for a nonce
+        // that is invalid at the *first* site, instead of making the test
+        // probabilistic.
+        let mut saw_invalid_alpha = false;
+        for nonce in 0..64 {
+            if nonce == proof.grinding_nonces[0] {
+                continue;
+            }
+            let mut bad = proof.clone();
+            bad.grinding_nonces[0] = nonce;
+            let mut ch_bad = FsChallenger::new(b"flock-lc-grinding-v0");
+            if matches!(
+                verify_with_grinding(
+                    m,
+                    k_log,
+                    k_skip,
+                    &circuit,
+                    &x_ab,
+                    v_a,
+                    v_b,
+                    &bad,
+                    grinding,
+                    &mut ch_bad,
+                ),
+                Err(LincheckError::InvalidGrindingNonce { which: "alpha" })
+            ) {
+                saw_invalid_alpha = true;
+                break;
+            }
+        }
+        assert!(saw_invalid_alpha, "must find an invalid one-bit PoW nonce");
+    }
+
+    /// Verify must reject byte-mutated proofs. Mutation positions are picked
+    /// where the corresponding matrix row-vector entry is **nonzero** —
+    /// otherwise the inner-product delta vanishes and the mutation is
+    /// undetectable (a property of the random sparse matrix, not a verifier
+    /// bug). The verifier's consistency check is sound for *any* mutation in
+    /// a nonzero-weighted slot.
+    #[test]
+    fn verify_rejects_mutations() {
+        let m = 12;
+        let k_log = 4;
+        let k_skip = 2;
+        let k = 1 << k_log;
+        let mut rng = Rng::new(66);
+        let a_0 = random_sparse_matrix(k, k * 5, &mut rng);
+        let b_0 = random_sparse_matrix(k, k * 5, &mut rng);
+        let z = rng.bits(1 << m);
+        let a = apply_block_diag(&a_0, &z, k_log);
+        let b = apply_block_diag(&b_0, &z, k_log);
+        let z_packed = pack_z_lincheck(&z, m, k_log);
+        let x_ab = random_quirky_point(m, k_log, k_skip, &mut rng);
+        let v_a = mle_eval_bool_quirky(&a, m, k_log, k_skip, &x_ab);
+        let v_b = mle_eval_bool_quirky(&b, m, k_log, k_skip, &x_ab);
+
+        let _seed: u64 = 0xFEEDFACE;
+        let circuit = SparseMatrixCircuit::new(&a_0, &b_0);
+        let mut ch_p = FsChallenger::new(b"flock-test-v0");
+        let (proof, _) = prove(&z_packed, m, k_log, k_skip, &circuit, &x_ab, &mut ch_p);
+
+        // Pick a mutation position where BOTH row vectors are nonzero so the
+        // mutation guarantees both checks would diverge.
+        let eq_inner =
+            build_quirky_eq_table_from_weights(&x_ab.z_skip.weights(k_skip), &x_ab.x_inner_rest);
+        let row_a = sparse_row_fold(&a_0, &eq_inner);
+        let row_b = sparse_row_fold(&b_0, &eq_inner);
+        let idx = (0..k)
+            .find(|&i| row_a[i] != F128::ZERO || row_b[i] != F128::ZERO)
+            .expect("no row-vector slot is nonzero in either A or B — test degenerate");
+
+        // Mutations now target `z_partial` (the post-sumcheck length-2^k_skip
+        // vector). Bit-flipping any entry must cause the sumcheck-final check
+        // to fail (running_claim ≠ Σ comb_partial · z_partial).
+        let n_skip = 1usize << k_skip;
+        let skip_idx = idx % n_skip;
+        let mutations: Vec<(String, Box<dyn Fn(&LincheckProof) -> LincheckProof>)> = vec![
+            (
+                format!("z_partial[{skip_idx}].lo bit-flip"),
+                Box::new(move |p| {
+                    let mut q = p.clone();
+                    q.z_partial[skip_idx].lo ^= 1;
+                    q
+                }),
+            ),
+            (
+                format!("z_partial[{skip_idx}].hi bit-flip"),
+                Box::new(move |p| {
+                    let mut q = p.clone();
+                    q.z_partial[skip_idx].hi ^= 1;
+                    q
+                }),
+            ),
+        ];
+        for (label, mutate) in mutations {
+            let bad = mutate(&proof);
+            let mut ch = FsChallenger::new(b"flock-test-v0");
+            let res = verify(m, k_log, k_skip, &circuit, &x_ab, v_a, v_b, &bad, &mut ch);
+            assert!(
+                matches!(res, Err(LincheckError::ConsistencyFailed { .. })),
+                "verify did not reject {label}: got {res:?}"
+            );
+        }
+    }
+
+    /// Verify must reject shape errors.
+    #[test]
+    fn verify_rejects_shape_errors() {
+        let m = 10;
+        let k_log = 3;
+        let k_skip = 1;
+        let k = 1 << k_log;
+        let mut rng = Rng::new(77);
+        let a_0 = random_sparse_matrix(k, k, &mut rng);
+        let b_0 = random_sparse_matrix(k, k, &mut rng);
+        let z = rng.bits(1 << m);
+        let a = apply_block_diag(&a_0, &z, k_log);
+        let b = apply_block_diag(&b_0, &z, k_log);
+        let z_packed = pack_z_lincheck(&z, m, k_log);
+        let x_ab = random_quirky_point(m, k_log, k_skip, &mut rng);
+        let v_a = mle_eval_bool_quirky(&a, m, k_log, k_skip, &x_ab);
+        let v_b = mle_eval_bool_quirky(&b, m, k_log, k_skip, &x_ab);
+
+        let circuit = SparseMatrixCircuit::new(&a_0, &b_0);
+        let mut ch_p = FsChallenger::new(b"flock-test-v0");
+        let (proof, _) = prove(&z_packed, m, k_log, k_skip, &circuit, &x_ab, &mut ch_p);
+
+        // Truncate z_partial.
+        let mut bad = proof.clone();
+        bad.z_partial.pop();
+        let mut ch = FsChallenger::new(b"flock-test-v0");
+        assert!(matches!(
+            verify(m, k_log, k_skip, &circuit, &x_ab, v_a, v_b, &bad, &mut ch),
+            Err(LincheckError::BadVectorLength { .. })
+        ));
+
+        // Wrong x_inner_rest length.
+        let mut ch = FsChallenger::new(b"flock-test-v0");
+        let bad_x_ab = QuirkyPoint {
+            z_skip: x_ab.z_skip,
+            x_inner_rest: x_ab.x_inner_rest[..x_ab.x_inner_rest.len() - 1].to_vec(),
+            x_outer: x_ab.x_outer.clone(),
+        };
+        assert!(matches!(
+            verify(
+                m, k_log, k_skip, &circuit, &bad_x_ab, v_a, v_b, &proof, &mut ch
+            ),
+            Err(LincheckError::BadInnerRestLength { .. })
+        ));
+
+        // k_skip > k_log.
+        let mut ch = FsChallenger::new(b"flock-test-v0");
+        assert!(matches!(
+            verify(
+                m,
+                k_log,
+                k_log + 1,
+                &circuit,
+                &x_ab,
+                v_a,
+                v_b,
+                &proof,
+                &mut ch,
+            ),
+            Err(LincheckError::KSkipExceedsKLog { .. })
+        ));
+    }
+}

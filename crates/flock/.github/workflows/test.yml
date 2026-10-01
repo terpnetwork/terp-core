@@ -1,0 +1,111 @@
+# Build + test gate, complementing the fmt/clippy gate in lint.yml. Runner
+# scheme follows succinctlabs/sp1 (.github/workflows/pr.yml `test-*` jobs).
+#
+# Both architecture legs matter: arm64 exercises the NEON kernels the crates
+# are tuned for, while the x86_64 leg pins a target-cpu with AVX-512 so those
+# kernels compile and their tests run. Tests run --release (the field/NTT paths
+# are too slow under the dev profile) but with debug assertions and overflow
+# checks re-enabled, matching sp1's test RUSTFLAGS.
+#
+# The x86_64 target-cpu must match the instance family runs-on gives us for
+# `16cpu-linux-x64`, currently Intel c7i-flex (Sapphire Rapids). znver4 is
+# wrong here: it enables sse4a, LLVM emits INSERTQ in ntt::compute_twiddles,
+# and the test binary dies with SIGILL on an Intel CPU. sapphirerapids keeps
+# avx512f/avx512bw/gfni/vpclmulqdq -- everything the kernel cfgs gate on --
+# without the AMD-only extensions. Note x86-64-v4 is not a substitute: it has
+# no gfni or vpclmulqdq, so those kernels would fall back to portable code and
+# go untested. Kernel dispatch is compile-time cfg with no runtime detection,
+# so any target-cpu/runner mismatch fails as a hard crash, not a fallback.
+
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Check & Test (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: 16cpu-linux-arm64
+            rustflags: -C target-cpu=native
+          - arch: x86_64-avx512
+            runner: 16cpu-linux-x64
+            rustflags: -C target-cpu=sapphirerapids
+    runs-on:
+      [
+        runs-on,
+        "runner=${{ matrix.runner }}",
+        spot=false,
+        "run-id=${{ github.run_id }}",
+      ]
+    env:
+      CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+      RUSTFLAGS: ${{ matrix.rustflags }} -C debug-assertions=on -C overflow-checks=on
+      RUST_BACKTRACE: "1"
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+
+      - name: Get stable toolchain date (cache key)
+        id: rust-version
+        shell: bash
+        run: |
+          # Cache key tracks the stable release so a new Rust version
+          # invalidates the cached toolchain instead of updating in place
+          # (same scheme as lint.yml / sp1's setup action).
+          STABLE_DATE=$(curl -sS https://static.rust-lang.org/dist/channel-rust-stable-date.txt)
+          echo "date=$STABLE_DATE" >> $GITHUB_OUTPUT
+
+      - name: rust-cache
+        # actions/cache@v4.2.3 (pinned by sha, matching sp1)
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/.rustup/
+            target/
+          key: flock-test-${{ runner.arch }}-${{ runner.os }}-${{ steps.rust-version.outputs.date }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            flock-test-${{ runner.arch }}-${{ runner.os }}-${{ steps.rust-version.outputs.date }}-
+
+      - name: Install Rust (stable)
+        shell: bash
+        run: |
+          if ! command -v rustup &> /dev/null; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+            export PATH="$HOME/.cargo/bin:$PATH"
+          fi
+          rustup toolchain install stable
+          rustup default stable
+          rustc --version && cargo --version
+
+      - name: cargo check
+        run: cargo check --workspace --all-targets
+
+      - name: cargo test
+        run: cargo test --release --workspace
+
+      # The two #[ignore] tape-region pin tests — the byte-format gate for
+      # the tower tape walkers (tower::chain / tower::node). Both arch legs
+      # run them: off aarch64 the leaf/outer zerocheck dispatch takes the RS
+      # arms (config::leaf_zerocheck_ag / outer_zerocheck_ag are compile-time false), so
+      # the tests compile and pass on x86_64 too. Names + --ignored select
+      # exactly these two (the rest of the ignored tower suite stays out);
+      # the release test binary is already built by the step above, so this
+      # adds only the two pins' runtime (~15 s).
+      - name: tower tape pins (ignored)
+        run: cargo test --release -p flock-prover --lib -- tower::chain::chain_tape_regions_pinned tower::node::real_tape_regions_pinned --ignored

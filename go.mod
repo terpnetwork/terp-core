@@ -15,7 +15,9 @@ go 1.26.5
 
 replace (
 	github.com/CosmWasm/wasmd => ./crates/zk-wasmd
-	github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
+	// Patched wasmvm (Wasmer 7.4.2) lives with the chain tree. Cargo paths
+	// inside it resolve crates/cosmwasm and crates/flock in this worktree.
+	github.com/CosmWasm/wasmvm/v3 => ./x/wasm/wasmvm
 )
 
 require (

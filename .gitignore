@@ -9,6 +9,7 @@
 .idea
 crates/*
 !crates/cosmwasm
+!crates/flock
 !crates/zk-wasmd
 !crates/zk-wasmvm
 websites/*

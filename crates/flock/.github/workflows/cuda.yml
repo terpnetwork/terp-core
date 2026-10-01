@@ -1,0 +1,85 @@
+# CUDA test gate for the cuda-ghash GPU prover port.
+#
+# Two legs:
+#   - build: hosted x64 runner. Installs nvcc and compiles every test binary
+#     (compiling needs no GPU) — catches header/API bit-rot cheaply.
+#   - test:  self-hosted Blackwell runner. The f128 kernels use the native
+#     `clmad` instruction (sm_120 inline PTX, no fallback), so no AWS-hosted
+#     GPU (L4/Ada, H100/Hopper) can run them. Register a runner on a Blackwell
+#     box with labels [self-hosted, gpu, blackwell]; it needs CUDA >= 12.8 and
+#     stable Rust (the oracles come from the Rust dump_* bins).
+#
+# Push-only trigger (no pull_request): standard precaution for self-hosted
+# runners, and the branch is the integration point anyway.
+
+name: CUDA
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compile CUDA tests (no GPU)
+    runs-on:
+      [
+        runs-on,
+        runner=16cpu-linux-x64,
+        spot=false,
+        "run-id=${{ github.run_id }}",
+      ]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+
+      - name: Install CUDA toolkit (nvcc + cudart)
+        shell: bash
+        run: |
+          wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
+          sudo dpkg -i cuda-keyring_1.1-1_all.deb
+          sudo apt-get update -q
+          # nvcc + cudart headers are all the test binaries need (they only
+          # include <cuda_runtime.h>). Full toolkit would be ~3 GB. Pinned to
+          # 13.3: the 13.0 ptxas does not know the Blackwell clmad mnemonic
+          # the f128 kernels emit (13.3 is the locally validated toolchain).
+          sudo apt-get install -y -q cuda-nvcc-13-3 cuda-cudart-dev-13-3
+          echo "/usr/local/cuda/bin" >> "$GITHUB_PATH"
+
+      - name: Build all CUDA test binaries
+        run: make -C cuda-ghash -j"$(nproc)" build-tests
+
+  test:
+    name: Run CUDA tests (Blackwell GPU)
+    runs-on: [self-hosted, gpu, blackwell]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+
+      - name: Runner PATH setup
+        run: |
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          echo "/usr/local/cuda/bin" >> "$GITHUB_PATH"
+
+      - name: GPU sanity
+        run: nvidia-smi && nvcc --version && cargo --version
+
+      - name: Build CUDA test binaries
+        run: make -C cuda-ghash -j"$(nproc)" build-tests
+
+      - name: Run vector-validated CUDA tests
+        # Serial on purpose — see the run-tests note in cuda-ghash/Makefile.
+        # -k: keep going past a failing target so one run reports every
+        # failing test instead of only the first; the step still fails if
+        # any target failed.
+        run: make -C cuda-ghash -k run-tests
+
+      - name: GPU prove -> Rust verify roundtrips (m=22/32/33)
+        # The name filter selects exactly the fixed-size roundtrips; the
+        # debug-diff and env-parameterized harness stay manual-only.
+        run: >
+          cargo test -p flock-cuda-ffi --release --features gpu --
+          --ignored gpu_roundtrip_m --nocapture

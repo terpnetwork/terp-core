@@ -1,0 +1,23 @@
+[package]
+name = "flock-cuda-ffi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "FFI bridge to the cuda-ghash GPU prover, plus the Rust-verifies-GPU-proof test"
+
+# The `gpu` feature gates everything: without it this crate builds an empty lib
+# (no nvcc, no CUDA link), so hosted CI and non-GPU checkouts are unaffected.
+# The roundtrip test needs a Blackwell GPU (sm_120 kernels):
+#   cargo test -p flock-cuda-ffi --release --features gpu -- --ignored --nocapture
+[features]
+gpu = []
+
+[dependencies]
+
+[dev-dependencies]
+flock-core = { path = "../flock-core" }
+flock-prover = { path = "../flock-prover" }
+
+[lints]
+workspace = true

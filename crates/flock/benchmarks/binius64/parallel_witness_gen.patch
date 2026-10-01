@@ -1,0 +1,746 @@
+diff --git a/crates/core/src/constraint_system.rs b/crates/core/src/constraint_system.rs
+index d6debdb..ac19487 100644
+--- a/crates/core/src/constraint_system.rs
++++ b/crates/core/src/constraint_system.rs
+@@ -865,6 +865,14 @@ impl ValueVec {
+ 		let end = self.layout.committed_total_len;
+ 		&self.data[start..end]
+ 	}
++
++	/// Mutable view over the full backing store, including scratch space.
++	///
++	/// Used by the witness evaluator to populate values in parallel via a raw
++	/// pointer over disjoint indices (see `binius_frontend`'s `ValueStore`).
++	pub fn as_mut_slice(&mut self) -> &mut [Word] {
++		&mut self.data
++	}
+ }
+ 
+ impl Index<ValueIndex> for ValueVec {
+diff --git a/crates/frontend/Cargo.toml b/crates/frontend/Cargo.toml
+index 29a3145..3711970 100644
+--- a/crates/frontend/Cargo.toml
++++ b/crates/frontend/Cargo.toml
+@@ -14,6 +14,7 @@ hex-literal.workspace = true
+ num-bigint = { workspace = true }
+ rand.workspace = true
+ petgraph.workspace = true
++rayon.workspace = true
+ serde.workspace = true
+ serde_json.workspace = true
+ smallvec.workspace = true
+diff --git a/crates/frontend/src/compiler/eval_form/interpreter.rs b/crates/frontend/src/compiler/eval_form/interpreter.rs
+index cfa0eba..af527b3 100644
+--- a/crates/frontend/src/compiler/eval_form/interpreter.rs
++++ b/crates/frontend/src/compiler/eval_form/interpreter.rs
+@@ -2,7 +2,7 @@
+ // Copyright 2025 Irreducible Inc.
+ //! Bytecode interpreter for circuit evaluation
+ 
+-use binius_core::{ValueIndex, ValueVec, Word};
++use binius_core::{ValueVec, Word};
+ 
+ use crate::compiler::{
+ 	circuit::PopulateError,
+@@ -18,9 +18,52 @@ pub struct AssertionFailure {
+ 	pub message: String,
+ }
+ 
+-/// Execution context holds a reference to ValueVec during execution
+-pub struct ExecutionContext<'a> {
+-	value_vec: &'a mut ValueVec,
++/// Raw, shareable view over a [`ValueVec`]'s backing words.
++///
++/// `Copy`/`Send`/`Sync` so per-component interpreters can run in parallel over
++/// the same buffer. SAFETY CONTRACT: concurrent writers touch **disjoint**
++/// indices, and any index read concurrently is already populated
++/// (constants/inputs) — both hold for the gate graph's independent connected
++/// components (see `EvalForm::build`/`evaluate`).
++#[derive(Clone, Copy)]
++pub struct ValueStore {
++	ptr: *mut Word,
++	len: usize,
++}
++
++// SAFETY: upheld by the disjointness contract above; the evaluator holds an
++// exclusive `&mut ValueVec` for the whole parallel run.
++unsafe impl Send for ValueStore {}
++unsafe impl Sync for ValueStore {}
++
++impl ValueStore {
++	pub fn new(value_vec: &mut ValueVec) -> Self {
++		let slice = value_vec.as_mut_slice();
++		Self {
++			len: slice.len(),
++			ptr: slice.as_mut_ptr(),
++		}
++	}
++
++	#[inline]
++	fn get(&self, index: usize) -> Word {
++		assert!(index < self.len, "value index {index} out of bounds (len {})", self.len);
++		// SAFETY: bounds-checked; the word is an already-populated source or this
++		// component's own output.
++		unsafe { *self.ptr.add(index) }
++	}
++
++	#[inline]
++	fn set(&self, index: usize, value: Word) {
++		assert!(index < self.len, "value index {index} out of bounds (len {})", self.len);
++		// SAFETY: bounds-checked; written by exactly one component.
++		unsafe { *self.ptr.add(index) = value }
++	}
++}
++
++/// Execution context: a shared value-store view + this component's assertions.
++pub struct ExecutionContext {
++	store: ValueStore,
+ 	/// Assertion failures recorded during the evaluation of the circuit.
+ 	///
+ 	/// This list is capped by [`MAX_ASSERTION_FAILURES`].
+@@ -29,15 +72,21 @@ pub struct ExecutionContext<'a> {
+ 	assertion_count: usize,
+ }
+ 
+-impl<'a> ExecutionContext<'a> {
+-	pub fn new(value_vec: &'a mut ValueVec) -> Self {
++impl ExecutionContext {
++	pub fn new(store: ValueStore) -> Self {
+ 		Self {
+-			value_vec,
++			store,
+ 			assertion_failures: Vec::new(),
+ 			assertion_count: 0,
+ 		}
+ 	}
+ 
++	/// Consume the context, returning recorded assertion failures + total count
++	/// (for merging across parallel component evaluations).
++	pub fn into_failures(self) -> (Vec<AssertionFailure>, usize) {
++		(self.assertion_failures, self.assertion_count)
++	}
++
+ 	/// Record an assertion failure with the given path spec and message.
+ 	///
+ 	/// Note that this assertion might be discarded in case there is already too many recorded
+@@ -56,39 +105,49 @@ impl<'a> ExecutionContext<'a> {
+ 		self,
+ 		path_spec_tree: Option<&PathSpecTree>,
+ 	) -> Result<(), PopulateError> {
+-		if !self.assertion_failures.is_empty() {
+-			let messages = if let Some(tree) = path_spec_tree {
+-				// Symbolicate the path specs
+-				self.assertion_failures
+-					.into_iter()
+-					.map(|f| {
+-						let mut path = String::new();
+-						tree.stringify(f.path_spec, &mut path);
+-						if path.is_empty() {
+-							f.message
+-						} else {
+-							format!("{}: {}", path, f.message)
+-						}
+-					})
+-					.collect()
+-			} else {
+-				// No tree provided, just use messages as-is
+-				self.assertion_failures
+-					.into_iter()
+-					.map(|f| f.message)
+-					.collect()
+-			};
+-
+-			Err(PopulateError {
+-				messages,
+-				total_count: self.assertion_count,
+-			})
+-		} else {
+-			Ok(())
+-		}
++		report_failures(self.assertion_failures, self.assertion_count, path_spec_tree)
+ 	}
+ }
+ 
++/// Symbolicate and report merged assertion failures (mirrors
++/// [`ExecutionContext::check_assertions`], but over failures collected from
++/// several parallel component evaluations). `total_count` is the sum of every
++/// component's assertion count; the message list is capped at
++/// [`MAX_ASSERTION_FAILURES`].
++pub fn report_failures(
++	mut failures: Vec<AssertionFailure>,
++	total_count: usize,
++	path_spec_tree: Option<&PathSpecTree>,
++) -> Result<(), PopulateError> {
++	if failures.is_empty() {
++		return Ok(());
++	}
++	failures.truncate(MAX_ASSERTION_FAILURES);
++	let messages = if let Some(tree) = path_spec_tree {
++		// Symbolicate the path specs
++		failures
++			.into_iter()
++			.map(|f| {
++				let mut path = String::new();
++				tree.stringify(f.path_spec, &mut path);
++				if path.is_empty() {
++					f.message
++				} else {
++					format!("{}: {}", path, f.message)
++				}
++			})
++			.collect()
++	} else {
++		// No tree provided, just use messages as-is
++		failures.into_iter().map(|f| f.message).collect()
++	};
++
++	Err(PopulateError {
++		messages,
++		total_count,
++	})
++}
++
+ pub struct Interpreter<'a> {
+ 	bytecode: &'a [u8],
+ 	hints: &'a HintRegistry,
+@@ -109,12 +168,27 @@ impl<'a> Interpreter<'a> {
+ 		value_vec: &mut ValueVec,
+ 		path_spec_tree: Option<&PathSpecTree>,
+ 	) -> Result<(), PopulateError> {
+-		let mut ctx = ExecutionContext::new(value_vec);
++		let mut ctx = ExecutionContext::new(ValueStore::new(value_vec));
+ 		self.run(&mut ctx)?;
+ 		ctx.check_assertions(path_spec_tree)
+ 	}
+ 
+-	pub fn run(&mut self, ctx: &mut ExecutionContext<'_>) -> Result<(), PopulateError> {
++	/// Run against a shared value-store view, returning this segment's raw
++	/// (un-symbolicated) assertion failures and total assertion count. Used by
++	/// the parallel per-component evaluator, which merges across segments before
++	/// symbolicating via [`report_failures`].
++	pub fn run_with_store(
++		&mut self,
++		store: ValueStore,
++	) -> (Vec<AssertionFailure>, usize) {
++		let mut ctx = ExecutionContext::new(store);
++		// `run` is infallible: it only records assertion failures into `ctx`.
++		self.run(&mut ctx)
++			.expect("interpreter run records assertions, never returns Err");
++		ctx.into_failures()
++	}
++
++	pub fn run(&mut self, ctx: &mut ExecutionContext) -> Result<(), PopulateError> {
+ 		while self.pc < self.bytecode.len() {
+ 			let opcode = self.read_u8();
+ 
+@@ -170,7 +244,7 @@ impl<'a> Interpreter<'a> {
+ 	}
+ 
+ 	// Bitwise operations
+-	fn exec_band(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_band(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src1 = self.read_reg();
+ 		let src2 = self.read_reg();
+@@ -178,7 +252,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_bor(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_bor(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src1 = self.read_reg();
+ 		let src2 = self.read_reg();
+@@ -186,7 +260,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_bxor(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_bxor(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src1 = self.read_reg();
+ 		let src2 = self.read_reg();
+@@ -194,7 +268,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_select(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_select(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let cond = self.read_reg();
+ 		let t = self.read_reg();
+@@ -209,7 +283,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_bxor_multi(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_bxor_multi(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let n = self.read_u32() as usize;
+ 		let mut val = Word::ZERO;
+@@ -220,7 +294,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_fax(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_fax(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src1 = self.read_reg();
+ 		let src2 = self.read_reg();
+@@ -230,7 +304,7 @@ impl<'a> Interpreter<'a> {
+ 	}
+ 
+ 	// Shifts
+-	fn exec_sll(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_sll(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src = self.read_reg();
+ 		let shift = self.read_u8() as u32;
+@@ -238,7 +312,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_slr(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_slr(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src = self.read_reg();
+ 		let shift = self.read_u8() as u32;
+@@ -246,7 +320,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_sar(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_sar(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src = self.read_reg();
+ 		let shift = self.read_u8() as u32;
+@@ -255,7 +329,7 @@ impl<'a> Interpreter<'a> {
+ 	}
+ 
+ 	// Arithmetic operations
+-	fn exec_iadd_cout(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_iadd_cout(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst_sum = self.read_reg();
+ 		let dst_cout = self.read_reg();
+ 		let src1 = self.read_reg();
+@@ -267,7 +341,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst_cout, cout);
+ 	}
+ 
+-	fn exec_iadd_cin_cout(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_iadd_cin_cout(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst_sum = self.read_reg();
+ 		let dst_cout = self.read_reg();
+ 		let src1 = self.read_reg();
+@@ -281,7 +355,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst_cout, cout);
+ 	}
+ 
+-	fn exec_isub_bin_bout(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_isub_bin_bout(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst_diff = self.read_reg();
+ 		let dst_bout = self.read_reg();
+ 		let src1 = self.read_reg();
+@@ -295,7 +369,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst_bout, bout);
+ 	}
+ 
+-	fn exec_imul(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_imul(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst_hi = self.read_reg();
+ 		let dst_lo = self.read_reg();
+ 		let src1 = self.read_reg();
+@@ -305,7 +379,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst_lo, lo);
+ 	}
+ 
+-	fn exec_smul(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_smul(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst_hi = self.read_reg();
+ 		let dst_lo = self.read_reg();
+ 		let src1 = self.read_reg();
+@@ -316,7 +390,7 @@ impl<'a> Interpreter<'a> {
+ 	}
+ 
+ 	// 32-bit operations
+-	fn exec_iadd32_cin_cout(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_iadd32_cin_cout(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst_sum = self.read_reg();
+ 		let dst_cout = self.read_reg();
+ 		let src1 = self.read_reg();
+@@ -329,7 +403,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst_cout, cout);
+ 	}
+ 
+-	fn exec_iadd32_cout(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_iadd32_cout(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst_sum = self.read_reg();
+ 		let dst_cout = self.read_reg();
+ 		let src1 = self.read_reg();
+@@ -339,7 +413,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst_cout, cout);
+ 	}
+ 
+-	fn exec_rotr32(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_rotr32(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src = self.read_reg();
+ 		let rotate = self.read_u8() as u32;
+@@ -347,7 +421,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_srl32(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_srl32(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src = self.read_reg();
+ 		let shift = self.read_u8() as u32;
+@@ -355,7 +429,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_sll32(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_sll32(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src = self.read_reg();
+ 		let shift = self.read_u8() as u32;
+@@ -363,7 +437,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_sra32(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_sra32(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src = self.read_reg();
+ 		let shift = self.read_u8() as u32;
+@@ -371,7 +445,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_rotr(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_rotr(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src = self.read_reg();
+ 		let rotate = self.read_u8() as u32;
+@@ -380,7 +454,7 @@ impl<'a> Interpreter<'a> {
+ 	}
+ 
+ 	// Mask operations
+-	fn exec_mask_low(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_mask_low(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src = self.read_reg();
+ 		let n_bits = self.read_u8();
+@@ -393,7 +467,7 @@ impl<'a> Interpreter<'a> {
+ 		self.store(ctx, dst, val);
+ 	}
+ 
+-	fn exec_mask_high(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_mask_high(&mut self, ctx: &mut ExecutionContext) {
+ 		let dst = self.read_reg();
+ 		let src = self.read_reg();
+ 		let n_bits = self.read_u8();
+@@ -407,7 +481,7 @@ impl<'a> Interpreter<'a> {
+ 	}
+ 
+ 	// Assertions
+-	fn exec_assert_eq(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_assert_eq(&mut self, ctx: &mut ExecutionContext) {
+ 		let src1 = self.read_reg();
+ 		let src2 = self.read_reg();
+ 		let error_id = self.read_u32();
+@@ -421,7 +495,7 @@ impl<'a> Interpreter<'a> {
+ 		}
+ 	}
+ 
+-	fn exec_assert_eq_cond(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_assert_eq_cond(&mut self, ctx: &mut ExecutionContext) {
+ 		let cond = self.read_reg();
+ 		let src1 = self.read_reg();
+ 		let src2 = self.read_reg();
+@@ -443,7 +517,7 @@ impl<'a> Interpreter<'a> {
+ 		}
+ 	}
+ 
+-	fn exec_assert_zero(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_assert_zero(&mut self, ctx: &mut ExecutionContext) {
+ 		let src = self.read_reg();
+ 		let error_id = self.read_u32();
+ 		let path_spec = PathSpec::from_u32(error_id);
+@@ -455,7 +529,7 @@ impl<'a> Interpreter<'a> {
+ 		}
+ 	}
+ 
+-	fn exec_assert_non_zero(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_assert_non_zero(&mut self, ctx: &mut ExecutionContext) {
+ 		let src = self.read_reg();
+ 		let error_id = self.read_u32();
+ 		let path_spec = PathSpec::from_u32(error_id);
+@@ -467,7 +541,7 @@ impl<'a> Interpreter<'a> {
+ 		}
+ 	}
+ 
+-	fn exec_assert_false(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_assert_false(&mut self, ctx: &mut ExecutionContext) {
+ 		let src = self.read_reg();
+ 		let error_id = self.read_u32();
+ 		let path_spec = PathSpec::from_u32(error_id);
+@@ -479,7 +553,7 @@ impl<'a> Interpreter<'a> {
+ 		}
+ 	}
+ 
+-	fn exec_assert_true(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_assert_true(&mut self, ctx: &mut ExecutionContext) {
+ 		let src = self.read_reg();
+ 		let error_id = self.read_u32();
+ 		let path_spec = PathSpec::from_u32(error_id);
+@@ -492,7 +566,7 @@ impl<'a> Interpreter<'a> {
+ 	}
+ 
+ 	// Hint execution
+-	fn exec_hint(&mut self, ctx: &mut ExecutionContext<'_>) {
++	fn exec_hint(&mut self, ctx: &mut ExecutionContext) {
+ 		let hint_id = self.read_u32();
+ 
+ 		// Read dimensions
+@@ -525,12 +599,12 @@ impl<'a> Interpreter<'a> {
+ 		}
+ 	}
+ 
+-	fn load(&self, ctx: &ExecutionContext<'_>, reg: u32) -> Word {
+-		ctx.value_vec[ValueIndex(reg)]
++	fn load(&self, ctx: &ExecutionContext, reg: u32) -> Word {
++		ctx.store.get(reg as usize)
+ 	}
+ 
+-	fn store(&self, ctx: &mut ExecutionContext<'_>, reg: u32, value: Word) {
+-		ctx.value_vec.set(reg as usize, value);
++	fn store(&self, ctx: &mut ExecutionContext, reg: u32, value: Word) {
++		ctx.store.set(reg as usize, value);
+ 	}
+ 
+ 	// Bytecode reading helpers
+diff --git a/crates/frontend/src/compiler/eval_form/mod.rs b/crates/frontend/src/compiler/eval_form/mod.rs
+index 0fdf6e8..23709eb 100644
+--- a/crates/frontend/src/compiler/eval_form/mod.rs
++++ b/crates/frontend/src/compiler/eval_form/mod.rs
+@@ -13,21 +13,24 @@ mod tests;
+ use binius_core::{ValueIndex, ValueVec};
+ pub use builder::BytecodeBuilder;
+ pub use const_eval::evaluate_gate_constants;
+-use cranelift_entity::SecondaryMap;
++use cranelift_entity::{EntityRef, SecondaryMap};
+ 
+ use crate::compiler::{
+ 	circuit::PopulateError,
+ 	gate,
+-	gate_graph::{GateGraph, Wire},
++	gate_graph::{Gate, GateGraph, Wire},
+ 	hints::HintRegistry,
+ 	pathspec::PathSpecTree,
+ };
+ 
+ /// Compiled evaluation form for circuit witness computation
+ pub struct EvalForm {
+-	/// Compiled bytecode instructions
+-	bytecode: Vec<u8>,
+-	/// Number of evaluation instructions
++	/// Bytecode split by independent connected component of the gate graph.
++	/// Components share no computed wires (only constants/inputs), so they write
++	/// disjoint witness indices and are evaluated in parallel by [`Self::evaluate`].
++	/// A circuit with a single component degrades to one sequential segment.
++	segments: Vec<Vec<u8>>,
++	/// Number of evaluation instructions (summed across segments)
+ 	n_eval_insn: usize,
+ 	/// Registered hint handlers
+ 	hint_registry: HintRegistry,
+@@ -44,8 +47,6 @@ impl EvalForm {
+ 		wire_mapping: &SecondaryMap<Wire, ValueIndex>,
+ 		hint_registry: HintRegistry,
+ 	) -> Self {
+-		let mut builder = BytecodeBuilder::new();
+-
+ 		// Combined wire to register mapping
+ 		let wire_to_reg = |wire: Wire| -> u32 {
+ 			if let Some(&ValueIndex(idx)) = wire_mapping.get(wire) {
+@@ -55,21 +56,83 @@ impl EvalForm {
+ 			}
+ 		};
+ 
+-		// Build bytecode for each gate
++		// --- Partition gates into independent connected components ----------
++		// First compute, locally, which gate *produces* each wire (its outputs and
++		// aux wires). We don't trust `gate_graph.wire_def`: it is only populated as
++		// a side effect of constant propagation, so it's stale/empty when that pass
++		// is disabled. Recomputing here keeps the partition correct unconditionally.
++		let mut producer: SecondaryMap<Wire, Option<Gate>> = SecondaryMap::new();
+ 		for (gate_id, data) in gate_graph.gates.iter() {
+-			gate::emit_gate_bytecode(
+-				gate_id,
+-				data,
+-				gate_graph,
+-				&mut builder,
+-				wire_to_reg,
+-				&hint_registry,
+-			);
++			let param = data.gate_param_with_registry(&hint_registry);
++			for &w in param.outputs.iter().chain(param.aux) {
++				producer[w] = Some(gate_id);
++			}
++		}
++
++		// Union each gate with the producer of every wire it *consumes*. Source
++		// wires (constants / circuit inputs; no producer) create no edge, so a
++		// circuit made of independent subgraphs — e.g. N independent keccak
++		// permutations, which share only constant wires — splits into N components.
++		// Each wire has a unique value-vec slot, so distinct components write
++		// disjoint indices and can be evaluated in parallel.
++		let n_gates = gate_graph.gates.len();
++		let mut parent: Vec<usize> = (0..n_gates).collect();
++		fn find(parent: &mut [usize], mut x: usize) -> usize {
++			while parent[x] != x {
++				parent[x] = parent[parent[x]]; // path halving
++				x = parent[x];
++			}
++			x
++		}
++		for (gate_id, data) in gate_graph.gates.iter() {
++			let gi = gate_id.index();
++			let param = data.gate_param_with_registry(&hint_registry);
++			for &w in param.inputs.iter().chain(param.constants) {
++				if let Some(p) = producer[w] {
++					let a = find(&mut parent, gi);
++					let b = find(&mut parent, p.index());
++					if a != b {
++						parent[a] = b;
++					}
++				}
++			}
++		}
++
++		// Group gates by component root, preserving original (topological) order.
++		let mut group_of: std::collections::HashMap<usize, usize> = std::collections::HashMap::new();
++		let mut groups: Vec<Vec<Gate>> = Vec::new();
++		for (gate_id, _) in gate_graph.gates.iter() {
++			let root = find(&mut parent, gate_id.index());
++			let slot = *group_of.entry(root).or_insert_with(|| {
++				groups.push(Vec::new());
++				groups.len() - 1
++			});
++			groups[slot].push(gate_id);
++		}
++
++		// Emit one bytecode segment per component.
++		let mut segments: Vec<Vec<u8>> = Vec::with_capacity(groups.len());
++		let mut n_eval_insn = 0usize;
++		for gates in &groups {
++			let mut builder = BytecodeBuilder::new();
++			for &gate_id in gates {
++				let data = &gate_graph.gates[gate_id];
++				gate::emit_gate_bytecode(
++					gate_id,
++					data,
++					gate_graph,
++					&mut builder,
++					wire_to_reg,
++					&hint_registry,
++				);
++			}
++			let (bytecode, insn) = builder.finalize();
++			n_eval_insn += insn;
++			segments.push(bytecode);
+ 		}
+ 
+-		let (bytecode, n_eval_insn) = builder.finalize();
+ 		EvalForm {
+-			bytecode,
++			segments,
+ 			n_eval_insn,
+ 			hint_registry,
+ 		}
+@@ -81,9 +144,38 @@ impl EvalForm {
+ 		value_vec: &mut ValueVec,
+ 		path_spec_tree: Option<&PathSpecTree>,
+ 	) -> Result<(), PopulateError> {
+-		let mut interpreter = interpreter::Interpreter::new(&self.bytecode, &self.hint_registry);
+-		interpreter.run_with_value_vec(value_vec, path_spec_tree)?;
+-		Ok(())
++		use rayon::prelude::*;
++
++		// Single segment: run sequentially, no parallel overhead.
++		if self.segments.len() <= 1 {
++			let bytecode = self.segments.first().map(Vec::as_slice).unwrap_or(&[]);
++			let mut interpreter = interpreter::Interpreter::new(bytecode, &self.hint_registry);
++			interpreter.run_with_value_vec(value_vec, path_spec_tree)?;
++			return Ok(());
++		}
++
++		// Multiple independent components: each writes a disjoint set of witness
++		// indices, so they run concurrently over a shared raw view of the
++		// ValueVec backing store. See [`interpreter::ValueStore`].
++		let store = interpreter::ValueStore::new(value_vec);
++		let per_segment: Vec<(Vec<interpreter::AssertionFailure>, usize)> = self
++			.segments
++			.par_iter()
++			.map(|bytecode| {
++				let mut interpreter =
++					interpreter::Interpreter::new(bytecode, &self.hint_registry);
++				interpreter.run_with_store(store)
++			})
++			.collect();
++
++		// Merge assertion failures across components, then symbolicate + report.
++		let mut failures = Vec::new();
++		let mut total_count = 0usize;
++		for (segment_failures, segment_count) in per_segment {
++			failures.extend(segment_failures);
++			total_count += segment_count;
++		}
++		interpreter::report_failures(failures, total_count, path_spec_tree)
+ 	}
+ 
+ 	/// Get the number of evaluation instructions
+diff --git a/crates/frontend/src/compiler/eval_form/tests.rs b/crates/frontend/src/compiler/eval_form/tests.rs
+index e746fce..6f5aae3 100644
+--- a/crates/frontend/src/compiler/eval_form/tests.rs
++++ b/crates/frontend/src/compiler/eval_form/tests.rs
+@@ -6,7 +6,7 @@ use crate::compiler::{
+ 	circuit::PopulateError,
+ 	eval_form::{
+ 		BytecodeBuilder,
+-		interpreter::{ExecutionContext, Interpreter},
++		interpreter::{ExecutionContext, Interpreter, ValueStore},
+ 	},
+ 	hints::HintRegistry,
+ };
+@@ -81,7 +81,7 @@ impl InterpreterTest {
+ 
+ 		let hint_registry = HintRegistry::new();
+ 		let mut interpreter = Interpreter::new(&bytecode, &hint_registry);
+-		let mut ctx = ExecutionContext::new(&mut value_vec);
++		let mut ctx = ExecutionContext::new(ValueStore::new(&mut value_vec));
+ 
+ 		let result = interpreter.run(&mut ctx);
+ 		assert!(result.is_ok(), "Interpreter should execute successfully");
+@@ -98,7 +98,7 @@ impl InterpreterTest {
+ 	}
+ 
+ 	/// Execute the bytecode and return the result and context
+-	fn execute(self) -> (Result<(), PopulateError>, ExecutionContext<'static>) {
++	fn execute(self) -> (Result<(), PopulateError>, ExecutionContext) {
+ 		let (bytecode, _) = self.builder.finalize();
+ 
+ 		// Create value vec with the right size
+@@ -122,9 +122,10 @@ impl InterpreterTest {
+ 		let hint_registry = HintRegistry::new();
+ 		let mut interpreter = Interpreter::new(&bytecode, &hint_registry);
+ 
+-		// Leak the value_vec to get 'static lifetime - this is ok in tests
++		// Leak the value_vec so the ValueStore's raw view stays valid for as long
++		// as the returned context - this is ok in tests.
+ 		let value_vec = Box::leak(Box::new(value_vec));
+-		let mut ctx = ExecutionContext::new(value_vec);
++		let mut ctx = ExecutionContext::new(ValueStore::new(value_vec));
+ 
+ 		let result = interpreter.run(&mut ctx);
+ 		(result, ctx)

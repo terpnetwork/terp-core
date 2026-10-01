@@ -1,0 +1,10 @@
+{
+  "system": "flock-ligerito",
+  "statement": "blake3-merkle-depth-2+nullifier",
+  "gates": 5,
+  "build_secs": 1.626351584,
+  "prove_secs": 0.017219125,
+  "verify_secs": 0.005789333,
+  "proof_bytes": 103194,
+  "total_secs": 1.7789884169999999
+}

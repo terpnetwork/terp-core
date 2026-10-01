@@ -93,8 +93,10 @@ RUN ARCH=$(uname -m) && \
       cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a \
          /code/build/zk-deps/zk-wasmvm/internal/api/libwasmvm_muslc.$ARCH.a && \
       sed -i 's|=> \./crates/zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
+      sed -i 's|=> \./x/wasm/wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \./crates/zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \
       sed -i 's|=> \./crates/ibc-hooks-v11|=> /code/build/zk-deps/ibc-hooks-v11|g' /code/go.mod && \
+      sed -i 's|=> ../../x/wasm/wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/build/zk-deps/zk-wasmd/go.mod && \
       # Also accept already-rewritten or alternate relative forms
       sed -i 's|=> \.\./zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \.\./zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \

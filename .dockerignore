@@ -26,6 +26,12 @@ build/zk-deps/zk-wasmvm/builders/
 build/zk-deps/zk-wasmvm/internal/api/*.a
 build/wasmvm-release/
 
+# Host-only compile caches and the statesync home. The image takes the staged muslc under build/wasmvm/.
+build/musl-aarch64/
+build/musl-x86_64/
+build/cargo-home/
+build/node-v621/
+
 # Do not ship local artifacts into the image context
 build/release/
 build/*.tar.gz
