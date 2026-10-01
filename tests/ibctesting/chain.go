@@ -1,3 +1,6 @@
+//go:build ibc_simapp
+
+// Default builds skip this package so ibc-go v11 testing/simapp is not compiled.
 package terpibctesting
 
 import (
