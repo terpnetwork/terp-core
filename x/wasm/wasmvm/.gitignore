@@ -8,6 +8,10 @@ artifacts/*
 # no static libraries (35MB+)
 /internal/api/lib*.a
 
+# Linux glibc libraries from the Wasmer 5.0.6 pin. The v6.3 recut
+# links a muslc archive built from this tree, not these objects.
+/internal/api/libwasmvm*.so
+
 # artifacts from compile tests
 /build/
 /demo
