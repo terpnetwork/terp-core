@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
-	"github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/terpnetwork/terp-core/v6/x/wasm/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	bank "github.com/cosmos/cosmos-sdk/x/bank/types"

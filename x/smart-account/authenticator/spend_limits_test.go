@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/store/v2/prefix"
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmkeeper "github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
+	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"

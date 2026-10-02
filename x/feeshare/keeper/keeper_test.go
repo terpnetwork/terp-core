@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmkeeper "github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
+	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"

@@ -16,7 +16,7 @@ import (
 	"github.com/terpnetwork/terp-core/v6/app/keepers"
 	"github.com/terpnetwork/terp-core/v6/app/upgrades"
 
-	"github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/terpnetwork/terp-core/v6/x/wasm/types"
 	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 	icacontrollertypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/types"
 	icahosttypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/types"

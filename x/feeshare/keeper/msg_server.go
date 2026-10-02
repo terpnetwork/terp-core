@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 
-	wasmTypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmTypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 
 	errorsmod "cosmossdk.io/errors"
 

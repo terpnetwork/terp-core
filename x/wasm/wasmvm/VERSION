@@ -1,0 +1,7 @@
+source_repo: https://github.com/permissionlessweb/wasmvm
+source_commit: 8117f41c776b8fc7972750d3bdbf0e2886f0e29c
+source_tag: 4.0.0-zk
+folded_into: x/wasm/wasmvm/
+module_path: github.com/CosmWasm/wasmvm/v3
+builders: /builders
+archive_when_accepted: public archive of permissionlessweb/wasmvm

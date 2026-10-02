@@ -17,6 +17,12 @@ websites/
 .git
 .git/
 
+# In-tree wasmvm host libs are staged into build/wasmvm/ for the image.
+x/wasm/wasmvm/libwasmvm/target/
+x/wasm/wasmvm/internal/api/*.a
+x/wasm/wasmvm/internal/api/*.so
+x/wasm/wasmvm/internal/api/*.dylib
+
 # Staged zk-deps: Go source only. muslc lives in build/wasmvm/.
 build/zk-deps/**/.git
 build/zk-deps/zk-wasmvm/libwasmvm/target/

@@ -13,9 +13,9 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 
-	"github.com/CosmWasm/wasmd/x/wasm"
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/terpnetwork/terp-core/v6/x/wasm"
+	wasmkeeper "github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
+	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 	wasmvm "github.com/CosmWasm/wasmvm/v3"
 	ibcwlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
 	ibcwlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"

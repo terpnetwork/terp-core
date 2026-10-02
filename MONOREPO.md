@@ -2,7 +2,7 @@
 
 This repository is a **Go monorepo** for the Terp Network chain (`terpd`, `x/*`, protos, Docker, tests) that also vendors a large set of **Rust / CosmWasm / IBC related repositories** under `crates/` as **git submodules**.
 
-x/wasm, CosmWasm, and wasmvm stay **submodules** (`crates/zk-wasmd`, `crates/cosmwasm`, `crates/zk-wasmvm`). Their history stays on those forks. Do not copy them into `x/` or commit their `.github` and builders into this tree. IAVL, `store/v2`, and ICS23 are remote module replaces (`permissionlessweb/iavl`, `permissionlessweb/store-v2`, `permissionlessweb/ics23`), not vendored trees. A release artifact is the tagged `terpd` plus its sha256 on S3, not a dirty local tree.
+`x/wasm` is the wasmd module in this tree (`github.com/terpnetwork/terp-core/v6/x/wasm`). wasmvm is in-tree at `x/wasm/wasmvm` (Go module path stays `github.com/CosmWasm/wasmvm/v3`, replace `./x/wasm/wasmvm`). CosmWasm stays the `crates/cosmwasm` submodule. `crates/zk-wasmd` remains the fork checkout until that remote is archived. IAVL, `store/v2`, and ICS23 are remote module replaces (`permissionlessweb/iavl`, `permissionlessweb/store-v2`, `permissionlessweb/ics23`), not vendored trees. A release artifact is the tagged `terpd` plus its sha256 on S3, not a dirty local tree.
 
 CI by branch (not one hardcoded list of tags):
 
@@ -280,7 +280,7 @@ Authoritative source: [`.gitmodules`](.gitmodules). **61** entries:
 | `crates/xion-account` | `cw3` | https://github.com/permissionlessweb/contracts |
 | `crates/zk-wasmd` | `mvp` | https://github.com/permissionlessweb/wasmd |
 | `crates/zk-wasmd.bak` | `mvp` | https://github.com/permissionlessweb/wasmd |
-| `crates/zk-wasmvm` | `mvp` | https://github.com/permissionlessweb/wasmvm |
+| `x/wasm/wasmvm` | folded `4.0.0-zk` `8117f41` | was https://github.com/permissionlessweb/wasmvm (not a submodule) |
 
 Most remotes are under `permissionlessweb` forks; a few come from `burnt-labs`, `hard-nett`, `noble-assets`, `MegaRockLabs`, and `abstractsdk`. Branch names often track experimental lines (`mvp`, `zk-mvp`, `cw3`, feature branches) rather than upstream `main`.
 
@@ -363,7 +363,7 @@ Some tracking branch names are historical (for example `feat/calander`). `git su
 Full recursive checkout of all 61 modules is heavy. CI and local scripts often init only the subsets they need. Prefer explicit paths:
 
 ```sh
-git submodule update --init crates/cosmwasm crates/zk-wasmvm
+git submodule update --init crates/cosmwasm crates/zk-wasmd
 ```
 
 ### Syncing this document

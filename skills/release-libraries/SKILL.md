@@ -39,9 +39,10 @@ Ship in this order. Stop on the first red step.
    `crates/cosmwasm`. Version is `[workspace.package].version` (`4.0.0-zk`).
    Tag `4.0.0-zk` on the commit that pins the Common rev. Push the tag to
    the `fork` remote, not to upstream CosmWasm.
-3. **wasmvm** — `github.com/permissionlessweb/wasmvm`, checkout
-   `crates/zk-wasmvm`. `libwasmvm` version `4.0.0-zk`. Go module path stays
-   `github.com/CosmWasm/wasmvm/v3`.
+3. **wasmvm** — folded at `x/wasm/wasmvm` (source
+   `permissionlessweb/wasmvm` `4.0.0-zk`). `libwasmvm` version `4.0.0-zk`.
+   Go module path stays `github.com/CosmWasm/wasmvm/v3`
+   (`replace => ./x/wasm/wasmvm`).
    - Builders: `terpnetwork/zk-*-builder:4.0.0-zk` only.
    - `make wasmvm-release-build` then `make wasmvm-verify`.
    - Muslc upload is `./scripts/release/publish_zk_wasmvm.sh` (write alias

@@ -39,7 +39,7 @@ ARG WASMVM_BASE_URL
 # In local mode the lib is staged in build/wasmvm/ and will
 # be copied after the full source COPY below.
 #
-# Do NOT use `go list -m` here: go.mod may replace wasmvm → ./crates/zk-wasmvm
+# Do NOT use `go list -m` here: go.mod replaces wasmvm → ./x/wasm/wasmvm
 # and crates/ is dockerignored until staging; parse the require line instead.
 # ---------------------------------------------------------
 RUN if [ "$WASMVM_SOURCE" = "github" ]; then \
@@ -81,8 +81,8 @@ RUN ARCH=$(uname -m) && \
       cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a /lib/libwasmvm_muslc.$ARCH.a && \
       # Keep go replace to monorepo ZK forks — rewrite host paths → staged docker paths.
       # crates/ is dockerignored; build/zk-deps is what the image actually contains.
-      if [ ! -f /code/build/zk-deps/zk-wasmvm/go.mod ] || [ ! -f /code/build/zk-deps/zk-wasmd/go.mod ]; then \
-        echo "ERROR: staged zk-deps missing. Need build/zk-deps/zk-wasmvm and zk-wasmd." && \
+      if [ ! -f /code/build/zk-deps/zk-wasmvm/go.mod ]; then \
+        echo "ERROR: staged zk-deps missing. Need build/zk-deps/zk-wasmvm (from x/wasm/wasmvm)." && \
         exit 1; \
       fi && \
       if grep -q 'crates/ibc-hooks-v11' /code/go.mod && [ ! -f /code/build/zk-deps/ibc-hooks-v11/go.mod ]; then \
@@ -96,6 +96,7 @@ RUN ARCH=$(uname -m) && \
       fi && \
       cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a \
          /code/build/zk-deps/zk-wasmvm/internal/api/libwasmvm_muslc.$ARCH.a && \
+      sed -i 's|=> \./x/wasm/wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \./crates/zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \./crates/zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \
       sed -i 's|=> \./crates/ibc-hooks-v11|=> /code/build/zk-deps/ibc-hooks-v11|g' /code/go.mod && \
@@ -108,6 +109,7 @@ RUN ARCH=$(uname -m) && \
       echo "==> Stripping local ZK replace directives for stock (github wasmvm) build" && \
       # Remove monorepo path replaces so require lines resolve to module proxy
       sed -i '/github.com\/CosmWasm\/wasmd => \.\/crates\/zk-wasmd/d' /code/go.mod && \
+      sed -i '/github.com\/CosmWasm\/wasmvm\/v3 => \.\/x\/wasm\/wasmvm/d' /code/go.mod && \
       sed -i '/github.com\/CosmWasm\/wasmvm\/v3 => \.\/crates\/zk-wasmvm/d' /code/go.mod && \
       sed -i '/github.com\/CosmWasm\/wasmd => \/code\/build\/zk-deps\/zk-wasmd/d' /code/go.mod && \
       sed -i '/github.com\/CosmWasm\/wasmvm\/v3 => \/code\/build\/zk-deps\/zk-wasmvm/d' /code/go.mod && \

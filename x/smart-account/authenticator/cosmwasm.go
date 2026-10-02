@@ -7,7 +7,7 @@ import (
 	"github.com/terpnetwork/terp-core/v6/x/smart-account/types"
 
 	errorsmod "cosmossdk.io/errors"
-	"github.com/CosmWasm/wasmd/x/wasm/keeper"
+	"github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"

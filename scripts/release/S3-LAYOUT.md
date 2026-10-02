@@ -113,7 +113,7 @@ releases/zk-wasmvm/v4.0.0-zk/
 ```
 
 Built with **our** `terpnetwork/zk-*-builder:4.0.0-zk` images, never
-`cosmwasm/libwasmvm-builder:0103-*`. See `crates/zk-wasmvm/docs/BUILDERS.md`.
+`cosmwasm/libwasmvm-builder:0103-*`. See `x/wasm/wasmvm/docs/BUILDERS.md`.
 
 ## Container images
 

@@ -29,6 +29,15 @@ want_platform() {
   echo ",$PLATFORMS," | grep -q ",$1,"
 }
 
+# Published tags keep crates/zk-wasmvm. The fold keeps the module at x/wasm/wasmvm.
+wasmvm_rel() {
+  if [ -d x/wasm/wasmvm ]; then
+    echo x/wasm/wasmvm
+  else
+    echo crates/zk-wasmvm
+  fi
+}
+
 copy_tree() {
   mkdir -p "$2"
   if command -v rsync >/dev/null; then
@@ -61,7 +70,13 @@ fetch_ibc_hooks() {
 
 rebuild_muslc() {
   command -v docker >/dev/null || { echo "ERROR: docker required to rebuild muslc" >&2; exit 1; }
-  local builders="crates/zk-wasmvm/builders"
+  local vm builders
+  vm="$(wasmvm_rel)"
+  if [ -f builders/Dockerfile.alpine-nightly ] || [ -f builders/Dockerfile.alpine ]; then
+    builders="builders"
+  else
+    builders="$vm/builders"
+  fi
   local df="$builders/Dockerfile.alpine"
   if [ -f "$builders/Dockerfile.alpine-nightly" ]; then
     df="$builders/Dockerfile.alpine-nightly"
@@ -82,10 +97,10 @@ rebuild_muslc() {
     export ZK_ZCASH_DIR="$WORK/empty-zcash"
   fi
   echo "==> cargo muslc aarch64+x86_64 inside rebuilt builder"
-  ( cd crates/zk-wasmvm && BUILDER_IMAGE=terp-fresh-muslc-builder make release-build-alpine-custom )
+  ( cd "$vm" && BUILDER_IMAGE=terp-fresh-muslc-builder make release-build-alpine-custom )
   local arch name want got
   for arch in aarch64 x86_64; do
-    name="crates/zk-wasmvm/internal/api/libwasmvm_muslc.${arch}.a"
+    name="$vm/internal/api/libwasmvm_muslc.${arch}.a"
     [ -f "$name" ] || { echo "ERROR: muslc rebuild missing $name" >&2; exit 1; }
     grep -a -q -F 'stwo: Dummy DSTW rejected' "$name" \
       || { echo "ERROR: $name missing Path A STWO host" >&2; exit 1; }
@@ -110,9 +125,9 @@ rebuild_muslc() {
 
 fetch_muslc() {
   if [ -f "$TOOLKIT/fetch_zk_muslc.sh" ]; then
-    bash "$TOOLKIT/fetch_zk_muslc.sh" crates/zk-wasmvm/internal/api
+    bash "$TOOLKIT/fetch_zk_muslc.sh" "$(wasmvm_rel)/internal/api"
   elif [ -f scripts/release/fetch_zk_muslc.sh ]; then
-    bash scripts/release/fetch_zk_muslc.sh crates/zk-wasmvm/internal/api
+    bash scripts/release/fetch_zk_muslc.sh "$(wasmvm_rel)/internal/api"
   else
     echo "ERROR: fetch_zk_muslc.sh missing and WASMVM_MUSLC_FETCH=1" >&2
     exit 1
@@ -122,9 +137,13 @@ fetch_muslc() {
 rebuild_darwin_a() {
   [ "$(uname -s)" = Darwin ] && [ "$(uname -m)" = arm64 ] || return 0
   want_platform darwin/arm64 || return 0
-  [ -f crates/zk-wasmvm/builders/host/build_macos_static_arm64.sh ] || return 0
-  echo "==> rebuild libwasmvmstatic_darwin.a from source"
-  bash crates/zk-wasmvm/builders/host/build_macos_static_arm64.sh
+  if [ -f builders/host/build_macos_static_arm64.sh ]; then
+    echo "==> rebuild libwasmvmstatic_darwin.a from source"
+    bash builders/host/build_macos_static_arm64.sh
+  elif [ -f "$(wasmvm_rel)/builders/host/build_macos_static_arm64.sh" ]; then
+    echo "==> rebuild libwasmvmstatic_darwin.a from source"
+    bash "$(wasmvm_rel)/builders/host/build_macos_static_arm64.sh"
+  fi
 }
 
 default_prepare() {
@@ -285,7 +304,7 @@ fi
 if want_platform darwin/arm64; then
   if [ "$(uname -s)" = Darwin ] && [ "$(uname -m)" = arm64 ]; then
     echo "==> darwin/arm64 host rebuild (empty GOMODCACHE)"
-    if [ ! -f crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a ]; then
+    if [ ! -f "$(wasmvm_rel)/internal/api/libwasmvmstatic_darwin.a" ]; then
       echo "NOTE: no libwasmvmstatic_darwin.a in clone/extras — skip darwin rebuild"
       if grep -q 'terpd-darwin-arm64' "$WORK/published.sha256sum.txt"; then
         echo "published darwin hash: $(awk '$2=="terpd-darwin-arm64"{print $1}' "$WORK/published.sha256sum.txt")"

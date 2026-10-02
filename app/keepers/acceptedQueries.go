@@ -2,7 +2,7 @@ package keepers
 
 import (
 	"github.com/cosmos/gogoproto/proto"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 	icacontrollertypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"

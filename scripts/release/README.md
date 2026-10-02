@@ -11,7 +11,7 @@ without drift.
 | **Mainnet** (stock CosmWasm wasmvm) | release tags e.g. `v5.2.0` | `containers.terp.network/terp-core:v5.2.0` | `snapshots/mainnet/morocco-1/` |
 | **Testnet ZK** (monorepo + local zk-wasmvm) | `v5.3.0-dev` (and later `v5.3.0`) | `containers.terp.network/terp-core:v5.3.0-dev` | `releases/terp-core/v5.3.0-dev/` + `snapshots/testnet/120u-1/` |
 
-Build ZK images with `WASMVM_SOURCE=local` from this monorepo (`crates/zk-wasmvm`).
+Build ZK images with `WASMVM_SOURCE=local` from this monorepo (`x/wasm/wasmvm`).
 
 ## 4.0.0-zk libwasmvm builders (required)
 
@@ -23,15 +23,15 @@ images, not CosmWasm Docker Hub:
 - `terpnetwork/zk-cross-builder:4.0.0-zk` → osxcross (optional; Darwin native is supported)
 
 ```bash
-(cd crates/zk-wasmvm/builders && make docker-images-4.0.0-zk)
+(cd builders && make docker-images-4.0.0-zk)
 make wasmvm-release-build
 make wasmvm-verify
 ./scripts/release/publish_zk_wasmvm.sh   # S3 releases/zk-wasmvm/v4.0.0-zk/
 ```
 
-`make docker-images` in `crates/zk-wasmvm/builders` **refuses**
+`make docker-images` in `builders` **refuses**
 `cosmwasm/libwasmvm-builder:0103-*`. Write-up:
-[`crates/zk-wasmvm/docs/BUILDERS.md`](../../crates/zk-wasmvm/docs/BUILDERS.md).
+[`x/wasm/wasmvm/docs/BUILDERS.md`](../../x/wasm/wasmvm/docs/BUILDERS.md).
 
 ## Quick start — `v6.0.0-dev`
 
@@ -64,13 +64,12 @@ make release-s3 RELEASE_TAG=v6.0.0-dev DRY_RUN=1
 **Always keep** the monorepo replaces in `go.mod` on this branch:
 
 ```go
-github.com/CosmWasm/wasmd => ./crates/zk-wasmd
-github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
+github.com/CosmWasm/wasmvm/v3 => ./x/wasm/wasmvm
 ```
 
-`make docker-publish-dev` runs `build-zk-local` with `WASMVM_SOURCE=local`, which:
+`x/wasm` is the main module, not a replace. `make docker-publish-dev` runs `build-zk-local` with `WASMVM_SOURCE=local`, which:
 
-1. Stages `crates/zk-*` → `build/zk-deps/zk-*` (because `.dockerignore` excludes `crates/`)
+1. Stages `x/wasm/wasmvm` → `build/zk-deps/zk-wasmvm` (because `.dockerignore` excludes `crates/`)
 2. Stages muslc `.a` → `build/wasmvm/`
 3. Dockerfile rewrites those replaces to `/code/build/zk-deps/...` and links the ZK `.a`
 
@@ -196,13 +195,12 @@ node = "containers.terp.network/terp-core:v5.3.0-dev"
 
 ## ZK libwasmvm artifacts
 
-Run make target wasmvm-curate. It copies every libwasmvm* from crates/zk-wasmvm
+Run make target wasmvm-curate. It copies every libwasmvm* from x/wasm/wasmvm
 into build/wasmvm-release/ plus SHA256SUMS and VERSIONS.txt.
 
-wasmd CheckLibwasmVersion requires the rust CARGO_PKG_VERSION (3.0.7-zk) to be
-a substring of the Go wasmvm module version. A path replace to ./crates/zk-wasmvm
-reports (devel) and the check is a no-op. Tag ZK releases so go.mod require is
-v3.0.7-zk (or set rust version to 3.0.7 to match v3.0.7).
+wasmd CheckLibwasmVersion requires the rust CARGO_PKG_VERSION to be a
+substring of the Go wasmvm module version. A path replace to ./x/wasm/wasmvm
+reports (devel) and the check is a no-op.
 
 Goreleaser linux hooks copy build/wasmvm-release muslc archives when present
 so published linux binaries link the curated ZK muslc instead of the official

@@ -12,7 +12,6 @@
 crates/*
 !crates/cosmwasm
 !crates/zk-wasmd
-!crates/zk-wasmvm
 websites/*
 tools/*
 # Build

@@ -18,8 +18,8 @@ import (
 	globalfeekeeper "github.com/terpnetwork/terp-core/v6/x/globalfee/keeper"
 	smartaccountkeeper "github.com/terpnetwork/terp-core/v6/x/smart-account/keeper"
 
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmTypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmkeeper "github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
+	wasmTypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 )
 
 // Lower back to 1 mil after https://github.com/cosmos/relayer/issues/1255

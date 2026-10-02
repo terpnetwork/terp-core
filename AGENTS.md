@@ -26,13 +26,17 @@ local path override is not a release.
 2. **cosmwasm** (`permissionlessweb/cosmwasm`). Tag `4.0.0-zk` on the commit
    whose `Cargo.toml` uses that git rev. Workspace version is
    `[workspace.package]` in `crates/cosmwasm/Cargo.toml`.
-3. **wasmvm** (`permissionlessweb/wasmvm`). Tag `4.0.0-zk`. Cargo version is
-   `libwasmvm` `4.0.0-zk`. Go import stays `wasmvm/v3`. Host libs come from
-   `terpnetwork/zk-*-builder:4.0.0-zk`, never CosmWasm `0103-*`. Publish muslc
-   to `releases/zk-wasmvm/v4.0.0-zk/`. Do not push the builder images.
-4. **wasmd** (`permissionlessweb/wasmd`, checkout `crates/zk-wasmd`). Tag only
-   the commit terp-core's `go.mod` replace will point at.
-5. **terp-core**. Submodule gitlinks match those SHAs. Tag `v6.3.0`, then
+3. **wasmvm** is in-tree at `x/wasm/wasmvm` (source
+   `permissionlessweb/wasmvm` tag `4.0.0-zk`). Cargo version is `libwasmvm`
+   `4.0.0-zk`. Go import stays `wasmvm/v3` (`replace => ./x/wasm/wasmvm`).
+   Host libs come from `terpnetwork/zk-*-builder:4.0.0-zk`, never CosmWasm
+   `0103-*`. Publish muslc to `releases/zk-wasmvm/v4.0.0-zk/`. Do not push
+   the builder images.
+4. **wasmd** is in-tree at `x/wasm`
+   (`github.com/terpnetwork/terp-core/v6/x/wasm`). `crates/zk-wasmd` is the
+   fork checkout until that remote is archived.
+5. **terp-core**. The CosmWasm gitlink matches its tag. wasmvm is not a
+   submodule. Tag `v6.3.0`, then
    build `v6.4.0` (`-tags v64`) and put its tarball sha256 into v6.3's
    `NextUpgradeInfo` before the v6.3 tag is the one operators run. Linux ELFs
    and Cosmovisor JSON go to `s3.terp.network`. Operator image is

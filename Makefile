@@ -10,6 +10,7 @@ include scripts/makefiles/tsh.mk
 include scripts/makefiles/lint.mk
 include scripts/makefiles/proto.mk
 include scripts/makefiles/tests.mk
+include scripts/makefiles/wasmvm.mk
 include scripts/makefiles/release.mk
 include scripts/makefiles/deps.mk
 
@@ -30,6 +31,7 @@ help:
 	@echo "  make proto                 Show available proto commands"
 	@echo "  make release               Show available release commands"
 	@echo "  make release-help          Show available release commands"
+	@echo "  make wasmvm-help           libwasmvm targets (scripts/makefiles/wasmvm.mk)"
 	@echo "  make test                  Show available test commands"
 	@echo ""
   
@@ -110,10 +112,10 @@ ifeq ($(WITH_CLEVELDB),yes)
   build_tags += gcc
 endif
 # Darwin installer/dev binaries must not rpath libwasmvm.dylib to this clone
-# (${SRCDIR} in crates/zk-wasmvm/internal/api/link_mac.go). Link the static
+# (${SRCDIR} in x/wasm/wasmvm/internal/api/link_mac.go). Link the static
 # archive instead. Override with BUILD_TAGS= (empty) only for local dylib debug.
 ifeq ($(shell uname -s 2>/dev/null),Darwin)
-  ifneq ($(wildcard crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a),)
+  ifneq ($(wildcard x/wasm/wasmvm/internal/api/libwasmvmstatic_darwin.a),)
     ifeq ($(filter static_wasm,$(BUILD_TAGS)),)
       BUILD_TAGS += static_wasm
     endif

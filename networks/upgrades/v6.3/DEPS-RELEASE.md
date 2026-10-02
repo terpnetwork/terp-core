@@ -17,11 +17,11 @@ libwasmvm version is **4.0.0-zk**.
 
 Dynamic libraries **must** be built with our Libwasm builder images, never
 CosmWasm’s `libwasmvm-builder:0103-*`. See
-[`crates/zk-wasmvm/docs/BUILDERS.md`](../../../crates/zk-wasmvm/docs/BUILDERS.md).
+[`x/wasm/wasmvm/docs/BUILDERS.md`](../../../x/wasm/wasmvm/docs/BUILDERS.md).
 
 ```sh
 # OUR builders only — never cosmwasm/libwasmvm-builder:0103-*.
-(cd crates/zk-wasmvm/builders && make docker-images-4.0.0-zk)
+(cd builders && make docker-images-4.0.0-zk)
 make wasmvm-release-build
 make wasmvm-verify
 # muslc (+ .so) to the releases bucket — do not push zk-*-builder images

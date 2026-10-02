@@ -40,14 +40,14 @@ build-windows: go.sum
 	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/terpd.exe ./cmd/terpd
 
 # Host darwin/arm64 for the public installer. Requires
-# crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a (arm64).
+# x/wasm/wasmvm/internal/api/libwasmvmstatic_darwin.a (arm64).
 # `otool -L` must not list libwasmvm.dylib.
 build-darwin-arm64: go.sum
 	@if [ "$$(uname -s)" != "Darwin" ] || [ "$$(uname -m)" != "arm64" ]; then \
 	  echo "ERROR: build-darwin-arm64 is host-native (this Mac, arm64)"; exit 1; \
 	fi
-	@if [ ! -f crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a ]; then \
-	  echo "ERROR: missing libwasmvmstatic_darwin.a — run crates/zk-wasmvm/builders/host/build_macos_static_arm64.sh"; \
+	@if [ ! -f x/wasm/wasmvm/internal/api/libwasmvmstatic_darwin.a ]; then \
+	  echo "ERROR: missing libwasmvmstatic_darwin.a — run builders/host/build_macos_static_arm64.sh"; \
 	  exit 1; \
 	fi
 	mkdir -p $(BUILDDIR)

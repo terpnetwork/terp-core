@@ -90,8 +90,14 @@ write_source_deps() {
   wasmd_sha="$(gitlink_sha "$commit" crates/zk-wasmd)"
   wasmvm_sha="$(gitlink_sha "$commit" crates/zk-wasmvm)"
   cosmwasm_sha="$(gitlink_sha "$commit" crates/cosmwasm)"
-  if [ -z "$wasmd_sha" ] || [ -z "$wasmvm_sha" ] || [ -z "$cosmwasm_sha" ]; then
-    echo "ERROR: missing gitlinks at $commit (zk-wasmd / zk-wasmvm / cosmwasm)" >&2
+  wasmvm_path="crates/zk-wasmvm"
+  if [ -z "$wasmvm_sha" ]; then
+    # wasmvm is in the terp-core tree at this commit, not a submodule.
+    wasmvm_sha="$commit"
+    wasmvm_path="x/wasm/wasmvm"
+  fi
+  if [ -z "$wasmd_sha" ] || [ -z "$cosmwasm_sha" ]; then
+    echo "ERROR: missing gitlinks at $commit (zk-wasmd / cosmwasm)" >&2
     exit 1
   fi
   wasmd_url="$(submodule_url "$commit" crates/zk-wasmd)"
@@ -104,7 +110,7 @@ write_source_deps() {
     echo
     echo "terp-core  $origin  $tag  $commit"
     echo "wasmd      ${wasmd_url:-https://github.com/permissionlessweb/wasmd}  $wasmd_sha  crates/zk-wasmd"
-    echo "wasmvm     ${wasmvm_url:-https://github.com/permissionlessweb/wasmvm}  $wasmvm_sha  crates/zk-wasmvm"
+    echo "wasmvm     ${wasmvm_url:-$origin}  $wasmvm_sha  $wasmvm_path"
     echo "cosmwasm   ${cosmwasm_url:-https://github.com/permissionlessweb/cosmwasm.git}  $cosmwasm_sha  crates/cosmwasm"
     echo
     echo "replaces (go.mod at binary_commit):"

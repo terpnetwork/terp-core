@@ -118,7 +118,7 @@ fail-closed (no dummy Flock/DSTW placeholders), zakura Halo2 IPA.
 
 Host libs are built with **our** `terpnetwork/zk-*-builder:4.0.0-zk` images
 (local compile; not published). Never `cosmwasm/libwasmvm-builder:0103-*`.
-See [`../../../crates/zk-wasmvm/docs/BUILDERS.md`](../../../crates/zk-wasmvm/docs/BUILDERS.md).
+See [`../../../x/wasm/wasmvm/docs/BUILDERS.md`](../../../x/wasm/wasmvm/docs/BUILDERS.md).
 
 Operators upgrade with the tarballs above. This cut did not republish
 `registry.terp.network/terp-core:v6.3.0` or `:v6.4.0`.

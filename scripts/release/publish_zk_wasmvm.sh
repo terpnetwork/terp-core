@@ -7,7 +7,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-ZK="${ZK_WASMVM_DIR:-$ROOT/crates/zk-wasmvm}"
+ZK="${ZK_WASMVM_DIR:-$ROOT/x/wasm/wasmvm}"
 # usb2 is the LAN write alias (Makefile default). s3terp is public read.
 ALIAS="${MINIO_ALIAS:-usb2}"
 BUCKET="${S3_BUCKET:-releases}"
@@ -15,10 +15,14 @@ TAG="${WASMVM_S3_TAG:-v4.0.0-zk}"
 DEST="${ALIAS}/${BUCKET}/zk-wasmvm/${TAG}"
 DRY_RUN="${DRY_RUN:-0}"
 
-bash "$ZK/builders/host/verify_libwasmvm.sh"
+bash "$ROOT/builders/host/verify_libwasmvm.sh"
 
 API="$ZK/internal/api"
-COMMIT="$(git -C "$ZK" rev-parse HEAD)"
+if [ -f "$ZK/VERSION" ]; then
+  COMMIT="$(awk -F': ' '/^source_commit:/{print $2; exit}' "$ZK/VERSION")"
+else
+  COMMIT="$(git -C "$ZK" rev-parse HEAD)"
+fi
 VERSION="$(awk -F'"' '/^version = /{print $2; exit}' "$ZK/libwasmvm/Cargo.toml")"
 
 STAGE="$(mktemp -d)"

@@ -1,8 +1,8 @@
 package app
 
 import (
-	wasm "github.com/CosmWasm/wasmd/x/wasm"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasm "github.com/terpnetwork/terp-core/v6/x/wasm"
+	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	mint "github.com/cosmos/cosmos-sdk/x/mint"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"

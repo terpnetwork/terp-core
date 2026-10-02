@@ -5,10 +5,7 @@ go 1.26.5
 // for verifiable dependencies:
 // go mod edit -replace github.com/CosmWasm/wasmd=github.com/permissionlessweb/wasmd@<commit>
 // go mod edit -replace github.com/CosmWasm/wasmvm/<version>=github.com/permissionlessweb/wasmvm/<version>@<commit>
-replace (
-	github.com/CosmWasm/wasmd => ./crates/zk-wasmd
-	github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm
-)
+replace github.com/CosmWasm/wasmvm/v3 => ./x/wasm/wasmvm
 
 require (
 	cosmossdk.io/api v1.1.0
@@ -17,7 +14,6 @@ require (
 	cosmossdk.io/errors v1.1.0
 	cosmossdk.io/log/v2 v2.1.0
 	cosmossdk.io/math v1.5.3
-	github.com/CosmWasm/wasmd v0.70.3
 	github.com/cometbft/cometbft v0.40.0
 	github.com/cosmos/cosmos-db v1.1.3
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
@@ -34,6 +30,7 @@ require (
 require (
 	cosmossdk.io/store v1.1.2
 	github.com/cosmos/cosmos-sdk/store/v2 v2.0.0
+	github.com/distribution/reference v0.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/manifoldco/promptui v0.9.0
@@ -48,6 +45,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa
 	google.golang.org/grpc v1.82.1
 	google.golang.org/protobuf v1.36.11
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 // logging,monitoring & telemetry
@@ -78,7 +76,7 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/gofuzz v1.2.0
 	github.com/google/orderedcode v0.0.1 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -95,7 +93,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pkg/errors v0.9.1
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.70.1 // indirect
@@ -222,7 +220,6 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/desertbit/timer v1.0.1 // indirect
-	github.com/distribution/reference v0.6.0 // indirect
 	github.com/dunglas/httpsfv v1.1.0 // indirect
 	github.com/dvsekhvalnov/jose2go v1.8.0 // indirect
 	github.com/ebitengine/purego v0.10.1 // indirect
@@ -371,7 +368,6 @@ require (
 	google.golang.org/api v0.276.0 // indirect
 	google.golang.org/genproto v0.0.0-20260511170946-3700d4141b60 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 	lukechampine.com/blake3 v1.4.1 // indirect
