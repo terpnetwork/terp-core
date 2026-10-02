@@ -40,8 +40,8 @@ iterator is still valid, so a normal end-of-range scan no longer fails.
 
 | Plan | Platform | sha256 |
 |------|----------|--------|
-| v6.3.0 | linux/amd64 | `4161cf4531f357ce4cec24e0302b71ca404810556b439729d43a120dd0972d65` |
-| v6.3.0 | linux/arm64 | `3d28fe7a68e52c6bfcc696b71393c4cd5795d208c7c87f0ee4f6d65f44f6e4cf` |
+| v6.3.0 | linux/amd64 | `302ad85a28f317fc54983c7cc47597820f40e2b6f0176703b89085d63f5d53bb` |
+| v6.3.0 | linux/arm64 | `c26383a772625e240e8bf150b4249a4eafcf32b3a6076c82abfb9a64ce77fc06` |
 | v6.4.0 | linux/amd64 | `c8fe6cf8cbf8ae0493732907c8b14614e6999a92534cc79717f92d2a977175e7` |
 | v6.4.0 | linux/arm64 | `3b8c70ff76525c4dd647e45ec9550318a092433cf55acc067ef04d8710968d9e` |
 
