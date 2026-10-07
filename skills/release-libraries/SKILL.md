@@ -37,8 +37,9 @@ Ship in this order. Stop on the first red step.
    crates unless the user asked for a Common crates.io release.
 2. **cosmwasm** — `github.com/permissionlessweb/cosmwasm`, checkout
    `crates/cosmwasm`. Version is `[workspace.package].version` (`4.0.0-zk`).
-   Tag `4.0.0-zk` on the commit that pins the Common rev. Push the tag to
-   the `fork` remote, not to upstream CosmWasm.
+   The host pin is the `release/v6.3.0-wasmer` commit (git rev in
+   libwasmvm, same SHA as the gitlink). Push that branch to the `fork`
+   remote, not to upstream CosmWasm. Do not move tag `4.0.0-zk`.
 3. **wasmvm** — folded at `x/wasm/wasmvm` (source
    `permissionlessweb/wasmvm` `4.0.0-zk`). `libwasmvm` version `4.0.0-zk`.
    Go module path stays `github.com/CosmWasm/wasmvm/v3`
@@ -47,10 +48,10 @@ Ship in this order. Stop on the first red step.
    - `make wasmvm-release-build` then `make wasmvm-verify`.
    - Muslc upload is `./scripts/release/publish_zk_wasmvm.sh` (write alias
      `usb2`). Builders stay on the build machine.
-4. **wasmd** — `github.com/permissionlessweb/wasmd`, checkout
-   `crates/zk-wasmd`. Tag the commit the chain replace will use. No tag
-   until that commit is the one you mean.
-5. **terp-core** — gitlinks for the three submodules match the tags above.
+4. **wasmd** — in-tree at `x/wasm`. Not a submodule. Do not re-add
+   `crates/zk-wasmd`.
+5. **terp-core** — the `crates/cosmwasm` gitlink matches the libwasmvm rev.
+   wasmvm and wasmd are in this tree.
    - Build `v6.4.0` with `-tags v64` first. Stamp
      `app/upgrades/v6_3/constants.go` from
      `networks/upgrades/v6.4/cosmovisor.json`

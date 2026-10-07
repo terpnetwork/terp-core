@@ -90,14 +90,20 @@ write_source_deps() {
   wasmd_sha="$(gitlink_sha "$commit" crates/zk-wasmd)"
   wasmvm_sha="$(gitlink_sha "$commit" crates/zk-wasmvm)"
   cosmwasm_sha="$(gitlink_sha "$commit" crates/cosmwasm)"
+  wasmd_path="crates/zk-wasmd"
   wasmvm_path="crates/zk-wasmvm"
+  if [ -z "$wasmd_sha" ]; then
+    # wasmd is in the terp-core tree at this commit, not a submodule.
+    wasmd_sha="$commit"
+    wasmd_path="x/wasm"
+  fi
   if [ -z "$wasmvm_sha" ]; then
     # wasmvm is in the terp-core tree at this commit, not a submodule.
     wasmvm_sha="$commit"
     wasmvm_path="x/wasm/wasmvm"
   fi
-  if [ -z "$wasmd_sha" ] || [ -z "$cosmwasm_sha" ]; then
-    echo "ERROR: missing gitlinks at $commit (zk-wasmd / cosmwasm)" >&2
+  if [ -z "$cosmwasm_sha" ]; then
+    echo "ERROR: missing gitlink at $commit (cosmwasm)" >&2
     exit 1
   fi
   wasmd_url="$(submodule_url "$commit" crates/zk-wasmd)"
@@ -109,7 +115,7 @@ write_source_deps() {
     echo "# ELF identity is git tag $tag = $commit. Pack files belong on release/$tag."
     echo
     echo "terp-core  $origin  $tag  $commit"
-    echo "wasmd      ${wasmd_url:-https://github.com/permissionlessweb/wasmd}  $wasmd_sha  crates/zk-wasmd"
+    echo "wasmd      ${wasmd_url:-$origin}  $wasmd_sha  $wasmd_path"
     echo "wasmvm     ${wasmvm_url:-$origin}  $wasmvm_sha  $wasmvm_path"
     echo "cosmwasm   ${cosmwasm_url:-https://github.com/permissionlessweb/cosmwasm.git}  $cosmwasm_sha  crates/cosmwasm"
     echo

@@ -8,9 +8,9 @@ libwasmvm version is **4.0.0-zk**.
 
 | Repo | Tag | Tip on this tree | What to ship |
 |------|-----|------------------|--------------|
-| permissionlessweb/cosmwasm | `4.0.0-zk` | `09e3ba815` | std/vm, Path A fail-closed, poseidon377, in-tree bn254 |
-| permissionlessweb/wasmvm | `4.0.0-zk` | `de95b3f` | libwasmvm + **new** muslc `.a` (not v3.0.7-zk); glibc `.so` from our debian-nightly |
-| permissionlessweb/wasmd | tag when ready | `d08c754a` (`crates/zk-wasmd`) | consensus 4→5 migration |
+| permissionlessweb/cosmwasm | do not move `4.0.0-zk` | `416d8c60` (`release/v6.3.0-wasmer`) | std/vm git rev; libwasmvm pins this commit |
+| permissionlessweb/wasmvm | `4.0.0-zk` | in-tree `x/wasm/wasmvm` | libwasmvm; not a submodule |
+| wasmd | in-tree | `x/wasm` | not a submodule |
 | zakura-common | pin in SOURCE_DEPS | `a64b90a` (contains `5364d3d`) | Halo2 IPA CS/VK/PK codec, no dummy SNARKs |
 
 ## wasmvm host libs (bit-for-bit)

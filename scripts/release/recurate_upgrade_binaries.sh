@@ -45,7 +45,7 @@ mkdir -p "$(dirname "$WT")"
 init_wt_submodules() {
   local wt="$1"
   local p mods=()
-  for p in crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm; do
+  for p in crates/cosmwasm; do
     if [ -f "$wt/.gitmodules" ] && grep -Fq "path = ${p}" "$wt/.gitmodules"; then
       mods+=("$p")
     fi

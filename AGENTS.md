@@ -23,9 +23,11 @@ local path override is not a release.
 1. **zakura-common** (`permissionlessweb/common`). Pin the git rev CosmWasm
    will build. Today's pin is `5364d3d`. A crates.io publish of those crates
    is a separate Common release, not this chain cut.
-2. **cosmwasm** (`permissionlessweb/cosmwasm`). Tag `4.0.0-zk` on the commit
-   whose `Cargo.toml` uses that git rev. Workspace version is
-   `[workspace.package]` in `crates/cosmwasm/Cargo.toml`.
+2. **cosmwasm** (`permissionlessweb/cosmwasm`). The only wasm-library
+   submodule is `crates/cosmwasm`, branch `release/v6.3.0-wasmer`.
+   libwasmvm pins that commit with `git` / `rev`, not a path. Workspace
+   version is `[workspace.package]` in `crates/cosmwasm/Cargo.toml`.
+   Do not move the `4.0.0-zk` tag onto this line.
 3. **wasmvm** is in-tree at `x/wasm/wasmvm` (source
    `permissionlessweb/wasmvm` tag `4.0.0-zk`). Cargo version is `libwasmvm`
    `4.0.0-zk`. Go import stays `wasmvm/v3` (`replace => ./x/wasm/wasmvm`).
@@ -33,10 +35,9 @@ local path override is not a release.
    `0103-*`. Publish muslc to `releases/zk-wasmvm/v4.0.0-zk/`. Do not push
    the builder images.
 4. **wasmd** is in-tree at `x/wasm`
-   (`github.com/terpnetwork/terp-core/v6/x/wasm`). `crates/zk-wasmd` is the
-   fork checkout until that remote is archived.
-5. **terp-core**. The CosmWasm gitlink matches its tag. wasmvm is not a
-   submodule. Tag `v6.3.0`, then
+   (`github.com/terpnetwork/terp-core/v6/x/wasm`). It is not a submodule.
+5. **terp-core**. The CosmWasm gitlink matches the libwasmvm `rev`.
+   wasmvm and wasmd are not submodules. Tag `v6.3.0`, then
    build `v6.4.0` (`-tags v64`) and put its tarball sha256 into v6.3's
    `NextUpgradeInfo` before the v6.3 tag is the one operators run. Linux ELFs
    and Cosmovisor JSON go to `s3.terp.network`. Operator image is

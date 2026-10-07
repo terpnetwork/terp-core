@@ -111,7 +111,7 @@ ifdef WASMVM_LIB
 	@echo "==> Additional single lib override: $(WASMVM_LIB)"
 	@cp $(WASMVM_LIB) build/wasmvm/ 2>/dev/null || true
 endif
-	@echo "==> Staging zk-wasmvm / zk-wasmd Go source ..."
+	@echo "==> Staging in-tree wasmvm (wasmd stays in the main module) ..."
 	@mkdir -p build/zk-deps/zk-wasmvm build/zk-deps/zk-wasmd
 	@rsync -a --delete \
 		--exclude='target/' \

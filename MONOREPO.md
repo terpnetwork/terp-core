@@ -2,7 +2,7 @@
 
 This repository is a **Go monorepo** for the Terp Network chain (`terpd`, `x/*`, protos, Docker, tests) that also vendors a large set of **Rust / CosmWasm / IBC related repositories** under `crates/` as **git submodules**.
 
-`x/wasm` is the wasmd module in this tree (`github.com/terpnetwork/terp-core/v6/x/wasm`). wasmvm is in-tree at `x/wasm/wasmvm` (Go module path stays `github.com/CosmWasm/wasmvm/v3`, replace `./x/wasm/wasmvm`). CosmWasm stays the `crates/cosmwasm` submodule. `crates/zk-wasmd` remains the fork checkout until that remote is archived. IAVL, `store/v2`, and ICS23 are remote module replaces (`permissionlessweb/iavl`, `permissionlessweb/store-v2`, `permissionlessweb/ics23`), not vendored trees. A release artifact is the tagged `terpd` plus its sha256 on S3, not a dirty local tree.
+`x/wasm` is the wasmd module in this tree (`github.com/terpnetwork/terp-core/v6/x/wasm`). wasmvm is in-tree at `x/wasm/wasmvm` (Go module path stays `github.com/CosmWasm/wasmvm/v3`, replace `./x/wasm/wasmvm`). CosmWasm stays the `crates/cosmwasm` submodule. wasmd is not a submodule. IAVL, `store/v2`, and ICS23 are remote module replaces (`permissionlessweb/iavl`, `permissionlessweb/store-v2`, `permissionlessweb/ics23`), not vendored trees. A release artifact is the tagged `terpd` plus its sha256 on S3, not a dirty local tree.
 
 CI by branch (not one hardcoded list of tags):
 
@@ -206,7 +206,7 @@ The crate path `crates/monorepo` (when present) is a **crate/workspace name**, n
 
 These groupings are for orientation only; remotes and branches remain authoritative in `.gitmodules`.
 
-- **CosmWasm core and WASM VM**: `cosmwasm`, `zk-wasmvm`, `zk-wasmd`, `zk-wasmd.bak`, `cw-storage-plus`, `cw-multi-test`, `cw-multi-test-fork`, `clone-cw-multi-test`, `core-cosmwasm`
+- **CosmWasm core and WASM VM**: `cosmwasm`, `cw-storage-plus`, `cw-multi-test`, `cw-multi-test-fork`, `clone-cw-multi-test`, `core-cosmwasm`. wasmd is `x/wasm`. wasmvm is `x/wasm/wasmvm`. Neither is a submodule.
 - **CW contract ecosystems**: `cw-plus`, `cw-plus-plus`, `cw-packages`, `cw-nfts`, `cw-asset`, `cw-minus`, `cw-orchestrator`, `cw-ica-controller`, `cw-ibc-demo`, `cw-infuser`, `cw-headstash`, `dao-contracts`, `polytone`, `polytone-evm`, `proxy-accounts`, `token-bindings`, `xion-account`, `abstract`, `abstract-account`, `abstract-cw-plus`, `wynddex`, `wynd-lsd`, `headstash`, `shitstrap`, `terp-account-billboards`, `terp-rs`
 - **IBC / Tendermint / chains tooling**: `ibc-rs`, `ibc-proto-rs`, `ibc-types`, `ibc-middleware`, `ics23`, `tendermint-rs`, `hermes`, `interchaintest`, `ict-rs`, `basecoin-rs`, `commonware-abci`, `tower-abci`
 - **ZK / crypto / ledger-adjacent**: `halo2-axiom`, `blst`, `jmt`, `sparse-merkle-tree`, `cnidarium`, `namada`, `penumbra`, `pbjson`, `smart-account-auth`
@@ -216,7 +216,7 @@ These groupings are for orientation only; remotes and branches remain authoritat
 
 ## 5. Submodule inventory (from `.gitmodules`)
 
-Authoritative source: [`.gitmodules`](.gitmodules). **61** entries:
+Authoritative source: [`.gitmodules`](.gitmodules). **59** entries:
 
 | Path | Branch (tracking) | URL |
 |------|-------------------|-----|
@@ -230,7 +230,7 @@ Authoritative source: [`.gitmodules`](.gitmodules). **61** entries:
 | `crates/commonware-abci` | `main` | https://github.com/permissionlessweb/commonware-abci |
 | `crates/core-cosmwasm` | `main` | https://github.com/permissionlessweb/core-cosmwasm |
 | `crates/cosmos-rust` | `main` | https://github.com/permissionlessweb/cosmos-rust |
-| `crates/cosmwasm` | `mvp-fix` | https://github.com/permissionlessweb/cosmwasm.git |
+| `crates/cosmwasm` | `release/v6.3.0-wasmer` | https://github.com/permissionlessweb/cosmwasm.git |
 | `crates/cw-asset` | `zk-mvp` | https://github.com/permissionlessweb/cw-asset |
 | `crates/cw-headstash` | `feat/halo2` | https://github.com/permissionlessweb/cw-headstash |
 | `crates/cw-ibc-demo` | `cosmwasm3` | https://github.com/permissionlessweb/cw-ibc-demo |
@@ -278,8 +278,7 @@ Authoritative source: [`.gitmodules`](.gitmodules). **61** entries:
 | `crates/wynd-lsd` | `cw3` | https://github.com/abstractsdk/wynd-lsd |
 | `crates/wynddex` | `mvp` | https://github.com/permissionlessweb/wynddex |
 | `crates/xion-account` | `cw3` | https://github.com/permissionlessweb/contracts |
-| `crates/zk-wasmd` | `mvp` | https://github.com/permissionlessweb/wasmd |
-| `crates/zk-wasmd.bak` | `mvp` | https://github.com/permissionlessweb/wasmd |
+| `x/wasm` | in-tree wasmd | not a submodule |
 | `x/wasm/wasmvm` | folded `4.0.0-zk` `8117f41` | was https://github.com/permissionlessweb/wasmvm (not a submodule) |
 
 Most remotes are under `permissionlessweb` forks; a few come from `burnt-labs`, `hard-nett`, `noble-assets`, `MegaRockLabs`, and `abstractsdk`. Branch names often track experimental lines (`mvp`, `zk-mvp`, `cw3`, feature branches) rather than upstream `main`.
@@ -350,9 +349,9 @@ cd crates/example-crate && git submodule update --init --recursive
 
 **Fix:** restore the path as a proper submodule entry and gitlink; do not vendor the full history into terp-core without an explicit decision.
 
-### `zk-wasmd` and `zk-wasmd.bak`
+### wasmd is not a submodule
 
-Both point at `permissionlessweb/wasmd` on branch `mvp`. Treat them as **two pins** (possibly different SHAs) for experimental/backup layouts. Confirm which path your scripts and Cargo patches reference before bumping either.
+`x/wasm` is the chain module. Do not re-add `crates/zk-wasmd`.
 
 ### Branch name typos in tracking branches
 
@@ -360,10 +359,10 @@ Some tracking branch names are historical (for example `feat/calander`). `git su
 
 ### Disk space and CI time
 
-Full recursive checkout of all 61 modules is heavy. CI and local scripts often init only the subsets they need. Prefer explicit paths:
+Full recursive checkout of all 59 modules is heavy. CI and local scripts often init only the subsets they need. Prefer explicit paths:
 
 ```sh
-git submodule update --init crates/cosmwasm crates/zk-wasmd
+git submodule update --init crates/cosmwasm
 ```
 
 ### Syncing this document

@@ -23,6 +23,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Check libwasmvm bindings header
         working-directory: x/wasm/wasmvm/libwasmvm
+        # CosmWasm crates are git revs, so this job does not init submodules.
         run: cargo check --locked
 
   cosmwasm-fmt:

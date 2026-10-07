@@ -1013,10 +1013,12 @@ dependencies = [
 [[package]]
 name = "cosmwasm-core"
 version = "4.0.0-zk"
+source = "git+https://github.com/permissionlessweb/cosmwasm.git?rev=416d8c60ebae74d0b714b1bb58f2a90bf702a348#416d8c60ebae74d0b714b1bb58f2a90bf702a348"
 
 [[package]]
 name = "cosmwasm-crypto"
 version = "4.0.0-zk"
+source = "git+https://github.com/permissionlessweb/cosmwasm.git?rev=416d8c60ebae74d0b714b1bb58f2a90bf702a348#416d8c60ebae74d0b714b1bb58f2a90bf702a348"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -1049,6 +1051,7 @@ dependencies = [
 [[package]]
 name = "cosmwasm-derive"
 version = "4.0.0-zk"
+source = "git+https://github.com/permissionlessweb/cosmwasm.git?rev=416d8c60ebae74d0b714b1bb58f2a90bf702a348#416d8c60ebae74d0b714b1bb58f2a90bf702a348"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1058,6 +1061,7 @@ dependencies = [
 [[package]]
 name = "cosmwasm-std"
 version = "4.0.0-zk"
+source = "git+https://github.com/permissionlessweb/cosmwasm.git?rev=416d8c60ebae74d0b714b1bb58f2a90bf702a348#416d8c60ebae74d0b714b1bb58f2a90bf702a348"
 dependencies = [
  "base64",
  "bech32",
@@ -1081,6 +1085,7 @@ dependencies = [
 [[package]]
 name = "cosmwasm-vm"
 version = "4.0.0-zk"
+source = "git+https://github.com/permissionlessweb/cosmwasm.git?rev=416d8c60ebae74d0b714b1bb58f2a90bf702a348#416d8c60ebae74d0b714b1bb58f2a90bf702a348"
 dependencies = [
  "bech32",
  "blake2",
@@ -1116,6 +1121,7 @@ dependencies = [
 [[package]]
 name = "cosmwasm-vm-derive"
 version = "4.0.0-zk"
+source = "git+https://github.com/permissionlessweb/cosmwasm.git?rev=416d8c60ebae74d0b714b1bb58f2a90bf702a348#416d8c60ebae74d0b714b1bb58f2a90bf702a348"
 dependencies = [
  "blake2",
  "proc-macro2",
@@ -1272,6 +1278,7 @@ dependencies = [
 [[package]]
 name = "cw-schema"
 version = "4.0.0-zk"
+source = "git+https://github.com/permissionlessweb/cosmwasm.git?rev=416d8c60ebae74d0b714b1bb58f2a90bf702a348#416d8c60ebae74d0b714b1bb58f2a90bf702a348"
 dependencies = [
  "cw-schema-derive",
  "indexmap",
@@ -1285,6 +1292,7 @@ dependencies = [
 [[package]]
 name = "cw-schema-derive"
 version = "4.0.0-zk"
+source = "git+https://github.com/permissionlessweb/cosmwasm.git?rev=416d8c60ebae74d0b714b1bb58f2a90bf702a348#416d8c60ebae74d0b714b1bb58f2a90bf702a348"
 dependencies = [
  "heck",
  "itertools 0.13.0",
@@ -1802,6 +1810,7 @@ dependencies = [
 [[package]]
 name = "flock-core"
 version = "0.1.0"
+source = "git+https://github.com/succinctlabs/flock?rev=b684b1258e4b1f202bec24afd660ace851b09e5e#b684b1258e4b1f202bec24afd660ace851b09e5e"
 dependencies = [
  "bincode",
  "blake3",
@@ -1821,6 +1830,7 @@ dependencies = [
 [[package]]
 name = "flock-field"
 version = "0.1.0"
+source = "git+https://github.com/succinctlabs/flock?rev=b684b1258e4b1f202bec24afd660ace851b09e5e#b684b1258e4b1f202bec24afd660ace851b09e5e"
 dependencies = [
  "serde",
 ]
@@ -1828,6 +1838,7 @@ dependencies = [
 [[package]]
 name = "flock-hash"
 version = "0.1.0"
+source = "git+https://github.com/succinctlabs/flock?rev=b684b1258e4b1f202bec24afd660ace851b09e5e#b684b1258e4b1f202bec24afd660ace851b09e5e"
 dependencies = [
  "serde",
 ]
@@ -1835,6 +1846,7 @@ dependencies = [
 [[package]]
 name = "flock-merkle"
 version = "0.1.0"
+source = "git+https://github.com/succinctlabs/flock?rev=b684b1258e4b1f202bec24afd660ace851b09e5e#b684b1258e4b1f202bec24afd660ace851b09e5e"
 dependencies = [
  "blake3",
  "flock-hash",
@@ -1846,6 +1858,7 @@ dependencies = [
 [[package]]
 name = "flock-multilinear"
 version = "0.1.0"
+source = "git+https://github.com/succinctlabs/flock?rev=b684b1258e4b1f202bec24afd660ace851b09e5e#b684b1258e4b1f202bec24afd660ace851b09e5e"
 dependencies = [
  "rayon",
 ]
@@ -1853,6 +1866,7 @@ dependencies = [
 [[package]]
 name = "flock-parallel"
 version = "0.1.0"
+source = "git+https://github.com/succinctlabs/flock?rev=b684b1258e4b1f202bec24afd660ace851b09e5e#b684b1258e4b1f202bec24afd660ace851b09e5e"
 dependencies = [
  "rayon",
 ]
@@ -1860,6 +1874,7 @@ dependencies = [
 [[package]]
 name = "flock-transcript"
 version = "0.1.0"
+source = "git+https://github.com/succinctlabs/flock?rev=b684b1258e4b1f202bec24afd660ace851b09e5e#b684b1258e4b1f202bec24afd660ace851b09e5e"
 dependencies = [
  "blake3",
  "flock-field",
@@ -2238,6 +2253,7 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 [[package]]
 name = "lean-stwo-dummy"
 version = "0.1.0"
+source = "git+https://github.com/permissionlessweb/cosmwasm.git?rev=416d8c60ebae74d0b714b1bb58f2a90bf702a348#416d8c60ebae74d0b714b1bb58f2a90bf702a348"
 dependencies = [
  "bincode",
  "itertools 0.12.1",
@@ -4796,6 +4812,7 @@ dependencies = [
 [[package]]
 name = "zk-cosmwasm"
 version = "4.0.0-zk"
+source = "git+https://github.com/permissionlessweb/cosmwasm.git?rev=416d8c60ebae74d0b714b1bb58f2a90bf702a348#416d8c60ebae74d0b714b1bb58f2a90bf702a348"
 dependencies = [
  "ark-bn254",
  "ark-crypto-primitives 0.5.0",
@@ -4828,6 +4845,7 @@ dependencies = [
 [[package]]
 name = "zk-cosmwasm-hosts"
 version = "4.0.0-zk"
+source = "git+https://github.com/permissionlessweb/cosmwasm.git?rev=416d8c60ebae74d0b714b1bb58f2a90bf702a348#416d8c60ebae74d0b714b1bb58f2a90bf702a348"
 dependencies = [
  "bincode",
  "blake3",
