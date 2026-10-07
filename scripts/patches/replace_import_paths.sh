@@ -48,7 +48,9 @@ PRUNE=(
   -path ./build -o
   -path ./artifacts -o
   -path ./.worktrees -o
-  -path ./optimizer -o
+  -path ./tools/optimizer -o
+  -path ./tools/builders -o
+  -path ./tools/cw-optimizoor -o
   -path ./websites -o
   -path ./notes
 )

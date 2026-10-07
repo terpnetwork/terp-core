@@ -30,7 +30,7 @@ COMMIT="$(git rev-parse HEAD)"
 STATIC_A="$ROOT/x/wasm/wasmvm/internal/api/libwasmvmstatic_darwin.a"
 if [ ! -f "$STATIC_A" ]; then
   echo "ERROR: missing $STATIC_A" >&2
-  echo "Build it with: builders/host/build_macos_static_arm64.sh" >&2
+  echo "Build it with: tools/builders/host/build_macos_static_arm64.sh" >&2
   exit 1
 fi
 if command -v lipo >/dev/null; then

@@ -36,7 +36,7 @@ copy_lib libwasmvm.x86_64.so
 copy_lib libwasmvm_muslc.aarch64.a
 copy_lib libwasmvm_muslc.x86_64.a
 if [ ! -f "$VM/internal/api/libwasmvmstatic_darwin.a" ]; then
-  echo "ERROR: libwasmvmstatic_darwin.a missing (run builders/host/build_macos_static_arm64.sh)" >&2
+  echo "ERROR: libwasmvmstatic_darwin.a missing (run tools/builders/host/build_macos_static_arm64.sh)" >&2
   exit 1
 fi
 copy_lib libwasmvmstatic_darwin.a

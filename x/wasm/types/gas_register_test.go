@@ -349,7 +349,7 @@ func TestUncompressCosts(t *testing.T) {
 		},
 		"max len": {
 			lenIn: MaxWasmSize,
-			exp:   122880,
+			exp:   245_760, // (800 KiB * 2) * 0.15 gas/byte
 		},
 		"invalid len": {
 			lenIn:    -1,

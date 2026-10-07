@@ -171,4 +171,4 @@ you can just use `rustup` to install all this with no problems.
 
 ## Folded into terp-core
 
-This copy is the `8117f41` tree of [permissionlessweb/wasmvm](https://github.com/permissionlessweb/wasmvm), tag `4.0.0-zk`. The Go module path stays `github.com/CosmWasm/wasmvm/v3`. Builders live at `/builders` in the terp-core root. See `VERSION`. When this fold is accepted, that GitHub repository should be archived public and read-only. This review checkout is not committed.
+This copy is the `8117f41` tree of [permissionlessweb/wasmvm](https://github.com/permissionlessweb/wasmvm), tag `4.0.0-zk`. The Go module path stays `github.com/CosmWasm/wasmvm/v3`. Builders live at `tools/builders` in the terp-core root. See `VERSION`. When this fold is accepted, that GitHub repository should be archived public and read-only. This review checkout is not committed.

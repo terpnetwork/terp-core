@@ -72,7 +72,9 @@ rebuild_muslc() {
   command -v docker >/dev/null || { echo "ERROR: docker required to rebuild muslc" >&2; exit 1; }
   local vm builders
   vm="$(wasmvm_rel)"
-  if [ -f builders/Dockerfile.alpine-nightly ] || [ -f builders/Dockerfile.alpine ]; then
+  if [ -f tools/builders/Dockerfile.alpine-nightly ] || [ -f tools/builders/Dockerfile.alpine ]; then
+    builders="tools/builders"
+  elif [ -f builders/Dockerfile.alpine-nightly ] || [ -f builders/Dockerfile.alpine ]; then
     builders="builders"
   else
     builders="$vm/builders"
@@ -137,7 +139,10 @@ fetch_muslc() {
 rebuild_darwin_a() {
   [ "$(uname -s)" = Darwin ] && [ "$(uname -m)" = arm64 ] || return 0
   want_platform darwin/arm64 || return 0
-  if [ -f builders/host/build_macos_static_arm64.sh ]; then
+  if [ -f tools/builders/host/build_macos_static_arm64.sh ]; then
+    echo "==> rebuild libwasmvmstatic_darwin.a from source"
+    bash tools/builders/host/build_macos_static_arm64.sh
+  elif [ -f builders/host/build_macos_static_arm64.sh ]; then
     echo "==> rebuild libwasmvmstatic_darwin.a from source"
     bash builders/host/build_macos_static_arm64.sh
   elif [ -f "$(wasmvm_rel)/builders/host/build_macos_static_arm64.sh" ]; then

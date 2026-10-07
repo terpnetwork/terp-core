@@ -40,7 +40,7 @@ PY
 
 # --- wasmvm host libs in the tree vs lock ---
 API="$ROOT/x/wasm/wasmvm/internal/api"
-bash "$ROOT/builders/host/verify_libwasmvm.sh"
+bash "$ROOT/tools/builders/host/verify_libwasmvm.sh"
 
 want_x86="$(hex_from_lock libwasmvm_muslc.x86_64.a)"
 want_arm="$(hex_from_lock libwasmvm_muslc.aarch64.a)"

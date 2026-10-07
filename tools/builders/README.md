@@ -1,7 +1,7 @@
 # Cross Compilation Scripts
 
-These Dockerfiles and host scripts live at the repository root.
-`scripts/makefiles/wasmvm.mk` (included by the top-level Makefile) calls `builders/`.
+These Dockerfiles and host scripts live in `tools/builders/`.
+`scripts/makefiles/wasmvm.mk` (included by the top-level Makefile) calls `tools/builders/`.
 
 
 

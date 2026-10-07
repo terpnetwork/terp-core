@@ -47,7 +47,7 @@ build-darwin-arm64: go.sum
 	  echo "ERROR: build-darwin-arm64 is host-native (this Mac, arm64)"; exit 1; \
 	fi
 	@if [ ! -f x/wasm/wasmvm/internal/api/libwasmvmstatic_darwin.a ]; then \
-	  echo "ERROR: missing libwasmvmstatic_darwin.a — run builders/host/build_macos_static_arm64.sh"; \
+	  echo "ERROR: missing libwasmvmstatic_darwin.a — run tools/builders/host/build_macos_static_arm64.sh"; \
 	  exit 1; \
 	fi
 	mkdir -p $(BUILDDIR)

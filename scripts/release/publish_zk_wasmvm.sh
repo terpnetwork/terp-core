@@ -15,7 +15,7 @@ TAG="${WASMVM_S3_TAG:-v4.0.0-zk}"
 DEST="${ALIAS}/${BUCKET}/zk-wasmvm/${TAG}"
 DRY_RUN="${DRY_RUN:-0}"
 
-bash "$ROOT/builders/host/verify_libwasmvm.sh"
+bash "$ROOT/tools/builders/host/verify_libwasmvm.sh"
 
 API="$ZK/internal/api"
 if [ -f "$ZK/VERSION" ]; then

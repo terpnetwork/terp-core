@@ -11,9 +11,10 @@
 .opencode/*
 crates/*
 !crates/cosmwasm
-!crates/zk-wasmd
 websites/*
 tools/*
+!tools/builders/
+!tools/builders/**
 # Build
 vendor
 build

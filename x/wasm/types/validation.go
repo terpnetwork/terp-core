@@ -21,8 +21,10 @@ const MaxSaltSize = 64
 var (
 	// MaxLabelSize is the longest label that can be used when instantiating a contract
 	MaxLabelSize = 128 // extension point for chains to customize via compile flag.
-	// MaxWasmSize is the largest a compiled contract code can be when storing code on chain
-	MaxWasmSize    = 800 * 1024       // extension point for chains to customize via compile flag.
+	// MaxWasmSize is the largest a compiled contract code can be when storing code on chain.
+	// Upstream wasmd ships 800 KiB. Terp's default is that limit doubled.
+	// MAX_WASM_SIZE overrides this at process start.
+	MaxWasmSize    = 800 * 1024 * 2
 	MaxCircuitSize = 32 * 1024 * 1024 // 32 mb
 	// MaxProposalWasmSize is the largest a gov proposal compiled contract code can be when storing code on chain
 	MaxProposalWasmSize = 3 * 1024 * 1024 // extension point for chains to customize via compile flag.

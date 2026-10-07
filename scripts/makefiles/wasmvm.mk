@@ -12,8 +12,8 @@ ALPINE_TESTER := cosmwasm/alpine-tester:local
 USER_ID := $(shell id -u)
 USER_GROUP = $(shell id -g)
 
-# Cargo path deps are ../../../../crates/cosmwasm from libwasmvm.
-# Inside the builder, /code is libwasmvm, so that collapses to /crates/cosmwasm.
+# libwasmvm pins permissionlessweb/cosmwasm by git rev. A path dep on
+# ../../../../crates/cosmwasm is what mounts the local tree into the builder.
 _HAS_LOCAL_DEPS := $(shell grep -q 'path = "../../../../crates/cosmwasm' $(WASMVM_DIR)/libwasmvm/Cargo.toml 2>/dev/null && echo yes)
 ZK_COSMWASM_DIR ?= $(abspath $(CURDIR)/crates/cosmwasm)
 ZK_ZCASH_DIR ?= $(abspath $(CURDIR)/crates/zcash)
@@ -138,7 +138,7 @@ release-build-macos-static:
 
 .PHONY: release-build-macos-static-arm64
 release-build-macos-static-arm64:
-	@bash $(CURDIR)/builders/host/build_macos_static_arm64.sh
+	@bash $(CURDIR)/tools/builders/host/build_macos_static_arm64.sh
 
 release-build-windows:
 	$(_DOCKER_RUN) $(_CROSS_BUILDER) build_windows.sh
@@ -166,8 +166,8 @@ release-build:
 
 .PHONY: verify-libwasmvm
 verify-libwasmvm:
-	@chmod +x $(CURDIR)/builders/host/verify_libwasmvm.sh
-	@bash $(CURDIR)/builders/host/verify_libwasmvm.sh
+	@chmod +x $(CURDIR)/tools/builders/host/verify_libwasmvm.sh
+	@bash $(CURDIR)/tools/builders/host/verify_libwasmvm.sh
 
 .PHONY: create-tester-image
 create-tester-image:

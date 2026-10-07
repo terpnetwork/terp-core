@@ -1,6 +1,6 @@
 # 4.0.0-zk uses OUR images only.
 # Do not pull or push cosmwasm/libwasmvm-builder:0103-* (rustc 1.86, no Path A).
-# See docs/BUILDERS.md and builders/README.md.
+# See docs/BUILDERS.md and tools/builders/README.md.
 ZK_TAG := 4.0.0-zk
 
 .PHONY: docker-image-alpine-nightly
