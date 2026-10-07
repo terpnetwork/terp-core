@@ -24,7 +24,7 @@ jobs:
           submodules: false
 
       - name: Chain forks at this tag's gitlinks
-        run: git submodule update --init crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+        run: git submodule update --init crates/cosmwasm
 
       - name: Published muslc and ibc-hooks
         run: |
@@ -35,7 +35,7 @@ jobs:
             # shellcheck disable=SC1090
             . "$extras"
           fi
-          ./scripts/release/fetch_zk_muslc.sh crates/zk-wasmvm/internal/api
+          ./scripts/release/fetch_zk_muslc.sh x/wasm/wasmvm/internal/api
           if [ ! -f crates/ibc-hooks-v11/go.mod ]; then
             url="${IBC_HOOKS_URL:-https://minio.terp.network/releases/terp-core/v6.0.0-dev/ibc-hooks-v11.tar.gz}"
             curl -fsSL -o /tmp/ibc-hooks-v11.tar.gz "$url"
