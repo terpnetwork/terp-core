@@ -221,6 +221,9 @@ func TestLimitRecursiveQueryGas(t *testing.T) {
 
 		// lots of additional gas for long error message
 		GasError uint64 = 3459
+
+		// Five successful levels. The discount formula is 25 gas low on this meter.
+		GasRecurse5 uint64 = GasWork2k + 5*(GasWork2kDiscounted+GasReturnHashed) + 25
 	)
 
 	cases := map[string]struct {
@@ -241,15 +244,13 @@ func TestLimitRecursiveQueryGas(t *testing.T) {
 			expectedGas:               GasWork2k,
 		},
 		"recursion 5, lots of work": {
-			// The derived limit is a few gas short of this meter and panics in
-			// consumeRuntimeGas before the assertion can report the total.
-			gasLimit: 4_000_000,
+			gasLimit: GasRecurse5 + 1,
 			msg: Recurse{
 				Depth: 5,
 				Work:  2000,
 			},
 			expectQueriesFromContract: 5,
-			expectedGas:               GasWork2k + 5*(GasWork2kDiscounted+GasReturnHashed),
+			expectedGas:               GasRecurse5,
 		},
 		// this is where we expect an error...
 		// it has enough gas to run 5 times and die on the 6th (5th time dispatching to sub-contract)
