@@ -64,10 +64,12 @@ func TestInitCacheWorksForNonExistentDir(t *testing.T) {
 }
 
 func TestInitCacheErrorsForBrokenDir(t *testing.T) {
-	// Use colon to make this fail on Windows
-	// https://gist.github.com/doctaphred/d01d05291546186941e1b7ddc02034d3
-	// On Unix we should not have permission to create this.
-	cannotBeCreated := "/foo:bar"
+	// A regular file cannot be a parent of the cache directory. This fails
+	// for root and for an unprivileged user. "/foo:bar" only fails when the
+	// process cannot create a directory in /.
+	parent := filepath.Join(t.TempDir(), "not-a-directory")
+	require.NoError(t, os.WriteFile(parent, []byte("x"), 0o644))
+	cannotBeCreated := filepath.Join(parent, "child")
 	config := types.VMConfig{
 		Cache: types.CacheOptions{
 			BaseDir:                  cannotBeCreated,
