@@ -97,7 +97,6 @@ func TestStoreCodeAndVk(t *testing.T) {
 		_, _, err = vm.StoreCodeWithCircuit(wasm, vk, testingGasLimit)
 		require.ErrorContains(t, err, "Wasm bytecode could not be deserialized")
 	}
-
 }
 
 func TestStoreCode(t *testing.T) {
@@ -203,6 +202,7 @@ func TestSimulateStoreCodeWithCircuit(t *testing.T) {
 		})
 	}
 }
+
 func TestSimulateStoreCode(t *testing.T) {
 	vm := withVM(t)
 

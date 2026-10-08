@@ -36,8 +36,8 @@ jobs:
         name: Check out the repo
         uses: actions/checkout@v6
         with:
-          # SKIP submodules:recursive — stock image build uses WASMVM_SOURCE=github
-          # and strips monorepo path replaces; crates/ is dockerignored.
+          # SKIP submodules:recursive. The image downloads muslc v4.0.0-zk
+          # and keeps the in-tree wasmvm replace. crates/ is dockerignored.
           fetch-depth: 1
       - 
         name: Set up QEMU
@@ -71,6 +71,9 @@ jobs:
           file: Dockerfile
           context: .
           push: true
+          build-args: |
+            WASMVM_SOURCE=github
+            WASMVM_MUSLC_TAG=v4.0.0-zk
           platforms: linux/amd64,linux/arm64
           tags: |
             ghcr.io/terpnetwork/terp-core:${{ env.MAJOR_VERSION }}

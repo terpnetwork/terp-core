@@ -116,10 +116,7 @@ pub mod zk {
             .map_err(|e| Error::vm_err(format!("Failed to load circuit from cache: {}", e)))?;
 
         match vk_data {
-            Some(data) => Ok(data
-                .vk
-                .to_bytes_with_params()
-                .map_err(|e| Error::vm_err(e))?),
+            Some(data) => Ok(data.vk.to_bytes_with_params().map_err(Error::vm_err)?),
             None => Err(Error::vm_err(
                 "Circuit not found in cache for given checksum",
             )),
@@ -215,7 +212,7 @@ pub mod zk {
         param: ByteSliceView,
     ) -> Result<Vec<u8>, Error> {
         let p = param.read().ok_or_else(|| Error::unset_arg(WASM_ARG))?;
-        let param_key = cache.store_param(&p)?;
+        let param_key = cache.store_param(p)?;
         Ok(param_key.to_vec())
     }
 }
@@ -478,8 +475,10 @@ fn do_sync_pinned_codes(
         .ok_or_else(|| Error::unset_arg(CHECKSUMS_ARG))?
         .into();
     let checksums: Vec<Checksum> = checksums
-        .chunks_exact(32)
-        .map(|checksum| checksum.try_into())
+        .as_chunks::<32>()
+        .0
+        .iter()
+        .map(|checksum| checksum.as_slice().try_into())
         .collect::<Result<_, _>>()?;
     cache.sync_pinned_codes(&checksums)?;
     Ok(())
@@ -495,13 +494,13 @@ pub extern "C" fn sync_pinned_circuits(
     error_msg: Option<&mut UnmanagedVector>,
 ) {
     let r = match to_cache(cache) {
-        Some(c) => {
-            catch_unwind(AssertUnwindSafe(move || do_sync_pinned_circuits(c, circuit_keys)))
-                .unwrap_or_else(|err| {
-                    handle_vm_panic("do_sync_pinned_circuits", err);
-                    Err(Error::panic())
-                })
-        }
+        Some(c) => catch_unwind(AssertUnwindSafe(move || {
+            do_sync_pinned_circuits(c, circuit_keys)
+        }))
+        .unwrap_or_else(|err| {
+            handle_vm_panic("do_sync_pinned_circuits", err);
+            Err(Error::panic())
+        }),
         None => Err(Error::unset_arg(CACHE_ARG)),
     };
     handle_c_error_default(r, error_msg)
@@ -515,17 +514,12 @@ fn do_sync_pinned_circuits(
         .read()
         .ok_or_else(|| Error::unset_arg(CHECKSUMS_ARG))?
         .into();
-    if raw.len() % 72 != 0 {
-        return Err(Error::invalid_utf8("circuit keys length must be multiple of 72"));
+    if !raw.len().is_multiple_of(72) {
+        return Err(Error::invalid_utf8(
+            "circuit keys length must be multiple of 72",
+        ));
     }
-    let keys: Vec<[u8; 72]> = raw
-        .chunks_exact(72)
-        .map(|c| {
-            let mut a = [0u8; 72];
-            a.copy_from_slice(c);
-            a
-        })
-        .collect();
+    let keys: Vec<[u8; 72]> = raw.as_chunks::<72>().0.to_vec();
     cache.sync_pinned_circuits(&keys)?;
     Ok(())
 }

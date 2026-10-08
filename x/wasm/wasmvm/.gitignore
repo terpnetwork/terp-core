@@ -1,5 +1,10 @@
 # Please also see libwasmvm/.gitignore for the Rust-specific ignored files.
 artifacts/*
+# libwasmvm include_bytes! these four. The rest are demo downloads.
+!artifacts/cyberpunk.wasm
+!artifacts/hackatom.wasm
+!artifacts/ibc_reflect.wasm
+!artifacts/norick_vk.bin
 **/*.rs.bk
 *.iml
 .idea

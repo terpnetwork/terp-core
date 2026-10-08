@@ -100,4 +100,5 @@ SENTRY_SETUP.md
 oline-ui.md
 docs/
 .grok
-artifacts/
+# Repo-root build dump only. x/wasm/wasmvm/artifacts is the libwasmvm fixture set.
+/artifacts/

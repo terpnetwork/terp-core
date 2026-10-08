@@ -86,8 +86,7 @@ func (e NoSuchCircuit) Error() string {
 	return fmt.Sprintf("no such circuit: %d", e.ZkID)
 }
 
-type NoVkorWasm struct {
-}
+type NoVkorWasm struct{}
 
 func (e NoVkorWasm) Error() string {
 	return "must provide either wasm or vk bytes"

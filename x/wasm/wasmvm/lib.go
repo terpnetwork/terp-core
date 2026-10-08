@@ -15,8 +15,10 @@ import (
 type Checksum = types.Checksum
 
 // Circuit identity is 72 bytes (not a 32-byte wasm checksum). See types.CircuitKeyLen.
-const CircuitKeyLen = types.CircuitKeyLen
-const CombinedStoreIDLen = types.CombinedStoreIDLen
+const (
+	CircuitKeyLen      = types.CircuitKeyLen
+	CombinedStoreIDLen = types.CombinedStoreIDLen
+)
 
 // WasmCode is an alias for raw bytes of the wasm compiled code
 type WasmCode []byte
