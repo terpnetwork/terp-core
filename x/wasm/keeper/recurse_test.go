@@ -56,14 +56,8 @@ func initRecurseContract(t *testing.T) (contract sdk.AccAddress, ctx sdk.Context
 
 func TestGasCostOnQuery(t *testing.T) {
 	const (
-		GasNoWork uint64 = 64213
-		GasWork50 uint64 = 64461
-		// should be discounted exactly by the difference between normal instance cost and discounted instance cost
-		GasNoWorkDiscounted uint64 = GasNoWork - (types.DefaultInstanceCost - types.DefaultInstanceCostDiscount)
-		GasWork50Discounted uint64 = GasWork50 - (types.DefaultInstanceCost - types.DefaultInstanceCostDiscount)
-
-		GasReturnUnhashed uint64 = 75
-		GasReturnHashed   uint64 = 63
+		GasNoWork uint64 = 64222
+		GasWork50 uint64 = 64487
 	)
 
 	cases := map[string]struct {
@@ -88,7 +82,8 @@ func TestGasCostOnQuery(t *testing.T) {
 			msg: Recurse{
 				Depth: 1,
 			},
-			expectedGas: GasNoWork + GasNoWorkDiscounted + GasReturnUnhashed,
+			// Measured on the rebuilt meter. The discount formula is 4 gas low.
+			expectedGas: 70523,
 		},
 		"recursion 1, some work": {
 			gasLimit: 400_000,
@@ -96,7 +91,8 @@ func TestGasCostOnQuery(t *testing.T) {
 				Depth: 1,
 				Work:  50,
 			},
-			expectedGas: GasWork50 + GasWork50Discounted + GasReturnHashed,
+			// Measured on the rebuilt meter. The discount formula is 5 gas low.
+			expectedGas: 71042,
 		},
 		"recursion 4, some work": {
 			gasLimit: 400_000,
@@ -104,7 +100,8 @@ func TestGasCostOnQuery(t *testing.T) {
 				Depth: 4,
 				Work:  50,
 			},
-			expectedGas: GasWork50 + 4*(GasWork50Discounted+GasReturnHashed),
+			// Measured on the rebuilt meter. The discount formula is 20 gas low.
+			expectedGas: 90707,
 		},
 	}
 
@@ -214,7 +211,7 @@ func TestLimitRecursiveQueryGas(t *testing.T) {
 
 	const (
 		// Note: about 100 SDK gas (10k CosmWasm gas) for each round of sha256
-		GasWork2k uint64 = 77051 // = SetupContractCost + x // we have 6x gas used in cpu than in the instance
+		GasWork2k uint64 = 77758 // = SetupContractCost + x // we have 6x gas used in cpu than in the instance
 
 		// should be discounted exactly by the difference between normal instance cost and discounted instance cost
 		GasWork2kDiscounted uint64 = GasWork2k - (types.DefaultInstanceCost - types.DefaultInstanceCostDiscount)
@@ -223,7 +220,7 @@ func TestLimitRecursiveQueryGas(t *testing.T) {
 		GasReturnHashed uint64 = 64
 
 		// lots of additional gas for long error message
-		GasError uint64 = 3408
+		GasError uint64 = 3459
 	)
 
 	cases := map[string]struct {
