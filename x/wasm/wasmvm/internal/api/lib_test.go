@@ -735,7 +735,8 @@ func TestExecuteCpuLoop(t *testing.T) {
 	diff := time.Since(start)
 	require.NoError(t, err)
 	requireOkResponse(t, res, 0)
-	require.Equal(t, uint64(0xd0cda9), cost.UsedInternally)
+	// Instantiate cost of the rebuilt cyberpunk guest (rustc bulk-memory memcpy).
+	require.Equal(t, uint64(0x34ac77b), cost.UsedInternally)
 	t.Logf("Time (%d gas): %s\n", cost.UsedInternally, diff)
 
 	// execute a cpu loop

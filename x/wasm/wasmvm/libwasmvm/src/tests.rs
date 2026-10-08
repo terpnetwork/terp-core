@@ -62,8 +62,10 @@ fn handle_cpu_loop_with_cache() {
 fn handle_cpu_loop_no_cache() {
     let gas_limit = GAS_LIMIT;
     // The stock mock omits bulk_memory. rustc >= 1.87 guests require it.
-    let mut options = MockInstanceOptions::default();
-    options.gas_limit = gas_limit;
+    let mut options = MockInstanceOptions {
+        gas_limit,
+        ..Default::default()
+    };
     options
         .available_capabilities
         .insert("bulk_memory".to_string());
