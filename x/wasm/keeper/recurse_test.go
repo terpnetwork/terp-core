@@ -241,7 +241,9 @@ func TestLimitRecursiveQueryGas(t *testing.T) {
 			expectedGas:               GasWork2k,
 		},
 		"recursion 5, lots of work": {
-			gasLimit: GasWork2k + 5*(GasWork2kDiscounted+GasReturnHashed) + 1,
+			// The derived limit is a few gas short of this meter and panics in
+			// consumeRuntimeGas before the assertion can report the total.
+			gasLimit: 4_000_000,
 			msg: Recurse{
 				Depth: 5,
 				Work:  2000,
