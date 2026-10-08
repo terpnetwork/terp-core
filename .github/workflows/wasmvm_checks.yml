@@ -230,9 +230,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      # wasmer's floor is 1.95, but stwo's prover feature uses nightly
+      # portable_simd. rustc 1.95 fails with E0554 on that crate.
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: 1.95.0
+          toolchain: nightly
       - name: Cargo cache
         uses: actions/cache@v4
         with:
@@ -244,9 +246,9 @@ jobs:
             x/wasm/wasmvm/libwasmvm/target/release/.fingerprint
             x/wasm/wasmvm/libwasmvm/target/release/build
             x/wasm/wasmvm/libwasmvm/target/release/deps
-          key: cargocache-v3-build_shared_library-rust-1.95.0-${{ hashFiles('x/wasm/wasmvm/libwasmvm/Cargo.lock') }}
+          key: cargocache-v4-build_shared_library-rust-nightly-${{ hashFiles('x/wasm/wasmvm/libwasmvm/Cargo.lock') }}
           restore-keys: |
-            cargocache-v3-build_shared_library-rust-1.95.0-
+            cargocache-v4-build_shared_library-rust-nightly-
       - name: Build shared library
         run: make build-libwasmvm
       - uses: actions/upload-artifact@v4

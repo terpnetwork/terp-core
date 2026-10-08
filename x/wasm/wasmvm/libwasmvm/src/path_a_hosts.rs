@@ -25,7 +25,6 @@ mod tests {
         zk_cosmwasm_hosts::install();
         let proposer = [0x42u8; 32];
         let (_ticket, proof) = lean_stwo_dummy::prove_ssle(1, 7, &proposer).expect("prove");
-        zk_cosmwasm_hosts::stwo::host_verify(&proof, &[])
-            .expect("verify via zk-cosmwasm-hosts");
+        zk_cosmwasm_hosts::stwo::host_verify(&proof, &[]).expect("verify via zk-cosmwasm-hosts");
     }
 }

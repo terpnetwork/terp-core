@@ -18,7 +18,7 @@ fn handle_cpu_loop_with_cache() {
     let backend = mock_backend(&[]);
     let options = CacheOptions::new(
         TempDir::new().unwrap().path().to_path_buf(),
-        capabilities_from_csv("staking"),
+        capabilities_from_csv("staking,cosmwasm_1_1,cosmwasm_1_2,cosmwasm_1_3"),
         MEMORY_CACHE_SIZE,
         MEMORY_LIMIT,
     );

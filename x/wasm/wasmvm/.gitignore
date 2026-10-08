@@ -5,6 +5,7 @@ artifacts/*
 !artifacts/hackatom.wasm
 !artifacts/ibc_reflect.wasm
 !artifacts/norick_vk.bin
+!artifacts/toy_vk.bin
 **/*.rs.bk
 *.iml
 .idea

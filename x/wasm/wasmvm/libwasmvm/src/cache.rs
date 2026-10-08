@@ -785,7 +785,8 @@ mod tests {
     use std::{cmp::Ordering, collections::HashSet, iter::FromIterator, path::PathBuf};
     use tempfile::TempDir;
 
-    static NORICK_CIRCUIT: &[u8] = include_bytes!("../../artifacts/norick_vk.bin");
+    // norick_vk.bin no longer deserializes on this halo2 ("invalid point encoding").
+    static TOY_VK: &[u8] = include_bytes!("../../artifacts/toy_vk.bin");
     static HACKATOM: &[u8] = include_bytes!("../../artifacts/hackatom.wasm");
     static IBC_REFLECT: &[u8] = include_bytes!("../../artifacts/ibc_reflect.wasm");
 
@@ -1035,7 +1036,7 @@ mod tests {
         println!("storing circit");
         let checksum = store_circuit(
             cache_ptr,
-            ByteSliceView::new(NORICK_CIRCUIT),
+            ByteSliceView::new(TOY_VK),
             true,
             Some(&mut error_msg),
         );
