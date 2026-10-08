@@ -3,6 +3,7 @@
 package cosmwasm
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -631,10 +632,9 @@ func TestPinUnpin(t *testing.T) {
 	pinnedMetrics, err = vm.GetPinnedMetrics()
 	require.NoError(t, err)
 	require.Len(t, pinnedMetrics.PerModule, 2)
-	require.Equal(t, uint32(0), pinnedMetrics.PerModule[0].Metrics.Hits)
-	require.InEpsilon(t, 4800000, pinnedMetrics.PerModule[0].Metrics.Size, 0.25)
-	require.Equal(t, uint32(0), pinnedMetrics.PerModule[1].Metrics.Hits)
-	require.InEpsilon(t, 4800000, pinnedMetrics.PerModule[1].Metrics.Size, 0.60)
+	// Checksum order, not pin order. A rebuilt guest sorts differently.
+	requirePinnedSize(t, pinnedMetrics, checksumHackatom, 4800000, 0.25)
+	requirePinnedSize(t, pinnedMetrics, checksumCyberpunk, 4800000, 0.60)
 
 	// Unpin contract 1. The remaining module is cyberpunk.
 	err = vm.Unpin(checksumHackatom)
@@ -655,6 +655,18 @@ func TestPinUnpin(t *testing.T) {
 	pinnedMetrics, err = vm.GetPinnedMetrics()
 	require.NoError(t, err)
 	require.Empty(t, pinnedMetrics.PerModule)
+}
+
+func requirePinnedSize(t *testing.T, metrics *types.PinnedMetrics, checksum []byte, expected uint64, epsilon float64) {
+	t.Helper()
+	for _, entry := range metrics.PerModule {
+		if bytes.Equal(entry.Checksum, checksum) {
+			require.Equal(t, uint32(0), entry.Metrics.Hits)
+			require.InEpsilon(t, float64(expected), float64(entry.Metrics.Size), epsilon)
+			return
+		}
+	}
+	t.Fatalf("checksum %x is not pinned", checksum)
 }
 
 func TestPinNotExisting(t *testing.T) {

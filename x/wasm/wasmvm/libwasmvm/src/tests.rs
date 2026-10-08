@@ -2,7 +2,9 @@
 
 use tempfile::TempDir;
 
-use cosmwasm_vm::testing::{mock_backend, mock_env, mock_info, mock_instance_with_gas_limit};
+use cosmwasm_vm::testing::{
+    mock_backend, mock_env, mock_info, mock_instance_with_options, MockInstanceOptions,
+};
 use cosmwasm_vm::{
     call_execute_raw, call_instantiate_raw, capabilities_from_csv, to_vec, Cache, CacheOptions,
     InstanceOptions, Size,
@@ -18,7 +20,7 @@ fn handle_cpu_loop_with_cache() {
     let backend = mock_backend(&[]);
     let options = CacheOptions::new(
         TempDir::new().unwrap().path().to_path_buf(),
-        capabilities_from_csv("staking,cosmwasm_1_1,cosmwasm_1_2,cosmwasm_1_3"),
+        capabilities_from_csv("staking,bulk_memory,cosmwasm_1_1,cosmwasm_1_2,cosmwasm_1_3"),
         MEMORY_CACHE_SIZE,
         MEMORY_LIMIT,
     );
@@ -59,7 +61,13 @@ fn handle_cpu_loop_with_cache() {
 #[test]
 fn handle_cpu_loop_no_cache() {
     let gas_limit = GAS_LIMIT;
-    let mut instance = mock_instance_with_gas_limit(CYBERPUNK, gas_limit);
+    // The stock mock omits bulk_memory. rustc >= 1.87 guests require it.
+    let mut options = MockInstanceOptions::default();
+    options.gas_limit = gas_limit;
+    options
+        .available_capabilities
+        .insert("bulk_memory".to_string());
+    let mut instance = mock_instance_with_options(CYBERPUNK, options);
 
     // instantiate
     let env = mock_env();

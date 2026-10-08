@@ -26,7 +26,9 @@ const (
 	TESTING_CACHE_SIZE   = 100                     // MiB
 )
 
-var TESTING_CAPABILITIES = []string{"staking", "stargate", "iterator", "cosmwasm_1_1", "cosmwasm_1_2", "cosmwasm_1_3", "zk", "hash_poseidon", "bn254", "hash_blake", "redpallas"}
+// bulk_memory is required by a rustc >= 1.87 guest (memcpy). The chain
+// advertises it from BuiltInCapabilities.
+var TESTING_CAPABILITIES = []string{"staking", "stargate", "iterator", "bulk_memory", "cosmwasm_1_1", "cosmwasm_1_2", "cosmwasm_1_3", "zk", "hash_poseidon", "bn254", "hash_blake", "redpallas"}
 
 func TestInitAndReleaseCache(t *testing.T) {
 	tmpdir := t.TempDir()
