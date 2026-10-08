@@ -87,6 +87,15 @@ jobs:
             pub="$(awk -F': ' '$1=="published"{print $2; exit}' "$lock")"
             plan="$(awk -F': ' '$1=="plan"{print $2; exit}' "$lock")"
             [ "$pub" = "true" ] || continue
+            commit="$(awk -F': ' '$1=="binary_commit"{print $2; exit}' "$lock")"
+            # v6.1 and v6.2 ELFs are already on S3. Their commits still
+            # path-replace crates/zk-wasmd and crates/zk-wasmvm, which this
+            # branch does not init. published-bytes checks those packs.
+            if git grep -q '=> ./crates/zk-wasmvm' "$commit" -- go.mod \
+              || git grep -q '=> ./crates/zk-wasmd' "$commit" -- go.mod; then
+              echo "SKIP $plan: $commit still path-replaces removed wasm submodules"
+              continue
+            fi
             echo "==> recurate PLAN=$plan arch=amd64"
             RECURATE_ARCH=amd64 PLAN="$plan" bash scripts/release/recurate_upgrade_binaries.sh
           done

@@ -42,11 +42,28 @@ jobs:
           fi
       - name: Hasher packaging
         run: ./scripts/release/curate_v63.sh
+      - name: Published muslc
+        run: ./scripts/release/fetch_zk_muslc.sh x/wasm/wasmvm/internal/api
       - name: Setup go
         uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-      - run: go build ./...
+      - name: Build
+        run: |
+          set -euo pipefail
+          # Linux go links the published muslc archive. go-gen fixtures are
+          # rust snapshots without a package clause; any other list error fails.
+          list="$(go list -e -f '{{if .Error}}ERR {{.ImportPath}}{{else}}{{.ImportPath}}{{end}}' ./...)"
+          bad="$(printf '%s\n' "$list" | grep '^ERR ' | grep -v '/crates/cosmwasm/packages/go-gen' || true)"
+          if [ -n "$bad" ]; then
+            echo "$bad" >&2
+            exit 1
+          fi
+          pkgs=()
+          while IFS= read -r p; do
+            pkgs+=("$p")
+          done < <(printf '%s\n' "$list" | grep -v '^ERR ')
+          go build -tags muslc "${pkgs[@]}"
 
   test:
     runs-on: ubuntu-latest
@@ -69,8 +86,22 @@ jobs:
           fi
       - name: Hasher packaging
         run: ./scripts/release/curate_v63.sh
+      - name: Published muslc
+        run: ./scripts/release/fetch_zk_muslc.sh x/wasm/wasmvm/internal/api
       - name: Test
-        run: go test ./...
+        run: |
+          set -euo pipefail
+          list="$(go list -e -f '{{if .Error}}ERR {{.ImportPath}}{{else}}{{.ImportPath}}{{end}}' ./...)"
+          bad="$(printf '%s\n' "$list" | grep '^ERR ' | grep -v '/crates/cosmwasm/packages/go-gen' || true)"
+          if [ -n "$bad" ]; then
+            echo "$bad" >&2
+            exit 1
+          fi
+          pkgs=()
+          while IFS= read -r p; do
+            pkgs+=("$p")
+          done < <(printf '%s\n' "$list" | grep -v '^ERR ')
+          go test -tags muslc "${pkgs[@]}"
 
   tidy:
     runs-on: ubuntu-latest

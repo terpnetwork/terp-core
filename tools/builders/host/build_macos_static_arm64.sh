@@ -3,7 +3,7 @@
 # Produces internal/api/libwasmvmstatic_darwin.a for `go build -tags static_wasm`.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$ROOT/x/wasm/wasmvm/libwasmvm"
 
 export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-13.0}"

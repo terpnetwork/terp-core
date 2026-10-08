@@ -2,7 +2,7 @@
 # Fail if internal/api is a mixed-generation set (the 4.0.0-zk trip:
 # muslc .a recut, glibc .so still 3.0.7 → Linux go test undefined store_param).
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 API="$ROOT/x/wasm/wasmvm/internal/api"
 
 need() {

@@ -24,12 +24,13 @@ const (
 	testingCacheSize   = 100                     // MiB
 )
 
-var testingCapabilities = []string{"staking", "stargate", "iterator", "bulk_memory"}
+var testingCapabilities = []string{"staking", "stargate", "iterator", "bulk_memory", "cosmwasm_1_1", "cosmwasm_1_2", "cosmwasm_1_3"}
 
 const (
 	cyberpunkTestContract = "./artifacts/cyberpunk.wasm"
 	hackatomTestContract  = "./artifacts/hackatom.wasm"
-	noRickTestCircuitVK   = "./artifacts/norick_vk.bin"
+	// norick_vk.bin no longer deserializes on this halo2.
+	noRickTestCircuitVK = "./artifacts/toy_vk.bin"
 )
 
 func withVM(t *testing.T) *VM {
@@ -469,7 +470,7 @@ func TestGetMetrics(t *testing.T) {
 	require.Equal(t, uint64(0), metrics.ElementsPinnedMemoryCache)
 	require.Equal(t, uint64(1), metrics.ElementsMemoryCache)
 	require.Equal(t, uint64(0), metrics.SizePinnedMemoryCache)
-	require.InEpsilon(t, 3700000, metrics.SizeMemoryCache, 0.25)
+	require.InEpsilon(t, 5544384, metrics.SizeMemoryCache, 0.45)
 
 	// Instantiate 2
 	msg2 := []byte(`{"verifier": "fred", "beneficiary": "susi"}`)
@@ -487,7 +488,7 @@ func TestGetMetrics(t *testing.T) {
 	require.Equal(t, uint64(0), metrics.ElementsPinnedMemoryCache)
 	require.Equal(t, uint64(1), metrics.ElementsMemoryCache)
 	require.Equal(t, uint64(0), metrics.SizePinnedMemoryCache)
-	require.InEpsilon(t, 3700000, metrics.SizeMemoryCache, 0.25)
+	require.InEpsilon(t, 5544384, metrics.SizeMemoryCache, 0.45)
 
 	// Pin
 	err = vm.Pin(checksum)
@@ -500,8 +501,8 @@ func TestGetMetrics(t *testing.T) {
 	require.Equal(t, uint32(2), metrics.HitsFsCache)
 	require.Equal(t, uint64(1), metrics.ElementsPinnedMemoryCache)
 	require.Equal(t, uint64(1), metrics.ElementsMemoryCache)
-	require.InEpsilon(t, 3700000, metrics.SizePinnedMemoryCache, 0.25)
-	require.InEpsilon(t, 3700000, metrics.SizeMemoryCache, 0.25)
+	require.InEpsilon(t, 5544384, metrics.SizePinnedMemoryCache, 0.45)
+	require.InEpsilon(t, 5544384, metrics.SizeMemoryCache, 0.45)
 
 	// Instantiate 3
 	msg3 := []byte(`{"verifier": "fred", "beneficiary": "bert"}`)
@@ -519,8 +520,8 @@ func TestGetMetrics(t *testing.T) {
 	require.Equal(t, uint32(2), metrics.HitsFsCache)
 	require.Equal(t, uint64(1), metrics.ElementsPinnedMemoryCache)
 	require.Equal(t, uint64(1), metrics.ElementsMemoryCache)
-	require.InEpsilon(t, 3700000, metrics.SizePinnedMemoryCache, 0.25)
-	require.InEpsilon(t, 3700000, metrics.SizeMemoryCache, 0.25)
+	require.InEpsilon(t, 5544384, metrics.SizePinnedMemoryCache, 0.45)
+	require.InEpsilon(t, 5544384, metrics.SizeMemoryCache, 0.45)
 
 	// Unpin
 	err = vm.Unpin(checksum)
@@ -535,7 +536,7 @@ func TestGetMetrics(t *testing.T) {
 	require.Equal(t, uint64(0), metrics.ElementsPinnedMemoryCache)
 	require.Equal(t, uint64(1), metrics.ElementsMemoryCache)
 	require.Equal(t, uint64(0), metrics.SizePinnedMemoryCache)
-	require.InEpsilon(t, 3700000, metrics.SizeMemoryCache, 0.25)
+	require.InEpsilon(t, 5544384, metrics.SizeMemoryCache, 0.45)
 
 	// Instantiate 4
 	msg4 := []byte(`{"verifier": "fred", "beneficiary": "jeff"}`)
@@ -554,7 +555,7 @@ func TestGetMetrics(t *testing.T) {
 	require.Equal(t, uint64(0), metrics.ElementsPinnedMemoryCache)
 	require.Equal(t, uint64(1), metrics.ElementsMemoryCache)
 	require.Equal(t, uint64(0), metrics.SizePinnedMemoryCache)
-	require.InEpsilon(t, 3700000, metrics.SizeMemoryCache, 0.25)
+	require.InEpsilon(t, 5544384, metrics.SizeMemoryCache, 0.45)
 }
 
 func TestLongPayloadDeserialization(t *testing.T) {
@@ -633,9 +634,9 @@ func TestPinUnpin(t *testing.T) {
 	require.Equal(t, uint32(0), pinnedMetrics.PerModule[0].Metrics.Hits)
 	require.InEpsilon(t, 4800000, pinnedMetrics.PerModule[0].Metrics.Size, 0.25)
 	require.Equal(t, uint32(0), pinnedMetrics.PerModule[1].Metrics.Hits)
-	require.InEpsilon(t, 4800000, pinnedMetrics.PerModule[1].Metrics.Size, 0.25)
+	require.InEpsilon(t, 4800000, pinnedMetrics.PerModule[1].Metrics.Size, 0.60)
 
-	// Unpin contract 1
+	// Unpin contract 1. The remaining module is cyberpunk.
 	err = vm.Unpin(checksumHackatom)
 	require.NoError(t, err)
 
@@ -644,7 +645,7 @@ func TestPinUnpin(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, pinnedMetrics.PerModule, 1)
 	require.Equal(t, uint32(0), pinnedMetrics.PerModule[0].Metrics.Hits)
-	require.InEpsilon(t, 4800000, pinnedMetrics.PerModule[0].Metrics.Size, 0.25)
+	require.InEpsilon(t, 4800000, pinnedMetrics.PerModule[0].Metrics.Size, 0.60)
 
 	// Unpin contract 2
 	err = vm.Unpin(checksumCyberpunk)

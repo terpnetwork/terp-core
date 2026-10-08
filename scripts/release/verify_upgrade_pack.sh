@@ -38,9 +38,10 @@ print(m.group(1) if m else "")
 PY
 }
 
-# --- wasmvm host libs in the tree vs lock ---
+# Host-lib generation (muslc + glibc + darwin dylib) is `make` /
+# verify_libwasmvm.sh after a release build. This pack check compares lock
+# rows to the tree only when the lock names them, then checks JSON and S3.
 API="$ROOT/x/wasm/wasmvm/internal/api"
-bash "$ROOT/tools/builders/host/verify_libwasmvm.sh"
 
 want_x86="$(hex_from_lock libwasmvm_muslc.x86_64.a)"
 want_arm="$(hex_from_lock libwasmvm_muslc.aarch64.a)"

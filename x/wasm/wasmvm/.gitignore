@@ -4,6 +4,9 @@ artifacts/*
 !artifacts/cyberpunk.wasm
 !artifacts/hackatom.wasm
 !artifacts/ibc_reflect.wasm
+!artifacts/floaty_2.0.wasm
+!artifacts/queue.wasm
+!artifacts/reflect.wasm
 !artifacts/norick_vk.bin
 !artifacts/toy_vk.bin
 **/*.rs.bk
