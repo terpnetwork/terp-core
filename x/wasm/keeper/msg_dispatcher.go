@@ -125,13 +125,13 @@ func (d MessageDispatcher) DispatchSubmessages(ctx sdk.Context, contractAddr sdk
 		if err == nil {
 			commit()
 			filteredEvents = filterEvents(append(em.Events(), events...))
-			// Indexers still see bank/staking; reply payload is filtered separately below.
+			// Tx events and the reply payload share this set. Native CosmosMsg
+			// replies are emptied below (wasmd #917): SDK events are not consensus.
+			// Wasm CosmosMsg replies keep the rest, including instantiate/execute.
 			ctx.EventManager().EmitEvents(filteredEvents)
 			if msg.Msg.Wasm == nil {
 				filteredEvents = []sdk.Event{}
 			} else {
-				// Reply payload (and ReplyCosts) only includes wasm / wasm-* events.
-				filteredEvents = filterWasmReplyEvents(filteredEvents)
 				for _, e := range filteredEvents {
 					attributes := e.Attributes
 					sort.SliceStable(attributes, func(i, j int) bool {
@@ -237,18 +237,6 @@ func filterEvents(events []sdk.Event) []sdk.Event {
 	res := make([]sdk.Event, 0, len(events))
 	for _, ev := range events {
 		if ev.Type != "message" {
-			res = append(res, ev)
-		}
-	}
-	return res
-}
-
-// filterWasmReplyEvents keeps contract events for SubMsgResponse / ReplyCosts.
-// Native bank/staking and wasm system events (execute/instantiate/sudo/reply) are omitted.
-func filterWasmReplyEvents(events []sdk.Event) []sdk.Event {
-	res := make([]sdk.Event, 0, len(events))
-	for _, ev := range events {
-		if ev.Type == types.WasmModuleEventType || strings.HasPrefix(ev.Type, types.CustomContractEventPrefix) {
 			res = append(res, ev)
 		}
 	}

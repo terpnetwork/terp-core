@@ -34,6 +34,10 @@ submitted on Thursday.
 The wasmvm in these binaries reports a prefix-iterator error only while the
 iterator is still valid, so a normal end-of-range scan no longer fails.
 
+**Contract authors:** wasm-to-wasm `reply` events follow upstream wasmd
+again. The v6.1 allowlist that dropped `instantiate` / `execute` from the
+reply payload is not the rule. See [`REPLY-EVENTS.md`](./REPLY-EVENTS.md).
+
 ---
 
 ## Published tarballs

@@ -29,8 +29,10 @@ If `ExecStart` is already `cosmovisor run start`, skip to
 [Pre-place both binaries](#pre-place-both-binaries-before-halt).
 If it is raw `terpd start`, start at [Install Cosmovisor](#install-cosmovisor-first-time).
 
-**Contract authors:** submessage **actions still happen**; `reply.events` no
-longer includes bank/`instantiate` plumbing. Audit list:
+**Contract authors:** v6.1 narrowed wasm `reply.events`. v6.3 restores the
+upstream wasmd boundary. Current rule:
+[`../v6.3/REPLY-EVENTS.md`](../v6.3/REPLY-EVENTS.md). Other v6.1 contract
+notes (cw-hooks, HashMerchant) stay in
 [`CONTRACT-BREAKING.md`](./CONTRACT-BREAKING.md).
 
 ---

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"testing"
 
 	wasmvm "github.com/CosmWasm/wasmvm/v3"
@@ -214,20 +213,24 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 	}
 
 	assertGotContractAddr := func(t *testing.T, ctx sdk.Context, contract, emptyAccount string, response wasmvmtypes.SubMsgResult) {
-		// Address is in protobuf data; instantiate system events are not in the reply payload.
+		// Address is in protobuf data and on the wasmd instantiate event (wasmd #586).
 		var res types.MsgInstantiateContractResponse
 		keepers.EncodingConfig.Codec.MustUnmarshal(response.Ok.Data, &res)
 		assert.NotEmpty(t, res.Address)
 		assert.NotEqual(t, contract, res.Address)
+		var found bool
 		for _, event := range response.Ok.Events {
-			assert.True(t, event.Type == types.WasmModuleEventType || strings.HasPrefix(event.Type, types.CustomContractEventPrefix), event.Type)
-			assert.NotEqual(t, types.EventTypeInstantiate, event.Type)
+			if event.Type != types.EventTypeInstantiate {
+				continue
+			}
 			for _, attr := range event.Attributes {
 				if attr.Key == types.AttributeKeyContractAddr {
 					assert.Equal(t, res.Address, attr.Value)
+					found = true
 				}
 			}
 		}
+		require.True(t, found, "reply.events must include instantiate/_contract_address")
 	}
 
 	cases := map[string]struct {
@@ -286,7 +289,7 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 			// uses all the subGasLimit, plus the 52k or so for the main contract
 			resultAssertions: []assertion{assertGasUsed(subGasLimit+75_000, subGasLimit+77_000), assertErrorString("codespace: sdk, code: 11")},
 		},
-		"instantiate contract gets address in data and events": {
+		"instantiate contract gets address in data and instantiate event": {
 			submsgID: 21,
 			msg:      instantiateContract,
 			resultAssertions: []assertion{
@@ -345,6 +348,9 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 				err = json.Unmarshal(queryRes, &res)
 				require.NoError(t, err)
 				assert.Equal(t, tc.submsgID, res.ID)
+				// Upstream leaves this unset. Filling it from the meter would put
+				// cache-dependent gas into the reply JSON.
+				assert.Zero(t, res.GasUsed)
 
 				if tc.subMsgError {
 					require.NotEmpty(t, res.Result.Err)
@@ -361,6 +367,91 @@ func TestDispatchSubMsgErrorHandling(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestWasmExecuteSubmsgReplyKeepsHostAndContractEvents runs a real execute
+// SubMsg through the keeper. The reply must contain the wasmd execute event
+// and the child contract's wasm event. An allowlist that keeps only wasm/*
+// fails the execute check. Emptying every wasm reply fails both.
+func TestWasmExecuteSubmsgReplyKeepsHostAndContractEvents(t *testing.T) {
+	ctx, keepers := CreateTestInput(t, false, ReflectCapabilities)
+	ctx = ctx.WithGasMeter(storetypes.NewInfiniteGasMeter())
+	ctx = ctx.WithBlockGasMeter(storetypes.NewInfiniteGasMeter())
+	keeper := keepers.WasmKeeper
+
+	deposit := sdk.NewCoins(sdk.NewInt64Coin("denom", 100_000))
+	creator := keepers.Faucet.NewFundedRandomAccount(ctx, deposit...)
+	reflectID, _, err := keepers.ContractKeeper.Create(ctx, creator, testdata.ReflectContractWasm(), nil)
+	require.NoError(t, err)
+
+	parent, _, err := keepers.ContractKeeper.Instantiate(ctx, reflectID, creator, nil, []byte("{}"), "parent", nil)
+	require.NoError(t, err)
+	// Parent is the instantiator, so it is the child's owner and may execute it.
+	child, _, err := keepers.ContractKeeper.Instantiate(ctx, reflectID, parent, nil, []byte("{}"), "child", nil)
+	require.NoError(t, err)
+
+	_, nextOwner := keyPubAddr()
+	changeOwner, err := json.Marshal(map[string]any{
+		"change_owner": map[string]string{"owner": nextOwner.String()},
+	})
+	require.NoError(t, err)
+
+	const submsgID = uint64(42)
+	reflectSend, err := json.Marshal(testdata.ReflectHandleMsg{
+		ReflectSubMsg: &testdata.ReflectSubPayload{
+			Msgs: []wasmvmtypes.SubMsg{{
+				ID:      submsgID,
+				ReplyOn: wasmvmtypes.ReplyAlways,
+				Msg: wasmvmtypes.CosmosMsg{Wasm: &wasmvmtypes.WasmMsg{Execute: &wasmvmtypes.ExecuteMsg{
+					ContractAddr: child.String(),
+					Msg:          changeOwner,
+				}}},
+			}},
+		},
+	})
+	require.NoError(t, err)
+
+	execCtx := ctx.WithGasMeter(storetypes.NewGasMeter(2_000_000))
+	_, err = keepers.ContractKeeper.Execute(execCtx, parent, creator, reflectSend, nil)
+	require.NoError(t, err)
+
+	queryBz, err := json.Marshal(testdata.ReflectQueryMsg{SubMsgResult: &testdata.SubCall{ID: submsgID}})
+	require.NoError(t, err)
+	queryRes, err := keeper.QuerySmart(ctx, parent, queryBz)
+	require.NoError(t, err)
+	var reply wasmvmtypes.Reply
+	require.NoError(t, json.Unmarshal(queryRes, &reply))
+	require.NotNil(t, reply.Result.Ok)
+	assert.Zero(t, reply.GasUsed)
+
+	var sawExecute, sawWasm bool
+	for _, event := range reply.Result.Ok.Events {
+		assert.NotEqual(t, "message", event.Type)
+		for i := 1; i < len(event.Attributes); i++ {
+			assert.LessOrEqual(t, event.Attributes[i-1].Key, event.Attributes[i].Key)
+		}
+		switch event.Type {
+		case types.EventTypeExecute:
+			sawExecute = true
+			var addr string
+			for _, attr := range event.Attributes {
+				if attr.Key == types.AttributeKeyContractAddr {
+					addr = attr.Value
+				}
+			}
+			assert.Equal(t, child.String(), addr)
+		case types.WasmModuleEventType:
+			sawWasm = true
+			keys := make([]string, len(event.Attributes))
+			for i, attr := range event.Attributes {
+				keys[i] = attr.Key
+			}
+			assert.Contains(t, keys, "action")
+			assert.Contains(t, keys, types.AttributeKeyContractAddr)
+		}
+	}
+	require.True(t, sawExecute, "wasm execute SubMsg must deliver the execute event in reply")
+	require.True(t, sawWasm, "child-authored wasm attributes must stay in reply")
 }
 
 // Test an error case, where the Encoded doesn't return any sdk.Msg and we trigger(ed) a null pointer exception.

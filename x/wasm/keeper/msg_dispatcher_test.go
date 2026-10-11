@@ -311,12 +311,15 @@ func TestDispatchSubmessages(t *testing.T) {
 					}
 					res := reply.Result.Ok
 
-					// reply payload is wasm / wasm-* only (execute is emitted to indexers, not the contract)
-					if len(res.Events) != 1 {
+					// message is stripped; execute and wasm both reach the contract.
+					if len(res.Events) != 2 {
 						return nil, fmt.Errorf("event count: %#v", res.Events)
 					}
-					if res.Events[0].Type != "wasm" {
+					if res.Events[0].Type != "execute" {
 						return nil, fmt.Errorf("event0: %#v", res.Events[0])
+					}
+					if res.Events[1].Type != "wasm" {
+						return nil, fmt.Errorf("event1: %#v", res.Events[1])
 					}
 
 					// let's add a custom event here and see if it makes it out
@@ -370,7 +373,7 @@ func TestDispatchSubmessages(t *testing.T) {
 			},
 			expCommits: []bool{true},
 		},
-		"wasm reply excludes bank and system events from payload": {
+		"wasm reply keeps host events and sorts attributes": {
 			msgs: []wasmvmtypes.SubMsg{{ID: 1, ReplyOn: wasmvmtypes.ReplyAlways, Msg: wasmvmtypes.CosmosMsg{Wasm: &wasmvmtypes.WasmMsg{}}}},
 			replyer: &mockReplyer{
 				replyFn: func(ctx sdk.Context, contractAddress sdk.AccAddress, reply wasmvmtypes.Reply) ([]byte, error) {
@@ -378,20 +381,26 @@ func TestDispatchSubmessages(t *testing.T) {
 						return nil, errors.New(reply.Result.Err)
 					}
 					res := reply.Result.Ok
-					if len(res.Events) != 2 {
+					want := []string{
+						"transfer",
+						types.EventTypeExecute,
+						types.EventTypeInstantiate,
+						types.EventTypeSudo,
+						types.EventTypeReply,
+						types.WasmModuleEventType,
+						types.CustomContractEventPrefix + "custom",
+					}
+					if len(res.Events) != len(want) {
 						return nil, fmt.Errorf("event count: %#v", res.Events)
 					}
-					if res.Events[0].Type != types.WasmModuleEventType {
-						return nil, fmt.Errorf("event0: %#v", res.Events[0])
-					}
-					if res.Events[1].Type != types.CustomContractEventPrefix+"custom" {
-						return nil, fmt.Errorf("event1: %#v", res.Events[1])
-					}
-					for _, ev := range res.Events {
-						if ev.Type == "transfer" || ev.Type == types.EventTypeExecute ||
-							ev.Type == types.EventTypeInstantiate || ev.Type == types.EventTypeSudo ||
-							ev.Type == types.EventTypeReply {
-							return nil, fmt.Errorf("native/system event leaked into reply: %#v", ev)
+					for i, ev := range res.Events {
+						if ev.Type != want[i] {
+							return nil, fmt.Errorf("event %d: got %s want %s (%#v)", i, ev.Type, want[i], res.Events)
+						}
+						for j := 1; j < len(ev.Attributes); j++ {
+							if ev.Attributes[j-1].Key > ev.Attributes[j].Key {
+								return nil, fmt.Errorf("attributes not sorted: %#v", ev)
+							}
 						}
 					}
 					return res.Data, nil
@@ -418,10 +427,11 @@ func TestDispatchSubmessages(t *testing.T) {
 			expData:    []byte("subData"),
 			expCommits: []bool{true},
 			expEvents: []sdk.Event{
+				// Attribute sort runs on the shared slice after emit, so tx events are sorted too.
 				sdk.NewEvent("transfer",
+					sdk.NewAttribute("amount", "1utoken"),
 					sdk.NewAttribute("recipient", "cosmos1bankrecipient"),
 					sdk.NewAttribute("sender", "cosmos1banksender"),
-					sdk.NewAttribute("amount", "1utoken"),
 				),
 				sdk.NewEvent(types.EventTypeExecute, sdk.NewAttribute("_contract_address", "placeholder-random-addr")),
 				sdk.NewEvent(types.EventTypeInstantiate, sdk.NewAttribute("_contract_address", "placeholder-random-addr")),
@@ -506,15 +516,14 @@ func TestDispatchSubmessages(t *testing.T) {
 	}
 }
 
-func TestDispatchSubmessagesReplyCostsIndependentOfBankEvents(t *testing.T) {
+func TestDispatchSubmessagesNativeReplyOmitsSDKEvents(t *testing.T) {
 	bankEvent := sdk.NewEvent("transfer",
 		sdk.NewAttribute("recipient", "cosmos1bankrecipientxxxxxxxxxxxxxxxxxxxxxxxx"),
 		sdk.NewAttribute("sender", "cosmos1banksenderxxxxxxxxxxxxxxxxxxxxxxxxxx"),
 		sdk.NewAttribute("amount", "1000000000000000000utoken"),
 	)
-	wasmEvent := sdk.NewEvent(types.WasmModuleEventType, sdk.NewAttribute("random", "data"))
 
-	dispatch := func(emitBank bool) (sdk.Events, wasmvmtypes.Reply) {
+	dispatch := func(wasmMsg bool, emitBank bool) (sdk.Events, wasmvmtypes.Reply) {
 		t.Helper()
 		var captured wasmvmtypes.Reply
 		replyer := &mockReplyer{
@@ -528,7 +537,11 @@ func TestDispatchSubmessagesReplyCostsIndependentOfBankEvents(t *testing.T) {
 				if emitBank {
 					ctx.EventManager().EmitEvent(bankEvent)
 				}
-				return []sdk.Event{wasmEvent}, [][]byte{[]byte("subData")}, [][]*codectypes.Any{}, nil
+				return []sdk.Event{
+					sdk.NewEvent("message", sdk.NewAttribute(types.AttributeKeyContractAddr, contractAddr.String())),
+					sdk.NewEvent(types.EventTypeInstantiate, sdk.NewAttribute(types.AttributeKeyContractAddr, "cosmos1child")),
+					sdk.NewEvent(types.WasmModuleEventType, sdk.NewAttribute("random", "data")),
+				}, [][]byte{[]byte("subData")}, [][]*codectypes.Any{}, nil
 			},
 		}
 		em := sdk.NewEventManager()
@@ -537,10 +550,14 @@ func TestDispatchSubmessagesReplyCostsIndependentOfBankEvents(t *testing.T) {
 			WithGasMeter(storetypes.NewGasMeter(100)).
 			WithEventManager(em).WithLogger(log.NewTestLogger(t))
 		d := NewMessageDispatcher(msgHandler, replyer)
+		msg := wasmvmtypes.CosmosMsg{Any: &wasmvmtypes.AnyMsg{}}
+		if wasmMsg {
+			msg = wasmvmtypes.CosmosMsg{Wasm: &wasmvmtypes.WasmMsg{}}
+		}
 		msgs := []wasmvmtypes.SubMsg{{
 			ID:      1,
 			ReplyOn: wasmvmtypes.ReplyAlways,
-			Msg:     wasmvmtypes.CosmosMsg{Wasm: &wasmvmtypes.WasmMsg{}},
+			Msg:     msg,
 		}}
 		gotData, err := d.DispatchSubmessages(ctx, RandomAccountAddress(t), "any_port", msgs)
 		require.NoError(t, err)
@@ -549,45 +566,56 @@ func TestDispatchSubmessagesReplyCostsIndependentOfBankEvents(t *testing.T) {
 		return em.Events(), captured
 	}
 
-	emittedWithBank, replyWithBank := dispatch(true)
-	emittedWithoutBank, replyWithoutBank := dispatch(false)
-
-	require.Len(t, replyWithBank.Result.Ok.Events, 1)
-	assert.Equal(t, types.WasmModuleEventType, replyWithBank.Result.Ok.Events[0].Type)
-	for _, ev := range replyWithBank.Result.Ok.Events {
-		assert.NotEqual(t, "transfer", ev.Type)
-	}
-	assert.Equal(t, replyWithoutBank.Result.Ok.Events, replyWithBank.Result.Ok.Events)
-
-	require.GreaterOrEqual(t, len(emittedWithBank), 2)
-	assert.Equal(t, "transfer", emittedWithBank[0].Type)
-	assert.Equal(t, types.WasmModuleEventType, emittedWithBank[1].Type)
-	for _, ev := range emittedWithoutBank {
-		assert.NotEqual(t, "transfer", ev.Type)
-	}
-
 	gasReg := types.NewDefaultWasmGasRegister()
-	assert.Equal(t, gasReg.ReplyCosts(true, replyWithoutBank), gasReg.ReplyCosts(true, replyWithBank))
 
-	inflated := wasmvmtypes.Reply{
-		ID:      replyWithBank.ID,
-		Payload: replyWithBank.Payload,
-		Result: wasmvmtypes.SubMsgResult{
-			Ok: &wasmvmtypes.SubMsgResponse{
-				Events: append(append([]wasmvmtypes.Event(nil), replyWithBank.Result.Ok.Events...), wasmvmtypes.Event{
-					Type: "transfer",
-					Attributes: []wasmvmtypes.EventAttribute{
-						{Key: "recipient", Value: "cosmos1bankrecipientxxxxxxxxxxxxxxxxxxxxxxxx"},
-						{Key: "sender", Value: "cosmos1banksenderxxxxxxxxxxxxxxxxxxxxxxxxxx"},
-						{Key: "amount", Value: "1000000000000000000utoken"},
-					},
-				}),
-				Data:         replyWithBank.Result.Ok.Data,
-				MsgResponses: replyWithBank.Result.Ok.MsgResponses,
-			},
-		},
+	// wasmd #917: a native submessage's SDK events stay on the tx and out of reply.
+	// ReplyCosts does not see them. GasUsed stays 0. That patch stays.
+	emittedNative, replyNative := dispatch(false, true)
+	_, replyNativeQuiet := dispatch(false, false)
+	require.Empty(t, replyNative.Result.Ok.Events)
+	require.Empty(t, replyNativeQuiet.Result.Ok.Events)
+	assert.Equal(t, []byte("subData"), replyNative.Result.Ok.Data)
+	assert.Zero(t, replyNative.GasUsed)
+	assert.Zero(t, replyNativeQuiet.GasUsed)
+	require.NotEmpty(t, emittedNative)
+	assert.Equal(t, "transfer", emittedNative[0].Type)
+	for _, ev := range emittedNative {
+		assert.NotEqual(t, "message", ev.Type)
 	}
-	assert.Greater(t, gasReg.ReplyCosts(true, inflated), gasReg.ReplyCosts(true, replyWithBank))
+	assert.Equal(t, gasReg.ReplyCosts(true, replyNativeQuiet), gasReg.ReplyCosts(true, replyNative))
+
+	// Wasm submessages keep instantiate, contract events, and events the sub-context emitted.
+	// "message" is still dropped. Dropping instantiate or wasm fails this check.
+	_, replyWasmQuiet := dispatch(true, false)
+	emittedWasm, replyWasm := dispatch(true, true)
+	assert.Zero(t, replyWasm.GasUsed)
+	assert.Equal(t, []byte("subData"), replyWasm.Result.Ok.Data)
+	require.Len(t, replyWasmQuiet.Result.Ok.Events, 2)
+	assert.Equal(t, types.EventTypeInstantiate, replyWasmQuiet.Result.Ok.Events[0].Type)
+	assert.Equal(t, types.AttributeKeyContractAddr, replyWasmQuiet.Result.Ok.Events[0].Attributes[0].Key)
+	assert.Equal(t, "cosmos1child", replyWasmQuiet.Result.Ok.Events[0].Attributes[0].Value)
+	assert.Equal(t, types.WasmModuleEventType, replyWasmQuiet.Result.Ok.Events[1].Type)
+	require.Len(t, replyWasm.Result.Ok.Events, 3)
+	assert.Equal(t, "transfer", replyWasm.Result.Ok.Events[0].Type)
+	transferAttrs := replyWasm.Result.Ok.Events[0].Attributes
+	require.Len(t, transferAttrs, 3)
+	assert.Equal(t, "amount", transferAttrs[0].Key)
+	assert.Equal(t, "1000000000000000000utoken", transferAttrs[0].Value)
+	assert.Equal(t, "recipient", transferAttrs[1].Key)
+	assert.Equal(t, "sender", transferAttrs[2].Key)
+	assert.Equal(t, types.EventTypeInstantiate, replyWasm.Result.Ok.Events[1].Type)
+	assert.Equal(t, types.WasmModuleEventType, replyWasm.Result.Ok.Events[2].Type)
+	for _, ev := range replyWasm.Result.Ok.Events {
+		assert.NotEqual(t, "message", ev.Type)
+	}
+	assert.Equal(t, "transfer", emittedWasm[0].Type)
+	txAttrs := sdkAttributesToWasmVMAttributes(emittedWasm[0].Attributes)
+	require.Len(t, txAttrs, len(transferAttrs))
+	for i := range txAttrs {
+		assert.Equal(t, txAttrs[i].Key, transferAttrs[i].Key)
+		assert.Equal(t, txAttrs[i].Value, transferAttrs[i].Value)
+	}
+	assert.Greater(t, gasReg.ReplyCosts(true, replyWasm), gasReg.ReplyCosts(true, replyWasmQuiet))
 }
 
 type mockReplyer struct {
