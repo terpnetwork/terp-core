@@ -66,7 +66,7 @@ Expedited voting is **24 hours**. The full expedited deposit
 `100000000000uterp` puts the proposal into voting immediately. Deposit it
 by Thursday 2026-10-15 10:00 UTC so the vote ends as height `23893261`
 arrives (Friday 2026-10-16 10:00 UTC). v6.4 is armed at `23893263`.
-`plan.info` is pending the linux tarball checksums for this cut.
+`plan.info` is the linux Cosmovisor JSON for this cut's v6.3.0 tarballs.
 
 Download the versioned tarballs (`terpd-6.3.0-linux-amd64.tar.gz` and the
 arm64 pair, and the same names for `6.4.0`). The bare `terpd-linux-amd64`

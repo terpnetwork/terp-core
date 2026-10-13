@@ -7,12 +7,12 @@
         "name": "v6.3",
         "time": "0001-01-01T00:00:00Z",
         "height": "23893261",
-        "info": "PENDING_FRIDAY_LINUX_TARBALL_CHECKSUMS",
+        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-amd64.tar.gz?checksum=sha256:7663b78e16f448bc13c38aea8be984ab51a7cfb653639d48d701fbba658a2fc0\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-arm64.tar.gz?checksum=sha256:493f95d711c8b4bf0ff212e1068cdd51ff4348436282f982e94cb9f31ee0007b\"}}",
         "upgraded_client_state": null
       }
     }
   ],
-  "metadata": "Expedited upgrade v6.3 at height 23893261, targeting 2026-10-16 10:00 UTC. v6.4 is armed two blocks later at 23893263. Submit the full expedited deposit by 2026-10-15 10:00 UTC. plan.info stays pending until the linux tarball checksums for this cut are stamped. See networks/upgrades/v6.3/metadata.json.",
+  "metadata": "Expedited upgrade v6.3 at height 23893261, targeting 2026-10-16 10:00 UTC. v6.4 is armed two blocks later at 23893263. Submit the full expedited deposit by 2026-10-15 10:00 UTC. See networks/upgrades/v6.3/metadata.json.",
   "deposit": "100000000000uterp",
   "title": "Software upgrade v6.3, then v6.4",
   "summary": "Halt morocco-1 at height 23893261 for terpd v6.3.0, set for 10:00 UTC on Friday 2026-10-16. That binary copies application stores onto BLAKE3 trees and arms v6.4 at height 23893263. v6.4 switches keepers onto those trees. IBC stores stay SHA-256. Governance submits only v6.3. The full expedited deposit puts the proposal into a 24-hour vote; deposit it by 10:00 UTC on Thursday 2026-10-15 so the vote ends as the halt arrives.",
