@@ -1,6 +1,6 @@
 {
   "binaries": {
-    "linux/amd64": "https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-amd64.tar.gz?checksum=sha256:7663b78e16f448bc13c38aea8be984ab51a7cfb653639d48d701fbba658a2fc0",
-    "linux/arm64": "https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-arm64.tar.gz?checksum=sha256:493f95d711c8b4bf0ff212e1068cdd51ff4348436282f982e94cb9f31ee0007b"
+    "linux/amd64": "https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-amd64.tar.gz?checksum=sha256:9355efb7d6ae4c7d1f53b65e7d9027c8858187e580ca70a2e784f1a587f7651c",
+    "linux/arm64": "https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-arm64.tar.gz?checksum=sha256:1d7a72338d6c97450f4b4d880db8ce4f4448f229ac736249d0e89258a91135d0"
   }
 }

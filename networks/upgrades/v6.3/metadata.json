@@ -27,33 +27,23 @@
   "projection": "halt_height = tip + floor(seconds_until_2026-10-16T10:00:00Z / avg_block_seconds). The 2000-block sample is the live rate. A 20000-block window is slower because the chain stalled on 8-10 October, so that window is not the projection.",
   "vote_margin_blocks": 34398,
   "v6_4_tarball_sha256": {
-    "linux/amd64": "503e7d4ffb6a777644de122e10285b6f3e8bb851be7915c56c27ec377d1b54f8",
-    "linux/arm64": "45e4ce69a4e08cb12d1d91ce7ec34d21af5d42b819633a2394a9e82b51cf8c0c",
-    "darwin/arm64": "e5c65dd567387ae281a5302dd3f97ad5eb18ad1156ba29ed2150061b56c0e3c8"
+    "linux/amd64": "3887809b2ba46ad7d7ef63bf276e83474232f300dfd2b4ac981cb36227eedbff",
+    "linux/arm64": "b5b819e003aacbd535bebd773cf7d67ee17eb525bf5aba43d5e6973daf988508"
   },
   "v6_3_plan_info": "proposal.json plan.info is the linux Cosmovisor JSON. Darwin is packed for the release and is omitted from plan.info, matching the operator guide.",
-  "plan_info": "linux cosmovisor JSON for the v6.3.0 tarballs built from fc894f67",
+  "plan_info": "linux cosmovisor JSON for the v6.3.0 tarballs built from 42369ef9",
   "v6_3_tarball_sha256": {
-    "linux/amd64": "7663b78e16f448bc13c38aea8be984ab51a7cfb653639d48d701fbba658a2fc0",
-    "linux/arm64": "493f95d711c8b4bf0ff212e1068cdd51ff4348436282f982e94cb9f31ee0007b"
-  },
-  "v6_4_tarball_sha256": {
-    "linux/amd64": "f9facb3bbd65ce78fa800c92468b1391a7be6f1db12d958250b871e8b327dbae",
-    "linux/arm64": "d56cf97ebe9b657285dd02d318e85df64d3fad072087a646778f91b8d830f20c"
+    "linux/amd64": "9355efb7d6ae4c7d1f53b65e7d9027c8858187e580ca70a2e784f1a587f7651c",
+    "linux/arm64": "1d7a72338d6c97450f4b4d880db8ce4f4448f229ac736249d0e89258a91135d0"
   },
   "binary_commits": {
-    "v6.3.0": "fc894f672dfb002662775d6b6897ef2f4d874b06",
-    "v6.4.0": "8951fc4035d961f9ba066ab25f43888be6b53dbf"
+    "v6.3.0": "42369ef9f6da96ae58be6f4bcf128e3cea989eda",
+    "v6.4.0": "89576f66f4f3e8173d91e40c2fe864febcc631ce"
   },
   "supersedes_halt": {
     "height": 23833180,
     "time_utc": "2026-10-13T10:00:00Z",
     "reason": "That height passed before this cut. Tip at measurement was 23838500."
   },
-  "broadcast": false,
-  "v6_3_tarball_sha256": {
-    "linux/amd64": "cd78aa8341d32c19e6f5fc0d27a97fd53cf3b15061648f7aef0276194c4becc2",
-    "linux/arm64": "b8689d2a9a8ece2daecadbf6c88e01051b8de195ee62e9c2eefb2a3224cdf2cc",
-    "darwin/arm64": "ef8f15872a35e9438d24176b4e74769e71fa016fcbc8275f3471f678e5d4d911"
-  }
+  "broadcast": false
 }
