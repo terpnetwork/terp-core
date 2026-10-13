@@ -27,18 +27,18 @@
   "projection": "halt_height = tip + floor(seconds_until_2026-10-16T10:00:00Z / avg_block_seconds). The 2000-block sample is the live rate. A 20000-block window is slower because the chain stalled on 8-10 October, so that window is not the projection.",
   "vote_margin_blocks": 34398,
   "v6_4_tarball_sha256": {
-    "linux/amd64": "3887809b2ba46ad7d7ef63bf276e83474232f300dfd2b4ac981cb36227eedbff",
-    "linux/arm64": "b5b819e003aacbd535bebd773cf7d67ee17eb525bf5aba43d5e6973daf988508"
+    "linux/amd64": "33e11632d368e455ab9a906fe161445a77f7127415ebb6cc80bad2d2e05e3196",
+    "linux/arm64": "4d1298cfa6d3dab824381e60227f07f6e5c0a054a5be42f970e40de4678c9a36"
   },
   "v6_3_plan_info": "proposal.json plan.info is the linux Cosmovisor JSON. Darwin is packed for the release and is omitted from plan.info, matching the operator guide.",
-  "plan_info": "linux cosmovisor JSON for the v6.3.0 tarballs built from 42369ef9",
+  "plan_info": "linux cosmovisor JSON for the v6.3.0 tarballs built from ef0692159fef3b7c89f5d80a3ec45e6353806bd9",
   "v6_3_tarball_sha256": {
-    "linux/amd64": "9355efb7d6ae4c7d1f53b65e7d9027c8858187e580ca70a2e784f1a587f7651c",
-    "linux/arm64": "1d7a72338d6c97450f4b4d880db8ce4f4448f229ac736249d0e89258a91135d0"
+    "linux/amd64": "dc9a4e2db78bd87c140d9fba6c3927ce1bd3c31485443f678b11238fdb806cfc",
+    "linux/arm64": "07737b5f7f00d1df6df1908dc5f62b8525ad57c7379caa59a9ebc970e5f0c26f"
   },
   "binary_commits": {
-    "v6.3.0": "42369ef9f6da96ae58be6f4bcf128e3cea989eda",
-    "v6.4.0": "89576f66f4f3e8173d91e40c2fe864febcc631ce"
+    "v6.3.0": "ef0692159fef3b7c89f5d80a3ec45e6353806bd9",
+    "v6.4.0": "84a113953df8a53f11e6675d5704d0d53ab3d792"
   },
   "supersedes_halt": {
     "height": 23833180,

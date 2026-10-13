@@ -17,12 +17,12 @@ Deposit `100000000000uterp` by `2026-10-15T10:00:00Z` so the 24-hour vote
 ends as the halt arrives. The calculation record is `metadata.json`.
 
 `plan.info` is the linux Cosmovisor JSON for the v6.3.0 tarballs built
-from `42369ef9`: linux/amd64
-`9355efb7d6ae4c7d1f53b65e7d9027c8858187e580ca70a2e784f1a587f7651c`,
+from `ef0692159fef`: linux/amd64
+`dc9a4e2db78bd87c140d9fba6c3927ce1bd3c31485443f678b11238fdb806cfc`,
 linux/arm64
-`1d7a72338d6c97450f4b4d880db8ce4f4448f229ac736249d0e89258a91135d0`.
+`07737b5f7f00d1df6df1908dc5f62b8525ad57c7379caa59a9ebc970e5f0c26f`.
 That binary's `NextUpgradeInfo` names the v6.4.0 tarballs built from
-`89576f66`. Height `23833180` was for Tuesday 2026-10-13 10:00 UTC and was
+`84a113953df8`. Height `23833180` was for Tuesday 2026-10-13 10:00 UTC and was
 already behind the follower at measurement.
 
 ## The number in the old draft is past
