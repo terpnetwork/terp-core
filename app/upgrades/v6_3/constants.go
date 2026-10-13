@@ -18,7 +18,7 @@ const NextUpgradeGap int64 = 2
 // NextUpgradeInfo is compact Cosmovisor binaries JSON (never file://).
 // After linux recurate: scripts/release/stamp_v63_next_info.sh copies
 // networks/upgrades/v6.4/cosmovisor.json so plan.info carries v6.4 checksums.
-const NextUpgradeInfo = `{"binaries":{"linux/amd64":"https://s3.terp.network/releases/terp-core/v6.4.0/terpd-6.4.0-linux-amd64.tar.gz?checksum=sha256:f9facb3bbd65ce78fa800c92468b1391a7be6f1db12d958250b871e8b327dbae","linux/arm64":"https://s3.terp.network/releases/terp-core/v6.4.0/terpd-6.4.0-linux-arm64.tar.gz?checksum=sha256:d56cf97ebe9b657285dd02d318e85df64d3fad072087a646778f91b8d830f20c"}}`
+const NextUpgradeInfo = `{"binaries":{"linux/amd64":"https://s3.terp.network/releases/terp-core/v6.4.0/terpd-6.4.0-linux-amd64.tar.gz?checksum=sha256:3887809b2ba46ad7d7ef63bf276e83474232f300dfd2b4ac981cb36227eedbff","linux/arm64":"https://s3.terp.network/releases/terp-core/v6.4.0/terpd-6.4.0-linux-arm64.tar.gz?checksum=sha256:b5b819e003aacbd535bebd773cf7d67ee17eb525bf5aba43d5e6973daf988508"}}`
 
 var Upgrade = upgrades.Upgrade{
 	UpgradeName:          UpgradeName,
