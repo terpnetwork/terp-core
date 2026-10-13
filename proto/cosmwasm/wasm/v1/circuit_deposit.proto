@@ -1,0 +1,40 @@
+syntax = "proto3";
+package cosmwasm.wasm.v1;
+
+import "amino/amino.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/terpnetwork/terp-core/x/wasm/types";
+
+// CircuitDeposit is the Msg service for yearly circuit-upload coverage.
+service CircuitDeposit {
+  option (cosmos.msg.v1.service) = true;
+
+  // PayCircuitDeposit buys coverage for the sender.
+  rpc PayCircuitDeposit(MsgPayCircuitDeposit)
+      returns (MsgPayCircuitDepositResponse);
+}
+
+// MsgPayCircuitDeposit pays yearly circuit-upload coverage for the sender.
+// Allowlisted uploaders do not need this message.
+message MsgPayCircuitDeposit {
+  option (cosmos.msg.v1.signer) = "sender";
+  option (amino.name) = "wasm/MsgPayCircuitDeposit";
+  option (gogoproto.equal) = false;
+
+  // sender is the account paying for coverage.
+  string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+
+  // years is how many years of coverage to buy. Valid range is 1 through 10.
+  uint32 years = 2;
+}
+
+// MsgPayCircuitDepositResponse is returned by PayCircuitDeposit.
+message MsgPayCircuitDepositResponse {
+  option (gogoproto.equal) = false;
+
+  // paid_until_unix is the unix time coverage runs through.
+  int64 paid_until_unix = 1;
+}
