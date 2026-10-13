@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Terp e2e</title>
+  <style>
+    body { font: 15px/1.4 ui-sans-serif, system-ui, sans-serif; margin: 1.5rem; color: #1c1917; background: #fafaf9; }
+    h1 { font-size: 1.4rem; margin-bottom: 0.2rem; }
+    p { max-width: 46rem; }
+    label { margin-right: 1rem; }
+    table { border-collapse: collapse; width: 100%; background: white; margin: 1rem 0 2rem; }
+    th, td { border: 1px solid #e7e5e4; padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
+    th { background: #f5f5f4; }
+    button { font: inherit; }
+    .passed { color: #166534; }
+    .failed { color: #991b1b; }
+    .skipped { color: #92400e; }
+    .errline { display: block; margin-top: 0.25rem; font-weight: 600; }
+    pre.tail { white-space: pre-wrap; word-break: break-word; max-height: 14rem; overflow: auto; margin: 0.35rem 0 0; padding: 0.4rem; font: 12px/1.35 ui-monospace, monospace; background: #fafaf9; }
+    td.failed pre.tail { background: #fef2f2; }
+  </style>
+</head>
+<body>
+  <h1>Terp e2e</h1>
+  <p>Filter curated against experimental. Every row uses the terp-core image from <code>TERP_IMAGE_REPO</code> and <code>TERP_IMAGE_VERSION</code>. ict-rs examples go through <code>make e2e-ict EXAMPLE=…</code>. A failed or skipped row shows the error line and the log tail from that run. Seconds, <code>terpd version</code>, and the libwasmvm rev are from that image run.</p>
+  <p>
+    <label><input type="radio" name="lane" value="all" checked> all</label>
+    <label><input type="radio" name="lane" value="curated"> curated</label>
+    <label><input type="radio" name="lane" value="experimental"> experimental</label>
+  </p>
+  <h2>Mock</h2>
+  <table id="mock"></table>
+  <h2>Local</h2>
+  <table id="local"></table>
+  <script>
+    const head = ["lane", "tree", "name", "result", "seconds", "terpd", "wasmvm", ""];
+    let catalog = [];
+    let results = [];
+    function resultFor(id) {
+      return results.find((row) => row.id === id) || {};
+    }
+    function esc(value) {
+      return String(value).replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      })[ch]);
+    }
+    function errorLine(got) {
+      if (got.error) return got.error;
+      const skip = /waiting for other jobs|generated \d+ warnings|proc-macro-error/;
+      const lines = String(got.tail || got.note || "").split("\n").map((ln) => ln.trim()).filter((ln) => ln && !skip.test(ln) && !/^[{}\]]+$/.test(ln));
+      const strong = [...lines].reverse().find((ln) => /^(error|ERROR:)|panicked at|section out of order/i.test(ln));
+      const hit = [...lines].reverse().find((ln) => /error|failed|panic|timeout|rejected/i.test(ln));
+      return strong || hit || lines.at(-1) || "";
+    }
+    function detail(got) {
+      const text = got.tail || got.note || "";
+      if (!text) return "";
+      const pre = `<pre class="tail">${esc(text)}</pre>`;
+      if (got.status === "failed" || got.status === "skipped") return pre;
+      return `<details><summary>log</summary>${pre}</details>`;
+    }
+    function render() {
+      const lane = document.querySelector('input[name="lane"]:checked').value;
+      for (const kind of ["mock", "local"]) {
+        const table = document.getElementById(kind);
+        const rows = catalog.filter((row) => row.kind === kind && (lane === "all" || row.lane === lane));
+        const body = rows.map((row) => {
+          const got = resultFor(row.id);
+          const status = got.status || "";
+          const err = (status === "failed" || status === "skipped") ? errorLine(got) : "";
+          return `<tr>
+            <td>${row.lane}</td><td>${row.tree}</td><td><code>${esc(row.name)}</code></td>
+            <td class="${status}">${esc(status)}${err ? `<span class="errline">${esc(err)}</span>` : ""}${detail(got)}</td>
+            <td>${got.seconds ?? ""}</td><td>${esc(got.terpd || "")}</td><td>${esc(got.wasmvm || "")}</td>
+            <td><button data-id="${esc(row.id)}">run</button></td>
+          </tr>`;
+        }).join("");
+        table.innerHTML = `<thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${body}</tbody>`;
+      }
+    }
+    document.addEventListener("change", render);
+    document.addEventListener("click", async (event) => {
+      const id = event.target?.dataset?.id;
+      if (!id) return;
+      event.target.disabled = true;
+      const response = await fetch("/run", { method: "POST", body: JSON.stringify({ id }) });
+      const record = await response.json();
+      results = results.filter((row) => row.id !== id).concat(record);
+      event.target.disabled = false;
+      render();
+    });
+    Promise.all([
+      fetch("catalog.json").then((r) => r.json()),
+      fetch("results.json").then((r) => r.json()).catch(() => []),
+    ]).then(([cat, res]) => { catalog = cat; results = res; render(); });
+  </script>
+</body>
+</html>

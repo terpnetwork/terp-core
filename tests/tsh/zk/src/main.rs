@@ -19,9 +19,8 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 fn main() -> Result<(), BoxError> {
     let suite = zk_cosmwasm::TestPressSuite::new();
-    let path = Path::new("../../interchaintest/circuits");
-    // Write to JSON file
-    let json_file = "../../interchaintest/circuits/no_rick_proof.json";
+    let path = Path::new("../../../artifacts");
+    let json_file = "../../../artifacts/no_rick_proof.json";
 
     // Words we want in the output JSON
     let words = vec!["rick", "morty", "summer"];

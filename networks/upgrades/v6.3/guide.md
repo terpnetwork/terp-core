@@ -63,9 +63,10 @@ are already applied (`current_plan` is empty; nothing is in voting or
 deposit). The DAO's week-long revote cooldown does not apply to this path.
 
 Expedited voting is **24 hours**. The full expedited deposit
-`100000000000uterp` puts the proposal into voting immediately. Broadcast
-early enough that those 24 hours end before height `23674923` (before
-Friday 2026-10-02 10:00 UTC).
+`100000000000uterp` puts the proposal into voting immediately. Deposit it
+by Thursday 2026-10-15 10:00 UTC so the vote ends as height `23893261`
+arrives (Friday 2026-10-16 10:00 UTC). v6.4 is armed at `23893263`.
+`plan.info` is pending the linux tarball checksums for this cut.
 
 Download the versioned tarballs (`terpd-6.3.0-linux-amd64.tar.gz` and the
 arm64 pair, and the same names for `6.4.0`). The bare `terpd-linux-amd64`

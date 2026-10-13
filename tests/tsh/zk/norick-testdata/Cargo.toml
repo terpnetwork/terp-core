@@ -13,7 +13,7 @@ path = "src/main.rs"
 base64 = "0.22"
 group = "0.13"
 cosmwasm-std = { path = "../../../../crates/cosmwasm/packages/std" }
-halo2_proofs = { path = "../../../../crates/zcash/halo2/halo2_proofs", default-features = false, features = ["batch"] }
+halo2_proofs = { package = "zakura-halo2-proofs", path = "../../../../crates/zakura-common/crates/halo2_proofs", default-features = false, features = ["batch"] }
 pasta_curves = "=0.5.1"
 rand = "0.8"
 serde_json = "1"

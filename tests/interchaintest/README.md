@@ -4,12 +4,9 @@ Rust binaries that replaced the Go `interchaintest` package. Sources live in
 `crates/ict-rs/examples/` (plus a few module smokes in `src/bin/`).
 
 ```sh
-# mock (no Docker)
+# every suite uses TERP_IMAGE_REPO and TERP_IMAGE_VERSION
 cd tests/interchaintest
-cargo run --bin basic
-cargo run --bin tokenfactory   # ICT_MOCK=1 implied by mock runtime inside these bins
-
-# docker (needs terpnetwork/terp-core:local)
+cargo run --bin ict -- basic_cosmos
 cargo run --bin ibc
 cargo run --bin polytone
 ```
@@ -21,7 +18,7 @@ From repo root: `make e2e` then `make e2e-basic`, `make e2e-ibc`, …
 | `TestBasicTerpStart` | `basic` | `integration_test.rs` |
 | (chain boot) | `chain_start` | `basic_cosmos.rs` |
 | `TestTerpGaiaIBCTransfer` | `ibc` | `ibc_transfer.rs` |
-| `TestTerpIBCHooks` | `ibchooks` | `ibc_hooks.rs` |
+| `TestTerpIBCHooks` | `ibc2` | `ibc_v2_callbacks.rs` |
 | `TestPacketForwardMiddlewareRouter` | `pfm` | `pfm.rs` |
 | `TestPolytoneOnTerp` | `polytone` | `polytone.rs` |
 | `TestTerpStateSync` | `statesync` | `state_sync.rs` |
@@ -34,4 +31,4 @@ From repo root: `make e2e` then `make e2e-basic`, `make e2e-ibc`, …
 | (new) | `circuit_deposit` | `circuit_deposit.rs` |
 | (new) | `circuit_runway_epoch` | 3-val Docker epoch settle (`make e2e-circuit-runway-docker`, image `terpnetwork/terp-core:local-zk`) |
 
-Contract wasm for polytone/zk lives in `contracts/` and `circuits/` (copied from `artifacts/`).
+Contract wasm and circuit bytes live in the repo `artifacts/` directory. `cargo run --bin ict -- <example>` is the shim onto `crates/ict-rs/examples`.

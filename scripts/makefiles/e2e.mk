@@ -1,27 +1,28 @@
 ###############################################################################
 ###                             e2e (ict-rs binaries)                       ###
 # tests/interchaintest is the rust crate of e2e bins (old Go package removed).
-# CI: .github/workflows/interchaintest-E2E.yml (ict-ci mock + docker suites).
+# `make e2e-ict -- EXAMPLE=ibc_hooks` forwards to crates/ict-rs.
+# CI: .github/workflows/interchaintest-E2E.yml (ict-ci docker suites).
 #
 # MAINNET SAFETY: no target here may touch morocco-1 / mainnet. Docker suites
 # spin ephemeral local chains (120u-1, circuit-epoch-1); image ensures run
 # with PUSH=0 / BUILD=0 (read-only pulls). Known live-capable files that must
 # NEVER be wired here: crates/ict-rs/examples/bootstrap_mainnet.rs
 # (state-syncs morocco-1), crates/terp-rs/tests/bin/polytone_migrate.rs and
-# ibc_info.rs (accept morocco-1). Mock targets run ICT_MOCK=1 only.
+# ibc_info.rs (accept morocco-1). Suites use TERP_IMAGE_REPO and TERP_IMAGE_VERSION.
 ###############################################################################
 E2E_MANIFEST := tests/interchaintest/Cargo.toml
 E2E_RUN = cargo run --manifest-path $(E2E_MANIFEST)
 
 e2e-help:
 	@echo "e2e (tests/interchaintest rust bins + ict-rs)"
-	@echo "  make e2e-basic              TestBasicTerpStart (mock)"
-	@echo "  make e2e-tokenfactory       TestTerpTokenFactory (mock)"
-	@echo "  make e2e-feeshare           TestTerpFeeShare (mock)"
-	@echo "  make e2e-drip               TestTerpDrip (mock)"
-	@echo "  make e2e-clock              TestTerpClock (mock)"
-	@echo "  make e2e-circuit-deposit    circuit runway pay/query (mock)"
-	@echo "  make e2e-circuit-runway     3-val epoch settle (ICT_MOCK=1 smoke; omit for Docker local-zk)"
+	@echo "  make e2e-basic              TestBasicTerpStart (terp image)"
+	@echo "  make e2e-tokenfactory       TestTerpTokenFactory (terp image)"
+	@echo "  make e2e-feeshare           TestTerpFeeShare (terp image)"
+	@echo "  make e2e-drip               TestTerpDrip (terp image)"
+	@echo "  make e2e-clock              TestTerpClock (terp image)"
+	@echo "  make e2e-circuit-deposit    circuit deposit pay/query (terp image)"
+	@echo "  make e2e-circuit-runway     3-val epoch settle on TERP_IMAGE_REPO:TERP_IMAGE_VERSION"
 	@echo "  make e2e-ibc                TestTerpGaiaIBCTransfer (docker)"
 	@echo "  make e2e-ibchooks           TestTerpIBCHooks"
 	@echo "  make e2e-pfm                TestPacketForwardMiddlewareRouter"
@@ -29,41 +30,52 @@ e2e-help:
 	@echo "  make e2e-statesync          TestTerpStateSync (docker)"
 	@echo "  make e2e-upgrade            TestBasicTerpUpgrade (docker; ICT_UPGRADE_NAME=v6.1 for IAVL dual-store)"
 	@echo "  make e2e-zk                 TestTerpZkCosmwasmVm (docker)"
-	@echo "  make e2e-all-mock-extended  all mock: bins + ict-rs + terp-rs"
+	@echo "  make e2e-all-mock-extended  single-chain image suites, then ict-rs and terp-rs"
 	@echo "  make e2e-all-docker         all docker suites (one image ensure)"
 	@echo "  make e2e-all                everything: mock-extended then docker"
 	@echo "  make e2e-ict-rs-build       Compile ict-ci + CI examples"
+	@echo "  make e2e-ict EXAMPLE=name  Shim: cargo run -p ict-rs --example \$$EXAMPLE"
+	@echo "  make e2e-page               Serve tests/e2e at http://127.0.0.1:8765"
 
 e2e: e2e-help
 
 e2e-basic:
-	ICT_MOCK=1 $(E2E_RUN) --bin basic
+	@$(MAKE) docker-ensure-image PUSH=0
+	$(E2E_RUN) --bin basic
 
 e2e-tokenfactory:
-	ICT_MOCK=1 $(E2E_RUN) --bin tokenfactory
+	@$(MAKE) docker-ensure-image PUSH=0
+	$(E2E_RUN) --bin tokenfactory
 
 e2e-feeshare:
-	ICT_MOCK=1 $(E2E_RUN) --bin feeshare
+	@$(MAKE) docker-ensure-image PUSH=0
+	$(E2E_RUN) --bin feeshare
 
 e2e-drip:
-	ICT_MOCK=1 $(E2E_RUN) --bin drip
+	@$(MAKE) docker-ensure-image PUSH=0
+	$(E2E_RUN) --bin drip
 
 e2e-clock:
-	ICT_MOCK=1 $(E2E_RUN) --bin clock
+	@$(MAKE) docker-ensure-image PUSH=0
+	$(E2E_RUN) --bin clock
 
 e2e-circuit-deposit:
-	ICT_MOCK=1 $(E2E_RUN) --bin circuit_deposit
+	@$(MAKE) docker-ensure-image PUSH=0
+	$(E2E_RUN) --bin circuit_deposit
 
 e2e-circuit-runway:
-	@echo "==> mock: ICT_MOCK=1  docker: make build-zk-local && make e2e-circuit-runway-docker"
-	ICT_MOCK=1 $(E2E_RUN) --bin circuit_runway_epoch
+	@$(MAKE) docker-ensure-image PUSH=0
+	$(E2E_RUN) --bin circuit_runway_epoch
 
 e2e-circuit-runway-docker:
 	@$(MAKE) docker-ensure-image PUSH=0
 	$(E2E_RUN) --bin circuit_runway_epoch
 
-# Mock-only gate (no Docker). Docker suites need TERP_IMAGE_VERSION set.
+# Single-chain image gate. Needs TERP_IMAGE_VERSION.
 e2e-all-mock: e2e-basic e2e-tokenfactory e2e-feeshare e2e-drip e2e-clock e2e-circuit-deposit e2e-circuit-runway
+
+e2e-ict:
+	$(E2E_RUN) --bin ict -- $(EXAMPLE)
 
 e2e-ibc:
 ifeq ($(ICT_MOCK),1)
@@ -147,9 +159,13 @@ e2e-ict-rs-docker:
 e2e-ict-rs-from-tarball:
 	bash scripts/ci/run-e2e-from-tarball.sh $(TARBALL) $(SUITE)
 
+# Catalog page lives in tests/e2e. Foreground; Ctrl-C stops it.
+e2e-page:
+	python3 scripts/e2e/serve.py
+
 .PHONY: e2e e2e-help e2e-basic e2e-tokenfactory e2e-feeshare e2e-drip e2e-clock e2e-circuit-deposit \
 	e2e-circuit-runway e2e-circuit-runway-docker e2e-all-mock \
 	e2e-ibc e2e-ibchooks e2e-pfm e2e-polytone e2e-statesync e2e-upgrade e2e-zk \
 	e2e-all-docker e2e-ict-rs-mock e2e-ict-rs-unit e2e-ict-rs-test-docker \
 	e2e-terp-rs-mock e2e-all-mock-extended e2e-all \
-	e2e-ict-rs-build e2e-ict-rs-pack e2e-ict-rs-docker e2e-ict-rs-from-tarball
+	e2e-ict-rs-build e2e-ict-rs-pack e2e-ict-rs-docker e2e-ict-rs-from-tarball e2e-page e2e-ict

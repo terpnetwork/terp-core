@@ -13,13 +13,14 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 
-	"github.com/terpnetwork/terp-core/v6/x/wasm"
-	wasmkeeper "github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
-	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 	wasmvm "github.com/CosmWasm/wasmvm/v3"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v3/types"
 	ibcwlckeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
 	ibcwlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 	appparams "github.com/terpnetwork/terp-core/v6/app/params"
+	"github.com/terpnetwork/terp-core/v6/x/wasm"
+	wasmkeeper "github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
+	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 
 	ibccallbacks "github.com/cosmos/ibc-go/v11/modules/apps/callbacks"
 	packetforward "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware"
@@ -438,12 +439,30 @@ func NewAppKeepers(
 	// Both x/wasm and 08-wasm use the local zk-wasmvm (wasmvm v3).
 	// Each NewVM gets MemoryCacheSize (default 100 MiB); two VMs ≈ 200 MiB resident LRU.
 	// LRU is node-local and gas-neutral — pin hot codeIDs via gov MsgPinCodes, not hottest-N.
-	wasmVm, err := wasmvm.NewVM(wasmDir, wasmCapabilities, 32, wasmConfig.ContractDebugMode, wasmConfig.MemoryCacheSize)
+	// max_function_locals is 1024. Nil WasmLimits would keep the library default of 100.
+	wasmLimits := wasmtypes.DefaultWasmLimits()
+	wasmVm, err := wasmvm.NewVMWithConfig(wasmvmtypes.VMConfig{
+		Cache: wasmvmtypes.CacheOptions{
+			BaseDir:                  wasmDir,
+			AvailableCapabilities:    wasmCapabilities,
+			MemoryCacheSizeBytes:     wasmvmtypes.NewSizeMebi(wasmConfig.MemoryCacheSize),
+			InstanceMemoryLimitBytes: wasmvmtypes.NewSizeMebi(32),
+		},
+		WasmLimits: wasmLimits,
+	}, wasmConfig.ContractDebugMode)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create terp wasm vm: %s", err))
 	}
 
-	lcWasmer, err := wasmvm.NewVM(ibcWasmConfig.DataDir, wasmCapabilities, 32, ibcWasmConfig.ContractDebugMode, wasmConfig.MemoryCacheSize)
+	lcWasmer, err := wasmvm.NewVMWithConfig(wasmvmtypes.VMConfig{
+		Cache: wasmvmtypes.CacheOptions{
+			BaseDir:                  ibcWasmConfig.DataDir,
+			AvailableCapabilities:    wasmCapabilities,
+			MemoryCacheSizeBytes:     wasmvmtypes.NewSizeMebi(wasmConfig.MemoryCacheSize),
+			InstanceMemoryLimitBytes: wasmvmtypes.NewSizeMebi(32),
+		},
+		WasmLimits: wasmLimits,
+	}, ibcWasmConfig.ContractDebugMode)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create terp wasm vm for 08-wasm: %s", err))
 	}
@@ -463,7 +482,7 @@ func NewAppKeepers(
 		bApp.GRPCQueryRouter(),
 		wasmDir,
 		wasmConfig,
-		wasmtypes.VMConfig{},
+		wasmtypes.VMConfig{WasmLimits: wasmLimits},
 		wasmCapabilities,
 		govModAddress,
 		append(wasmOpts,

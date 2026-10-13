@@ -6,15 +6,15 @@
       "plan": {
         "name": "v6.3",
         "time": "0001-01-01T00:00:00Z",
-        "height": "23674923",
-        "info": "{\"binaries\":{\"linux/amd64\":\"https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-amd64.tar.gz?checksum=sha256:302ad85a28f317fc54983c7cc47597820f40e2b6f0176703b89085d63f5d53bb\",\"linux/arm64\":\"https://s3.terp.network/releases/terp-core/v6.3.0/terpd-6.3.0-linux-arm64.tar.gz?checksum=sha256:c26383a772625e240e8bf150b4249a4eafcf32b3a6076c82abfb9a64ce77fc06\"}}",
+        "height": "23893261",
+        "info": "PENDING_FRIDAY_LINUX_TARBALL_CHECKSUMS",
         "upgraded_client_state": null
       }
     }
   ],
-  "metadata": "",
+  "metadata": "Expedited upgrade v6.3 at height 23893261, targeting 2026-10-16 10:00 UTC. v6.4 is armed two blocks later at 23893263. Submit the full expedited deposit by 2026-10-15 10:00 UTC. plan.info stays pending until the linux tarball checksums for this cut are stamped. See networks/upgrades/v6.3/metadata.json.",
   "deposit": "100000000000uterp",
   "title": "Software upgrade v6.3, then v6.4",
-  "summary": "Halt for terpd v6.3.0, which copies application stores onto BLAKE3 trees and arms v6.4 two blocks later. v6.4 switches keepers onto those trees and deletes the old SHA-256 names. IBC stores stay SHA-256. This pair includes the wasmvm prefix-iterator fix. Governance submits only v6.3.",
+  "summary": "Halt morocco-1 at height 23893261 for terpd v6.3.0, set for 10:00 UTC on Friday 2026-10-16. That binary copies application stores onto BLAKE3 trees and arms v6.4 at height 23893263. v6.4 switches keepers onto those trees. IBC stores stay SHA-256. Governance submits only v6.3. The full expedited deposit puts the proposal into a 24-hour vote; deposit it by 10:00 UTC on Thursday 2026-10-15 so the vote ends as the halt arrives.",
   "expedited": true
 }

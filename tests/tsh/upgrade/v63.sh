@@ -48,7 +48,13 @@ GENESIS_FILE="${GENESIS_FILE:-}"
 
 V63PRE_BIN="${V63PRE_BIN:-$REPO/build/terpd-v63pre}"
 V63_BIN="${V63_BIN:-$REPO/build/terpd-v63}"
-V64_BIN="${V64_BIN:-$REPO/build/terpd-v64}"
+if [ -z "${V64_BIN:-}" ]; then
+  if [ -x "$REPO/build/e2e-v63/terpd-v64" ]; then
+    V64_BIN="$REPO/build/e2e-v63/terpd-v64"
+  else
+    V64_BIN="$REPO/build/terpd-v64"
+  fi
+fi
 
 rpc() { curl -sf "http://127.0.0.1:${RPC}/status"; }
 rpc_height() { rpc | jq -r '.result.sync_info.latest_block_height'; }
@@ -57,20 +63,35 @@ wait_rpc() {
   echo "RPC down"; return 1
 }
 
+build_one() {
+  local tags="$1" dest="$2" stage="$3"
+  mkdir -p "$stage"
+  ( cd "$REPO" && BUILD_TAGS="$tags" BUILDDIR="$stage" make build )
+  cp "$stage/terpd" "$dest"
+  chmod +x "$dest"
+}
+
 build_bins() {
-  if [ "$SKIP_BUILD" = "1" ] && [ -x "$V63PRE_BIN" ] && [ -x "$V63_BIN" ] && [ -x "$V64_BIN" ]; then
+  if [ "$SKIP_BUILD" = "1" ]; then
+    [ -x "$V63PRE_BIN" ] && [ -x "$V63_BIN" ] && [ -x "$V64_BIN" ] || {
+      echo "v63: SKIP_BUILD=1 but a binary is missing"
+      echo "  V63PRE_BIN=$V63PRE_BIN"
+      echo "  V63_BIN=$V63_BIN"
+      echo "  V64_BIN=$V64_BIN"
+      exit 1
+    }
     echo "v63: SKIP_BUILD using $V63PRE_BIN $V63_BIN $V64_BIN"
     return 0
   fi
-  echo "v63: building v63pre / v6.3 / v6.4 ELFs"
-  mkdir -p "$REPO/build"
-  ( cd "$REPO" && BUILD_TAGS=v63pre make build )
-  cp "$REPO/build/terpd" "$V63PRE_BIN"
-  ( cd "$REPO" && make build )
-  cp "$REPO/build/terpd" "$V63_BIN"
-  ( cd "$REPO" && BUILD_TAGS=v64 make build )
-  cp "$REPO/build/terpd" "$V64_BIN"
-  chmod +x "$V63PRE_BIN" "$V63_BIN" "$V64_BIN"
+  local out="${V63_OUT:-$REPO/build/e2e-v63}"
+  mkdir -p "$out"
+  echo "v63: building ELFs into $out"
+  build_one v63pre "$out/terpd-v63pre" "$out/stage-v63pre"
+  build_one "" "$out/terpd-v63" "$out/stage-v63"
+  build_one v64 "$out/terpd-v64" "$out/stage-v64"
+  V63PRE_BIN="$out/terpd-v63pre"
+  V63_BIN="$out/terpd-v63"
+  V64_BIN="$out/terpd-v64"
 }
 
 MODE=genesis
@@ -91,6 +112,9 @@ from_scratch() {
   "$V63PRE_BIN" genesis collect-gentxs --home "$HOME_DIR"
   local cfg="$HOME_DIR/config/config.toml"
   sed -i.bak "/^\[rpc\]/,/^\[/ s/^laddr *=.*/laddr = \"tcp:\/\/127.0.0.1:${RPC}\"/" "$cfg"
+  # Cosmovisor's upgrade restart does not keep --rpc.pprof_laddr. The follower
+  # already owns localhost:6060, so the relaunch must read a free port from config.
+  sed -i.bak "s|^pprof_laddr *=.*|pprof_laddr = \"127.0.0.1:${PPROF:-36060}\"|" "$cfg"
   sed -i.bak "/^\[p2p\]/,/^\[/ s/^laddr *=.*/laddr = \"tcp:\/\/127.0.0.1:${P2P}\"/" "$cfg"
   sed -i.bak "/^\[p2p\]/,/^\[/ s/^pex *=.*/pex = false/" "$cfg"
   sed -i.bak "/^\[p2p\]/,/^\[/ s/^seeds *=.*/seeds = \"\"/" "$cfg"
@@ -160,6 +184,12 @@ stop_cv() {
 
 build_bins
 
+fa_count="$(strings "$V64_BIN" | grep -c fa6735f || true)"
+if [ "${fa_count:-0}" -lt 1 ]; then
+  echo "v63: $V64_BIN does not link fa6735f (DataCount is written after the data section)"
+  exit 1
+fi
+
 if ! command -v "$CV_BIND" >/dev/null; then
   GOTOOLCHAIN=auto go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.7.1
 fi
@@ -207,6 +237,7 @@ if [ "$MODE" = "snapshot" ]; then
     --trigger-testnet-upgrade "$PLAN_A" \
     --home "$HOME_DIR" --skip-confirmation \
     --rpc.laddr "tcp://127.0.0.1:${RPC}" \
+    --rpc.pprof_laddr "127.0.0.1:${PPROF:-36060}" \
     --minimum-gas-prices=0uterp \
     ${WASMVM_SKIP:+--wasm.skip_wasmvm_version_check} >>"$OLD_LOG" 2>&1 &
   OLD_PID=$!
@@ -217,7 +248,9 @@ else
   place_cv_and_trap
   : > "$OLD_LOG"
   "$V63PRE_BIN" start --home "$HOME_DIR" --pruning=nothing --minimum-gas-prices=0uterp \
-    --rpc.laddr="tcp://127.0.0.1:${RPC}" ${WASMVM_SKIP:+--wasm.skip_wasmvm_version_check} >>"$OLD_LOG" 2>&1 &
+    --rpc.laddr="tcp://127.0.0.1:${RPC}" \
+    --rpc.pprof_laddr="127.0.0.1:${PPROF:-36060}" \
+    ${WASMVM_SKIP:+--wasm.skip_wasmvm_version_check} >>"$OLD_LOG" 2>&1 &
   OLD_PID=$!
   wait_rpc
   sleep 2
@@ -247,8 +280,6 @@ else
       summary: "v6.3 dest copy; handler arms v6.4 at +2",
       expedited: true
     }' > "$HOME_DIR/upgrade.json"
-  mkdir -p "$REPO/networks/upgrades/v6.3"
-  cp "$HOME_DIR/upgrade.json" "$REPO/networks/upgrades/v6.3/draft_proposal.json"
   "$V63PRE_BIN" tx gov submit-proposal "$HOME_DIR/upgrade.json" --from "$KEY" --home "$HOME_DIR" \
     --chain-id "$CHAIN_ID" --keyring-backend "$KEYRING" --node "tcp://127.0.0.1:${RPC}" \
     --gas auto --gas-adjustment 1.5 --fees "2000uterp" -y
@@ -306,7 +337,9 @@ ln -sfn "$HOME_DIR/cosmovisor/upgrades/${PLAN_A}" "$HOME_DIR/cosmovisor/current"
 
 : > "$NEW_LOG"
 nohup "$CV_BIND" run start --home "$HOME_DIR" --pruning=nothing --minimum-gas-prices=0uterp \
-  --rpc.laddr="tcp://0.0.0.0:${RPC}" --log_level info \
+  --rpc.laddr="tcp://0.0.0.0:${RPC}" \
+  --rpc.pprof_laddr="127.0.0.1:${PPROF:-36060}" \
+  --log_level info \
   ${WASMVM_SKIP:+--wasm.skip_wasmvm_version_check} >>"$NEW_LOG" 2>&1 &
 echo $! > "$HOME_DIR/cosmovisor.pid"
 CV_PID=$(cat "$HOME_DIR/cosmovisor.pid")
@@ -435,8 +468,10 @@ SNAPSHOT="$post_snap" SKIP_SEND="$post_skip" MIN_CODES="$post_codes" \
 echo "v63: hasher_state after B OK"
 
 rm -rf "$SCRATCH/home2"
+LC_BIND="${LC_BIND:-$V64_BIN}"
+LC_VERIFY_BIND="${LC_VERIFY_BIND:-$V64_BIN}"
 HOME1="$HOME_DIR" HOME2="$SCRATCH/home2" ID1="$CHAIN_ID" ID2="local-2" \
-  RPC1="$RPC" RPC2=27657 BIND="$V63PRE_BIN" VERIFY_BIND="$V63_BIN" \
+  RPC1="$RPC" RPC2=27657 BIND="$LC_BIND" VERIFY_BIND="$LC_VERIFY_BIND" \
   WASM_LC="$REPO/crates/terp-rs/artifacts/cw_ics08_wasm_terp.wasm" \
   LC_LOG="$LC_LOG" \
   bash "$ROOT/hasher_lc.sh"

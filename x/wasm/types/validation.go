@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -25,12 +27,24 @@ var (
 	// Upstream wasmd ships 800 KiB. Terp's default is that limit doubled.
 	// MAX_WASM_SIZE overrides this at process start.
 	MaxWasmSize    = 800 * 1024 * 2
-	MaxCircuitSize = 32 * 1024 * 1024 // 32 mb
+	// 32MiB. MAX_CIRCUIT_SIZE overrides this in init. K=18 params are 33554500 bytes.
+	MaxCircuitSize = 32 * 1024 * 1024
 	// MaxProposalWasmSize is the largest a gov proposal compiled contract code can be when storing code on chain
 	MaxProposalWasmSize = 3 * 1024 * 1024 // extension point for chains to customize via compile flag.
 	// MaxAddressCount is the maximum number of addresses allowed within a message
 	MaxAddressCount = 50
 )
+
+func init() {
+	// Every terpd process, including `tx` ValidateBasic, reads this.
+	// Unset keeps the 32MiB default. The local headstash chain sets 67108864.
+	if raw := os.Getenv("MAX_CIRCUIT_SIZE"); raw != "" {
+		val, err := strconv.ParseInt(raw, 10, 64)
+		if err == nil && val > 0 {
+			MaxCircuitSize = int(val)
+		}
+	}
+}
 
 func validateWasmCode(s []byte, maxSize int) error {
 	if len(s) == 0 {

@@ -184,4 +184,7 @@ distclean: clean
 	go-mod-cache draw-deps clean build \
 	build-docker localnet-start localnet-stop test-docker test-docker-push \
 	test test-all test-cover
- 
+
+.PHONY: headstash-e2e
+headstash-e2e:
+	bash crates/headstash/scripts/headstash-e2e.sh

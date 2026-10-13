@@ -111,7 +111,7 @@ type AppModule struct {
 	validatorSetSource keeper.ValidatorSetSource
 	accountKeeper      types.AccountKeeper // for simulation
 	bankKeeper         simulation.BankKeeper
-	router keeper.MessageRouter
+	router             keeper.MessageRouter
 }
 
 // NewAppModule creates a new AppModule object
@@ -157,9 +157,12 @@ func (AppModule) ConsensusVersion() uint64 { return 5 }
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	msgServer := keeper.NewMsgServerImpl(am.keeper)
 	types.RegisterMsgServer(cfg.MsgServer(), msgServer)
+	// NewMsgServerImpl returns the wasm MsgServer interface. The concrete
+	// server also implements CircuitDepositServer.
+	types.RegisterCircuitDepositServer(cfg.MsgServer(), msgServer.(types.CircuitDepositServer))
 	types.RegisterQueryServer(cfg.QueryServer(), keeper.Querier(am.keeper))
-	// CircuitDeposit msg/query services are handmade (not in tx.proto / query.proto).
-	// Registering them on SDK routers panics: no method descriptor.
+	// CircuitDepositQuery stays handmade. Its file has no method descriptor,
+	// so it is not registered on the query router.
 
 	m := keeper.NewMigrator(*am.keeper, nil)
 	err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2)

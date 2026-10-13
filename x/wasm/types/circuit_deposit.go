@@ -32,25 +32,10 @@ var (
 )
 
 func init() {
-	proto.RegisterType((*MsgPayCircuitDeposit)(nil), "cosmwasm.wasm.v1.MsgPayCircuitDeposit")
-	proto.RegisterType((*MsgPayCircuitDepositResponse)(nil), "cosmwasm.wasm.v1.MsgPayCircuitDepositResponse")
 	proto.RegisterType((*QueryCircuitDepositRequest)(nil), "cosmwasm.wasm.v1.QueryCircuitDepositRequest")
 	proto.RegisterType((*QueryCircuitDepositResponse)(nil), "cosmwasm.wasm.v1.QueryCircuitDepositResponse")
 }
 
-// MsgPayCircuitDeposit pays yearly circuit-upload coverage for the sender.
-// Allowlisted CircuitUploadAccess actors do not need this.
-type MsgPayCircuitDeposit struct {
-	Sender string `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty"`
-	Years  uint32 `protobuf:"varint,2,opt,name=years,proto3" json:"years,omitempty"`
-}
-
-func (m *MsgPayCircuitDeposit) Reset()         { *m = MsgPayCircuitDeposit{} }
-func (m *MsgPayCircuitDeposit) String() string { return proto.CompactTextString(m) }
-func (*MsgPayCircuitDeposit) ProtoMessage()    {}
-func (*MsgPayCircuitDeposit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4f74d82755520264, []int{48}
-}
 func (m *MsgPayCircuitDeposit) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrap("sender")
@@ -63,17 +48,6 @@ func (m *MsgPayCircuitDeposit) ValidateBasic() error {
 func (m *MsgPayCircuitDeposit) GetSigners() []sdk.AccAddress {
 	a, _ := sdk.AccAddressFromBech32(m.Sender)
 	return []sdk.AccAddress{a}
-}
-
-type MsgPayCircuitDepositResponse struct {
-	PaidUntilUnix int64 `json:"paid_until_unix"`
-}
-
-func (m *MsgPayCircuitDepositResponse) Reset()         { *m = MsgPayCircuitDepositResponse{} }
-func (m *MsgPayCircuitDepositResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgPayCircuitDepositResponse) ProtoMessage()    {}
-func (*MsgPayCircuitDepositResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4f74d82755520264, []int{49}
 }
 
 // SplitCircuitRunway is a 50/50 split. Odd leftover uterp goes to the dev/maintenance pool.
@@ -117,121 +91,6 @@ func encodeVarintDeposit(dAtA []byte, offset int, v uint64) int {
 }
 
 func sovDeposit(x uint64) int { return (math_bits.Len64(x|1) + 6) / 7 }
-
-func (m *MsgPayCircuitDeposit) Marshal() ([]byte, error) {
-	size := m.Size()
-	dAtA := make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-func (m *MsgPayCircuitDeposit) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	if l := len(m.Sender); l > 0 {
-		n += 1 + l + sovDeposit(uint64(l))
-	}
-	if m.Years != 0 {
-		n += 1 + sovDeposit(uint64(m.Years))
-	}
-	return n
-}
-func (m *MsgPayCircuitDeposit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.Years != 0 {
-		i = encodeVarintDeposit(dAtA, i, uint64(m.Years))
-		i--
-		dAtA[i] = 0x10
-	}
-	if len(m.Sender) > 0 {
-		i -= len(m.Sender)
-		copy(dAtA[i:], m.Sender)
-		i = encodeVarintDeposit(dAtA, i, uint64(len(m.Sender)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-func (m *MsgPayCircuitDeposit) XXX_Size() int { return m.Size() }
-func (m *MsgPayCircuitDeposit) XXX_Marshal(_ []byte, _ bool) ([]byte, error) {
-	return m.Marshal()
-}
-func (m *MsgPayCircuitDeposit) XXX_Unmarshal(b []byte) error { return m.Unmarshal(b) }
-func (m *MsgPayCircuitDeposit) XXX_Merge(_ interface{})      {}
-func (m *MsgPayCircuitDeposit) XXX_DiscardUnknown()          {}
-
-func (m *MsgPayCircuitDeposit) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		switch fieldNum {
-		case 1:
-			var sl int
-			for shift := uint(0); ; shift += 7 {
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				sl |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Sender = string(dAtA[iNdEx : iNdEx+sl])
-			iNdEx += sl
-		case 2:
-			for shift := uint(0); ; shift += 7 {
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Years |= uint32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			return io.ErrUnexpectedEOF
-		}
-	}
-	return nil
-}
-
-func (m *MsgPayCircuitDepositResponse) Marshal() ([]byte, error) {
-	dAtA := make([]byte, 11)
-	i := len(dAtA)
-	if m.PaidUntilUnix != 0 {
-		i = encodeVarintDeposit(dAtA, i, uint64(m.PaidUntilUnix))
-		i--
-		dAtA[i] = 0x8
-	}
-	return dAtA[i:], nil
-}
-func (m *MsgPayCircuitDepositResponse) XXX_Size() int { return 0 }
-func (m *MsgPayCircuitDepositResponse) XXX_Marshal(_ []byte, _ bool) ([]byte, error) {
-	return m.Marshal()
-}
-func (m *MsgPayCircuitDepositResponse) XXX_Unmarshal([]byte) error { return nil }
-func (m *MsgPayCircuitDepositResponse) XXX_Merge(_ interface{})    {}
-func (m *MsgPayCircuitDepositResponse) XXX_DiscardUnknown()        {}
 
 type QueryCircuitDepositRequest struct {
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`

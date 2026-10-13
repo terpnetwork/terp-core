@@ -112,6 +112,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
+	msgservice.RegisterMsgServiceDesc(registry, &_CircuitDeposit_serviceDesc)
 
 	// legacy gov v1beta1 types that may be used for unmarshalling stored gov data
 	registry.RegisterImplementations(

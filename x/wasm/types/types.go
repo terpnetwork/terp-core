@@ -369,6 +369,17 @@ func NewWasmCoins(cosmosCoins sdk.Coins) (wasmCoins []wasmvmtypes.Coin) {
 	return wasmCoins
 }
 
+// DefaultMaxFunctionLocals is the per-function cap passed to wasmvm.
+// 1024 covers the protobuf registry guest (231 locals). The operand-stack
+// limiter uses its own 4096 budget and does not read this value.
+const DefaultMaxFunctionLocals uint32 = 1024
+
+// DefaultWasmLimits is the static Wasm validation config for both app VMs.
+func DefaultWasmLimits() wasmvmtypes.WasmLimits {
+	n := DefaultMaxFunctionLocals
+	return wasmvmtypes.WasmLimits{MaxFunctionLocals: &n}
+}
+
 // VMConfig contains configurations that are passed on to CosmWasm VM.
 type VMConfig struct {
 	// WasmLimits are the limits that are used for static validation of Wasm binaries.

@@ -240,17 +240,17 @@ func createTestInput(
 	appCodec := encodingConfig.Codec
 
 	maccPerms := map[string][]string{ // module account permissions
-		authtypes.FeeCollectorName:     nil,
-		distributiontypes.ModuleName:   nil,
-		minttypes.ModuleName:           {authtypes.Minter},
+		authtypes.FeeCollectorName:          nil,
+		distributiontypes.ModuleName:        nil,
+		minttypes.ModuleName:                {authtypes.Minter},
 		stakingtypes.BondedPoolName:         {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName:      {authtypes.Burner, authtypes.Staking},
 		stakingtypes.KeyRotationFeePoolName: nil,
-		govtypes.ModuleName:            {authtypes.Burner},
-		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
-		types.ModuleName:               {authtypes.Burner},
-		types.CircuitValPoolName:       nil,
-		types.CircuitDevPoolName:       {authtypes.Staking},
+		govtypes.ModuleName:                 {authtypes.Burner},
+		ibctransfertypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
+		types.ModuleName:                    {authtypes.Burner},
+		types.CircuitValPoolName:            nil,
+		types.CircuitDevPoolName:            {authtypes.Staking},
 	}
 
 	accountKeeper := authkeeper.NewAccountKeeper(
@@ -379,7 +379,9 @@ func createTestInput(
 		gov.NewAppModule(appCodec, govKeeper, accountKeeper, bankKeeper),
 	)
 	am.RegisterServices(module.NewConfigurator(appCodec, msgRouter, querier)) //nolint:errcheck
-	types.RegisterMsgServer(msgRouter, NewMsgServerImpl(&keeper))
+	msgSrv := NewMsgServerImpl(&keeper)
+	types.RegisterMsgServer(msgRouter, msgSrv)
+	types.RegisterCircuitDepositServer(msgRouter, msgSrv.(types.CircuitDepositServer))
 	types.RegisterQueryServer(querier, NewGrpcQuerier(appCodec, runtime.NewKVStoreService(keys[types.ModuleName]), keeper, keeper.queryGasLimit))
 
 	keepers := TestKeepers{

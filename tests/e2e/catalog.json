@@ -1,0 +1,705 @@
+[
+  {
+    "id": "ict-basic-cosmos",
+    "tree": "ict-rs",
+    "name": "basic_cosmos",
+    "kind": "local",
+    "lane": "curated",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "basic_cosmos"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-integration-test",
+    "tree": "ict-rs",
+    "name": "integration_test",
+    "kind": "local",
+    "lane": "curated",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "integration_test"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-ibc-v2-callbacks",
+    "tree": "ict-rs",
+    "name": "ibc_v2_callbacks",
+    "kind": "local",
+    "lane": "curated",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "ibc_v2_callbacks"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-pfm",
+    "tree": "ict-rs",
+    "name": "pfm",
+    "kind": "local",
+    "lane": "curated",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "pfm"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-circuit-deposit",
+    "tree": "ict-rs",
+    "name": "circuit_deposit",
+    "kind": "local",
+    "lane": "curated",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "circuit_deposit"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-ibc-v2",
+    "tree": "ict-rs",
+    "name": "ibc_v2",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "ibc_v2"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-ibc-wasm-lc",
+    "tree": "ict-rs",
+    "name": "ibc_wasm_lc",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "ibc_wasm_lc"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-marketplace-offline",
+    "tree": "ict-rs",
+    "name": "marketplace_inventory_offline",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "marketplace_inventory_offline"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-loyalty-zkjwt",
+    "tree": "ict-rs",
+    "name": "loyalty_rewards_zkjwt",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "loyalty_rewards_zkjwt"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-ibc-transfer",
+    "tree": "ict-rs",
+    "name": "ibc_transfer",
+    "kind": "local",
+    "lane": "curated",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "ibc_transfer"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-polytone",
+    "tree": "ict-rs",
+    "name": "polytone",
+    "kind": "local",
+    "lane": "curated",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "polytone"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-state-sync",
+    "tree": "ict-rs",
+    "name": "state_sync",
+    "kind": "local",
+    "lane": "curated",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "state_sync"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-ibc-callbacks",
+    "tree": "ict-rs",
+    "name": "ibc_callbacks",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "ibc_callbacks"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-no-rick",
+    "tree": "ict-rs",
+    "name": "no_rick",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "no_rick"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-suite-wasm-smoke",
+    "tree": "ict-rs",
+    "name": "suite_wasm_smoke",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "suite_wasm_smoke"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ],
+    "note": "shim: cargo run -p ict-rs --example suite_wasm_smoke"
+  },
+  {
+    "id": "ict-bulk-memory-gas",
+    "tree": "ict-rs",
+    "name": "bulk_memory_gas",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "bulk_memory_gas"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION",
+      "ICT_BULK_WASM"
+    ]
+  },
+  {
+    "id": "ict-headstash",
+    "tree": "ict-rs",
+    "name": "headstash",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "headstash"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-hashmerchant",
+    "tree": "ict-rs",
+    "name": "hashmerchant",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "hashmerchant"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-epoch-claim",
+    "tree": "ict-rs",
+    "name": "epoch_claim",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "epoch_claim"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-snapshot",
+    "tree": "ict-rs",
+    "name": "snapshot",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "snapshot"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "ict-cosmos-upgrade",
+    "tree": "ict-rs",
+    "name": "cosmos_upgrade",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "cosmos_upgrade"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION",
+      "TERP_UPGRADE_FROM=v6.2.1",
+      "TERP_UPGRADE_MID=v6.3.0"
+    ],
+    "note": "Halt image is TERP_UPGRADE_FROM. The plan handler image is TERP_UPGRADE_MID. TERP_IMAGE_VERSION is the image after the armed next plan. local / local-zk are refused. A same-tag plan panics in the SDK (BINARY UPDATED BEFORE TRIGGER)."
+  },
+  {
+    "id": "dao-actions",
+    "tree": "terp-rs",
+    "name": "dao_modules_initialize_on_terp",
+    "kind": "local",
+    "lane": "curated",
+    "cwd": "crates/terp-rs",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "dao-foundation-suite",
+      "--test",
+      "dao_actions_chain",
+      "--offline",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "env": [
+      "ICT_DAO_ACTIONS=1",
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "dao-reply-gas",
+    "tree": "terp-rs",
+    "name": "reply_vs_instantiate2_gas",
+    "kind": "local",
+    "lane": "curated",
+    "cwd": "crates/terp-rs",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "dao-foundation-suite",
+      "--test",
+      "dao_reply_gas",
+      "--offline",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "env": [
+      "ICT_DAO_GAS=1",
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "dao-init2",
+    "tree": "terp-rs",
+    "name": "nested_subdaos_instantiate2_on_terp",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "crates/terp-rs",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "dao-foundation-suite",
+      "--test",
+      "dao_init2_chain",
+      "--offline",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "env": [
+      "ICT_DAO_INIT2=1",
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "dao-polytone",
+    "tree": "terp-rs",
+    "name": "polytone_two_chains",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "crates/terp-rs",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "dao-foundation-suite",
+      "--test",
+      "polytone_two_chains",
+      "--offline",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "env": [
+      "ICT_POLYTONE=1",
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "orch-artifact-stack",
+    "tree": "terp-rs",
+    "name": "artifact_stack live",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "crates/terp-rs",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "terp-orch",
+      "--features",
+      "stack,ict",
+      "--test",
+      "artifact_stack",
+      "live",
+      "--offline",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ]
+  },
+  {
+    "id": "tsh-v63",
+    "tree": "terp-core",
+    "name": "tests/tsh/upgrade/v63.sh",
+    "kind": "local",
+    "lane": "curated",
+    "cwd": ".",
+    "argv": [
+      "bash",
+      "tests/tsh/upgrade/v63.sh"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION",
+      "USE_SNAPSHOT=0",
+      "SKIP_BUILD=1"
+    ],
+    "note": "Local dual-halt genesis. The public pruned latest is already past halt 23833180. V64_BIN must be a -tags v64 ELF linked against the current libwasmvm (DataCount before code). September build/terpd-v64 is the wrong wasmvm."
+  },
+  {
+    "id": "dao-testing-suites",
+    "tree": "dao-contracts",
+    "name": "dao_testing",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "dao_testing"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ],
+    "note": "stores dao-contracts artifacts (core, proposal, voting, cw4, stake) and instantiates cw4_group"
+  },
+  {
+    "id": "abstract-account",
+    "tree": "terp-core",
+    "name": "abstract_account",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "abstract_account"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ],
+    "note": "x/smart-account params and authenticator query on the terp image"
+  },
+  {
+    "id": "ict-smart-accounts",
+    "tree": "terp-rs",
+    "name": "smart_accounts",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "smart_accounts"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ],
+    "note": "stores and instantiates every crates/terp-rs/artifacts/terp_*.wasm authenticator, then queries each"
+  },
+  {
+    "id": "ict-wasm-light-clients",
+    "tree": "terp-rs",
+    "name": "wasm_light_clients",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "wasm_light_clients"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION"
+    ],
+    "note": "gov-stores cw_ics08_wasm_terp, zap1, dregg, and crosslink through ibc-wasm on the terp image"
+  },
+  {
+    "id": "ict-svg-mint",
+    "tree": "cw-infuser",
+    "name": "svg_mint_cw_orch_runtime",
+    "kind": "local",
+    "lane": "experimental",
+    "cwd": "tests/interchaintest",
+    "argv": [
+      "cargo",
+      "run",
+      "--offline",
+      "--bin",
+      "ict",
+      "--",
+      "svg_mint_cw_orch_runtime"
+    ],
+    "env": [
+      "TERP_IMAGE_REPO",
+      "TERP_IMAGE_VERSION",
+      "SVG_MINT_ARTIFACTS"
+    ],
+    "note": "cw-orch Daemon on an ict-rs chain: upload cw721-svg and cw-svg-minter, create a collection, mint, instantiate cw-infuser"
+  }
+]

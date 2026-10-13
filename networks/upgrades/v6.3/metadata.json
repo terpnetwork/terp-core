@@ -1,0 +1,47 @@
+{
+  "chain_id": "morocco-1",
+  "plan": "v6.3",
+  "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+  "expedited": true,
+  "deposit": "100000000000uterp",
+  "voting_period": "24h",
+  "halt": {
+    "height": 23893261,
+    "time_utc": "2026-10-16T10:00:00Z"
+  },
+  "next_plan": {
+    "name": "v6.4",
+    "height": 23893263,
+    "armed_by": "v6.3 handler at apply height + 2"
+  },
+  "submit_by_utc": "2026-10-15T10:00:00Z",
+  "measured": {
+    "rpc": "http://127.0.0.1:26657",
+    "height": 23838500,
+    "time_utc": "2026-10-13T17:27:31.724629389Z",
+    "sample_blocks": 2000,
+    "avg_block_seconds": 4.2429,
+    "seconds_until_halt": 232348,
+    "blocks_ahead": 54761
+  },
+  "projection": "halt_height = tip + floor(seconds_until_2026-10-16T10:00:00Z / avg_block_seconds). The 2000-block sample is the live rate. A 20000-block window is slower because the chain stalled on 8-10 October, so that window is not the projection.",
+  "vote_margin_blocks": 34398,
+  "v6_4_tarball_sha256": {
+    "linux/amd64": "503e7d4ffb6a777644de122e10285b6f3e8bb851be7915c56c27ec377d1b54f8",
+    "linux/arm64": "45e4ce69a4e08cb12d1d91ce7ec34d21af5d42b819633a2394a9e82b51cf8c0c",
+    "darwin/arm64": "e5c65dd567387ae281a5302dd3f97ad5eb18ad1156ba29ed2150061b56c0e3c8"
+  },
+  "v6_3_plan_info": "proposal.json plan.info is the linux Cosmovisor JSON. Darwin is packed for the release and is omitted from plan.info, matching the operator guide.",
+  "plan_info": "PENDING_FRIDAY_LINUX_TARBALL_CHECKSUMS",
+  "supersedes_halt": {
+    "height": 23833180,
+    "time_utc": "2026-10-13T10:00:00Z",
+    "reason": "That height passed before this cut. Tip at measurement was 23838500."
+  },
+  "broadcast": false,
+  "v6_3_tarball_sha256": {
+    "linux/amd64": "cd78aa8341d32c19e6f5fc0d27a97fd53cf3b15061648f7aef0276194c4becc2",
+    "linux/arm64": "b8689d2a9a8ece2daecadbf6c88e01051b8de195ee62e9c2eefb2a3224cdf2cc",
+    "darwin/arm64": "ef8f15872a35e9438d24176b4e74769e71fa016fcbc8275f3471f678e5d4d911"
+  }
+}

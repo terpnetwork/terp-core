@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	_ types.MsgServer               = msgServer{}
-	_ types.CircuitDepositMsgServer = msgServer{}
+	_ types.MsgServer            = msgServer{}
+	_ types.CircuitDepositServer = msgServer{}
 )
 
 // grpc message server implementation

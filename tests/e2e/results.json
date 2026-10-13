@@ -1,0 +1,297 @@
+[
+  {
+    "id": "ict-basic-cosmos",
+    "status": "passed",
+    "seconds": 81.33,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "`Result` may be an `Err` variant, which should be handled\n   = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.34s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/basic_cosmos`\n"
+  },
+  {
+    "id": "ict-integration-test",
+    "status": "passed",
+    "seconds": 14.52,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": ")]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.37s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/integration_test`\n"
+  },
+  {
+    "id": "ict-ibc-v2-callbacks",
+    "status": "passed",
+    "seconds": 20.38,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": ")]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.20s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/ibc_v2_callbacks`\n"
+  },
+  {
+    "id": "ict-pfm",
+    "status": "passed",
+    "seconds": 375.1,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "used_must_use)]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.84s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/pfm`\n"
+  },
+  {
+    "id": "ict-circuit-deposit",
+    "status": "failed",
+    "seconds": 10.79,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "ng value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.36s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/circuit_deposit`\nError: Config(\"invalid circuit-deposit JSON: EOF while parsing a value at line 1 column 0\")\n",
+    "error": "Error: Config(\"invalid circuit-deposit JSON: EOF while parsing a value at line 1 column 0\")"
+  },
+  {
+    "id": "ict-ibc-v2",
+    "status": "passed",
+    "seconds": 11.18,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "d_must_use)]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.25s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/ibc_v2`\n"
+  },
+  {
+    "id": "ict-ibc-wasm-lc",
+    "status": "passed",
+    "seconds": 7.52,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "t_use)]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.70s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/ibc_wasm_lc`\n"
+  },
+  {
+    "id": "ict-marketplace-offline",
+    "status": "passed",
+    "seconds": 7.2,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "`#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.41s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/marketplace_inventory_offline`\n"
+  },
+  {
+    "id": "ict-loyalty-zkjwt",
+    "status": "passed",
+    "seconds": 7.06,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.26s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/loyalty_rewards_zkjwt`\n"
+  },
+  {
+    "id": "ict-ibc-transfer",
+    "status": "passed",
+    "seconds": 224.38,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "_use)]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.22s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/ibc_transfer`\n"
+  },
+  {
+    "id": "ict-polytone",
+    "status": "passed",
+    "seconds": 197.96,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "> {\n    |    ^^^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: function `account_number_and_sequence` is never used\n   --> ict-rs/../examples/polytone.rs:271:10\n    |\n271 | async fn account_number_and_sequence(\n    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: `ict-rs` (example \"polytone\") generated 2 warnings\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.94s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/polytone`\n"
+  },
+  {
+    "id": "ict-state-sync",
+    "status": "passed",
+    "seconds": 48.83,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "st_use)]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.57s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/state_sync`\n"
+  },
+  {
+    "id": "ict-ibc-callbacks",
+    "status": "passed",
+    "seconds": 184.05,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "use)]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.43s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/ibc_callbacks`\n"
+  },
+  {
+    "id": "ict-no-rick",
+    "status": "failed",
+    "seconds": 21.23,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "or: Aborted: invalid point encoding in proof: create wasm contract failed [/code/x/wasm/keeper/keeper.go:568] with gas used: '3087662': unknown request\n\nError: \"store-full-circuit failed (exit 1): Error: rpc error: code = Unknown desc = rpc error: code = Unknown desc = failed to execute message; message index: 0: Error calling the VM: ZkError error: Aborted: invalid point encoding in proof: create wasm contract failed [/code/x/wasm/keeper/keeper.go:568] with gas used: '3087662': unknown request\\nrpc error: code = Unknown desc = rpc error: code = Unknown desc = failed to execute message; message index: 0: Error calling the VM: ZkError error: Aborted: invalid point encoding in proof: create wasm contract failed [/code/x/wasm/keeper/keeper.go:568] with gas used: '3087662': unknown request\\n\"\n",
+    "error": "Error: \"store-full-circuit failed (exit 1): Error: rpc error: code = Unknown desc = rpc error: code = Unknown desc = failed to execute message; message index: 0: Error calling the VM: ZkError error: Aborted: invalid point encoding in proof: create wasm contract failed [/code/x/wasm/keeper/keeper.go:568] with gas used: '3087662': unknown request\\nrpc error: code = Unknown desc = rpc error: code = U"
+  },
+  {
+    "id": "ict-suite-wasm-smoke",
+    "status": "passed",
+    "seconds": 279.75,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "et(s) in 2.66s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/suite_wasm_smoke`\nMISSING dir auth-irl: /Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs/../../terp-rs/contracts/smart-accounts/terp-irl/artifacts\nMISSING dir auth-poseidon: /Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs/../../terp-rs/contracts/smart-accounts/terp-zkposiedon/artifacts\n  MISS  [auth-irl] no artifacts/ \u2014 compile wasm before testnet\n  MISS  [auth-poseidon] no artifacts/ \u2014 compile wasm before testnet\n"
+  },
+  {
+    "id": "ict-bulk-memory-gas",
+    "status": "passed",
+    "seconds": 23.61,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "guest wasm artifacts/bulk_meter_guest.wasm (254816 bytes)\n[1] wasm store accepted rustc\u22651.87 guest code_id=1\n[3] copy n=16 succeeded\n[4] copy n=2147483647 trapped code=11 (sdk ErrOutOfGas)\nbulk_memory_gas PASSED\n"
+  },
+  {
+    "id": "ict-headstash",
+    "status": "failed",
+    "seconds": 4.59,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.96s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/headstash`\n\nHeadstash E2E test FAILED: cw-headstash WASM not found: /Users/returniflost/abstract/terp-core/artifacts/cw_headstash.wasm\nError: \"cw-headstash WASM not found: /Users/returniflost/abstract/terp-core/artifacts/cw_headstash.wasm\"\n",
+    "error": "Error: \"cw-headstash WASM not found: /Users/returniflost/abstract/terp-core/artifacts/cw_headstash.wasm\""
+  },
+  {
+    "id": "ict-hashmerchant",
+    "status": "failed",
+    "seconds": 10.0,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "y 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.06s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/hashmerchant`\n\nthread 'main' (39593919) panicked at ict-rs/../examples/hashmerchant.rs:238:5:\nhash-market-server binary not found.\nBuild it first: cd tools/hash-market && cargo build --features server\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+    "error": "thread 'main' (39593919) panicked at ict-rs/../examples/hashmerchant.rs:238:5:"
+  },
+  {
+    "id": "ict-epoch-claim",
+    "status": "passed",
+    "seconds": 235.63,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "image=registry.terp.network/terp-core:v6.4.0 validators=3\nclaim workflows passed\n"
+  },
+  {
+    "id": "ict-snapshot",
+    "status": "passed",
+    "seconds": 35.27,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "this `Result` may be an `Err` variant, which should be handled\n   = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.27s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/snapshot`\n"
+  },
+  {
+    "id": "ict-cosmos-upgrade",
+    "status": "passed",
+    "seconds": 106.12,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "v6.2.1 \u2192 v6.3.0 \u2192 v6.4.0 plan v6.3. Halt at 14, v6.4 resumed at 16, height 24. tokenfactory=true wasm=true module_versions=true\n"
+  },
+  {
+    "id": "dao-actions",
+    "status": "failed",
+    "seconds": 28.86,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "              ^^^^^^^ use of unresolved module or unlinked crate `reqwest`\n   |\n   = help: if you wanted to use a crate named `reqwest`, use `cargo add reqwest` to add it to your `Cargo.toml`\n\nwarning: unused import: `crate::msg::VoteExtensionHashData`\n  --> tools/hash-market/src/trusted_builder.rs:14:5\n   |\n14 | use crate::msg::VoteExtensionHashData;\n   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nSome errors have detailed explanations: E0432, E0433.\nFor more information about an error, try `rustc --explain E0432`.\nwarning: `hash-market` (lib) generated 1 warning\nerror: could not compile `hash-market` (lib) due to 60 previous errors; 1 warning emitted\nwarning: build failed, waiting for other jobs to finish...\n",
+    "error": "error: could not compile `hash-market` (lib) due to 60 previous errors; 1 warning emitted"
+  },
+  {
+    "id": "dao-reply-gas",
+    "status": "failed",
+    "seconds": 2.67,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "              ^^^^^^^ use of unresolved module or unlinked crate `reqwest`\n   |\n   = help: if you wanted to use a crate named `reqwest`, use `cargo add reqwest` to add it to your `Cargo.toml`\n\nwarning: unused import: `crate::msg::VoteExtensionHashData`\n  --> tools/hash-market/src/trusted_builder.rs:14:5\n   |\n14 | use crate::msg::VoteExtensionHashData;\n   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nSome errors have detailed explanations: E0432, E0433.\nFor more information about an error, try `rustc --explain E0432`.\nwarning: `hash-market` (lib) generated 1 warning\nerror: could not compile `hash-market` (lib) due to 60 previous errors; 1 warning emitted\nwarning: build failed, waiting for other jobs to finish...\n",
+    "error": "error: could not compile `hash-market` (lib) due to 60 previous errors; 1 warning emitted"
+  },
+  {
+    "id": "dao-init2",
+    "status": "failed",
+    "seconds": 5.64,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "act/terp-core/crates/dao-contracts/packages/dao-testing/src/suite/dao_suite.rs:600:4\n    |\n600 | fn extract_instantiate_fields(section: &serde_json::Value) -> Vec<(String, String, bool)> {\n    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: function `to_pascal` is never used\n   --> /Users/returniflost/abstract/terp-core/crates/dao-contracts/packages/dao-testing/src/suite/dao_suite.rs:629:4\n    |\n629 | fn to_pascal(s: &str) -> String {\n    |    ^^^^^^^^^\n\nwarning: function `truncate` is never used\n   --> /Users/returniflost/abstract/terp-core/crates/dao-contracts/packages/dao-testing/src/suite/dao_suite.rs:641:4\n    |\n641 | fn truncate(s: &str, max: usize) -> String {\n    |    ^^^^^^^^\n\nwarning: `dao-testing` (lib) generated 5 warnings (run `cargo fix --lib -p dao-testing` to apply 1 suggestion)\n"
+  },
+  {
+    "id": "dao-polytone",
+    "status": "passed",
+    "seconds": 88.37,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "note and voice instantiated on registry.terp.network/terp-core:v6.4.0. polytone_remote_account_on_two_terp_networks ok\n"
+  },
+  {
+    "id": "orch-artifact-stack",
+    "status": "failed",
+    "seconds": 6.55,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "rs:23:44\n   |\n23 |             header: proto.header.and_then(|h| {\n   |                                            ^ help: if this is intentional, prefix it with an underscore: `_h`\n   |\n   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default\n\n   Compiling abstract-cw-multi-test v3.0.0-rc (/Users/returniflost/abstract/terp-core/crates/cw-multi-test-fork)\nSome errors have detailed explanations: E0432, E0433.\nFor more information about an error, try `rustc --explain E0432`.\nwarning: `hash-market` (lib) generated 1 warning\nerror: could not compile `hash-market` (lib) due to 60 previous errors; 1 warning emitted\nwarning: build failed, waiting for other jobs to finish...\nwarning: `cosmrs` (lib) generated 1 warning (run `cargo fix --lib -p cosmrs` to apply 1 suggestion)\n",
+    "error": "error: could not compile `hash-market` (lib) due to 60 previous errors; 1 warning emitted"
+  },
+  {
+    "id": "tsh-v63",
+    "status": "passed",
+    "seconds": 75.07,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "USE_SNAPSHOT=0 SKIP_BUILD=1 V64_BIN=build/e2e-v63/terpd-v64. applied v6.3 at 23 v6.4 at 25. OK wasm-lc bank=blake3 ibc=sha256. v63 OK\n"
+  },
+  {
+    "id": "dao-testing-suites",
+    "status": "passed",
+    "seconds": 43.35,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "t_use)]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.91s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/dao_testing`\n"
+  },
+  {
+    "id": "abstract-account",
+    "status": "passed",
+    "seconds": 10.75,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": ")]` (part of `#[warn(unused)]`) on by default\nhelp: use `let _ = ...` to ignore the resulting value\n   |\n43 |             let _ = driver.run().await;\n   |             +++++++\n\nwarning: `ict-rs` (lib) generated 4 warnings (run `cargo fix --lib -p ict-rs` to apply 1 suggestion)\n   Compiling ict-rs v0.1.0 (/Users/returniflost/abstract/terp-core/crates/ict-rs/ict-rs)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.62s\nwarning: the following packages contain code that will be rejected by a future version of Rust: proc-macro-error2 v2.0.1\nnote: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`\n     Running `/Users/returniflost/abstract/terp-core/crates/ict-rs/target/debug/examples/abstract_account`\n"
+  },
+  {
+    "id": "ict-smart-accounts",
+    "status": "passed",
+    "seconds": 57.7,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "ok terp_ed25519.wasm code_id=1\nok terp_eth.wasm code_id=2\nok terp_dao.wasm code_id=3 (contract info only; instantiate does not write Item dao)\nok terp_dregg.wasm code_id=4\nok terp_frost.wasm code_id=5\nok terp_passkey.wasm code_id=6\nok terp_recovery.wasm code_id=7\nok terp_vsck.wasm code_id=8\nok terp_zkjwt.wasm code_id=9\nok terp_zktls.wasm code_id=10\nok terp_bls.wasm code_id=11\nsmart_accounts passed\n"
+  },
+  {
+    "id": "ict-wasm-light-clients",
+    "status": "passed",
+    "seconds": 266.4,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "stored cw_ics08_wasm_terp.wasm proposal=1 checksums=1\nstored cw_ics08_wasm_zap1.wasm proposal=2 checksums=2\nstored cw_ics08_wasm_dregg.wasm proposal=3 checksums=3\nstored cw_ics08_wasm_crosslink.wasm proposal=4 checksums=4\nwasm_light_clients passed\n"
+  },
+  {
+    "id": "ict-svg-mint",
+    "status": "passed",
+    "seconds": 26.9,
+    "terpd": "6.4.0",
+    "wasmvm": "c156aef60266",
+    "image": "registry.terp.network/terp-core:v6.4.0",
+    "tail": "ok true engine cw-orch chain_id test-1\nminter terp1wug8sewp6cedgkmrmvhl3lf3tulagm9hnvy8p0rppz9yjw0g4wtqw39a47\ncollection terp1cmxxj7zqqyl7zhzr28stvs4s3s4sh44ttsrvvahugn6mvzyzjljqt7l4ua\ninfuser terp1qg5ega6dykkxc307y25pecuufrjkxkaggkkxh7nad0vhyhtuhw3set9j8z\ntx 48A352974658D6CBFAAB39711FAE01FB281B4BE2BB79870C2CF9B9AF8FB02C59\n"
+  }
+]
