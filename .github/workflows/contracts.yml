@@ -1,10 +1,11 @@
 name: contracts
 
+# Pull requests run only when the title contains [cosmwasm].
+# workflow_dispatch always runs. Contract crates live under crates/cosmwasm.
 on:
   workflow_dispatch:
-  push:
-    branches: [ "main" ]
   pull_request:
+    types: [opened, edited, synchronize, reopened]
 
 env:
   TOOLCHAIN_STABLE: 1.91.0
@@ -14,6 +15,7 @@ env:
 
 jobs:
   stable:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: ${{ matrix.dir }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -40,10 +42,14 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: contracts/${{ matrix.dir }}
+        working-directory: crates/cosmwasm/contracts/${{ matrix.dir }}
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -77,9 +83,10 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.dir }}-${{ runner.os }}
-          path: ./contracts/${{ matrix.dir }}/target/wasm32-unknown-unknown/release/*.wasm
+          path: crates/cosmwasm/contracts/${{ matrix.dir }}/target/wasm32-unknown-unknown/release/*.wasm
 
   nightly:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: ${{ matrix.dir }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -90,10 +97,14 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ./contracts/${{ matrix.dir }}
+        working-directory: crates/cosmwasm/contracts/${{ matrix.dir }}
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust for compiling contracts
         uses: dtolnay/rust-toolchain@nightly
@@ -127,9 +138,10 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.dir }}-${{ runner.os }}
-          path: ./contracts/${{ matrix.dir }}/target/wasm32-unknown-unknown/release/*.wasm
+          path: crates/cosmwasm/contracts/${{ matrix.dir }}/target/wasm32-unknown-unknown/release/*.wasm
 
   chkr:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: check-rel-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     needs: [ stable, nightly ]
@@ -140,6 +152,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust for compiling cosmwasm-check
         uses: dtolnay/rust-toolchain@stable
@@ -234,6 +250,7 @@ jobs:
         run: cosmwasm-check *.wasm
 
   chkd:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: check-dev-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     needs: [ stable, nightly ]
@@ -244,6 +261,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust for compiling cosmwasm-check
         uses: dtolnay/rust-toolchain@stable
@@ -251,6 +272,7 @@ jobs:
           toolchain: ${{ env.TOOLCHAIN_CHECK }}
 
       - name: Install currently developed cosmwasm-check
+        working-directory: crates/cosmwasm
         run: cargo install --path ./packages/check --force --locked
 
       - uses: actions/download-artifact@v7

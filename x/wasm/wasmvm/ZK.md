@@ -18,9 +18,9 @@
 |----------|-------------|--------------------------------------|--------------------------------------|------------|
 | **CosmwasmCircuit** | Circuits define the private witnesses and compose the constraints to create the verifying and proving keys. This not needed during proof verification, only during proof or vk/pk generation. |  |  |  |
 | **Params** |  Params define the values specific to a circuit, and contain the necessary data to define a circuit verifying key `vk`. Each halo2 circuit is similar, but dependent on the constant `K`, so when storing a circuits verifying key, we need specify the `K` value.  | `K`, `vk`  | | `zk-wasmvm` |
-| **VerifyingKey** | Verifying keys are used for generating proofs for specific circuit instances. Each circuit hash its own set of keys, and in order to verify proofs, the vm layer must have access to the verification keys, along with the inputs required for proof verification (the proof bytes iteself and any public instances). |  | |  |
+| **VerifyingKey** | Verifying keys are used for generating proofs for specific circuit instances. Each circuit hash its own set of keys, and in order to verify proofs, the vm layer must have access to the verification keys, along with the inputs required for proof verification (the proof bytes itself and any public instances). |  | |  |
 | **ProvingKey** |  Proving keys are used to generate proofs! These are stored client side, and are separate from proving keys. |    | |  |
-| **Instance** |Instances are public inputs required to be provided along with a proof and a proving key in order to proove a statement.. under the hood we require instance values to be `pasta_curves::Fp`, so when storing a circuits verifying key, we need to specify how many instances a circuit expects, allowing us to generically verify circuits proofs within the vm.  Smart contracts can be programmed to define instances from the vm's environment such as block heights, light client headers, and other data from the chains application state, unlocking interesteing trust assumptions with zk-circuit design.  |  |  |  |
+| **Instance** |Instances are public inputs required to be provided along with a proof and a proving key in order to prove a statement.. under the hood we require instance values to be `pasta_curves::Fp`, so when storing a circuits verifying key, we need to specify how many instances a circuit expects, allowing us to generically verify circuits proofs within the vm.  Smart contracts can be programmed to define instances from the vm's environment such as block heights, light client headers, and other data from the chains application state, unlocking interesteing trust assumptions with zk-circuit design.  |  |  |  |
 | **Proof** |  A proof is a value generated from a specific circuits proving keys, involving the private (witness) values. Proofs are a Vec<u8> of bytes. Our vm has a designated Proof definition to use as a generic wrapper for proofs in the vm. Specifically, we mirror default halo2 plonk proof functionality and define a proof that implements create and verify, so that we can pass in generic circuit and instance values and create a proof via plonk create proof  |  ||  |
 
 ### Storage
@@ -29,11 +29,11 @@ Like contracts, there is a dedicated storage layer for circuit keys in the vm. K
 
 ### Serializing And Deserializing
 
-We must define the canonical serialization and deserialization for circuits in order for us to have a fully programmable vm layer for proofs circuits, as we do with stateful applications via cosmwasm. Each circuit top two bytes is reserved and expected for cirucit builders to append to compiled plonk verifyingkeys. Specifically, we reserve the top two most bytes in the following order:
+We must define the canonical serialization and deserialization for circuits in order for us to have a fully programmable vm layer for proofs circuits, as we do with stateful applications via cosmwasm. Each circuit top two bytes is reserved and expected for circuit builders to append to compiled plonk verifyingkeys. Specifically, we reserve the top two most bytes in the following order:
 
 ### BINARY FOOTER METADATA
 
-Any compilation of circuit keys for zk-wasmvm must have appended 10 bytes to the file footer, as the vm expect these paramater bytes to be available for specifying specific parameters for each circuit.
+Any compilation of circuit keys for zk-wasmvm must have appended 10 bytes to the file footer, as the vm expect these parameter bytes to be available for specifying specific parameters for each circuit.
 
 | Byte     | Type       | Description|   Value | |
 |----------|-------------|--------------------------------------|-------------------------------------|------------|

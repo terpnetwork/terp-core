@@ -1,21 +1,23 @@
 name: Check for typos
 
+# Pull requests run only when the title contains [wasmvm].
 on:
-  merge_group:
+  workflow_dispatch:
   pull_request:
+    types: [opened, edited, synchronize, reopened]
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   check-typos:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.title, '[wasmvm]')
     name: "Spell-check repository source"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Run spell-check
-        uses: crate-ci/typos@master
+        uses: crate-ci/typos@v1.50.2
         with:
           files: ./x/wasm/wasmvm

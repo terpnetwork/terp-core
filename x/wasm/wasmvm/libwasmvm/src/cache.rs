@@ -1033,7 +1033,7 @@ mod tests {
         assert!(error_msg.is_none());
         let _ = error_msg.consume();
         let mut error_msg = UnmanagedVector::default();
-        println!("storing circit");
+        println!("storing circuit");
         let checksum = store_circuit(
             cache_ptr,
             ByteSliceView::new(TOY_VK),

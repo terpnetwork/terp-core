@@ -1,11 +1,13 @@
 name: golangci-lint
 
-# Long living branches and all PRs
+# Pull requests run only when the title contains [wasmvm].
+# Pushes to main still run.
 on:
   push:
     branches:
       - main
   pull_request:
+    types: [opened, edited, synchronize, reopened]
 
 permissions:
   contents: read
@@ -14,21 +16,20 @@ permissions:
 
 jobs:
   golangci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.title, '[wasmvm]')
     name: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.23.4"
+          go-version: "1.26.5"
           cache: false
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          # Require: The version of golangci-lint to use.
-          # When `install-mode` is `binary` (default) the value can be v1.2 or v1.2.3 or `latest` to use the latest version.
-          # When `install-mode` is `goinstall` the value can be v1.2.3, `latest`, or the hash of a commit.
-          version: v2.1
+          # v2.14 is built with Go 1.26, which can load this module's go 1.26.5 line.
+          version: v2.14.0
 
           working-directory: x/wasm/wasmvm
 

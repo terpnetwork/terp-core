@@ -1,16 +1,22 @@
 name: packages
 
+# Pull requests run only when the title contains [cosmwasm].
+# workflow_dispatch always runs.
 on:
   workflow_dispatch:
-  push:
-    branches: [ "main" ]
   pull_request:
+    types: [opened, edited, synchronize, reopened]
 
 env:
   TOOLCHAIN_STABLE: 1.91.0 # zakura-halo2-proofs MSRV
 
+defaults:
+  run:
+    working-directory: crates/cosmwasm
+
 jobs:
   format:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: format-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -20,6 +26,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -30,6 +40,7 @@ jobs:
       - run: cargo fmt -- --check
 
   package-cosmwasm-core:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: cosmwasm-core-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -39,6 +50,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -62,6 +77,7 @@ jobs:
       - run: cargo test   -p cosmwasm-core --locked --all-features
 
   package-cosmwasm-crypto:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: cosmwasm-crypto-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -71,6 +87,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -83,6 +103,7 @@ jobs:
       - run: cargo test   -p cosmwasm-crypto --locked
 
   package-cw-schema:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: cw-schema-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -92,6 +113,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -104,6 +129,7 @@ jobs:
       - run: cargo test   -p cw-schema --locked
 
   package-cw-schema-derive:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: cw-schema-derive-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -113,6 +139,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -125,6 +155,7 @@ jobs:
       - run: cargo test   -p cw-schema-derive --locked
 
   package-cosmwasm-derive:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: cosmwasm-derive-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -134,6 +165,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -146,6 +181,7 @@ jobs:
       - run: cargo test   -p cosmwasm-derive --locked
 
   package-cosmwasm-schema:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: cosmwasm-schema-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -155,6 +191,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -167,6 +207,7 @@ jobs:
       - run: cargo test   -p cosmwasm-schema --locked
 
   package-cosmwasm-schema-derive:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: cosmwasm-schema-derive-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -176,6 +217,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -188,6 +233,7 @@ jobs:
       - run: cargo test   -p cosmwasm-schema-derive --locked
 
   package-cosmwasm-std:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: cosmwasm-std-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -197,6 +243,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -222,6 +272,7 @@ jobs:
       - run: cargo test   -p cosmwasm-std --locked --all-features
 
   package-cosmwasm-vm:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: cosmwasm-vm-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -231,6 +282,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -252,6 +307,7 @@ jobs:
         if: runner.os == 'Linux'
 
   package-cosmwasm-vm-derive:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: cosmwasm-vm-derive-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -261,6 +317,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -273,6 +333,7 @@ jobs:
       - run: cargo test   -p cosmwasm-vm-derive --locked
 
   package-cosmwasm-check:
+    if: contains(github.event.pull_request.title, '[cosmwasm]') || github.event_name == 'workflow_dispatch'
     name: cosmwasm-check-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -282,6 +343,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+      - name: Checkout CosmWasm
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init crates/cosmwasm
+
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
