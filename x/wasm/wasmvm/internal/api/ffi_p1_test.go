@@ -21,7 +21,7 @@ func TestCopyU8SliceEmptyAndNil(t *testing.T) {
 	require.Nil(t, copyU8SliceFromBytes(nil))
 	empty := copyU8SliceFromBytes([]byte{})
 	require.NotNil(t, empty)
-	require.Equal(t, 0, len(empty))
+	require.Empty(t, empty)
 	require.Equal(t, []byte("hi"), copyU8SliceFromBytes([]byte("hi")))
 }
 
@@ -32,7 +32,7 @@ func TestCopyU8SliceRejectsNilPtrNonzeroLen(t *testing.T) {
 func TestCopyAndDestroyUnmanagedVectorLenCap(t *testing.T) {
 	require.Nil(t, copyUnmanagedNone())
 	out := copyUnmanagedEmpty()
-	require.Equal(t, 0, len(out))
+	require.Empty(t, out)
 }
 
 func TestCopyAndDestroyUnmanagedVectorRejectsLenGtCap(t *testing.T) {
@@ -42,7 +42,7 @@ func TestCopyAndDestroyUnmanagedVectorRejectsLenGtCap(t *testing.T) {
 func TestAccountUsedGasOnOutOfGasGet(t *testing.T) {
 	ret, used := cGetOOGUsedGas()
 	require.Equal(t, goErrOutOfGas, ret)
-	require.Greater(t, used, uint64(0))
+	require.Positive(t, used)
 }
 
 type errIter struct {

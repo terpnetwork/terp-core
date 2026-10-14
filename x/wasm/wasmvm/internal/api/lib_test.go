@@ -1228,11 +1228,6 @@ func createReflectContract(tb testing.TB, cache Cache) []byte {
 	return createContract(tb, cache, "../../artifacts/reflect.wasm")
 }
 
-func createFloaty2(tb testing.TB, cache Cache) []byte {
-	tb.Helper()
-	return createContract(tb, cache, "../../artifacts/floaty_2.0.wasm")
-}
-
 func createContract(tb testing.TB, cache Cache, wasmFile string) []byte {
 	tb.Helper()
 	wasm, err := os.ReadFile(wasmFile)
