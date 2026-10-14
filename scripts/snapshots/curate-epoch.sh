@@ -1,14 +1,7 @@
 #!/usr/bin/env bash
-# Morocco-1 snapshot epoch on groot2 — LOCAL HUB ONLY.
-#
-# Public sentries (Akash rpc.terp.network) statesync from host-rpc. This job
-# must never remanifest, SSH, or wipe those pods. It only:
-#   1) Spawn an ephemeral terpd on this machine, statesync from LIVE_RPC (LAN hub).
-#   2) Tar data/+wasm/ and publish to usb2 snapshots/ (not static/terp.network).
-# Archive halt-copy (stop_live) is opt-in: OLINE_DANGER_HALT_LIVE=1.
-#
-# Never copies config/, node_key, priv_validator_key, addrbook, or keyring.
-# Never oline manage update/restart of Akash dseqs.
+# LOCAL HUB ONLY. Public sentries statesync from host-rpc, so this job must
+# never remanifest, SSH, or wipe those pods. Halt-copy is opt-in
+# (OLINE_DANGER_HALT_LIVE=1). Never copy keys or oline-restart Akash dseqs.
 set -euo pipefail
 
 LIVE_HOME="${LIVE_HOME:-/home/returniflost/.terpd-mainnet}"
@@ -33,9 +26,7 @@ MC_ALIAS="${MC_ALIAS:-usb2}"
 S3_BUCKET="${S3_BUCKET:-snapshots}"
 PUBLIC_BASE="${PUBLIC_BASE:-https://minio.terp.network}"
 KEEP_LAST="${KEEP_LAST:-1}"
-# pruned | archive | both | resolve-only | reap-only
-# resolve-only: copy live Cosmovisor/current (or running exe) and exit (no spawn)
-# reap-only: kill leftover --home $EPH_HOME processes and exit (no spawn, no upload)
+# resolve-only and reap-only must not spawn or upload.
 CLASS="${CLASS:-pruned}"
 TRUST_LAG="${TRUST_LAG:-2000}"
 SYNC_TIMEOUT_SEC="${SYNC_TIMEOUT_SEC:-10800}"

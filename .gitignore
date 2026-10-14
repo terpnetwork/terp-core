@@ -11,10 +11,10 @@
 .opencode/*
 crates/*
 !crates/cosmwasm
-!crates/zk-wasmd
-!crates/zk-wasmvm
 websites/*
 tools/*
+!tools/builders/
+!tools/builders/**
 # Build
 vendor
 build
@@ -100,4 +100,5 @@ SENTRY_SETUP.md
 oline-ui.md
 docs/
 .grok
-artifacts/
+# Repo-root build dump only. x/wasm/wasmvm/artifacts is the libwasmvm fixture set.
+/artifacts/

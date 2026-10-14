@@ -14,13 +14,13 @@ jobs:
         run: |
           set -euo pipefail
           if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-            git submodule update --init crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+            git submodule update --init crates/cosmwasm
           fi
-          test -f crates/zk-wasmvm/go.mod
+          test -f x/wasm/wasmvm/libwasmvm/Cargo.toml
           test -f crates/cosmwasm/Cargo.toml
-          test -f crates/zk-wasmd/go.mod
+          test -f x/wasm/keeper/keeper.go
       - name: Published muslc
-        run: ./scripts/release/fetch_zk_muslc.sh crates/zk-wasmvm/internal/api
+        run: ./scripts/release/fetch_zk_muslc.sh x/wasm/wasmvm/internal/api
       - name: Published packs match S3
         run: |
           set -euo pipefail

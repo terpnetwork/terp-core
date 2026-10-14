@@ -3,8 +3,8 @@ package keeper
 import (
 	"context"
 
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmkeeper "github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
+	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 
 	storetypes "cosmossdk.io/core/store"
 	"cosmossdk.io/log/v2"

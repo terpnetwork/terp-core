@@ -1,61 +1,35 @@
-# v6.1 CosmWasm: what still happens vs what `reply` no longer sees
+# v6.1 CosmWasm: contract-visible behavior
 
 For contract authors and anyone grepping our CosmWasm stack (polytone, IBC factories, cw-hooks, HashMerchant sudo, smart-account authenticators).
 
 **Events from submessages still occur.** Bank sends, instantiates, executes, staking messages — they still run, they still write state, and they still show up on the **transaction** (explorers, LCD `tx` events, indexers). We did **not** cancel those actions.
 
-What changed: the list copied into the **calling contract’s `reply` entrypoint** (`reply.result.ok.events`) is smaller. Indexers are unchanged.
+The reply-event resolution for this tree is [`../v6.3/REPLY-EVENTS.md`](../v6.3/REPLY-EVENTS.md). v6.1 had narrowed wasm `reply.events` to `wasm` / `wasm-*`. That allowlist is not the current rule. Sections 2 and 3 below are separate v6.1 behavior (cw-hooks, HashMerchant).
 
 ---
 
-## 1. Submessage `reply` events (the CosmWasm break)
+## 1. Submessage `reply` events
 
-When contract A sends a **SubMsg** to another **wasm** contract (instantiate or execute) and asks for a reply:
+When contract A sends a **SubMsg** to another **wasm** contract (instantiate or execute) and asks for a reply, `reply.result.ok.events` includes:
 
-| Still in `reply` | No longer in `reply` (but still on the tx) |
-|------------------|--------------------------------------------|
-| ok / error | Bank `transfer` / coin-spent events |
-| `data` (instantiate still puts the new address here) | Staking / gov native events |
-| `msg_responses` (protobuf) | Wasmd plumbing: `instantiate`, `execute`, `sudo`, `reply` |
-| Events the inner contract emitted as CosmWasm: type **`wasm`** and **`wasm-…`** | Any other event type |
+- wasmd plumbing: `instantiate`, `execute`, `sudo`, `reply`
+- contract events: `wasm` and `wasm-…`
+- other events that submessage emitted (including bank `transfer` when the child moved coins)
 
-Native SubMsgs (A → bank send as SubMsg) already returned an **empty** event list in `reply`. That is unchanged. Those transfers still happen and still appear on the tx.
+`data` and `msg_responses` are still there. The instantiate address is on the `instantiate` event (`_contract_address`) and in `MsgInstantiateContractResponse`.
 
-### What to search for in our contracts
+SDK `message` events are still dropped (wasmd event flattening). Attribute keys are sorted on the shared slice, so the transaction events from a wasm SubMsg are sorted too. That matches upstream wasmd.
 
-```text
-fn reply(
-e.ty == "instantiate"
-e.ty == "execute"
-e.ty == "transfer"
-event.ty == "wasm"
-_contract_address
-reply.result
-SubMsg::reply_always
-reply_on_success
-```
-
-**Broken pattern** (sample in-tree: `crates/cosmwasm/contracts/ibc-reflect`):
+Native SubMsgs (A → bank send as SubMsg, `Wasm == nil`) still return an **empty** event list in `reply`. That is wasmd #917. Those transfers still happen and still appear on the tx.
 
 ```rust
 events.into_iter().find(|e| e.ty == "instantiate")
     .and_then(|ev| ev.attributes.into_iter().find(|a| a.key == "_contract_address"))
 ```
 
-After v6.1 that `find` is empty. The instantiate **did** run; the address is in **`reply.result.ok.data`** (`MsgInstantiateContractResponse`). Prefer `msg_responses` / `data`. If you need a CosmWasm event, look for type `wasm` (not `instantiate`).
+That pattern works again for wasm SubMsgs. It stays empty for a native bank SubMsg. `crates/cosmwasm/contracts/ibc-reflect` uses it.
 
-**Usually fine:** contracts that only read `reply.result` ok/err, `data`, or their own `wasm-*` events (polytone-style note/voice, factories that parse protobuf data).
-
-**Tune if true:** any factory, IBC wrapper, or “instantiate then record child address” that parses **event type `instantiate`** from the reply.
-
-### Our inventory to walk
-
-| Surface | Why look |
-|---------|----------|
-| Polytone (`tests/tsh/polytone`, `tests/interchaintest/contracts/polytone_*.wasm`) | SubMsg instantiate/execute + reply is the product. Confirm they use `data` / CosmWasm events, not `instantiate`/`transfer` in `reply`. |
-| IBC reflect / 08-wasm light clients | Same instantiate-callback pattern as `ibc-reflect`. |
-| Tokenfactory / clock / any “spawn a child contract” wasm | Child address from reply events. |
-| Frontend indexers | **No change** if they subscribe to tx events, not to contract `reply` JSON. |
+Code: `x/wasm/keeper/msg_dispatcher.go` (`filterEvents`, then empty the reply list only when `msg.Msg.Wasm == nil`). Detail and the “just enough” line: [`../v6.3/REPLY-EVENTS.md`](../v6.3/REPLY-EVENTS.md).
 
 ---
 
@@ -101,12 +75,12 @@ If you registered a contract for HashMerchant sudo (confirmed oracle root):
 
 ## 5. Checklist (copy into a review)
 
-- [ ] Every `fn reply` : does it assume event type `instantiate`, `execute`, or `transfer`?
-- [ ] Child contract address: from `data` / `msg_responses`, not from `instantiate` in `reply.events`?
-- [ ] Amounts from a nested bank send: from `msg_responses` or a `wasm-*` event the inner contract emitted, not from `transfer` in `reply`?
-- [ ] Polytone / IBC spawn paths re-tested after v6.1 (instantiate still records the right address).
+- [ ] Wasm SubMsg `fn reply` can read `instantiate` / `execute` again. Native SubMsgs still have an empty event list.
+- [ ] Child contract address: `instantiate` / `_contract_address`, or `data` / `msg_responses`.
+- [ ] Amounts from a nested bank send inside a **wasm** SubMsg can be on `transfer` in `reply`. A **native** bank SubMsg still has no reply events; use `msg_responses`.
+- [ ] Polytone / IBC spawn paths re-tested (ibc-reflect instantiate callback included).
 - [ ] cw-hooks listeners: OK with “stake succeeded even if we errored”?
 - [ ] HashMerchant sudo: stays under the gas cap; missing a callback is acceptable.
 - [ ] Indexers: still on **tx events**, not on reply payload.
 
-Upgrade context: `networks/upgrades/v6.1/guide.md`. Code: wasmd `filterWasmReplyEvents` in `crates/zk-wasmd/x/wasm/keeper/msg_dispatcher.go` (emit to EventManager first, then shrink the reply list).
+Upgrade context: `networks/upgrades/v6.1/guide.md`. Code: `x/wasm/keeper/msg_dispatcher.go`.

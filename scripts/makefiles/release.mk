@@ -318,17 +318,13 @@ release-dev: release-bundle release-s3
 	verify-fresh-vm
 # wasmvm already ships Docker builders for every host lib. Always recut
 # alpine + linux together: Linux go test links .so, not muslc .a.
-wasmvm-release-build:
-	$(MAKE) -C crates/zk-wasmvm release-build
+wasmvm-release-build: release-build
 
-wasmvm-release-build-linux:
-	$(MAKE) -C crates/zk-wasmvm release-build-linux
+wasmvm-release-build-linux: release-build-linux
 
-wasmvm-release-build-macos:
-	$(MAKE) -C crates/zk-wasmvm release-build-macos
+wasmvm-release-build-macos: release-build-macos
 
-wasmvm-verify:
-	$(MAKE) -C crates/zk-wasmvm verify-libwasmvm
+wasmvm-verify: verify-libwasmvm
 
 wasmvm-curate: wasmvm-verify
 	@./scripts/release/curate_wasmvm_artifacts.sh

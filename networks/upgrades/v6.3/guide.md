@@ -34,16 +34,20 @@ submitted on Thursday.
 The wasmvm in these binaries reports a prefix-iterator error only while the
 iterator is still valid, so a normal end-of-range scan no longer fails.
 
+**Contract authors:** wasm-to-wasm `reply` events follow upstream wasmd
+again. The v6.1 allowlist that dropped `instantiate` / `execute` from the
+reply payload is not the rule. See [`REPLY-EVENTS.md`](./REPLY-EVENTS.md).
+
 ---
 
 ## Published tarballs
 
 | Plan | Platform | sha256 |
 |------|----------|--------|
-| v6.3.0 | linux/amd64 | `4161cf4531f357ce4cec24e0302b71ca404810556b439729d43a120dd0972d65` |
-| v6.3.0 | linux/arm64 | `3d28fe7a68e52c6bfcc696b71393c4cd5795d208c7c87f0ee4f6d65f44f6e4cf` |
-| v6.4.0 | linux/amd64 | `dedd89bcd84957aba2d6e9625ee546da6a72703825528ebfa57224b333173106` |
-| v6.4.0 | linux/arm64 | `33f2e37454eb47c81685ee67438c0ea5082c6a484fa5350766f81868f332fd0f` |
+| v6.3.0 | linux/amd64 | `302ad85a28f317fc54983c7cc47597820f40e2b6f0176703b89085d63f5d53bb` |
+| v6.3.0 | linux/arm64 | `c26383a772625e240e8bf150b4249a4eafcf32b3a6076c82abfb9a64ce77fc06` |
+| v6.4.0 | linux/amd64 | `c8fe6cf8cbf8ae0493732907c8b14614e6999a92534cc79717f92d2a977175e7` |
+| v6.4.0 | linux/arm64 | `3b8c70ff76525c4dd647e45ec9550318a092433cf55acc067ef04d8710968d9e` |
 
 Cosmovisor verifies the `checksum=sha256:` query on the URL in
 `cosmovisor.json`. The v6.3 binary has the v6.4 checksums compiled into it
@@ -59,9 +63,10 @@ are already applied (`current_plan` is empty; nothing is in voting or
 deposit). The DAO's week-long revote cooldown does not apply to this path.
 
 Expedited voting is **24 hours**. The full expedited deposit
-`100000000000uterp` puts the proposal into voting immediately. Broadcast
-early enough that those 24 hours end before height `23674923` (before
-Friday 2026-10-02 10:00 UTC).
+`100000000000uterp` puts the proposal into voting immediately. Deposit it
+by Thursday 2026-10-15 10:00 UTC so the vote ends as height `23893261`
+arrives (Friday 2026-10-16 10:00 UTC). v6.4 is armed at `23893263`.
+`plan.info` is the linux Cosmovisor JSON for this cut's v6.3.0 tarballs.
 
 Download the versioned tarballs (`terpd-6.3.0-linux-amd64.tar.gz` and the
 arm64 pair, and the same names for `6.4.0`). The bare `terpd-linux-amd64`
@@ -118,7 +123,7 @@ fail-closed (no dummy Flock/DSTW placeholders), zakura Halo2 IPA.
 
 Host libs are built with **our** `terpnetwork/zk-*-builder:4.0.0-zk` images
 (local compile; not published). Never `cosmwasm/libwasmvm-builder:0103-*`.
-See [`../../../crates/zk-wasmvm/docs/BUILDERS.md`](../../../crates/zk-wasmvm/docs/BUILDERS.md).
+See [`../../../x/wasm/wasmvm/docs/BUILDERS.md`](../../../x/wasm/wasmvm/docs/BUILDERS.md).
 
 Operators upgrade with the tarballs above. This cut did not republish
 `registry.terp.network/terp-core:v6.3.0` or `:v6.4.0`.

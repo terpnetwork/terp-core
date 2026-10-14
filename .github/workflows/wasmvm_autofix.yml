@@ -1,0 +1,29 @@
+name: autofix.ci # needed to securely identify the workflow
+
+# Pull requests run only when the title contains [wasmvm].
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    if: contains(github.event.pull_request.title, '[wasmvm]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "oldstable"
+
+      - name: Install shfmt
+        run: go install mvdan.cc/sh/v3/cmd/shfmt@v3.11.0
+
+      - name: Format shell
+        run: shfmt --write x/wasm/wasmvm scripts/devtools/wasmvm_set_version.sh scripts/devtools/wasmvm_curate_release.sh scripts/devtools/wasmvm_get_glibc_version.sh
+
+      # See https://autofix.ci/
+      - uses: autofix-ci/action@v1

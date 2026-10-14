@@ -19,9 +19,11 @@ env:
   GOTOOLCHAIN: local
 
 # Monorepo submodule policy:
-# - go.mod path-replaces CosmWasm → ./crates/zk-wasmd and ./crates/zk-wasmvm
-# - SKIP full recursive checkout (60+ crates) to avoid runner bloat
-# - Only init the path-replace submodules required for go build/test/tidy
+# - go.mod path-replaces wasmvm → ./x/wasm/wasmvm. wasmd stays in-tree at x/wasm.
+# - crates/zk-wasmd and crates/zk-wasmvm are not submodules.
+# - The only wasm-library submodule is crates/cosmwasm (release/v6.3.0-wasmer).
+# - libwasmvm fetches that commit by git rev, so Go jobs do not need it checked out.
+# - SKIP full recursive checkout (60+ crates) to avoid runner bloat.
 
 jobs:
   build:
@@ -31,22 +33,37 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Init Go path-replace submodules
+      - name: Confirm in-tree wasm
         run: |
-          for p in crates/zk-wasmd crates/zk-wasmvm; do
-            if [ -f "$p/go.mod" ]; then
-              echo "OK $p already populated"
-            else
-              git submodule update --init --depth 1 "$p"
-            fi
-          done
+          test -f x/wasm/keeper/keeper.go
+          test -f x/wasm/wasmvm/libwasmvm/Cargo.toml
+          if [ ! -f crates/cosmwasm/Cargo.toml ]; then
+            git submodule update --init --depth 1 crates/cosmwasm
+          fi
       - name: Hasher packaging
         run: ./scripts/release/curate_v63.sh
+      - name: Published muslc
+        run: ./scripts/release/fetch_zk_muslc.sh x/wasm/wasmvm/internal/api
       - name: Setup go
         uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-      - run: go build ./...
+      - name: Build
+        run: |
+          set -euo pipefail
+          # Linux go links the published muslc archive. go-gen fixtures are
+          # rust snapshots without a package clause; any other list error fails.
+          list="$(go list -e -f '{{if .Error}}ERR {{.ImportPath}}{{else}}{{.ImportPath}}{{end}}' ./...)"
+          bad="$(printf '%s\n' "$list" | grep '^ERR ' | grep -v '/crates/cosmwasm/packages/go-gen' || true)"
+          if [ -n "$bad" ]; then
+            echo "$bad" >&2
+            exit 1
+          fi
+          pkgs=()
+          while IFS= read -r p; do
+            pkgs+=("$p")
+          done < <(printf '%s\n' "$list" | grep -v '^ERR ')
+          go build -tags muslc "${pkgs[@]}"
 
   test:
     runs-on: ubuntu-latest
@@ -60,19 +77,31 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Init Go path-replace submodules
+      - name: Confirm in-tree wasm
         run: |
-          for p in crates/zk-wasmd crates/zk-wasmvm; do
-            if [ -f "$p/go.mod" ]; then
-              echo "OK $p already populated"
-            else
-              git submodule update --init --depth 1 "$p"
-            fi
-          done
+          test -f x/wasm/keeper/keeper.go
+          test -f x/wasm/wasmvm/libwasmvm/Cargo.toml
+          if [ ! -f crates/cosmwasm/Cargo.toml ]; then
+            git submodule update --init --depth 1 crates/cosmwasm
+          fi
       - name: Hasher packaging
         run: ./scripts/release/curate_v63.sh
+      - name: Published muslc
+        run: ./scripts/release/fetch_zk_muslc.sh x/wasm/wasmvm/internal/api
       - name: Test
-        run: go test ./...
+        run: |
+          set -euo pipefail
+          list="$(go list -e -f '{{if .Error}}ERR {{.ImportPath}}{{else}}{{.ImportPath}}{{end}}' ./...)"
+          bad="$(printf '%s\n' "$list" | grep '^ERR ' | grep -v '/crates/cosmwasm/packages/go-gen' || true)"
+          if [ -n "$bad" ]; then
+            echo "$bad" >&2
+            exit 1
+          fi
+          pkgs=()
+          while IFS= read -r p; do
+            pkgs+=("$p")
+          done < <(printf '%s\n' "$list" | grep -v '^ERR ')
+          go test -tags muslc "${pkgs[@]}"
 
   tidy:
     runs-on: ubuntu-latest
@@ -81,15 +110,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Init Go path-replace submodules
+      - name: Confirm in-tree wasm
         run: |
-          for p in crates/zk-wasmd crates/zk-wasmvm; do
-            if [ -f "$p/go.mod" ]; then
-              echo "OK $p already populated"
-            else
-              git submodule update --init --depth 1 "$p"
-            fi
-          done
+          test -f x/wasm/keeper/keeper.go
+          test -f x/wasm/wasmvm/libwasmvm/Cargo.toml
+          if [ ! -f crates/cosmwasm/Cargo.toml ]; then
+            git submodule update --init --depth 1 crates/cosmwasm
+          fi
       - name: Setup go
         uses: actions/setup-go@v6
         with:

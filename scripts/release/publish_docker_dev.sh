@@ -47,8 +47,8 @@ if [ "$WASMVM_SOURCE" != "local" ]; then
   exit 1
 fi
 
-if [ ! -d "./crates/zk-wasmvm" ]; then
-  echo "ERROR: crates/zk-wasmvm not found — monorepo ZK build requires it" >&2
+if [ ! -d "./x/wasm/wasmvm" ]; then
+  echo "ERROR: x/wasm/wasmvm not found — monorepo ZK build requires it" >&2
   exit 1
 fi
 

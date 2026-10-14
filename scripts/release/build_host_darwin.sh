@@ -2,7 +2,7 @@
 # Host darwin/arm64 terpd for the public installer.
 # Same step as linux `make create-binaries` on a Darwin builder — not a sidecar job.
 #
-# Links crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a (`static_wasm`)
+# Links x/wasm/wasmvm/internal/api/libwasmvmstatic_darwin.a (`static_wasm`)
 # so the ELF does not rpath libwasmvm.dylib to this clone.
 #
 #   RELEASE_TAG=v6.0.1 ./scripts/release/build_host_darwin.sh
@@ -27,10 +27,10 @@ if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
 fi
 VER="${TAG#v}"
 COMMIT="$(git rev-parse HEAD)"
-STATIC_A="$ROOT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a"
+STATIC_A="$ROOT/x/wasm/wasmvm/internal/api/libwasmvmstatic_darwin.a"
 if [ ! -f "$STATIC_A" ]; then
   echo "ERROR: missing $STATIC_A" >&2
-  echo "Build it with: crates/zk-wasmvm/builders/host/build_macos_static_arm64.sh" >&2
+  echo "Build it with: tools/builders/host/build_macos_static_arm64.sh" >&2
   exit 1
 fi
 if command -v lipo >/dev/null; then

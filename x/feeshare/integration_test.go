@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/log/v2"
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmkeeper "github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cosmosdb "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"

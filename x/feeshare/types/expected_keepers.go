@@ -3,7 +3,7 @@ package types
 import (
 	context "context"
 
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 
 	// "github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"

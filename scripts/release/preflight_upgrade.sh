@@ -22,7 +22,7 @@ fi
 VER="${TAG#v}"
 PACK="${PACK:-$ROOT/networks/upgrades/${PLAN}}"
 BUILD_DIR="${BUILD_DIR:-$ROOT/build}"
-ZK="${ZK_WASMVM_DIR:-$ROOT/crates/zk-wasmvm}"
+ZK="${ZK_WASMVM_DIR:-$ROOT/x/wasm/wasmvm}"
 WASMVM_OUT="${WASMVM_ARTIFACT_DIR:-$ROOT/build/wasmvm-release}"
 WRITE="${WRITE:-0}"
 ALLOW_PARTIAL="${ALLOW_PARTIAL:-1}"
@@ -70,8 +70,7 @@ fi
 # ZK go.mod replaces
 # ------------------------------------------------------------------
 for pair in \
-  "github.com/CosmWasm/wasmd => ./crates/zk-wasmd" \
-  "github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm"
+  "github.com/CosmWasm/wasmvm/v3 => ./x/wasm/wasmvm"
 do
   if ! grep -F "$pair" go.mod >/dev/null; then
     err "missing go.mod replace: $pair"
@@ -209,7 +208,8 @@ if [ "$WRITE" = "1" ]; then
       --tag "$TAG" \
       --checksums_file "$sums_tmp" \
       --out "$cvj"
-    note "wrote $cvj"
+    cp "$cvj" "$PACK/binaries.json"
+    note "wrote $cvj (binaries.json identical)"
     cat "$cvj"
     if [ -f "$PACK/draft_proposal.json" ] && command -v jq >/dev/null; then
       compact="$(jq -c . "$cvj")"
@@ -223,7 +223,7 @@ if [ "$WRITE" = "1" ]; then
       echo "binary_tag: $TAG"
       echo "binary_commit: $(git rev-parse "$TAG^{commit}" 2>/dev/null || git rev-parse HEAD)"
       echo "pack_branch: release/$TAG"
-      echo "dirty: $(git describe --tags --always --dirty)"
+      echo "dirty: $TAG"
       echo "s3_binaries_intended: $S3_BASE/"
       echo "published: false"
       echo "note: ELF identity is git tag $TAG. Pack files belong on release/$TAG and must not move the tag."

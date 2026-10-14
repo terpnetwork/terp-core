@@ -10,7 +10,7 @@ replace). Cosmovisor plan names: **`v6.3`** then **`v6.4`**. Not `v7`.
 | Input | Tip / version |
 |-------|----------------|
 | CosmWasm | `4.0.0-zk` `09e3ba815` (`crates/cosmwasm`) |
-| libwasmvm | `4.0.0-zk` `de95b3f` (`crates/zk-wasmvm`) |
+| libwasmvm | `4.0.0-zk` (`x/wasm/wasmvm`, module `github.com/CosmWasm/wasmvm/v3`) |
 | zakura-halo2-proofs | `5364d3d` |
 | Go import | **`github.com/CosmWasm/wasmvm/v3`** (path unchanged) |
 | IAVL / store | `go.mod` replace `./crates/cosmos/iavl` and `./crates/cosmos/store-v2` |
@@ -19,7 +19,7 @@ Confirm:
 
 ```sh
 git -C crates/cosmwasm rev-parse HEAD    # 09e3ba815
-git -C crates/zk-wasmvm rev-parse HEAD   # de95b3f
+# wasmvm is in-tree; source commit is x/wasm/wasmvm/VERSION
 grep -n 'iavl =>\|store/v2 =>\|wasmvm/v3 =>' go.mod
 ./scripts/release/curate_v63.sh
 ```
@@ -28,10 +28,10 @@ Build libwasmvm with **our** images (`terpnetwork/zk-*-builder:4.0.0-zk`),
 local only — do not push builders to GHCR or `registry.terp.network`.
 Compiled release image is `registry.terp.network/terp-core:<tag>`. Never
 `docker pull cosmwasm/libwasmvm-builder:0103-*` (rustc 1.86, no Path A).
-Canonical: [`crates/zk-wasmvm/docs/BUILDERS.md`](../../../crates/zk-wasmvm/docs/BUILDERS.md).
+Canonical: [`x/wasm/wasmvm/docs/BUILDERS.md`](../../../x/wasm/wasmvm/docs/BUILDERS.md).
 
 ```sh
-(cd crates/zk-wasmvm/builders && make docker-images-4.0.0-zk)
+(cd builders && make docker-images-4.0.0-zk)
 make wasmvm-release-build   # muslc .a AND glibc .so AND dylib, then verify
 make wasmvm-verify
 ```
@@ -74,7 +74,7 @@ accepts dest-bank membership. That is **not** bit-for-bit linux identity.
 ## 4. Recurate linux (when asked)
 
 ```sh
-# rebuild muslc from crates/zk-wasmvm 4.0.0-zk, then:
+# rebuild muslc from x/wasm/wasmvm 4.0.0-zk, then:
 TAG=v6.3.0 PLATFORMS=linux/amd64,linux/arm64 ./scripts/release/fresh-vm/run.sh
 TAG=v6.4.0 BUILD_TAGS=v64 PLATFORMS=linux/amd64,linux/arm64 ./scripts/release/fresh-vm/run.sh
 PLAN=v6.3 make recurate-upgrade-binaries

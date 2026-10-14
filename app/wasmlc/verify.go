@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmkeeper "github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
 	wasmvm "github.com/CosmWasm/wasmvm/v3"
 	"github.com/CosmWasm/wasmvm/v3/types"
 	ics23 "github.com/cosmos/ics23/go"

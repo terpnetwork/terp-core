@@ -2,10 +2,13 @@ ARG GO_VERSION=1.26.5
 ARG RUNNER_IMAGE=alpine:3.17
 
 # WASMVM_SOURCE controls where the static wasmvm library comes from:
-#   "github" (default) — download libwasmvm_muslc from minio.terp.network/releases/zk-wasmvm/<ver>/
-#   "local"            — use pre-built lib from build/wasmvm/ (for custom zk-wasmvm)
+#   "github" (default) — download the published 4.0.0-zk muslc and keep the
+#                        in-tree replace (go.mod require v3.0.7 is the module
+#                        version, not the archive path).
+#   "local"            — use pre-built lib from build/wasmvm/.
 ARG WASMVM_SOURCE=github
 ARG WASMVM_BASE_URL=https://minio.terp.network/releases/zk-wasmvm
+ARG WASMVM_MUSLC_TAG=v4.0.0-zk
 
 FROM golang:${GO_VERSION}-alpine AS go-builder
 # Stamped into terpd via make VERSION=/COMMIT= (.git is dockerignored).
@@ -31,33 +34,32 @@ WORKDIR /code
 ADD go.mod go.sum ./
 
 # Re-declare ARGs after FROM (Docker scoping rule)
-ARG WASMVM_SOURCE
-ARG WASMVM_BASE_URL
+ARG WASMVM_SOURCE=github
+ARG WASMVM_BASE_URL=https://minio.terp.network/releases/zk-wasmvm
+ARG WASMVM_MUSLC_TAG=v4.0.0-zk
 
 # ---------------------------------------------------------
-# Pull in the wasmvm static library (github mode only).
-# In local mode the lib is staged in build/wasmvm/ and will
-# be copied after the full source COPY below.
-#
-# Do NOT use `go list -m` here: go.mod may replace wasmvm → ./crates/zk-wasmvm
-# and crates/ is dockerignored until staging; parse the require line instead.
+# Pull in the published 4.0.0-zk muslc (github mode only).
+# go.mod says wasmvm/v3 v3.0.7 because the import path stayed on v3.
+# That string is not a release directory. v3.0.7 404s. v4.0.0-zk is the pin
+# in scripts/release/fetch_zk_muslc.sh.
+# Local mode stages build/wasmvm/ and copies it after the source COPY.
 # ---------------------------------------------------------
 RUN if [ "$WASMVM_SOURCE" = "github" ]; then \
-      WASMVM_VERSION=$(awk '/^[[:space:]]*github.com\/CosmWasm\/wasmvm\/v3/ && !/=>/ {print $2; exit}' go.mod) && \
-      if [ -z "$WASMVM_VERSION" ]; then echo "ERROR: could not parse wasmvm version from go.mod"; exit 1; fi && \
       ARCH=$(uname -m) && \
+      TAG="${WASMVM_MUSLC_TAG:-v4.0.0-zk}" && \
       BASE="${WASMVM_BASE_URL:-https://minio.terp.network/releases/zk-wasmvm}" && \
-      echo "==> Downloading wasmvm $WASMVM_VERSION from $BASE ($ARCH)" && \
-      wget -q "$BASE/$WASMVM_VERSION/libwasmvm_muslc.$ARCH.a" \
+      echo "==> Downloading wasmvm $TAG from $BASE ($ARCH)" && \
+      wget -q "$BASE/$TAG/libwasmvm_muslc.$ARCH.a" \
            -O /lib/libwasmvm_muslc.$ARCH.a && \
-      wget -q "$BASE/$WASMVM_VERSION/SHA256SUMS" -O /tmp/SHA256SUMS && \
+      wget -q "$BASE/$TAG/SHA256SUMS" -O /tmp/SHA256SUMS && \
       sha256sum /lib/libwasmvm_muslc.$ARCH.a | grep $(grep libwasmvm_muslc.$ARCH /tmp/SHA256SUMS | awk '{print $1}') && \
       if ! grep -a -q -F 'stwo: Dummy DSTW rejected' /lib/libwasmvm_muslc.$ARCH.a; then \
         echo "ERROR: downloaded muslc missing Path A STWO host (proof_instance_verify)"; \
         exit 1; \
       fi; \
     else \
-      echo "==> Skipping GitHub download (WASMVM_SOURCE=$WASMVM_SOURCE)"; \
+      echo "==> Skipping published muslc download (WASMVM_SOURCE=$WASMVM_SOURCE)"; \
     fi
 
 # ---------------------------------------------------------
@@ -81,8 +83,8 @@ RUN ARCH=$(uname -m) && \
       cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a /lib/libwasmvm_muslc.$ARCH.a && \
       # Keep go replace to monorepo ZK forks — rewrite host paths → staged docker paths.
       # crates/ is dockerignored; build/zk-deps is what the image actually contains.
-      if [ ! -f /code/build/zk-deps/zk-wasmvm/go.mod ] || [ ! -f /code/build/zk-deps/zk-wasmd/go.mod ]; then \
-        echo "ERROR: staged zk-deps missing. Need build/zk-deps/zk-wasmvm and zk-wasmd." && \
+      if [ ! -f /code/build/zk-deps/zk-wasmvm/go.mod ]; then \
+        echo "ERROR: staged zk-deps missing. Need build/zk-deps/zk-wasmvm (from x/wasm/wasmvm)." && \
         exit 1; \
       fi && \
       if grep -q 'crates/ibc-hooks-v11' /code/go.mod && [ ! -f /code/build/zk-deps/ibc-hooks-v11/go.mod ]; then \
@@ -96,6 +98,7 @@ RUN ARCH=$(uname -m) && \
       fi && \
       cp /code/build/wasmvm/libwasmvm_muslc.$ARCH.a \
          /code/build/zk-deps/zk-wasmvm/internal/api/libwasmvm_muslc.$ARCH.a && \
+      sed -i 's|=> \./x/wasm/wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \./crates/zk-wasmvm|=> /code/build/zk-deps/zk-wasmvm|g' /code/go.mod && \
       sed -i 's|=> \./crates/zk-wasmd|=> /code/build/zk-deps/zk-wasmd|g'   /code/go.mod && \
       sed -i 's|=> \./crates/ibc-hooks-v11|=> /code/build/zk-deps/ibc-hooks-v11|g' /code/go.mod && \
@@ -105,16 +108,13 @@ RUN ARCH=$(uname -m) && \
       echo "==> go.mod replaces after rewrite:" && \
       grep -E 'CosmWasm/(wasmd|wasmvm)' /code/go.mod | head -20; \
     else \
-      echo "==> Stripping local ZK replace directives for stock (github wasmvm) build" && \
-      # Remove monorepo path replaces so require lines resolve to module proxy
-      sed -i '/github.com\/CosmWasm\/wasmd => \.\/crates\/zk-wasmd/d' /code/go.mod && \
-      sed -i '/github.com\/CosmWasm\/wasmvm\/v3 => \.\/crates\/zk-wasmvm/d' /code/go.mod && \
-      sed -i '/github.com\/CosmWasm\/wasmd => \/code\/build\/zk-deps\/zk-wasmd/d' /code/go.mod && \
-      sed -i '/github.com\/CosmWasm\/wasmvm\/v3 => \/code\/build\/zk-deps\/zk-wasmvm/d' /code/go.mod && \
-      sed -i '/=> \.\.\/zk-wasmvm/d' /code/go.mod && \
-      sed -i '/=> \.\.\/zk-wasmd/d'  /code/go.mod && \
-      sed -i '/zk-circuit flavored wasmd/d' /code/go.mod && \
-      sed -i '/zk-circuit flavored wasmvm/d' /code/go.mod; \
+      echo "==> Published muslc with in-tree wasmvm (replace stays ./x/wasm/wasmvm)" && \
+      if [ ! -f /lib/libwasmvm_muslc.$ARCH.a ]; then \
+        echo "ERROR: /lib/libwasmvm_muslc.$ARCH.a was not downloaded" && \
+        exit 1; \
+      fi && \
+      cp /lib/libwasmvm_muslc.$ARCH.a /code/x/wasm/wasmvm/internal/api/libwasmvm_muslc.$ARCH.a && \
+      grep -n 'wasmvm/v3' /code/go.mod | head -20; \
     fi
 
 # force it to use static lib (from above) not standard libgo_cosmwasm.so file

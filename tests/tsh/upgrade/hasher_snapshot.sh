@@ -25,8 +25,15 @@ if [ -z "$SNAPSHOT_PATH" ] && [ -z "$SNAPSHOT_URL" ]; then
     exit 1
   }
 fi
-if echo "${SNAPSHOT_URL:-$SNAPSHOT_PATH}" | grep -qE '22807932|22749033'; then
-  echo "hasher_snapshot: refusing pre-v6 pack ${SNAPSHOT_URL:-$SNAPSHOT_PATH}"
+pack="${SNAPSHOT_URL:-$SNAPSHOT_PATH}"
+if echo "$pack" | grep -qE '22807932|22749033'; then
+  echo "hasher_snapshot: refusing pre-v6 pack $pack"
+  exit 1
+fi
+pack_height="$(printf '%s' "$pack" | grep -oE '_[0-9]{7,}_' | tr -d '_' || true)"
+if [ -n "${pack_height:-}" ] && [ "$pack_height" -ge 23833180 ]; then
+  echo "hasher_snapshot: pack height $pack_height is at or after the v6.3 halt 23833180 ($pack)"
+  echo "hasher_snapshot: use a pre-halt pack, or USE_SNAPSHOT=0 for a local dual-halt genesis"
   exit 1
 fi
 if [ -z "$SNAPSHOT_PATH" ]; then

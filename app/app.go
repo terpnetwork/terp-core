@@ -98,10 +98,10 @@ import (
 	feegrantmodule "github.com/cosmos/cosmos-sdk/x/feegrant/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/CosmWasm/wasmd/x/wasm"
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmlctypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
+	"github.com/terpnetwork/terp-core/v6/x/wasm"
+	wasmkeeper "github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
+	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 	// unnamed import of statik for swagger UI support
 	// _ "github.com/cosmos/cosmos-sdk/client/docs/statik" // statik for swagger UI support
 )
@@ -354,8 +354,7 @@ func NewTerpApp(
 		panic(err)
 	}
 
-	// Default to 16MB wasm size limit; override via MAX_WASM_SIZE env var
-	wasmtypes.MaxWasmSize = 16 * 1024 * 1024
+	// MaxWasmSize defaults to 800 KiB * 2 in x/wasm/types. Override via MAX_WASM_SIZE.
 	if maxSize := os.Getenv("MAX_WASM_SIZE"); maxSize != "" {
 		// https://github.com/CosmWasm/wasmd#compile-time-parameters
 		val, _ := strconv.ParseInt(maxSize, 10, 32)

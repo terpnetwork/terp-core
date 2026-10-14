@@ -18,9 +18,12 @@ if [ -z "$VER" ]; then
   exit 1
 fi
 
-echo "==> preflight remote refs (wasmvm=$VER wasmd=$WASMD_REF)"
+echo "==> preflight remote refs (wasmvm=$VER)"
 git ls-remote --exit-code --heads "$WASMVM_REPO" "$VER" >/dev/null
-git ls-remote --exit-code --heads "$WASMD_REPO" "$WASMD_REF" >/dev/null
+if grep -q '=> ./crates/zk-wasmd' go.mod; then
+  echo "==> preflight wasmd ref $WASMD_REF"
+  git ls-remote --exit-code --heads "$WASMD_REPO" "$WASMD_REF" >/dev/null
+fi
 
 mkdir -p build/wasmvm build/zk-deps
 echo "==> muslc $VER $ARCH from $BASE"
@@ -38,10 +41,14 @@ if [ ! -f build/zk-deps/zk-wasmvm/go.mod ]; then
   rm -rf build/zk-deps/zk-wasmvm
   git clone --depth 1 --branch "$VER" "$WASMVM_REPO" build/zk-deps/zk-wasmvm
 fi
-if [ ! -f build/zk-deps/zk-wasmd/go.mod ]; then
-  echo "==> clone $WASMD_REPO @$WASMD_REF"
-  rm -rf build/zk-deps/zk-wasmd
-  git clone --depth 1 --branch "$WASMD_REF" "$WASMD_REPO" build/zk-deps/zk-wasmd
+if grep -q '=> ./crates/zk-wasmd' go.mod; then
+  if [ ! -f build/zk-deps/zk-wasmd/go.mod ]; then
+    echo "==> clone $WASMD_REPO @$WASMD_REF"
+    rm -rf build/zk-deps/zk-wasmd
+    git clone --depth 1 --branch "$WASMD_REF" "$WASMD_REPO" build/zk-deps/zk-wasmd
+  fi
+else
+  echo "==> wasmd is in the main module; not cloning zk-wasmd"
 fi
 # Path replace only. The release line imports the permissionlessweb module directly.
 if grep -q '=> ./crates/ibc-hooks-v11' go.mod; then
@@ -58,7 +65,9 @@ cp -f "build/wasmvm/libwasmvm_muslc.$ARCH.a" \
 echo "==> staged"
 ls -lh "build/wasmvm/libwasmvm_muslc.$ARCH.a"
 test -f build/zk-deps/zk-wasmvm/go.mod
-test -f build/zk-deps/zk-wasmd/go.mod
+if grep -q '=> ./crates/zk-wasmd' go.mod; then
+  test -f build/zk-deps/zk-wasmd/go.mod
+fi
 if grep -q '=> ./crates/ibc-hooks-v11' go.mod; then
   test -f build/zk-deps/ibc-hooks-v11/go.mod
 fi

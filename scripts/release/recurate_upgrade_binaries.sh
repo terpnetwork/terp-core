@@ -42,12 +42,24 @@ fi
 
 WT="${RECURATE_WORKDIR:-$ROOT/.worktrees/recurate-${PLAN}}"
 mkdir -p "$(dirname "$WT")"
+init_wt_submodules() {
+  local wt="$1"
+  local p mods=()
+  for p in crates/cosmwasm; do
+    if [ -f "$wt/.gitmodules" ] && grep -Fq "path = ${p}" "$wt/.gitmodules"; then
+      mods+=("$p")
+    fi
+  done
+  if [ "${#mods[@]}" -gt 0 ]; then
+    git -C "$wt" submodule update --init --checkout "${mods[@]}"
+  fi
+}
 if [ -d "$WT" ]; then
   git -C "$WT" checkout -q --detach "$COMMIT"
-  git -C "$WT" submodule update --init --checkout crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+  init_wt_submodules "$WT"
 else
   git worktree add --detach "$WT" "$COMMIT"
-  git -C "$WT" submodule update --init --checkout crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+  init_wt_submodules "$WT"
 fi
 # A workspace language server rewrites go.mod (drops // indirect) as soon as
 # the worktree appears. The tag's go.mod is the source of truth. Writable
@@ -68,7 +80,14 @@ if echo "$desc" | grep -q dirty; then
 fi
 
 # Muslc: published STWO archives, checksum-verified. Never parent-tree copy.
-bash "$ROOT/scripts/release/fetch_zk_muslc.sh" "$WT/crates/zk-wasmvm/internal/api"
+# Published v6.3/v6.4 tags still have the crates/zk-wasmvm gitlink.
+# This review tree keeps the same module at x/wasm/wasmvm.
+if [ -d "$WT/x/wasm/wasmvm" ]; then
+  WASMVM_REL="x/wasm/wasmvm"
+else
+  WASMVM_REL="crates/zk-wasmvm"
+fi
+bash "$ROOT/scripts/release/fetch_zk_muslc.sh" "$WT/$WASMVM_REL/internal/api"
 
 if grep -q '=> ./crates/ibc-hooks-v11' "$WT/go.mod"; then
   HOOKS_SRC="$ROOT/crates/ibc-hooks-v11"
@@ -89,10 +108,16 @@ if [ "$PLAN" = "v6.4" ] || [ "$TAG" = "v6.4.0" ]; then
   REC_BUILD_TAGS="muslc v64"
 fi
 # Darwin create-binaries needs the static archive; Cosmovisor packs are linux.
-if [ "$(uname -s)" = Darwin ] && [ -f "$ROOT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a" ]; then
-  mkdir -p "$WT/crates/zk-wasmvm/internal/api"
-  cp -f "$ROOT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a" \
-    "$WT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a"
+DARWIN_A=""
+for c in \
+  "$ROOT/x/wasm/wasmvm/internal/api/libwasmvmstatic_darwin.a" \
+  "$ROOT/crates/zk-wasmvm/internal/api/libwasmvmstatic_darwin.a"
+do
+  if [ -f "$c" ]; then DARWIN_A="$c"; break; fi
+done
+if [ "$(uname -s)" = Darwin ] && [ -n "$DARWIN_A" ]; then
+  mkdir -p "$WT/$WASMVM_REL/internal/api"
+  cp -f "$DARWIN_A" "$WT/$WASMVM_REL/internal/api/libwasmvmstatic_darwin.a"
 fi
 # RECURATE_ARCH=amd64 skips arm64 (CI on ubuntu). Default builds both.
 RECURATE_ARCH="${RECURATE_ARCH:-both}"

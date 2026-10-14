@@ -3,7 +3,7 @@ package types
 import (
 	"cosmossdk.io/math"
 
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 )
 
 // Wasm instance memory is 32 MiB (wasmd keeper contractMemoryLimit).

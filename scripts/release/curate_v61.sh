@@ -84,14 +84,7 @@ if ! grep -q "replace ${STORE_MOD} => ./crates/cosmos/store-v2" go.mod; then
 fi
 echo "OK store/v2 hasher replace"
 
-if [ -f artifacts/polytone_listener.wasm ] && [ ! -f tests/interchaintest/contracts/polytone_listener.wasm ]; then
-  mkdir -p tests/interchaintest/contracts
-  cp -f artifacts/polytone_listener.wasm tests/interchaintest/contracts/polytone_listener.wasm
-fi
-if [ -f artifacts/norick_vk.bin ]; then
-  mkdir -p tests/interchaintest/circuits
-  cp -f artifacts/norick_vk.bin tests/interchaintest/circuits/no_rick.bin
-fi
+# Contract and circuit bytes live in artifacts/. Suites read them there.
 
 mkdir -p "$PACK"
 bash "$ROOT/scripts/release/curate_wasmvm_artifacts.sh"
@@ -127,7 +120,8 @@ bash "$ROOT/scripts/release/curate_wasmvm_artifacts.sh"
     artifacts/tokenfactory_core.wasm \
     artifacts/ibchooks_counter.wasm \
     artifacts/norick_vk.bin \
-    tests/interchaintest/circuits/no_rick.bin
+    artifacts/no_rick.bin \
+    artifacts/zk_no_rick.wasm
   do
     if [ -f "$f" ]; then
       echo "$(sha256_file "$f")  $f"

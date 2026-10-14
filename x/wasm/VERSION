@@ -1,0 +1,6 @@
+source_repo: https://github.com/permissionlessweb/wasmd
+source_commit: ac3105eb2f5da538becdd01102b98c56c60d5dd7
+source_path: x/wasm
+folded_into: x/wasm
+import_path: github.com/terpnetwork/terp-core/v6/x/wasm
+archive_when_accepted: public archive of permissionlessweb/wasmd

@@ -1,0 +1,49 @@
+{
+  "chain_id": "morocco-1",
+  "plan": "v6.3",
+  "authority": "terp10d07y265gmmuvt4z0w9aw880jnsr700jag6fuq",
+  "expedited": true,
+  "deposit": "100000000000uterp",
+  "voting_period": "24h",
+  "halt": {
+    "height": 23893261,
+    "time_utc": "2026-10-16T10:00:00Z"
+  },
+  "next_plan": {
+    "name": "v6.4",
+    "height": 23893263,
+    "armed_by": "v6.3 handler at apply height + 2"
+  },
+  "submit_by_utc": "2026-10-15T10:00:00Z",
+  "measured": {
+    "rpc": "http://127.0.0.1:26657",
+    "height": 23838500,
+    "time_utc": "2026-10-13T17:27:31.724629389Z",
+    "sample_blocks": 2000,
+    "avg_block_seconds": 4.2429,
+    "seconds_until_halt": 232348,
+    "blocks_ahead": 54761
+  },
+  "projection": "halt_height = tip + floor(seconds_until_2026-10-16T10:00:00Z / avg_block_seconds). The 2000-block sample is the live rate. A 20000-block window is slower because the chain stalled on 8-10 October, so that window is not the projection.",
+  "vote_margin_blocks": 34398,
+  "v6_4_tarball_sha256": {
+    "linux/amd64": "33e11632d368e455ab9a906fe161445a77f7127415ebb6cc80bad2d2e05e3196",
+    "linux/arm64": "4d1298cfa6d3dab824381e60227f07f6e5c0a054a5be42f970e40de4678c9a36"
+  },
+  "v6_3_plan_info": "proposal.json plan.info is the linux Cosmovisor JSON. Darwin is packed for the release and is omitted from plan.info, matching the operator guide.",
+  "plan_info": "linux cosmovisor JSON for the v6.3.0 tarballs built from ef0692159fef3b7c89f5d80a3ec45e6353806bd9",
+  "v6_3_tarball_sha256": {
+    "linux/amd64": "dc9a4e2db78bd87c140d9fba6c3927ce1bd3c31485443f678b11238fdb806cfc",
+    "linux/arm64": "07737b5f7f00d1df6df1908dc5f62b8525ad57c7379caa59a9ebc970e5f0c26f"
+  },
+  "binary_commits": {
+    "v6.3.0": "ef0692159fef3b7c89f5d80a3ec45e6353806bd9",
+    "v6.4.0": "84a113953df8a53f11e6675d5704d0d53ab3d792"
+  },
+  "supersedes_halt": {
+    "height": 23833180,
+    "time_utc": "2026-10-13T10:00:00Z",
+    "reason": "That height passed before this cut. Tip at measurement was 23838500."
+  },
+  "broadcast": false
+}

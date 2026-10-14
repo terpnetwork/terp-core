@@ -1,0 +1,76 @@
+[package]
+name = "wasmvm"
+version = "4.0.0-zk"
+publish = false
+authors = ["Ethan Frey <ethanfrey@users.noreply.github.com>"]
+edition = "2021"
+# wasmer 7.4.2 and cosmwasm-vm 4.0.0-zk reject older rustc.
+rust-version = "1.95"
+description = "Go bindings for cosmwasm contracts"
+repository = "https://github.com/CosmWasm/wasmvm"
+license = "Apache-2.0"
+readme = "README.md"
+exclude = [".gitignore"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["zk", "hash-blake", "hash-poseidon", "redpallas"]
+zk = ["cosmwasm-std/zk", "cosmwasm-vm/zk"]
+# BLAKE2b-256 (blake2b_simd) and BLAKE3-256. Guest still opts in via
+# cosmwasm-std/hash-blake. The host import is env.blake2b_256 / env.blake3_256.
+hash-blake = ["cosmwasm-std/hash-blake", "cosmwasm-vm/hash-blake"]
+# Host Poseidon377 (Penumbra BLS12-377) + Pasta Poseidon. Guest still opts in
+# via cosmwasm-std/hash-poseidon + requires_hash_poseidon.
+hash-poseidon = ["cosmwasm-vm/hash-poseidon"]
+# RedPallas and RedJubjub spend-auth and binding verify.
+redpallas = ["cosmwasm-std/redpallas", "cosmwasm-vm/redpallas"]
+# This feature requires Rust nightly because it depends on the unstable backtrace feature.
+backtraces = []
+
+[dependencies]
+cosmwasm-std = { git = "https://github.com/permissionlessweb/cosmwasm.git", rev = "c156aef60266be0cd568a815199984ad283ed2c8", features = ["ibc2", "iterator", "staking", "stargate", "zk", "hash-blake", "redpallas"] }
+# Halo2 IPA stack is zakura-halo2-proofs via cosmwasm-vm
+# (permissionlessweb/common@798a317, inside the cosmwasm rev above).
+# hash-blake covers blake2b_256 and blake3_256. redpallas covers spend-auth
+# and binding verify. Defaults also turn these on; they are listed so a
+# later default-features change cannot drop them.
+cosmwasm-vm = { package = "cosmwasm-vm", git = "https://github.com/permissionlessweb/cosmwasm.git", rev = "c156aef60266be0cd568a815199984ad283ed2c8", features = ["ibc2", "iterator", "staking", "stargate", "zk", "bn254", "hash-blake", "hash-poseidon", "redpallas"] }
+errno = "0.3.8"
+hex = "0.4.3"
+rmp-serde = "1.3.0"
+serde = { version = "1.0.103", features = ["derive"] }
+serde_json = "1.0.91"
+thiserror = "1.0.38"
+time = { version = "0.3.36", features = ["formatting"] }
+winnow = "0.7.14"
+zk-cosmwasm = { package = "zk-cosmwasm", git = "https://github.com/permissionlessweb/cosmwasm.git", rev = "c156aef60266be0cd568a815199984ad283ed2c8" }
+zk-cosmwasm-hosts = { git = "https://github.com/permissionlessweb/cosmwasm.git", rev = "c156aef60266be0cd568a815199984ad283ed2c8" }
+
+
+[build-dependencies]
+cbindgen = "0.29.0"
+
+[dev-dependencies]
+serde = { version = "1.0.103", default-features = false, features = ["derive"] }
+tempfile = "3.4.0"
+lean-stwo-dummy = { git = "https://github.com/permissionlessweb/cosmwasm.git", rev = "c156aef60266be0cd568a815199984ad283ed2c8", features = ["real-stwo"] }
+
+# the example is to allow us to compile a muslc static lib with the same codebase as we compile the
+# normal dynamic libs (best workaround I could find to override crate-type on the command line)
+[[example]]
+name = "wasmvmstatic"
+path = "src/examples/wasmvmstatic.rs"
+crate-type = ["staticlib"]
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = true
+lto = false
+debug-assertions = false
+codegen-units = 16
+panic = 'unwind'
+incremental = true
+overflow-checks = true

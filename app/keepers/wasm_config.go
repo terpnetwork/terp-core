@@ -1,7 +1,7 @@
 package keepers
 
 import (
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmtypes "github.com/terpnetwork/terp-core/v6/x/wasm/types"
 )
 
 const (

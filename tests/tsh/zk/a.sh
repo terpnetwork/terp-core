@@ -15,7 +15,6 @@ CHAINDIR=../data/polytone
 VAL1HOME=$CHAINDIR/$CHAINID_A/val1
 ZK_COSMWASM=../../../../../artifacts/cw_norick.wasm
 ZK_VK=../../../../../artifacts/norick_vk.bin
-/Users/returniflost/abstract/terp-core/tests/interchaintest/circuits/norick_vk.bin
 # Define the new ports for val1 on chain a
 VAL1_API_PORT=1317
 VAL1_GRPC_PORT=9090

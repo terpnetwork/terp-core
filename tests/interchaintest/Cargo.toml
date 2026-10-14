@@ -73,3 +73,28 @@ path = "src/bin/drip.rs"
 [[bin]]
 name = "clock"
 path = "src/bin/clock.rs"
+
+# cw-orch-core pulls cw-utils from permissionlessweb/cw-minus and CosmWasm from
+# the mvp branch. Those git checkouts point at sibling paths that only exist
+# in this monorepo, so the e2e root has to pin them the same way terp-rs does.
+[patch."https://github.com/permissionlessweb/cosmwasm"]
+cosmwasm-core = { path = "../../crates/cosmwasm/packages/core" }
+cosmwasm-crypto = { path = "../../crates/cosmwasm/packages/crypto" }
+cosmwasm-derive = { path = "../../crates/cosmwasm/packages/derive" }
+cosmwasm-schema = { path = "../../crates/cosmwasm/packages/schema" }
+cosmwasm-schema-derive = { path = "../../crates/cosmwasm/packages/schema-derive" }
+cosmwasm-std = { path = "../../crates/cosmwasm/packages/std" }
+cw-schema = { path = "../../crates/cosmwasm/packages/cw-schema" }
+cw-schema-derive = { path = "../../crates/cosmwasm/packages/cw-schema-derive" }
+
+[patch."https://github.com/permissionlessweb/cw-minus"]
+cw-controllers = { path = "../../crates/cw-minus/packages/controllers" }
+cw-utils = { path = "../../crates/cw-minus/packages/cw-utils" }
+cw2 = { path = "../../crates/cw-minus/packages/cw2" }
+
+[patch."https://github.com/permissionlessweb/cw-storage-plus"]
+cw-storage-plus = { path = "../../crates/cw-storage-plus" }
+
+[patch."https://github.com/permissionlessweb/cw-plus"]
+cw20 = { path = "../../crates/cw-plus/packages/cw20" }
+cw20-ics20 = { path = "../../crates/cw-plus/contracts/cw20-ics20" }

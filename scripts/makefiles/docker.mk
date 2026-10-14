@@ -14,8 +14,8 @@ RUNNER_BASE_IMAGE_NONROOT := gcr.io/distroless/static-debian11:nonroot
 # ---------------------------------------------------------------------------
 
 # Sibling repo paths (for local zk development)
-ZK_WASMVM_DIR ?= ./crates/zk-wasmvm
-ZK_WASMD_DIR  ?= ./crates/zk-wasmd
+ZK_WASMVM_DIR ?= ./x/wasm/wasmvm
+ZK_WASMD_DIR  ?= ./x/wasm
 
 WASMVM_VERSION ?= $(shell grep 'CosmWasm/wasmvm' go.mod 2>/dev/null | grep -v '=>' | awk '{print $$2}')
 _HOST_ARCH := $(shell uname -m | sed 's/arm64/aarch64/; s/x86_64/x86_64/')
@@ -111,7 +111,7 @@ ifdef WASMVM_LIB
 	@echo "==> Additional single lib override: $(WASMVM_LIB)"
 	@cp $(WASMVM_LIB) build/wasmvm/ 2>/dev/null || true
 endif
-	@echo "==> Staging zk-wasmvm / zk-wasmd Go source ..."
+	@echo "==> Staging in-tree wasmvm (wasmd stays in the main module) ..."
 	@mkdir -p build/zk-deps/zk-wasmvm build/zk-deps/zk-wasmd
 	@rsync -a --delete \
 		--exclude='target/' \
@@ -123,9 +123,12 @@ endif
 		--exclude='libwasmvm/target/' \
 		--exclude='internal/api/*.a' \
 		$(ZK_WASMVM_DIR)/ build/zk-deps/zk-wasmvm/ 2>/dev/null || true
-	@rsync -a --delete \
-		--exclude='.git/' \
-		$(ZK_WASMD_DIR)/ build/zk-deps/zk-wasmd/ 2>/dev/null || true
+	@if [ -f "$(ZK_WASMD_DIR)/go.mod" ]; then \
+		rsync -a --delete --exclude='.git/' \
+			$(ZK_WASMD_DIR)/ build/zk-deps/zk-wasmd/; \
+	else \
+		echo "==> wasmd is in the main module; not staging $(ZK_WASMD_DIR)"; \
+	fi
 	@if grep -q '=> ./crates/ibc-hooks-v11' go.mod; then \
 		echo "==> Staging ibc-hooks-v11 (store/v2 keeper patch) ..."; \
 		mkdir -p build/zk-deps/ibc-hooks-v11; \

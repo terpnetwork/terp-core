@@ -1,0 +1,40 @@
+# Folded checks from permissionlessweb/wasmd, wasmvm, and cosmwasm.
+# workflow_dispatch only, so this does not run until someone starts it.
+name: folded wasm stack
+
+on:
+  workflow_dispatch:
+
+jobs:
+  x-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Compile x/wasm
+        run: go test -mod=readonly -count=0 ./x/wasm/...
+
+  libwasmvm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Check libwasmvm bindings header
+        working-directory: x/wasm/wasmvm/libwasmvm
+        # CosmWasm crates are git revs, so this job does not init submodules.
+        run: cargo check --locked
+
+  cosmwasm-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: cargo fmt
+        working-directory: crates/cosmwasm
+        run: cargo fmt -- --check

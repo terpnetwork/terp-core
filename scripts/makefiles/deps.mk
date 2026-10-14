@@ -55,7 +55,7 @@ submodules-help:
 	@echo "Submodule commands (monorepo)"
 	@echo ""
 	@echo "  make submodules-init       git submodule update --init --recursive"
-	@echo "  make submodules-init-go    only crates/zk-wasmd + crates/zk-wasmvm (go.mod path replace)"
+	@echo "  make submodules-init-go    crates/cosmwasm (wasmd is x/wasm, wasmvm is x/wasm/wasmvm)"
 	@echo "  make submodules-status     git submodule status"
 	@echo ""
 	@echo "Fresh checkout:"
@@ -68,8 +68,8 @@ submodules-init:
 
 # Minimal set required for go build/test with monorepo path replaces in go.mod
 submodules-init-go:
-	@echo "--> Initializing Go path-replace submodules (zk-wasmd, zk-wasmvm)"
-	git submodule update --init --depth 1 crates/zk-wasmd crates/zk-wasmvm
+	@echo "--> Initializing the CosmWasm submodule (wasmd and wasmvm are in-tree)"
+	git submodule update --init --depth 1 crates/cosmwasm
 
 submodules-status:
 	git submodule status

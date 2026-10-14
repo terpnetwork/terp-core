@@ -42,9 +42,9 @@ jobs:
           fetch-depth: 0
           submodules: false
       - name: Chain forks at gitlink SHAs
-        run: git submodule update --init crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+        run: git submodule update --init crates/cosmwasm
       - name: Published muslc
-        run: ./scripts/release/fetch_zk_muslc.sh crates/zk-wasmvm/internal/api
+        run: ./scripts/release/fetch_zk_muslc.sh x/wasm/wasmvm/internal/api
       - name: Each published upgrade pack matches S3
         run: |
           set -euo pipefail
@@ -70,7 +70,7 @@ jobs:
           fetch-depth: 0
           submodules: false
       - name: Chain forks at gitlink SHAs
-        run: git submodule update --init crates/zk-wasmd crates/zk-wasmvm crates/cosmwasm
+        run: git submodule update --init crates/cosmwasm
       - name: ibc-hooks path replace
         run: |
           if [ ! -f crates/ibc-hooks-v11/go.mod ]; then
@@ -87,6 +87,15 @@ jobs:
             pub="$(awk -F': ' '$1=="published"{print $2; exit}' "$lock")"
             plan="$(awk -F': ' '$1=="plan"{print $2; exit}' "$lock")"
             [ "$pub" = "true" ] || continue
+            commit="$(awk -F': ' '$1=="binary_commit"{print $2; exit}' "$lock")"
+            # v6.1 and v6.2 ELFs are already on S3. Their commits still
+            # path-replace crates/zk-wasmd and crates/zk-wasmvm, which this
+            # branch does not init. published-bytes checks those packs.
+            if git grep -q '=> ./crates/zk-wasmvm' "$commit" -- go.mod \
+              || git grep -q '=> ./crates/zk-wasmd' "$commit" -- go.mod; then
+              echo "SKIP $plan: $commit still path-replaces removed wasm submodules"
+              continue
+            fi
             echo "==> recurate PLAN=$plan arch=amd64"
             RECURATE_ARCH=amd64 PLAN="$plan" bash scripts/release/recurate_upgrade_binaries.sh
           done

@@ -10,7 +10,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-ZK="${ZK_WASMVM_DIR:-$ROOT/crates/zk-wasmvm}"
+ZK="${ZK_WASMVM_DIR:-$ROOT/x/wasm/wasmvm}"
 OUT="${WASMVM_ARTIFACT_DIR:-$ROOT/build/wasmvm-release}"
 
 mkdir -p "$OUT"
@@ -78,7 +78,7 @@ go_ver="$(awk '!/^[[:space:]]*\/\// && /github.com\/CosmWasm\/wasmvm/ && !/=>/ {
   echo "rust_crate_version=$rust_ver"
   echo "go_mod_require=$go_ver"
   echo "note=CheckLibwasmVersion: rust version must be a substring of the Go module version"
-  echo "note=path replace ./crates/zk-wasmvm reports (devel) and the check is a no-op"
+  echo "note=path replace ./x/wasm/wasmvm reports (devel) and the check is a no-op"
 } > "$OUT/VERSIONS.txt"
 
 if [ -z "$rust_ver" ] || [ -z "$go_ver" ]; then
@@ -86,7 +86,7 @@ if [ -z "$rust_ver" ] || [ -z "$go_ver" ]; then
   exit 1
 fi
 if ! printf '%s' "$go_ver" | grep -q -F "$rust_ver"; then
-  if grep -q 'github.com/CosmWasm/wasmvm/v3 => ./crates/zk-wasmvm' "$ROOT/go.mod"; then
+  if grep -q 'github.com/CosmWasm/wasmvm/v3 => ./x/wasm/wasmvm' "$ROOT/go.mod"; then
     echo "WARN: rust $rust_ver is not a substring of go $go_ver" >&2
     echo "      path replace reports (devel) so CheckLibwasmVersion is a no-op locally." >&2
     echo "      tagged releases must require v${rust_ver} (or matching) in go.mod." >&2

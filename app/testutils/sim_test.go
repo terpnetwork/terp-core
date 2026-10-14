@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmkeeper "github.com/terpnetwork/terp-core/v6/x/wasm/keeper"
 	"github.com/stretchr/testify/require"
 	"github.com/terpnetwork/terp-core/v6/app"
 
