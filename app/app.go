@@ -716,9 +716,7 @@ func (app *TerpApp) setupUpgradeStoreLoaders() {
 	for _, upgrade := range Upgrades {
 		if upgradeInfo.Name == upgrade.UpgradeName {
 			storeUpgrades := upgrade.StoreUpgrades
-			app.SetStoreLoader(
-				upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades),
-			)
+			app.SetStoreLoader(upgradeStoreLoader(upgradeInfo.Height, &storeUpgrades, upgrade.UpgradeName))
 		}
 	}
 }

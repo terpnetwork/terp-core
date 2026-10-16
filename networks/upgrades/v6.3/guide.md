@@ -1,5 +1,11 @@
 # Mainnet Upgrade Guide: v6.3 then v6.4 (BLAKE3 dest IAVL)
 
+6.3.0 does not open a node that ran v6.1. The plan name stays `v6.3`.
+Replace `upgrades/v6.3/bin/terpd` with 6.3.1 and leave the published 6.4.0
+binary in place. Steps and the amd64 tarball checksum are in
+[guide-v631.html](guide-v631.html). The heights and 6.3.0 checksums below
+are the earlier cut.
+
 ## Overview
 
 Coordinated software upgrade on **morocco-1**. Two Cosmovisor swaps about
